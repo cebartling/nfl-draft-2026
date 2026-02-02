@@ -231,19 +231,6 @@ mod tests {
         AppState::new(pool)
     }
 
-    async fn cleanup_combine_results(state: &AppState) {
-        sqlx::query!("DELETE FROM combine_results")
-            .execute(&state.combine_results_repo as &dyn std::any::Any)
-            .await
-            .expect("Failed to cleanup");
-    }
-
-    async fn cleanup_players(state: &AppState) {
-        sqlx::query!("DELETE FROM players")
-            .execute(&state.player_repo as &dyn std::any::Any)
-            .await
-            .expect("Failed to cleanup");
-    }
 
     async fn create_test_player(state: &AppState) -> Player {
         let player = Player::new(
