@@ -20,9 +20,13 @@ pub fn create_router(state: AppState) -> Router {
         // Teams
         .route("/teams", get(handlers::teams::list_teams).post(handlers::teams::create_team))
         .route("/teams/{id}", get(handlers::teams::get_team))
+        .route("/teams/{team_id}/scouting-reports", get(handlers::scouting_reports::get_team_scouting_reports))
+        .route("/teams/{team_id}/needs", get(handlers::team_needs::list_team_needs))
         // Players
         .route("/players", get(handlers::players::list_players).post(handlers::players::create_player))
         .route("/players/{id}", get(handlers::players::get_player))
+        .route("/players/{player_id}/combine-results", get(handlers::combine_results::get_player_combine_results))
+        .route("/players/{player_id}/scouting-reports", get(handlers::scouting_reports::get_player_scouting_reports))
         // Drafts
         .route("/drafts", get(handlers::drafts::list_drafts).post(handlers::drafts::create_draft))
         .route("/drafts/{id}", get(handlers::drafts::get_draft))
@@ -34,7 +38,25 @@ pub fn create_router(state: AppState) -> Router {
         .route("/drafts/{id}/pause", post(handlers::drafts::pause_draft))
         .route("/drafts/{id}/complete", post(handlers::drafts::complete_draft))
         // Draft Picks
-        .route("/picks/{id}/make", post(handlers::drafts::make_pick));
+        .route("/picks/{id}/make", post(handlers::drafts::make_pick))
+        // Combine Results
+        .route("/combine-results", post(handlers::combine_results::create_combine_results))
+        .route("/combine-results/{id}",
+            get(handlers::combine_results::get_combine_results)
+            .put(handlers::combine_results::update_combine_results)
+            .delete(handlers::combine_results::delete_combine_results))
+        // Scouting Reports
+        .route("/scouting-reports", post(handlers::scouting_reports::create_scouting_report))
+        .route("/scouting-reports/{id}",
+            get(handlers::scouting_reports::get_scouting_report)
+            .put(handlers::scouting_reports::update_scouting_report)
+            .delete(handlers::scouting_reports::delete_scouting_report))
+        // Team Needs
+        .route("/team-needs", post(handlers::team_needs::create_team_need))
+        .route("/team-needs/{id}",
+            get(handlers::team_needs::get_team_need)
+            .put(handlers::team_needs::update_team_need)
+            .delete(handlers::team_needs::delete_team_need));
 
     // Create stateful routes
     let stateful_router = Router::new()
