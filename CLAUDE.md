@@ -311,7 +311,16 @@ cargo test -p api --test acceptance -- --test-threads=1 --nocapture
 
 #### Acceptance Tests
 
-Acceptance tests (`back-end/crates/api/tests/acceptance.rs`) provide end-to-end HTTP testing:
+Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing organized by feature:
+
+**Test Files:**
+- `health.rs` - Health endpoint validation
+- `teams.rs` - Team CRUD operations
+- `players.rs` - Player CRUD operations
+- `drafts.rs` - Complete draft lifecycle (create → initialize → start → pick → pause → resume → complete)
+- `list.rs` - List endpoints for all resources (teams, players, drafts)
+- `errors.rs` - Error handling (404, 400, 409)
+- `common/mod.rs` - Shared test utilities (spawn_app, create_client, cleanup_database)
 
 **How They Work:**
 1. Each test spawns the API server on an ephemeral port (OS-assigned)
@@ -320,30 +329,26 @@ Acceptance tests (`back-end/crates/api/tests/acceptance.rs`) provide end-to-end 
 4. Makes actual HTTP requests and validates responses
 5. Cleans up database after each test
 
-**Test Coverage:**
-- `test_health_check` - Health endpoint validation
-- `test_create_and_get_team` - Team CRUD operations
-- `test_create_and_get_player` - Player CRUD operations
-- `test_draft_flow` - Complete draft lifecycle (create → initialize → start → pick → pause → resume → complete)
-- `test_list_endpoints` - List all resources (teams, players, drafts)
-- `test_error_handling` - Error responses (404, 400, 409)
-
 **Important Notes:**
 - Must run with `--test-threads=1` (tests share the same test database)
 - Each test spawns its own server instance
 - Tests verify actual HTTP status codes and JSON responses
 - Uses ephemeral ports to avoid port conflicts
+- Organized by feature for maintainability and scalability
 
 **Example Usage:**
 ```bash
 # Run all acceptance tests
-cargo test -p api --test acceptance -- --test-threads=1
+cargo test -p api --tests -- --test-threads=1
 
-# Run specific acceptance test
-cargo test -p api --test acceptance test_draft_flow -- --test-threads=1
+# Run specific test file
+cargo test -p api --test drafts -- --test-threads=1
+
+# Run specific test
+cargo test -p api --test drafts test_draft_flow -- --test-threads=1
 
 # Run with verbose output
-cargo test -p api --test acceptance -- --test-threads=1 --nocapture
+cargo test -p api --tests -- --test-threads=1 --nocapture
 ```
 
 ### Frontend
