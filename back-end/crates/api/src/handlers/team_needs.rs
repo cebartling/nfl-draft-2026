@@ -137,8 +137,8 @@ pub async fn update_team_need(
         .await?
         .ok_or_else(|| ApiError::NotFound(format!("Team need with id {} not found", id)))?;
 
-    // Update priority
-    need.priority = req.priority;
+    // Update priority with validation
+    need.update_priority(req.priority)?;
 
     let updated = state.team_need_repo.update(&need).await?;
 
