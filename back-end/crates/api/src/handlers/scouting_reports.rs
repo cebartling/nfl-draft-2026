@@ -279,7 +279,7 @@ mod tests {
         let state = setup_test_state().await;
 
         let player = create_test_player(&state).await;
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "SR1").await;
 
         let request = CreateScoutingReportRequest {
             player_id: player.id,
@@ -307,7 +307,7 @@ mod tests {
         let state = setup_test_state().await;
 
         let player = create_test_player(&state).await;
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "SR2").await;
 
         let request = CreateScoutingReportRequest {
             player_id: player.id,
@@ -343,7 +343,7 @@ mod tests {
             2026,
         ).unwrap()).await.unwrap();
 
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "SR3").await;
 
         let request1 = CreateScoutingReportRequest {
             player_id: player1.id,

@@ -203,7 +203,7 @@ mod tests {
     async fn test_create_team_need() {
         let state = setup_test_state().await;
 
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "TN1").await;
 
         let request = CreateTeamNeedRequest {
             team_id: team.id,
@@ -225,7 +225,7 @@ mod tests {
     async fn test_get_team_need() {
         let state = setup_test_state().await;
 
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "TN2").await;
 
         let request = CreateTeamNeedRequest {
             team_id: team.id,
@@ -248,7 +248,7 @@ mod tests {
     async fn test_list_team_needs() {
         let state = setup_test_state().await;
 
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "TN3").await;
 
         let request1 = CreateTeamNeedRequest {
             team_id: team.id,
@@ -293,7 +293,7 @@ mod tests {
     async fn test_update_team_need() {
         let state = setup_test_state().await;
 
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "TN4").await;
 
         let request = CreateTeamNeedRequest {
             team_id: team.id,
@@ -320,7 +320,7 @@ mod tests {
     async fn test_delete_team_need() {
         let state = setup_test_state().await;
 
-        let team = create_test_team(&state, "TST").await;
+        let team = create_test_team(&state, "TN5").await;
 
         let request = CreateTeamNeedRequest {
             team_id: team.id,
