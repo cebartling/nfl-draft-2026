@@ -1,9 +1,12 @@
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::handlers;
+use crate::openapi::ApiDoc;
 use crate::state::AppState;
 
 pub fn create_router(state: AppState) -> Router {
@@ -19,15 +22,36 @@ pub fn create_router(state: AppState) -> Router {
         .route("/teams/{id}", get(handlers::teams::get_team))
         // Players
         .route("/players", get(handlers::players::list_players).post(handlers::players::create_player))
-        .route("/players/{id}", get(handlers::players::get_player));
+        .route("/players/{id}", get(handlers::players::get_player))
+        // Drafts
+        .route("/drafts", get(handlers::drafts::list_drafts).post(handlers::drafts::create_draft))
+        .route("/drafts/{id}", get(handlers::drafts::get_draft))
+        .route("/drafts/{id}/initialize", post(handlers::drafts::initialize_draft_picks))
+        .route("/drafts/{id}/picks", get(handlers::drafts::get_draft_picks))
+        .route("/drafts/{id}/picks/next", get(handlers::drafts::get_next_pick))
+        .route("/drafts/{id}/picks/available", get(handlers::drafts::get_available_picks))
+        .route("/drafts/{id}/start", post(handlers::drafts::start_draft))
+        .route("/drafts/{id}/pause", post(handlers::drafts::pause_draft))
+        .route("/drafts/{id}/complete", post(handlers::drafts::complete_draft))
+        // Draft Picks
+        .route("/picks/{id}/make", post(handlers::drafts::make_pick));
 
-    // Main router
-    Router::new()
+    // Create stateful routes
+    let stateful_router = Router::new()
         .route("/health", get(handlers::health::health_check))
         .nest("/api/v1", api_routes)
+        .with_state(state);
+
+    // Swagger UI router (stateless)
+    let swagger_router: Router = SwaggerUi::new("/swagger-ui")
+        .url("/api-docs/openapi.json", ApiDoc::openapi())
+        .into();
+
+    // Merge routers and add layers
+    stateful_router
+        .merge(swagger_router)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
-        .with_state(state)
 }
 
 #[cfg(test)]

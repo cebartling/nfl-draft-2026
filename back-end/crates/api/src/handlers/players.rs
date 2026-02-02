@@ -1,6 +1,8 @@
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use domain::models::{Player, Position};
@@ -8,7 +10,7 @@ use domain::models::{Player, Position};
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreatePlayerRequest {
     pub first_name: String,
     pub last_name: String,
@@ -19,7 +21,7 @@ pub struct CreatePlayerRequest {
     pub draft_year: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct PlayerResponse {
     pub id: Uuid,
     pub first_name: String,
@@ -49,6 +51,14 @@ impl From<Player> for PlayerResponse {
 }
 
 /// GET /api/v1/players - List all players
+#[utoipa::path(
+    get,
+    path = "/api/v1/players",
+    responses(
+        (status = 200, description = "List of all players", body = Vec<PlayerResponse>)
+    ),
+    tag = "players"
+)]
 pub async fn list_players(State(state): State<AppState>) -> ApiResult<Json<Vec<PlayerResponse>>> {
     let players = state.player_repo.find_all().await?;
     let response: Vec<PlayerResponse> = players.into_iter().map(PlayerResponse::from).collect();
@@ -56,6 +66,18 @@ pub async fn list_players(State(state): State<AppState>) -> ApiResult<Json<Vec<P
 }
 
 /// GET /api/v1/players/:id - Get player by ID
+#[utoipa::path(
+    get,
+    path = "/api/v1/players/{id}",
+    responses(
+        (status = 200, description = "Player found", body = PlayerResponse),
+        (status = 404, description = "Player not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Player ID")
+    ),
+    tag = "players"
+)]
 pub async fn get_player(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -70,10 +92,20 @@ pub async fn get_player(
 }
 
 /// POST /api/v1/players - Create a new player
+#[utoipa::path(
+    post,
+    path = "/api/v1/players",
+    request_body = CreatePlayerRequest,
+    responses(
+        (status = 201, description = "Player created successfully", body = PlayerResponse),
+        (status = 400, description = "Invalid request")
+    ),
+    tag = "players"
+)]
 pub async fn create_player(
     State(state): State<AppState>,
     Json(payload): Json<CreatePlayerRequest>,
-) -> ApiResult<Json<PlayerResponse>> {
+) -> ApiResult<(StatusCode, Json<PlayerResponse>)> {
     let mut player = Player::new(
         payload.first_name,
         payload.last_name,
@@ -91,7 +123,7 @@ pub async fn create_player(
     }
 
     let created = state.player_repo.create(&player).await?;
-    Ok(Json(PlayerResponse::from(created)))
+    Ok((StatusCode::CREATED, Json(PlayerResponse::from(created))))
 }
 
 #[cfg(test)]
@@ -109,11 +141,19 @@ mod tests {
         let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
         let state = AppState::new(pool.clone());
 
-        // Cleanup
+        // Cleanup (delete in order of foreign key dependencies)
+        sqlx::query!("DELETE FROM draft_picks")
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup picks");
+        sqlx::query!("DELETE FROM drafts")
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup drafts");
         sqlx::query!("DELETE FROM players")
             .execute(&pool)
             .await
-            .expect("Failed to cleanup");
+            .expect("Failed to cleanup players");
 
         (state, pool)
     }
@@ -135,11 +175,11 @@ mod tests {
         let result = create_player(State(state), Json(request)).await;
         assert!(result.is_ok());
 
-        let response = result.unwrap().0;
-        assert_eq!(response.first_name, "John");
-        assert_eq!(response.last_name, "Doe");
-        assert_eq!(response.position, Position::QB);
-        assert_eq!(response.college, Some("Texas".to_string()));
+        let (_status, response) = result.unwrap();
+        assert_eq!(response.0.first_name, "John");
+        assert_eq!(response.0.last_name, "Doe");
+        assert_eq!(response.0.position, Position::QB);
+        assert_eq!(response.0.college, Some("Texas".to_string()));
     }
 
     #[tokio::test]
@@ -159,9 +199,9 @@ mod tests {
         let result = create_player(State(state), Json(request)).await;
         assert!(result.is_ok());
 
-        let response = result.unwrap().0;
-        assert_eq!(response.first_name, "Jane");
-        assert_eq!(response.college, None);
+        let (_status, response) = result.unwrap();
+        assert_eq!(response.0.first_name, "Jane");
+        assert_eq!(response.0.college, None);
     }
 
     #[tokio::test]
@@ -179,14 +219,14 @@ mod tests {
             draft_year: 2026,
         };
 
-        let created = create_player(State(state.clone()), Json(request)).await.unwrap().0;
+        let (_status, created) = create_player(State(state.clone()), Json(request)).await.unwrap();
 
         // Now get it by ID
-        let result = get_player(State(state), Path(created.id)).await;
+        let result = get_player(State(state), Path(created.0.id)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap().0;
-        assert_eq!(response.id, created.id);
+        assert_eq!(response.id, created.0.id);
         assert_eq!(response.first_name, "John");
     }
 

@@ -1,0 +1,389 @@
+use std::sync::Arc;
+use uuid::Uuid;
+
+use crate::errors::{DomainError, DomainResult};
+use crate::models::{Draft, DraftPick, Player};
+use crate::repositories::{DraftRepository, DraftPickRepository, PlayerRepository, TeamRepository};
+
+/// Draft engine service for managing draft operations
+pub struct DraftEngine {
+    draft_repo: Arc<dyn DraftRepository>,
+    pick_repo: Arc<dyn DraftPickRepository>,
+    team_repo: Arc<dyn TeamRepository>,
+    player_repo: Arc<dyn PlayerRepository>,
+}
+
+impl DraftEngine {
+    pub fn new(
+        draft_repo: Arc<dyn DraftRepository>,
+        pick_repo: Arc<dyn DraftPickRepository>,
+        team_repo: Arc<dyn TeamRepository>,
+        player_repo: Arc<dyn PlayerRepository>,
+    ) -> Self {
+        Self {
+            draft_repo,
+            pick_repo,
+            team_repo,
+            player_repo,
+        }
+    }
+
+    /// Create a new draft
+    pub async fn create_draft(&self, year: i32, rounds: i32, picks_per_round: i32) -> DomainResult<Draft> {
+        // Check if draft already exists for this year
+        if let Some(_existing) = self.draft_repo.find_by_year(year).await? {
+            return Err(DomainError::DuplicateEntry(
+                format!("Draft for year {} already exists", year)
+            ));
+        }
+
+        let draft = Draft::new(year, rounds, picks_per_round)?;
+        self.draft_repo.create(&draft).await
+    }
+
+    /// Initialize draft picks for a draft
+    /// This creates picks for all teams in standard draft order (reverse standings)
+    /// For now, we'll use a simple team ordering - in Phase 5 this will be based on standings
+    pub async fn initialize_picks(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>> {
+        // Get the draft
+        let draft = self.draft_repo.find_by_id(draft_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+
+        // Check if picks have already been initialized
+        let existing_picks = self.pick_repo.find_by_draft_id(draft_id).await?;
+        if !existing_picks.is_empty() {
+            return Err(DomainError::ValidationError(
+                format!("Draft picks have already been initialized for draft {}", draft_id)
+            ));
+        }
+
+        // Get all teams
+        let teams = self.team_repo.find_all().await?;
+        
+        if teams.is_empty() {
+            return Err(DomainError::ValidationError(
+                "Cannot initialize draft picks: no teams found".to_string()
+            ));
+        }
+
+        // Validate picks_per_round matches team count
+        if teams.len() != draft.picks_per_round as usize {
+            return Err(DomainError::ValidationError(
+                format!(
+                    "Draft configured for {} picks per round but {} teams exist",
+                    draft.picks_per_round,
+                    teams.len()
+                )
+            ));
+        }
+
+        // Generate all picks
+        let mut picks = Vec::new();
+        let mut overall_pick = 1;
+
+        for round in 1..=draft.rounds {
+            for (pick_num, team) in teams.iter().enumerate() {
+                let pick = DraftPick::new(
+                    draft_id,
+                    round,
+                    (pick_num + 1) as i32,
+                    overall_pick,
+                    team.id,
+                )?;
+                picks.push(pick);
+                overall_pick += 1;
+            }
+        }
+
+        // Create all picks in database
+        self.pick_repo.create_many(&picks).await
+    }
+
+    /// Get next available pick in the draft
+    pub async fn get_next_pick(&self, draft_id: Uuid) -> DomainResult<Option<DraftPick>> {
+        self.pick_repo.find_next_pick(draft_id).await
+    }
+
+    /// Get all available picks for a draft
+    pub async fn get_available_picks(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>> {
+        self.pick_repo.find_available_picks(draft_id).await
+    }
+
+    /// Get all picks for a draft
+    pub async fn get_all_picks(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>> {
+        self.pick_repo.find_by_draft_id(draft_id).await
+    }
+
+    /// Get available players for drafting (not yet picked in this draft)
+    pub async fn get_available_players(&self, draft_id: Uuid, draft_year: i32) -> DomainResult<Vec<Player>> {
+        // Get all players eligible for the draft year
+        let all_players = self.player_repo.find_by_draft_year(draft_year).await?;
+
+        // Get all picks for this draft
+        let picks = self.pick_repo.find_by_draft_id(draft_id).await?;
+
+        // Get IDs of already picked players
+        let picked_player_ids: std::collections::HashSet<Uuid> = picks
+            .iter()
+            .filter_map(|pick| pick.player_id)
+            .collect();
+
+        // Filter out picked players
+        let available_players = all_players
+            .into_iter()
+            .filter(|player| !picked_player_ids.contains(&player.id))
+            .collect();
+
+        Ok(available_players)
+    }
+
+    /// Make a draft pick
+    pub async fn make_pick(&self, pick_id: Uuid, player_id: Uuid) -> DomainResult<DraftPick> {
+        // Get the pick
+        let mut pick = self.pick_repo.find_by_id(pick_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Pick with id {} not found", pick_id)))?;
+
+        // Verify player exists
+        let player = self.player_repo.find_by_id(player_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Player with id {} not found", player_id)))?;
+
+        // Verify player is draft eligible for this draft year
+        let draft = self.draft_repo.find_by_id(pick.draft_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Draft not found")))?;
+
+        if player.draft_year != draft.year {
+            return Err(DomainError::ValidationError(
+                format!("Player is eligible for {} draft, not {}", player.draft_year, draft.year)
+            ));
+        }
+
+        if !player.draft_eligible {
+            return Err(DomainError::ValidationError(
+                "Player is not draft eligible".to_string()
+            ));
+        }
+
+        // Make the pick
+        pick.make_pick(player_id)?;
+
+        // Update in database
+        self.pick_repo.update(&pick).await
+    }
+
+    /// Start a draft
+    pub async fn start_draft(&self, draft_id: Uuid) -> DomainResult<Draft> {
+        let mut draft = self.draft_repo.find_by_id(draft_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+
+        draft.start()?;
+        self.draft_repo.update(&draft).await
+    }
+
+    /// Pause a draft
+    pub async fn pause_draft(&self, draft_id: Uuid) -> DomainResult<Draft> {
+        let mut draft = self.draft_repo.find_by_id(draft_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+
+        draft.pause()?;
+        self.draft_repo.update(&draft).await
+    }
+
+    /// Complete a draft
+    pub async fn complete_draft(&self, draft_id: Uuid) -> DomainResult<Draft> {
+        let mut draft = self.draft_repo.find_by_id(draft_id).await?
+            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+
+        draft.complete()?;
+        self.draft_repo.update(&draft).await
+    }
+
+    /// Get draft by ID
+    pub async fn get_draft(&self, draft_id: Uuid) -> DomainResult<Option<Draft>> {
+        self.draft_repo.find_by_id(draft_id).await
+    }
+
+    /// Get draft by year
+    pub async fn get_draft_by_year(&self, year: i32) -> DomainResult<Option<Draft>> {
+        self.draft_repo.find_by_year(year).await
+    }
+
+    /// Get all drafts
+    pub async fn get_all_drafts(&self) -> DomainResult<Vec<Draft>> {
+        self.draft_repo.find_all().await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{Conference, Division, Position, Team};
+    use mockall::mock;
+    use mockall::predicate::*;
+
+    mock! {
+        DraftRepo {}
+        #[async_trait::async_trait]
+        impl DraftRepository for DraftRepo {
+            async fn create(&self, draft: &Draft) -> DomainResult<Draft>;
+            async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<Draft>>;
+            async fn find_by_year(&self, year: i32) -> DomainResult<Option<Draft>>;
+            async fn find_all(&self) -> DomainResult<Vec<Draft>>;
+            async fn find_by_status(&self, status: crate::models::DraftStatus) -> DomainResult<Vec<Draft>>;
+            async fn update(&self, draft: &Draft) -> DomainResult<Draft>;
+            async fn delete(&self, id: Uuid) -> DomainResult<()>;
+        }
+    }
+
+    mock! {
+        DraftPickRepo {}
+        #[async_trait::async_trait]
+        impl DraftPickRepository for DraftPickRepo {
+            async fn create(&self, pick: &DraftPick) -> DomainResult<DraftPick>;
+            async fn create_many(&self, picks: &[DraftPick]) -> DomainResult<Vec<DraftPick>>;
+            async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<DraftPick>>;
+            async fn find_by_draft_id(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>>;
+            async fn find_by_draft_and_round(&self, draft_id: Uuid, round: i32) -> DomainResult<Vec<DraftPick>>;
+            async fn find_by_draft_and_team(&self, draft_id: Uuid, team_id: Uuid) -> DomainResult<Vec<DraftPick>>;
+            async fn find_next_pick(&self, draft_id: Uuid) -> DomainResult<Option<DraftPick>>;
+            async fn find_available_picks(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>>;
+            async fn update(&self, pick: &DraftPick) -> DomainResult<DraftPick>;
+            async fn delete(&self, id: Uuid) -> DomainResult<()>;
+            async fn delete_by_draft_id(&self, draft_id: Uuid) -> DomainResult<()>;
+        }
+    }
+
+    mock! {
+        TeamRepo {}
+        #[async_trait::async_trait]
+        impl TeamRepository for TeamRepo {
+            async fn create(&self, team: &Team) -> DomainResult<Team>;
+            async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<Team>>;
+            async fn find_by_abbreviation(&self, abbreviation: &str) -> DomainResult<Option<Team>>;
+            async fn find_all(&self) -> DomainResult<Vec<Team>>;
+            async fn update(&self, team: &Team) -> DomainResult<Team>;
+            async fn delete(&self, id: Uuid) -> DomainResult<()>;
+        }
+    }
+
+    mock! {
+        PlayerRepo {}
+        #[async_trait::async_trait]
+        impl PlayerRepository for PlayerRepo {
+            async fn create(&self, player: &Player) -> DomainResult<Player>;
+            async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<Player>>;
+            async fn find_all(&self) -> DomainResult<Vec<Player>>;
+            async fn find_by_position(&self, position: Position) -> DomainResult<Vec<Player>>;
+            async fn find_by_draft_year(&self, year: i32) -> DomainResult<Vec<Player>>;
+            async fn find_draft_eligible(&self, year: i32) -> DomainResult<Vec<Player>>;
+            async fn update(&self, player: &Player) -> DomainResult<Player>;
+            async fn delete(&self, id: Uuid) -> DomainResult<()>;
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_draft() {
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_year()
+            .with(eq(2026))
+            .returning(|_| Ok(None));
+        
+        draft_repo
+            .expect_create()
+            .returning(|d| Ok(d.clone()));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(MockDraftPickRepo::new()),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(MockPlayerRepo::new()),
+        );
+
+        let result = engine.create_draft(2026, 7, 32).await;
+        assert!(result.is_ok());
+
+        let draft = result.unwrap();
+        assert_eq!(draft.year, 2026);
+        assert_eq!(draft.rounds, 7);
+        assert_eq!(draft.picks_per_round, 32);
+    }
+
+    #[tokio::test]
+    async fn test_create_duplicate_draft() {
+        let existing_draft = Draft::new(2026, 7, 32).unwrap();
+        
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_year()
+            .with(eq(2026))
+            .returning(move |_| Ok(Some(existing_draft.clone())));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(MockDraftPickRepo::new()),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(MockPlayerRepo::new()),
+        );
+
+        let result = engine.create_draft(2026, 7, 32).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_initialize_picks() {
+        let draft = Draft::new(2026, 7, 2).unwrap();
+        let draft_id = draft.id;
+
+        let team1 = Team::new(
+            "Team A".to_string(),
+            "TMA".to_string(),
+            "City A".to_string(),
+            Conference::AFC,
+            Division::AFCEast,
+        ).unwrap();
+
+        let team2 = Team::new(
+            "Team B".to_string(),
+            "TMB".to_string(),
+            "City B".to_string(),
+            Conference::NFC,
+            Division::NFCEast,
+        ).unwrap();
+
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_id()
+            .with(eq(draft_id))
+            .returning(move |_| Ok(Some(draft.clone())));
+
+        let mut team_repo = MockTeamRepo::new();
+        team_repo
+            .expect_find_all()
+            .returning(move || Ok(vec![team1.clone(), team2.clone()]));
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_draft_id()
+            .with(eq(draft_id))
+            .returning(|_| Ok(vec![])); // No existing picks
+        pick_repo
+            .expect_create_many()
+            .returning(|picks| Ok(picks.to_vec()));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(pick_repo),
+            Arc::new(team_repo),
+            Arc::new(MockPlayerRepo::new()),
+        );
+
+        let result = engine.initialize_picks(draft_id).await;
+        assert!(result.is_ok());
+
+        let picks = result.unwrap();
+        // 2 teams * 7 rounds = 14 picks
+        assert_eq!(picks.len(), 14);
+        assert_eq!(picks[0].overall_pick, 1);
+        assert_eq!(picks[13].overall_pick, 14);
+    }
+}

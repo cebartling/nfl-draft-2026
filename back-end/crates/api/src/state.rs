@@ -1,21 +1,40 @@
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use domain::repositories::{TeamRepository, PlayerRepository};
-use db::repositories::{SqlxTeamRepository, SqlxPlayerRepository};
+use domain::repositories::{TeamRepository, PlayerRepository, DraftRepository, DraftPickRepository};
+use domain::services::DraftEngine;
+use db::repositories::{SqlxTeamRepository, SqlxPlayerRepository, SqlxDraftRepository, SqlxDraftPickRepository};
 
 /// Application state shared across all handlers
 #[derive(Clone)]
 pub struct AppState {
     pub team_repo: Arc<dyn TeamRepository>,
     pub player_repo: Arc<dyn PlayerRepository>,
+    pub draft_repo: Arc<dyn DraftRepository>,
+    pub draft_pick_repo: Arc<dyn DraftPickRepository>,
+    pub draft_engine: Arc<DraftEngine>,
 }
 
 impl AppState {
     pub fn new(pool: PgPool) -> Self {
+        let team_repo: Arc<dyn TeamRepository> = Arc::new(SqlxTeamRepository::new(pool.clone()));
+        let player_repo: Arc<dyn PlayerRepository> = Arc::new(SqlxPlayerRepository::new(pool.clone()));
+        let draft_repo: Arc<dyn DraftRepository> = Arc::new(SqlxDraftRepository::new(pool.clone()));
+        let draft_pick_repo: Arc<dyn DraftPickRepository> = Arc::new(SqlxDraftPickRepository::new(pool));
+
+        let draft_engine = Arc::new(DraftEngine::new(
+            draft_repo.clone(),
+            draft_pick_repo.clone(),
+            team_repo.clone(),
+            player_repo.clone(),
+        ));
+
         Self {
-            team_repo: Arc::new(SqlxTeamRepository::new(pool.clone())),
-            player_repo: Arc::new(SqlxPlayerRepository::new(pool)),
+            team_repo,
+            player_repo,
+            draft_repo,
+            draft_pick_repo,
+            draft_engine,
         }
     }
 }
