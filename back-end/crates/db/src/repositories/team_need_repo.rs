@@ -151,3 +151,226 @@ impl TeamNeedRepository for SqlxTeamNeedRepository {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::create_pool;
+    use domain::models::{Team, Conference, Division, Position};
+    use domain::repositories::TeamRepository;
+    use crate::repositories::SqlxTeamRepository;
+
+    async fn setup_test_pool() -> PgPool {
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| {
+                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+            });
+
+        create_pool(&database_url).await.expect("Failed to create pool")
+    }
+
+    async fn cleanup_team_needs(pool: &PgPool) {
+        sqlx::query!("DELETE FROM team_needs")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup team_needs");
+    }
+
+    async fn cleanup_teams(pool: &PgPool) {
+        sqlx::query!("DELETE FROM teams")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup teams");
+    }
+
+    async fn create_test_team(pool: &PgPool, abbr: &str) -> Team {
+        let team_repo = SqlxTeamRepository::new(pool.clone());
+        let team = Team::new(
+            format!("Test Team {}", abbr),
+            abbr.to_string(),
+            "Test City".to_string(),
+            Conference::AFC,
+            Division::AFCEast,
+        )
+        .unwrap();
+        team_repo.create(&team).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_create_team_need() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        let created = repo.create(&need).await.unwrap();
+
+        assert_eq!(created.team_id, team.id);
+        assert_eq!(created.position, Position::QB);
+        assert_eq!(created.priority, 10);
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_find_by_id() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        let created = repo.create(&need).await.unwrap();
+
+        let found = repo.find_by_id(created.id).await.unwrap();
+
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!(found.id, created.id);
+        assert_eq!(found.position, Position::QB);
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_find_by_team_id() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need1 = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        let need2 = TeamNeed::new(team.id, Position::WR, 8).unwrap();
+        let need3 = TeamNeed::new(team.id, Position::DE, 5).unwrap();
+
+        repo.create(&need1).await.unwrap();
+        repo.create(&need2).await.unwrap();
+        repo.create(&need3).await.unwrap();
+
+        let found = repo.find_by_team_id(team.id).await.unwrap();
+
+        assert_eq!(found.len(), 3);
+        assert_eq!(found[0].priority, 5); // Highest priority (lowest number) first
+        assert_eq!(found[1].priority, 8);
+        assert_eq!(found[2].priority, 10);
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_update_team_need() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        let created = repo.create(&need).await.unwrap();
+
+        let updated = TeamNeed {
+            priority: 5,
+            ..created
+        };
+
+        let result = repo.update(&updated).await.unwrap();
+
+        assert_eq!(result.priority, 5);
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_delete_team_need() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        let created = repo.create(&need).await.unwrap();
+
+        repo.delete(created.id).await.unwrap();
+
+        let found = repo.find_by_id(created.id).await.unwrap();
+        assert!(found.is_none());
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_delete_by_team_id() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need1 = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        let need2 = TeamNeed::new(team.id, Position::WR, 8).unwrap();
+
+        repo.create(&need1).await.unwrap();
+        repo.create(&need2).await.unwrap();
+
+        repo.delete_by_team_id(team.id).await.unwrap();
+
+        let found = repo.find_by_team_id(team.id).await.unwrap();
+        assert_eq!(found.len(), 0);
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_team_position() {
+        let pool = setup_test_pool().await;
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+        let repo = SqlxTeamNeedRepository::new(pool.clone());
+
+        let need = TeamNeed::new(team.id, Position::QB, 10).unwrap();
+        repo.create(&need).await.unwrap();
+
+        let duplicate = TeamNeed::new(team.id, Position::QB, 5).unwrap();
+        let result = repo.create(&duplicate).await;
+
+        assert!(result.is_err());
+
+        cleanup_team_needs(&pool).await;
+        cleanup_teams(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_invalid_priority() {
+        let pool = setup_test_pool().await;
+        cleanup_teams(&pool).await;
+
+        let team = create_test_team(&pool, "TST").await;
+
+        let result = TeamNeed::new(team.id, Position::QB, 0);
+        assert!(result.is_err());
+
+        let result = TeamNeed::new(team.id, Position::QB, 11);
+        assert!(result.is_err());
+
+        cleanup_teams(&pool).await;
+    }
+}

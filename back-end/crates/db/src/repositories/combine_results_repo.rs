@@ -184,3 +184,217 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::create_pool;
+    use domain::models::Player;
+    use domain::repositories::PlayerRepository;
+    use crate::repositories::SqlxPlayerRepository;
+
+    async fn setup_test_pool() -> PgPool {
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| {
+                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+            });
+
+        create_pool(&database_url).await.expect("Failed to create pool")
+    }
+
+    async fn cleanup_combine_results(pool: &PgPool) {
+        sqlx::query!("DELETE FROM combine_results")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup combine_results");
+    }
+
+    async fn cleanup_players(pool: &PgPool) {
+        sqlx::query!("DELETE FROM players")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup players");
+    }
+
+    async fn create_test_player(pool: &PgPool) -> Player {
+        let player_repo = SqlxPlayerRepository::new(pool.clone());
+        let player = Player::new(
+            "Test".to_string(),
+            "Player".to_string(),
+            domain::models::Position::QB,
+            2026,
+        )
+        .unwrap();
+        player_repo.create(&player).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_create_combine_results() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.52)
+            .unwrap()
+            .with_bench_press(20)
+            .unwrap();
+
+        let created = repo.create(&results).await.unwrap();
+
+        assert_eq!(created.player_id, player.id);
+        assert_eq!(created.year, 2026);
+        assert_eq!(created.forty_yard_dash, Some(4.52));
+        assert_eq!(created.bench_press, Some(20));
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_find_by_id() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.52)
+            .unwrap();
+
+        let created = repo.create(&results).await.unwrap();
+        let found = repo.find_by_id(created.id).await.unwrap();
+
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!(found.id, created.id);
+        assert_eq!(found.forty_yard_dash, Some(4.52));
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_find_by_player_id() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results1 = CombineResults::new(player.id, 2025).unwrap();
+        let results2 = CombineResults::new(player.id, 2026).unwrap();
+
+        repo.create(&results1).await.unwrap();
+        repo.create(&results2).await.unwrap();
+
+        let found = repo.find_by_player_id(player.id).await.unwrap();
+
+        assert_eq!(found.len(), 2);
+        assert_eq!(found[0].year, 2026); // Most recent first
+        assert_eq!(found[1].year, 2025);
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_find_by_player_and_year() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026).unwrap();
+        repo.create(&results).await.unwrap();
+
+        let found = repo.find_by_player_and_year(player.id, 2026).await.unwrap();
+
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!(found.player_id, player.id);
+        assert_eq!(found.year, 2026);
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_update_combine_results() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026).unwrap();
+        let created = repo.create(&results).await.unwrap();
+
+        let updated = CombineResults {
+            forty_yard_dash: Some(4.52),
+            bench_press: Some(20),
+            ..created
+        };
+
+        let result = repo.update(&updated).await.unwrap();
+
+        assert_eq!(result.forty_yard_dash, Some(4.52));
+        assert_eq!(result.bench_press, Some(20));
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_delete_combine_results() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026).unwrap();
+        let created = repo.create(&results).await.unwrap();
+
+        repo.delete(created.id).await.unwrap();
+
+        let found = repo.find_by_id(created.id).await.unwrap();
+        assert!(found.is_none());
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_player_year() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026).unwrap();
+        repo.create(&results).await.unwrap();
+
+        let duplicate = CombineResults::new(player.id, 2026).unwrap();
+        let result = repo.create(&duplicate).await;
+
+        assert!(result.is_err());
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+}
