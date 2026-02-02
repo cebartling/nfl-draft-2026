@@ -22,3 +22,8 @@ anyhow.workspace = true
 domain = { path = "../domain" }
 db = { path = "../db" }
 websocket = { path = "../websocket" }
+
+[dev-dependencies]
+sqlx.workspace = true
+uuid.workspace = true
+tower = { workspace = true, features = ["util"] }
