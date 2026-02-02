@@ -49,6 +49,14 @@ impl DraftEngine {
         let draft = self.draft_repo.find_by_id(draft_id).await?
             .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
 
+        // Check if picks have already been initialized
+        let existing_picks = self.pick_repo.find_by_draft_id(draft_id).await?;
+        if !existing_picks.is_empty() {
+            return Err(DomainError::ValidationError(
+                format!("Draft picks have already been initialized for draft {}", draft_id)
+            ));
+        }
+
         // Get all teams
         let teams = self.team_repo.find_all().await?;
         
@@ -354,6 +362,10 @@ mod tests {
             .returning(move || Ok(vec![team1.clone(), team2.clone()]));
 
         let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_draft_id()
+            .with(eq(draft_id))
+            .returning(|_| Ok(vec![])); // No existing picks
         pick_repo
             .expect_create_many()
             .returning(|picks| Ok(picks.to_vec()));

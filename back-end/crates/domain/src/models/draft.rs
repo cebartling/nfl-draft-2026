@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum DraftStatus {
     NotStarted,
     InProgress,
@@ -52,6 +53,17 @@ impl Draft {
         })
     }
 
+    /// Set the draft status directly, bypassing state validation.
+    ///
+    /// **WARNING**: This method is intended for internal use and testing only.
+    /// It bypasses the state validation enforced by `start()`, `pause()`, and `complete()` methods.
+    ///
+    /// For production code, use the proper state transition methods:
+    /// - `start()` - transition to InProgress
+    /// - `pause()` - transition to Paused
+    /// - `complete()` - transition to Completed
+    ///
+    /// This method is primarily used by the repository layer when loading drafts from the database.
     pub fn with_status(mut self, status: DraftStatus) -> Self {
         self.status = status;
         self.updated_at = Utc::now();
