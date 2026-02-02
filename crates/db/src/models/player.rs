@@ -58,7 +58,7 @@ impl PlayerDb {
     }
 }
 
-fn position_to_string(position: &Position) -> String {
+pub(crate) fn position_to_string(position: &Position) -> String {
     match position {
         Position::QB => "QB",
         Position::RB => "RB",
