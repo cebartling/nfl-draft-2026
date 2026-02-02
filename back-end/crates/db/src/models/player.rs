@@ -77,7 +77,7 @@ pub(crate) fn position_to_string(position: &Position) -> String {
     }.to_string()
 }
 
-fn string_to_position(s: &str) -> DbResult<Position> {
+pub(crate) fn string_to_position(s: &str) -> DbResult<Position> {
     match s {
         "QB" => Ok(Position::QB),
         "RB" => Ok(Position::RB),
