@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+documentation/
+
+# Environment files
+.env
+.env.local
+
+# Dependencies
+target/
+node_modules/
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+
+# Test coverage
+coverage/
+
+# Build artifacts
+dist/
+build/
