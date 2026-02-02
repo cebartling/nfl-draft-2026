@@ -93,11 +93,19 @@ mod tests {
         let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
         let state = AppState::new(pool.clone());
 
-        // Cleanup
+        // Cleanup (delete in order of foreign key dependencies)
+        sqlx::query!("DELETE FROM draft_picks")
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup picks");
+        sqlx::query!("DELETE FROM drafts")
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup drafts");
         sqlx::query!("DELETE FROM teams")
             .execute(&pool)
             .await
-            .expect("Failed to cleanup");
+            .expect("Failed to cleanup teams");
 
         (state, pool)
     }

@@ -1,4 +1,4 @@
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -19,7 +19,19 @@ pub fn create_router(state: AppState) -> Router {
         .route("/teams/{id}", get(handlers::teams::get_team))
         // Players
         .route("/players", get(handlers::players::list_players).post(handlers::players::create_player))
-        .route("/players/{id}", get(handlers::players::get_player));
+        .route("/players/{id}", get(handlers::players::get_player))
+        // Drafts
+        .route("/drafts", get(handlers::drafts::list_drafts).post(handlers::drafts::create_draft))
+        .route("/drafts/{id}", get(handlers::drafts::get_draft))
+        .route("/drafts/{id}/initialize", post(handlers::drafts::initialize_draft_picks))
+        .route("/drafts/{id}/picks", get(handlers::drafts::get_draft_picks))
+        .route("/drafts/{id}/picks/next", get(handlers::drafts::get_next_pick))
+        .route("/drafts/{id}/picks/available", get(handlers::drafts::get_available_picks))
+        .route("/drafts/{id}/start", post(handlers::drafts::start_draft))
+        .route("/drafts/{id}/pause", post(handlers::drafts::pause_draft))
+        .route("/drafts/{id}/complete", post(handlers::drafts::complete_draft))
+        // Draft Picks
+        .route("/picks/{id}/make", post(handlers::drafts::make_pick));
 
     // Main router
     Router::new()
