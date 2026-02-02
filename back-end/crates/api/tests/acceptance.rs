@@ -1,88 +1,12 @@
-use reqwest::Client;
+mod common;
+
 use serde_json::json;
 use std::time::Duration;
-use tokio::sync::oneshot;
-
-/// Spawns the API server on an ephemeral port and returns the base URL
-async fn spawn_app() -> String {
-    // Setup database
-    let database_url = std::env::var("TEST_DATABASE_URL")
-        .unwrap_or_else(|_| {
-            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-        });
-
-    let pool = db::create_pool(&database_url)
-        .await
-        .expect("Failed to create pool");
-
-    // Cleanup database
-    cleanup_database(&pool).await;
-
-    let state = api::state::AppState::new(pool);
-    let app = api::routes::create_router(state);
-
-    // Bind to ephemeral port (port 0)
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("Failed to bind to ephemeral port");
-
-    let addr = listener.local_addr().expect("Failed to get local address");
-    let base_url = format!("http://{}", addr);
-
-    // Create channel to notify when server is ready
-    let (tx, rx) = oneshot::channel();
-
-    // Spawn server in background task
-    tokio::spawn(async move {
-        // Notify that server is about to start
-        tx.send(()).unwrap();
-        
-        axum::serve(listener, app)
-            .await
-            .expect("Server failed to start");
-    });
-
-    // Wait for server to be ready
-    rx.await.expect("Server failed to start");
-
-    // Give server a moment to fully initialize
-    tokio::time::sleep(Duration::from_millis(100)).await;
-
-    base_url
-}
-
-async fn cleanup_database(pool: &sqlx::PgPool) {
-    sqlx::query!("DELETE FROM draft_picks")
-        .execute(pool)
-        .await
-        .expect("Failed to cleanup picks");
-    sqlx::query!("DELETE FROM drafts")
-        .execute(pool)
-        .await
-        .expect("Failed to cleanup drafts");
-    sqlx::query!("DELETE FROM players")
-        .execute(pool)
-        .await
-        .expect("Failed to cleanup players");
-    sqlx::query!("DELETE FROM teams")
-        .execute(pool)
-        .await
-        .expect("Failed to cleanup teams");
-}
-
-/// Creates a configured reqwest client with sensible defaults
-fn create_client() -> Client {
-    Client::builder()
-        .timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(5))
-        .build()
-        .expect("Failed to create HTTP client")
-}
 
 #[tokio::test]
 async fn test_health_check() {
-    let base_url = spawn_app().await;
-    let client = create_client();
+    let base_url = common::spawn_app().await;
+    let client = common::create_client();
 
     let response = client
         .get(&format!("{}/health", base_url))
@@ -99,8 +23,8 @@ async fn test_health_check() {
 
 #[tokio::test]
 async fn test_create_and_get_team() {
-    let base_url = spawn_app().await;
-    let client = create_client();
+    let base_url = common::spawn_app().await;
+    let client = common::create_client();
 
     // Create team
     let create_response = client
@@ -139,8 +63,8 @@ async fn test_create_and_get_team() {
 
 #[tokio::test]
 async fn test_create_and_get_player() {
-    let base_url = spawn_app().await;
-    let client = create_client();
+    let base_url = common::spawn_app().await;
+    let client = common::create_client();
 
     // Create player
     let create_response = client
@@ -182,8 +106,8 @@ async fn test_create_and_get_player() {
 
 #[tokio::test]
 async fn test_draft_flow() {
-    let base_url = spawn_app().await;
-    let client = create_client();
+    let base_url = common::spawn_app().await;
+    let client = common::create_client();
 
     // Create two teams
     let team1_response = client
@@ -344,8 +268,8 @@ async fn test_draft_flow() {
 
 #[tokio::test]
 async fn test_list_endpoints() {
-    let base_url = spawn_app().await;
-    let client = create_client();
+    let base_url = common::spawn_app().await;
+    let client = common::create_client();
 
     // Create some test data
     client
@@ -423,8 +347,8 @@ async fn test_list_endpoints() {
 
 #[tokio::test]
 async fn test_error_handling() {
-    let base_url = spawn_app().await;
-    let client = create_client();
+    let base_url = common::spawn_app().await;
+    let client = common::create_client();
 
     // Try to get non-existent team
     let response = client
