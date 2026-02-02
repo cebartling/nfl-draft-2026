@@ -2,8 +2,11 @@ use axum::routing::{get, post};
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::handlers;
+use crate::openapi::ApiDoc;
 use crate::state::AppState;
 
 pub fn create_router(state: AppState) -> Router {
@@ -33,13 +36,22 @@ pub fn create_router(state: AppState) -> Router {
         // Draft Picks
         .route("/picks/{id}/make", post(handlers::drafts::make_pick));
 
-    // Main router
-    Router::new()
+    // Create stateful routes
+    let stateful_router = Router::new()
         .route("/health", get(handlers::health::health_check))
         .nest("/api/v1", api_routes)
+        .with_state(state);
+
+    // Swagger UI router (stateless)
+    let swagger_router: Router = SwaggerUi::new("/swagger-ui")
+        .url("/api-docs/openapi.json", ApiDoc::openapi())
+        .into();
+
+    // Merge routers and add layers
+    stateful_router
+        .merge(swagger_router)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
-        .with_state(state)
 }
 
 #[cfg(test)]

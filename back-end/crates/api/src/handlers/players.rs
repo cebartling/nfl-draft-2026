@@ -2,6 +2,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use domain::models::{Player, Position};
@@ -9,7 +10,7 @@ use domain::models::{Player, Position};
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreatePlayerRequest {
     pub first_name: String,
     pub last_name: String,
@@ -20,7 +21,7 @@ pub struct CreatePlayerRequest {
     pub draft_year: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct PlayerResponse {
     pub id: Uuid,
     pub first_name: String,
@@ -50,6 +51,14 @@ impl From<Player> for PlayerResponse {
 }
 
 /// GET /api/v1/players - List all players
+#[utoipa::path(
+    get,
+    path = "/api/v1/players",
+    responses(
+        (status = 200, description = "List of all players", body = Vec<PlayerResponse>)
+    ),
+    tag = "players"
+)]
 pub async fn list_players(State(state): State<AppState>) -> ApiResult<Json<Vec<PlayerResponse>>> {
     let players = state.player_repo.find_all().await?;
     let response: Vec<PlayerResponse> = players.into_iter().map(PlayerResponse::from).collect();
@@ -57,6 +66,18 @@ pub async fn list_players(State(state): State<AppState>) -> ApiResult<Json<Vec<P
 }
 
 /// GET /api/v1/players/:id - Get player by ID
+#[utoipa::path(
+    get,
+    path = "/api/v1/players/{id}",
+    responses(
+        (status = 200, description = "Player found", body = PlayerResponse),
+        (status = 404, description = "Player not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Player ID")
+    ),
+    tag = "players"
+)]
 pub async fn get_player(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -71,6 +92,16 @@ pub async fn get_player(
 }
 
 /// POST /api/v1/players - Create a new player
+#[utoipa::path(
+    post,
+    path = "/api/v1/players",
+    request_body = CreatePlayerRequest,
+    responses(
+        (status = 201, description = "Player created successfully", body = PlayerResponse),
+        (status = 400, description = "Invalid request")
+    ),
+    tag = "players"
+)]
 pub async fn create_player(
     State(state): State<AppState>,
     Json(payload): Json<CreatePlayerRequest>,

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_health_check() {
-    let base_url = common::spawn_app().await;
+    let (base_url, _pool) = common::spawn_app().await;
     let client = common::create_client();
 
     let response = client

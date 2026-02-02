@@ -7,7 +7,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_draft_flow() {
-    let base_url = common::spawn_app().await;
+    let (base_url, pool) = common::spawn_app().await;
     let client = common::create_client();
 
     // Create two teams
@@ -41,6 +41,13 @@ async fn test_draft_flow() {
         .expect("Failed to create team 2");
     assert_eq!(team2_response.status(), 201);
 
+    // Verify teams were persisted in database
+    let db_team_count = sqlx::query!("SELECT COUNT(*) as count FROM teams")
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to count teams");
+    assert_eq!(db_team_count.count.unwrap(), 2);
+
     // Create a player
     let player_response = client
         .post(&format!("{}/api/v1/players", base_url))
@@ -57,6 +64,18 @@ async fn test_draft_flow() {
     assert_eq!(player_response.status(), 201);
     let player: serde_json::Value = player_response.json().await.expect("Failed to parse JSON");
     let player_id = player["id"].as_str().expect("Missing player id");
+
+    // Verify player was persisted in database
+    let db_player = sqlx::query!(
+        "SELECT first_name, last_name, position FROM players WHERE id = $1",
+        uuid::Uuid::parse_str(player_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Player not found in database");
+    assert_eq!(db_player.first_name, "John");
+    assert_eq!(db_player.last_name, "Doe");
+    assert_eq!(db_player.position, "QB");
 
     // Create draft
     let draft_response = client
@@ -78,6 +97,19 @@ async fn test_draft_flow() {
     assert_eq!(draft["status"], "NotStarted");
     assert_eq!(draft["total_picks"], 2);
 
+    // Verify draft was persisted in database with correct status
+    let db_draft = sqlx::query!(
+        "SELECT year, status, rounds, picks_per_round FROM drafts WHERE id = $1",
+        uuid::Uuid::parse_str(draft_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Draft not found in database");
+    assert_eq!(db_draft.year, 2026);
+    assert_eq!(db_draft.status, "NotStarted");
+    assert_eq!(db_draft.rounds, 1);
+    assert_eq!(db_draft.picks_per_round, 2);
+
     // Initialize draft picks
     let init_response = client
         .post(&format!("{}/api/v1/drafts/{}/initialize", base_url, draft_id))
@@ -92,6 +124,16 @@ async fn test_draft_flow() {
     assert_eq!(picks[0]["round"], 1);
     assert_eq!(picks[0]["pick_number"], 1);
     assert_eq!(picks[0]["overall_pick"], 1);
+
+    // Verify picks were persisted in database
+    let db_pick_count = sqlx::query!(
+        "SELECT COUNT(*) as count FROM draft_picks WHERE draft_id = $1",
+        uuid::Uuid::parse_str(draft_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to count picks");
+    assert_eq!(db_pick_count.count.unwrap(), 2);
 
     // Get next pick
     let next_pick_response = client
@@ -117,6 +159,16 @@ async fn test_draft_flow() {
     let started_draft: serde_json::Value = start_response.json().await.expect("Failed to parse JSON");
     assert_eq!(started_draft["status"], "InProgress");
 
+    // Verify draft status was updated in database
+    let db_status = sqlx::query!(
+        "SELECT status FROM drafts WHERE id = $1",
+        uuid::Uuid::parse_str(draft_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to fetch draft status");
+    assert_eq!(db_status.status, "InProgress");
+
     // Make pick
     let make_pick_response = client
         .post(&format!("{}/api/v1/picks/{}/make", base_url, pick_id))
@@ -133,6 +185,17 @@ async fn test_draft_flow() {
     assert_eq!(made_pick["player_id"], player_id);
     assert!(made_pick["picked_at"].is_string());
 
+    // Verify pick was updated in database
+    let db_pick = sqlx::query!(
+        "SELECT player_id, picked_at FROM draft_picks WHERE id = $1",
+        uuid::Uuid::parse_str(pick_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to fetch pick");
+    assert_eq!(db_pick.player_id, Some(uuid::Uuid::parse_str(player_id).expect("Invalid UUID")));
+    assert!(db_pick.picked_at.is_some());
+
     // Pause draft
     let pause_response = client
         .post(&format!("{}/api/v1/drafts/{}/pause", base_url, draft_id))
@@ -144,6 +207,16 @@ async fn test_draft_flow() {
 
     let paused_draft: serde_json::Value = pause_response.json().await.expect("Failed to parse JSON");
     assert_eq!(paused_draft["status"], "Paused");
+
+    // Verify pause status in database
+    let db_paused = sqlx::query!(
+        "SELECT status FROM drafts WHERE id = $1",
+        uuid::Uuid::parse_str(draft_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to fetch draft status");
+    assert_eq!(db_paused.status, "Paused");
 
     // Resume draft (start again)
     let resume_response = client
@@ -165,4 +238,14 @@ async fn test_draft_flow() {
 
     let completed_draft: serde_json::Value = complete_response.json().await.expect("Failed to parse JSON");
     assert_eq!(completed_draft["status"], "Completed");
+
+    // Verify completed status in database
+    let db_completed = sqlx::query!(
+        "SELECT status FROM drafts WHERE id = $1",
+        uuid::Uuid::parse_str(draft_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to fetch draft status");
+    assert_eq!(db_completed.status, "Completed");
 }

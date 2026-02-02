@@ -2,6 +2,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use domain::models::{Draft, DraftPick};
@@ -9,14 +10,14 @@ use domain::models::{Draft, DraftPick};
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateDraftRequest {
     pub year: i32,
     pub rounds: i32,
     pub picks_per_round: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct DraftResponse {
     pub id: Uuid,
     pub year: i32,
@@ -39,7 +40,7 @@ impl From<Draft> for DraftResponse {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct DraftPickResponse {
     pub id: Uuid,
     pub draft_id: Uuid,
@@ -66,12 +67,23 @@ impl From<DraftPick> for DraftPickResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct MakePickRequest {
     pub player_id: Uuid,
 }
 
 /// POST /api/v1/drafts - Create a new draft
+#[utoipa::path(
+    post,
+    path = "/api/v1/drafts",
+    request_body = CreateDraftRequest,
+    responses(
+        (status = 201, description = "Draft created successfully", body = DraftResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 409, description = "Draft for this year already exists")
+    ),
+    tag = "drafts"
+)]
 pub async fn create_draft(
     State(state): State<AppState>,
     Json(payload): Json<CreateDraftRequest>,
@@ -84,6 +96,14 @@ pub async fn create_draft(
 }
 
 /// GET /api/v1/drafts - List all drafts
+#[utoipa::path(
+    get,
+    path = "/api/v1/drafts",
+    responses(
+        (status = 200, description = "List of all drafts", body = Vec<DraftResponse>)
+    ),
+    tag = "drafts"
+)]
 pub async fn list_drafts(
     State(state): State<AppState>,
 ) -> ApiResult<Json<Vec<DraftResponse>>> {
@@ -93,6 +113,18 @@ pub async fn list_drafts(
 }
 
 /// GET /api/v1/drafts/:id - Get draft by ID
+#[utoipa::path(
+    get,
+    path = "/api/v1/drafts/{id}",
+    responses(
+        (status = 200, description = "Draft found", body = DraftResponse),
+        (status = 404, description = "Draft not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn get_draft(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -106,6 +138,18 @@ pub async fn get_draft(
 }
 
 /// POST /api/v1/drafts/:id/initialize - Initialize picks for a draft
+#[utoipa::path(
+    post,
+    path = "/api/v1/drafts/{id}/initialize",
+    responses(
+        (status = 201, description = "Picks initialized successfully", body = Vec<DraftPickResponse>),
+        (status = 404, description = "Draft not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn initialize_draft_picks(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -116,6 +160,17 @@ pub async fn initialize_draft_picks(
 }
 
 /// GET /api/v1/drafts/:id/picks - Get all picks for a draft
+#[utoipa::path(
+    get,
+    path = "/api/v1/drafts/{id}/picks",
+    responses(
+        (status = 200, description = "List of all picks for the draft", body = Vec<DraftPickResponse>)
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn get_draft_picks(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -126,6 +181,17 @@ pub async fn get_draft_picks(
 }
 
 /// GET /api/v1/drafts/:id/picks/next - Get next available pick
+#[utoipa::path(
+    get,
+    path = "/api/v1/drafts/{id}/picks/next",
+    responses(
+        (status = 200, description = "Next available pick (null if none available)", body = Option<DraftPickResponse>)
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn get_next_pick(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -135,6 +201,17 @@ pub async fn get_next_pick(
 }
 
 /// GET /api/v1/drafts/:id/picks/available - Get all available picks
+#[utoipa::path(
+    get,
+    path = "/api/v1/drafts/{id}/picks/available",
+    responses(
+        (status = 200, description = "List of all available (unmade) picks", body = Vec<DraftPickResponse>)
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn get_available_picks(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -145,6 +222,20 @@ pub async fn get_available_picks(
 }
 
 /// POST /api/v1/picks/:id/make - Make a draft pick
+#[utoipa::path(
+    post,
+    path = "/api/v1/picks/{id}/make",
+    request_body = MakePickRequest,
+    responses(
+        (status = 200, description = "Pick made successfully", body = DraftPickResponse),
+        (status = 404, description = "Pick not found"),
+        (status = 400, description = "Invalid request or player already drafted")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Pick ID")
+    ),
+    tag = "picks"
+)]
 pub async fn make_pick(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -155,6 +246,18 @@ pub async fn make_pick(
 }
 
 /// POST /api/v1/drafts/:id/start - Start a draft
+#[utoipa::path(
+    post,
+    path = "/api/v1/drafts/{id}/start",
+    responses(
+        (status = 200, description = "Draft started successfully", body = DraftResponse),
+        (status = 404, description = "Draft not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn start_draft(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -164,6 +267,18 @@ pub async fn start_draft(
 }
 
 /// POST /api/v1/drafts/:id/pause - Pause a draft
+#[utoipa::path(
+    post,
+    path = "/api/v1/drafts/{id}/pause",
+    responses(
+        (status = 200, description = "Draft paused successfully", body = DraftResponse),
+        (status = 404, description = "Draft not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn pause_draft(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -173,6 +288,18 @@ pub async fn pause_draft(
 }
 
 /// POST /api/v1/drafts/:id/complete - Complete a draft
+#[utoipa::path(
+    post,
+    path = "/api/v1/drafts/{id}/complete",
+    responses(
+        (status = 200, description = "Draft completed successfully", body = DraftResponse),
+        (status = 404, description = "Draft not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID")
+    ),
+    tag = "drafts"
+)]
 pub async fn complete_draft(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,

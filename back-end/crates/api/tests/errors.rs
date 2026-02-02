@@ -7,7 +7,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_error_handling() {
-    let base_url = common::spawn_app().await;
+    let (base_url, pool) = common::spawn_app().await;
     let client = common::create_client();
 
     // Try to get non-existent team
@@ -36,7 +36,7 @@ async fn test_error_handling() {
     assert_eq!(response.status(), 400);
 
     // Try to create duplicate draft year
-    client
+    let first_draft = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
             "year": 2026,
@@ -47,7 +47,16 @@ async fn test_error_handling() {
         .send()
         .await
         .expect("Failed to create first draft");
+    assert_eq!(first_draft.status(), 201);
 
+    // Verify first draft exists in database
+    let db_draft_count = sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to count drafts");
+    assert_eq!(db_draft_count.count.unwrap(), 1);
+
+    // Try to create duplicate
     let response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
@@ -60,4 +69,11 @@ async fn test_error_handling() {
         .await
         .expect("Failed to execute request");
     assert_eq!(response.status(), 409);
+
+    // Verify still only one draft in database
+    let db_draft_count_after = sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to count drafts");
+    assert_eq!(db_draft_count_after.count.unwrap(), 1);
 }

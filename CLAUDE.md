@@ -315,26 +315,36 @@ Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing 
 
 **Test Files:**
 - `health.rs` - Health endpoint validation
-- `teams.rs` - Team CRUD operations
-- `players.rs` - Player CRUD operations
-- `drafts.rs` - Complete draft lifecycle (create → initialize → start → pick → pause → resume → complete)
-- `list.rs` - List endpoints for all resources (teams, players, drafts)
-- `errors.rs` - Error handling (404, 400, 409)
-- `common/mod.rs` - Shared test utilities (spawn_app, create_client, cleanup_database)
+- `teams.rs` - Team CRUD operations with database validation
+- `players.rs` - Player CRUD operations with database validation
+- `drafts.rs` - Complete draft lifecycle with database state verification at each step
+- `list.rs` - List endpoints with database count validation
+- `errors.rs` - Error handling (404, 400, 409) with database verification
+- `common/mod.rs` - Shared test utilities (spawn_app returns pool, create_client, cleanup_database)
 
 **How They Work:**
 1. Each test spawns the API server on an ephemeral port (OS-assigned)
 2. Uses `tokio::sync::oneshot` channel to notify when server is ready
 3. Creates a configured `reqwest::Client` with timeouts (30s overall, 5s connect, 5s per-request)
 4. Makes actual HTTP requests and validates responses
-5. Cleans up database after each test
+5. **Validates data directly in the database** to ensure persistence
+6. Compares HTTP responses with database state for consistency
+7. Cleans up database after each test
+
+**What They Validate:**
+- **HTTP Layer**: Correct status codes (200, 201, 404, 400, 409) and JSON responses
+- **Database Layer**: Data is correctly persisted in PostgreSQL
+- **Consistency**: HTTP responses match database state
+- **State Transitions**: Draft status changes are reflected in the database
+- **Data Integrity**: Foreign keys, constraints, and counts are correct
 
 **Important Notes:**
 - Must run with `--test-threads=1` (tests share the same test database)
-- Each test spawns its own server instance
-- Tests verify actual HTTP status codes and JSON responses
+- Each test spawns its own server instance with a shared database pool
+- Tests verify both HTTP responses AND database persistence
 - Uses ephemeral ports to avoid port conflicts
 - Organized by feature for maintainability and scalability
+- True end-to-end testing: HTTP → API → Service → Repository → PostgreSQL
 
 **Example Usage:**
 ```bash

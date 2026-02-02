@@ -4,8 +4,8 @@ use reqwest::Client;
 use std::time::Duration;
 use tokio::sync::oneshot;
 
-/// Spawns the API server on an ephemeral port and returns the base URL
-pub async fn spawn_app() -> String {
+/// Spawns the API server on an ephemeral port and returns the base URL and database pool
+pub async fn spawn_app() -> (String, sqlx::PgPool) {
     // Setup database
     let database_url = std::env::var("TEST_DATABASE_URL")
         .unwrap_or_else(|_| {
@@ -19,7 +19,7 @@ pub async fn spawn_app() -> String {
     // Cleanup database
     cleanup_database(&pool).await;
 
-    let state = api::state::AppState::new(pool);
+    let state = api::state::AppState::new(pool.clone());
     let app = api::routes::create_router(state);
 
     // Bind to ephemeral port (port 0)
@@ -37,7 +37,7 @@ pub async fn spawn_app() -> String {
     tokio::spawn(async move {
         // Notify that server is about to start
         tx.send(()).unwrap();
-        
+
         axum::serve(listener, app)
             .await
             .expect("Server failed to start");
@@ -49,7 +49,7 @@ pub async fn spawn_app() -> String {
     // Give server a moment to fully initialize
     tokio::time::sleep(Duration::from_millis(100)).await;
 
-    base_url
+    (base_url, pool)
 }
 
 /// Cleans up the test database by deleting all data in the correct order

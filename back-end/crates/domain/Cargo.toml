@@ -12,6 +12,7 @@ uuid.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 async-trait.workspace = true
+utoipa.workspace = true
 
 [dev-dependencies]
 mockall.workspace = true

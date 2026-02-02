@@ -2,6 +2,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use domain::models::{Conference, Division, Team};
@@ -9,7 +10,7 @@ use domain::models::{Conference, Division, Team};
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateTeamRequest {
     pub name: String,
     pub abbreviation: String,
@@ -18,7 +19,7 @@ pub struct CreateTeamRequest {
     pub division: Division,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct TeamResponse {
     pub id: Uuid,
     pub name: String,
@@ -42,6 +43,14 @@ impl From<Team> for TeamResponse {
 }
 
 /// GET /api/v1/teams - List all teams
+#[utoipa::path(
+    get,
+    path = "/api/v1/teams",
+    responses(
+        (status = 200, description = "List of all teams", body = Vec<TeamResponse>)
+    ),
+    tag = "teams"
+)]
 pub async fn list_teams(State(state): State<AppState>) -> ApiResult<Json<Vec<TeamResponse>>> {
     let teams = state.team_repo.find_all().await?;
     let response: Vec<TeamResponse> = teams.into_iter().map(TeamResponse::from).collect();
@@ -49,6 +58,18 @@ pub async fn list_teams(State(state): State<AppState>) -> ApiResult<Json<Vec<Tea
 }
 
 /// GET /api/v1/teams/:id - Get team by ID
+#[utoipa::path(
+    get,
+    path = "/api/v1/teams/{id}",
+    responses(
+        (status = 200, description = "Team found", body = TeamResponse),
+        (status = 404, description = "Team not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Team ID")
+    ),
+    tag = "teams"
+)]
 pub async fn get_team(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -63,6 +84,16 @@ pub async fn get_team(
 }
 
 /// POST /api/v1/teams - Create a new team
+#[utoipa::path(
+    post,
+    path = "/api/v1/teams",
+    request_body = CreateTeamRequest,
+    responses(
+        (status = 201, description = "Team created successfully", body = TeamResponse),
+        (status = 400, description = "Invalid request")
+    ),
+    tag = "teams"
+)]
 pub async fn create_team(
     State(state): State<AppState>,
     Json(payload): Json<CreateTeamRequest>,

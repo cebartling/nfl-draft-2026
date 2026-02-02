@@ -3,6 +3,14 @@ use serde_json::{json, Value};
 
 /// Health check endpoint
 /// Returns 200 OK with status information
+#[utoipa::path(
+    get,
+    path = "/health",
+    responses(
+        (status = 200, description = "Service is healthy", body = Value)
+    ),
+    tag = "health"
+)]
 pub async fn health_check() -> Json<Value> {
     Json(json!({
         "status": "healthy",
