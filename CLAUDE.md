@@ -96,8 +96,12 @@ cp .env.example .env
 # Install sqlx-cli for migrations (if not already installed)
 cargo install sqlx-cli --no-default-features --features postgres
 
-# Run migrations
+# Run migrations for development database
 sqlx migrate run
+
+# Create and setup test database
+sqlx database create --database-url "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test"
+sqlx migrate run --database-url "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test"
 ```
 
 **Development:**
@@ -262,6 +266,26 @@ Types in `lib/types/` should mirror Rust structs from the backend for end-to-end
 - **Unit tests**: Domain services with mock repositories
 - **Integration tests**: Full API endpoints with test database
 - **Repository tests**: Against real PostgreSQL test database
+
+**Test Database Isolation:**
+- All tests use `TEST_DATABASE_URL` environment variable
+- Tests run against `nfl_draft_test` database (separate from `nfl_draft` development DB)
+- Tests clean up data after execution to maintain isolation
+- Never run tests against the production or development database
+
+**Running Tests:**
+```bash
+cd back-end
+
+# Ensure TEST_DATABASE_URL is set in .env
+# Run all tests (using test database)
+cargo test --workspace -- --test-threads=1
+
+# Run specific crate tests
+cargo test -p domain
+cargo test -p db
+cargo test -p api
+```
 
 ### Frontend
 - **Unit tests**: Pure functions, utilities, formatters

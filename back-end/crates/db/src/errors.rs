@@ -24,10 +24,10 @@ impl From<DbError> for domain::errors::DomainError {
             DbError::NotFound(msg) => domain::errors::DomainError::NotFound(msg),
             DbError::DuplicateEntry(msg) => domain::errors::DomainError::DuplicateEntry(msg),
             DbError::DatabaseError(e) => {
-                domain::errors::DomainError::ValidationError(format!("Database error: {}", e))
+                domain::errors::DomainError::InternalError(format!("Database error: {}", e))
             }
             DbError::MappingError(msg) => {
-                domain::errors::DomainError::ValidationError(format!("Mapping error: {}", msg))
+                domain::errors::DomainError::InternalError(format!("Mapping error: {}", msg))
             }
         }
     }

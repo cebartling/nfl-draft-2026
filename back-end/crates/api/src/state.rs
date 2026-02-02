@@ -26,8 +26,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_app_state_creation() {
-        let database_url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft".to_string());
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string());
 
         let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
         let state = AppState::new(pool);

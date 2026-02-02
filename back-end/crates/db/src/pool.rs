@@ -17,8 +17,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_pool_success() {
-        let database_url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft".to_string());
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string());
 
         let result = create_pool(&database_url).await;
         assert!(result.is_ok());

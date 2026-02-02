@@ -13,6 +13,9 @@ pub enum DomainError {
 
     #[error("Invalid state: {0}")]
     InvalidState(String),
+
+    #[error("Internal error: {0}")]
+    InternalError(String),
 }
 
 pub type DomainResult<T> = Result<T, DomainError>;

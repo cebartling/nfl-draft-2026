@@ -1,4 +1,4 @@
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -38,9 +38,9 @@ mod tests {
     use tower::ServiceExt;
 
     async fn setup_test_router() -> Router {
-        let database_url = std::env::var("DATABASE_URL")
+        let database_url = std::env::var("TEST_DATABASE_URL")
             .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft".to_string()
+                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
             });
 
         let pool = db::create_pool(&database_url).await.expect("Failed to create pool");

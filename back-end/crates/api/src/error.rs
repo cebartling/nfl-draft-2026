@@ -35,6 +35,10 @@ impl IntoResponse for ApiError {
                     DomainError::ValidationError(msg) => (StatusCode::BAD_REQUEST, msg),
                     DomainError::DuplicateEntry(msg) => (StatusCode::CONFLICT, msg),
                     DomainError::InvalidState(msg) => (StatusCode::BAD_REQUEST, msg),
+                    DomainError::InternalError(msg) => {
+                        tracing::error!("Internal error: {}", msg);
+                        (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
+                    }
                 }
             }
         };

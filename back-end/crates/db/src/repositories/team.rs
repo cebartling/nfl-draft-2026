@@ -174,9 +174,9 @@ mod tests {
     use crate::create_pool;
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("DATABASE_URL")
+        let database_url = std::env::var("TEST_DATABASE_URL")
             .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft".to_string()
+                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
             });
 
         create_pool(&database_url).await.expect("Failed to create pool")
