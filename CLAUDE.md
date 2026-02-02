@@ -263,17 +263,24 @@ Types in `lib/types/` should mirror Rust structs from the backend for end-to-end
 ## Testing Philosophy
 
 ### Backend
-- **Unit tests**: Domain services with mock repositories
+
+#### Test Types
+
+- **Unit tests**: Domain services with mock repositories (mockall)
 - **Integration tests**: Full API endpoints with test database
 - **Repository tests**: Against real PostgreSQL test database
+- **Acceptance tests**: End-to-end HTTP tests with ephemeral server
 
-**Test Database Isolation:**
+#### Test Database Isolation
+
 - All tests use `TEST_DATABASE_URL` environment variable
 - Tests run against `nfl_draft_test` database (separate from `nfl_draft` development DB)
 - Tests clean up data after execution to maintain isolation
 - Never run tests against the production or development database
 
-**Running Tests:**
+#### Running Tests
+
+**All Tests:**
 ```bash
 cd back-end
 
@@ -285,6 +292,58 @@ cargo test --workspace -- --test-threads=1
 cargo test -p domain
 cargo test -p db
 cargo test -p api
+```
+
+**Unit/Integration Tests Only:**
+```bash
+# Run all unit/integration tests (faster, no HTTP overhead)
+cargo test --workspace --lib -- --test-threads=1
+```
+
+**Acceptance Tests Only:**
+```bash
+# Run end-to-end HTTP tests with ephemeral servers
+cargo test -p api --test acceptance -- --test-threads=1
+
+# With output (useful for debugging)
+cargo test -p api --test acceptance -- --test-threads=1 --nocapture
+```
+
+#### Acceptance Tests
+
+Acceptance tests (`back-end/crates/api/tests/acceptance.rs`) provide end-to-end HTTP testing:
+
+**How They Work:**
+1. Each test spawns the API server on an ephemeral port (OS-assigned)
+2. Uses `tokio::sync::oneshot` channel to notify when server is ready
+3. Creates a configured `reqwest::Client` with timeouts (30s overall, 5s connect, 5s per-request)
+4. Makes actual HTTP requests and validates responses
+5. Cleans up database after each test
+
+**Test Coverage:**
+- `test_health_check` - Health endpoint validation
+- `test_create_and_get_team` - Team CRUD operations
+- `test_create_and_get_player` - Player CRUD operations
+- `test_draft_flow` - Complete draft lifecycle (create → initialize → start → pick → pause → resume → complete)
+- `test_list_endpoints` - List all resources (teams, players, drafts)
+- `test_error_handling` - Error responses (404, 400, 409)
+
+**Important Notes:**
+- Must run with `--test-threads=1` (tests share the same test database)
+- Each test spawns its own server instance
+- Tests verify actual HTTP status codes and JSON responses
+- Uses ephemeral ports to avoid port conflicts
+
+**Example Usage:**
+```bash
+# Run all acceptance tests
+cargo test -p api --test acceptance -- --test-threads=1
+
+# Run specific acceptance test
+cargo test -p api --test acceptance test_draft_flow -- --test-threads=1
+
+# Run with verbose output
+cargo test -p api --test acceptance -- --test-threads=1 --nocapture
 ```
 
 ### Frontend
