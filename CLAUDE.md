@@ -24,12 +24,13 @@ back-end/         # Rust backend (Cargo workspace)
 │   ├── domain/   # Business logic, services, domain models
 │   ├── db/       # Database layer (SQLx repositories)
 │   └── websocket/ # WebSocket connection management
-├── migrations/   # SQLx database migrations
-└── docker-compose.yml  # PostgreSQL development environment
+└── migrations/   # SQLx database migrations
 
 frontend/         # SvelteKit application (to be added)
 
 documentation/    # Architecture and planning docs
+
+docker-compose.yml  # Shared infrastructure (PostgreSQL, pgAdmin)
 ```
 
 **Key Architectural Patterns:**
@@ -50,10 +51,10 @@ The database is organized into logical domains:
 
 ### Docker Environment
 
+**Infrastructure services (PostgreSQL, pgAdmin) are managed from the repository root:**
+
 **Start services:**
 ```bash
-cd back-end
-
 # Start PostgreSQL only
 docker compose up -d postgres
 
@@ -72,8 +73,6 @@ docker compose down -v
 
 **Database access:**
 ```bash
-cd back-end
-
 # Connect to PostgreSQL via psql
 docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
 
@@ -85,13 +84,14 @@ docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
 
 **Initial Setup:**
 ```bash
+# Start PostgreSQL (from repository root)
+docker compose up -d postgres
+
+# Setup backend
 cd back-end
 
 # Copy environment variables
 cp .env.example .env
-
-# Start PostgreSQL
-docker compose up -d postgres
 
 # Install sqlx-cli for migrations (if not already installed)
 cargo install sqlx-cli --no-default-features --features postgres
