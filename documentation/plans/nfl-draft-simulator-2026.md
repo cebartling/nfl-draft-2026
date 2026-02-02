@@ -9,18 +9,21 @@ Build an NFL Draft simulator with:
 
 ## Architecture
 
-### Project Structure - Cargo Workspace
+### Project Structure - Monorepo
 
 ```
 nfl-draft-2026/
-├── Cargo.toml                    # Workspace root
-├── migrations/                   # Database migrations (sqlx)
-├── crates/
-│   ├── api/                      # Axum API server
-│   ├── domain/                   # Business logic & models
-│   ├── db/                       # Database layer (sqlx)
-│   └── websocket/                # WebSocket connections
-└── tests/                        # Integration tests
+├── back-end/                     # Rust backend (Cargo workspace)
+│   ├── Cargo.toml                # Workspace root
+│   ├── migrations/               # Database migrations (sqlx)
+│   ├── crates/
+│   │   ├── api/                  # Axum API server
+│   │   ├── domain/               # Business logic & models
+│   │   ├── db/                   # Database layer (sqlx)
+│   │   └── websocket/            # WebSocket connections
+│   └── tests/                    # Integration tests
+├── docker-compose.yml            # Shared infrastructure
+└── documentation/                # Architecture docs
 ```
 
 **Benefits of workspace approach**:
@@ -154,15 +157,15 @@ PostgreSQL Database
    - Players: GET /players, POST /players, GET /players/:id
 
 **Critical Files**:
-- `/Cargo.toml` - Workspace configuration
-- `/migrations/20260201000001_create_teams.sql`
-- `/migrations/20260201000002_create_players.sql`
-- `/crates/domain/src/models/team.rs`
-- `/crates/domain/src/models/player.rs`
-- `/crates/domain/src/repositories/team.rs` (trait)
-- `/crates/db/src/repositories/team_repo.rs` (impl)
-- `/crates/api/src/main.rs`
-- `/crates/api/src/handlers/teams.rs`
+- `/back-end/Cargo.toml` - Workspace configuration
+- `/back-end/migrations/20260201000001_create_teams.sql`
+- `/back-end/migrations/20260201000002_create_players.sql`
+- `/back-end/crates/domain/src/models/team.rs`
+- `/back-end/crates/domain/src/models/player.rs`
+- `/back-end/crates/domain/src/repositories/team.rs` (trait)
+- `/back-end/crates/db/src/repositories/team_repo.rs` (impl)
+- `/back-end/crates/api/src/main.rs`
+- `/back-end/crates/api/src/handlers/teams.rs`
 
 **Validation**: Can start server, access health check, create/read teams and players
 
@@ -178,10 +181,10 @@ PostgreSQL Database
 5. Implement draft session basics (create, start/pause)
 
 **Critical Files**:
-- `/migrations/20260201000003_create_drafts.sql`
-- `/crates/domain/src/models/draft.rs`
-- `/crates/domain/src/services/draft_engine.rs`
-- `/crates/api/src/handlers/drafts.rs`
+- `/back-end/migrations/20260201000003_create_drafts.sql`
+- `/back-end/crates/domain/src/models/draft.rs`
+- `/back-end/crates/domain/src/services/draft_engine.rs`
+- `/back-end/crates/api/src/handlers/drafts.rs`
 
 **Validation**: Can create a draft, initialize pick order, view draft state
 
@@ -196,10 +199,10 @@ PostgreSQL Database
 4. Add scouting endpoints
 
 **Critical Files**:
-- `/migrations/20260201000004_create_scouting.sql`
-- `/crates/domain/src/models/scouting.rs`
-- `/crates/domain/src/services/player_ranking.rs`
-- `/crates/api/src/handlers/players.rs` (extend)
+- `/back-end/migrations/20260201000004_create_scouting.sql`
+- `/back-end/crates/domain/src/models/scouting.rs`
+- `/back-end/crates/domain/src/services/player_ranking.rs`
+- `/back-end/crates/api/src/handlers/players.rs` (extend)
 
 **Validation**: Can add combine results, create scouting reports, rank players
 
@@ -216,10 +219,10 @@ PostgreSQL Database
 6. Create draft event recording
 
 **Critical Files**:
-- `/crates/websocket/src/manager.rs`
-- `/crates/websocket/src/messages.rs`
-- `/crates/api/src/handlers/websocket.rs`
-- `/migrations/20260201000005_create_sessions.sql`
+- `/back-end/crates/websocket/src/manager.rs`
+- `/back-end/crates/websocket/src/messages.rs`
+- `/back-end/crates/api/src/handlers/websocket.rs`
+- `/back-end/migrations/20260201000005_create_sessions.sql`
 
 **Validation**: Multiple clients can connect, receive real-time pick updates, see clock countdown
 
@@ -235,9 +238,9 @@ PostgreSQL Database
 5. Add draft strategy configurations
 
 **Critical Files**:
-- `/crates/domain/src/services/draft_engine.rs` (extend)
-- `/crates/domain/src/services/team_needs.rs`
-- `/crates/domain/src/services/player_ranking.rs` (extend)
+- `/back-end/crates/domain/src/services/draft_engine.rs` (extend)
+- `/back-end/crates/domain/src/services/team_needs.rs`
+- `/back-end/crates/domain/src/services/player_ranking.rs` (extend)
 
 **Validation**: AI can make realistic draft picks based on team needs and BPA
 
@@ -253,9 +256,9 @@ PostgreSQL Database
 5. Create trade endpoints
 
 **Critical Files**:
-- `/migrations/20260201000006_create_trades.sql`
-- `/crates/domain/src/services/trade_engine.rs`
-- `/crates/api/src/handlers/trades.rs`
+- `/back-end/migrations/20260201000006_create_trades.sql`
+- `/back-end/crates/domain/src/services/trade_engine.rs`
+- `/back-end/crates/api/src/handlers/trades.rs`
 
 **Validation**: Can propose trades, validate fairness, execute trades, update pick ownership
 
@@ -350,21 +353,21 @@ PostgreSQL Database
 ## Critical Files Reference
 
 ### Phase 1 (Immediate)
-- `/Cargo.toml` - Workspace root
-- `/crates/api/src/main.rs` - Entry point
-- `/crates/domain/src/models/team.rs` - Team model
-- `/crates/domain/src/models/player.rs` - Player model
-- `/crates/db/src/pool.rs` - Database connection
-- `/migrations/20260201000001_create_teams.sql`
+- `/back-end/Cargo.toml` - Workspace root
+- `/back-end/crates/api/src/main.rs` - Entry point
+- `/back-end/crates/domain/src/models/team.rs` - Team model
+- `/back-end/crates/domain/src/models/player.rs` - Player model
+- `/back-end/crates/db/src/pool.rs` - Database connection
+- `/back-end/migrations/20260201000001_create_teams.sql`
 
 ### Core Domain Logic
-- `/crates/domain/src/services/draft_engine.rs` - Draft simulation
-- `/crates/domain/src/services/trade_engine.rs` - Trade logic
-- `/crates/domain/src/services/player_ranking.rs` - Rankings
+- `/back-end/crates/domain/src/services/draft_engine.rs` - Draft simulation
+- `/back-end/crates/domain/src/services/trade_engine.rs` - Trade logic
+- `/back-end/crates/domain/src/services/player_ranking.rs` - Rankings
 
 ### API Layer
-- `/crates/api/src/handlers/drafts.rs` - Draft endpoints
-- `/crates/api/src/handlers/websocket.rs` - WebSocket handler
+- `/back-end/crates/api/src/handlers/drafts.rs` - Draft endpoints
+- `/back-end/crates/api/src/handlers/websocket.rs` - WebSocket handler
 
 ## Verification Plan
 
