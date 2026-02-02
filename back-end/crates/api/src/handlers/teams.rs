@@ -1,0 +1,188 @@
+use axum::extract::{Path, State};
+use axum::Json;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+use domain::models::{Conference, Division, Team};
+
+use crate::error::{ApiError, ApiResult};
+use crate::state::AppState;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateTeamRequest {
+    pub name: String,
+    pub abbreviation: String,
+    pub city: String,
+    pub conference: Conference,
+    pub division: Division,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TeamResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub abbreviation: String,
+    pub city: String,
+    pub conference: Conference,
+    pub division: Division,
+}
+
+impl From<Team> for TeamResponse {
+    fn from(team: Team) -> Self {
+        Self {
+            id: team.id,
+            name: team.name,
+            abbreviation: team.abbreviation,
+            city: team.city,
+            conference: team.conference,
+            division: team.division,
+        }
+    }
+}
+
+/// GET /api/v1/teams - List all teams
+pub async fn list_teams(State(state): State<AppState>) -> ApiResult<Json<Vec<TeamResponse>>> {
+    let teams = state.team_repo.find_all().await?;
+    let response: Vec<TeamResponse> = teams.into_iter().map(TeamResponse::from).collect();
+    Ok(Json(response))
+}
+
+/// GET /api/v1/teams/:id - Get team by ID
+pub async fn get_team(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<TeamResponse>> {
+    let team = state
+        .team_repo
+        .find_by_id(id)
+        .await?
+        .ok_or_else(|| ApiError::NotFound(format!("Team with id {} not found", id)))?;
+
+    Ok(Json(TeamResponse::from(team)))
+}
+
+/// POST /api/v1/teams - Create a new team
+pub async fn create_team(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateTeamRequest>,
+) -> ApiResult<Json<TeamResponse>> {
+    let team = Team::new(
+        payload.name,
+        payload.abbreviation,
+        payload.city,
+        payload.conference,
+        payload.division,
+    )?;
+
+    let created = state.team_repo.create(&team).await?;
+    Ok(Json(TeamResponse::from(created)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::extract::State;
+    use sqlx::PgPool;
+
+    async fn setup_test_state() -> (AppState, PgPool) {
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| {
+                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+            });
+
+        let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
+        let state = AppState::new(pool.clone());
+
+        // Cleanup
+        sqlx::query!("DELETE FROM teams")
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup");
+
+        (state, pool)
+    }
+
+    #[tokio::test]
+    async fn test_create_team() {
+        let (state, _pool) = setup_test_state().await;
+
+        let request = CreateTeamRequest {
+            name: "Dallas Cowboys".to_string(),
+            abbreviation: "DAL".to_string(),
+            city: "Dallas".to_string(),
+            conference: Conference::NFC,
+            division: Division::NFCEast,
+        };
+
+        let result = create_team(State(state), Json(request)).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap().0;
+        assert_eq!(response.name, "Dallas Cowboys");
+        assert_eq!(response.abbreviation, "DAL");
+    }
+
+    #[tokio::test]
+    async fn test_get_team() {
+        let (state, _pool): (AppState, PgPool) = setup_test_state().await;
+
+        // Create a team first
+        let request = CreateTeamRequest {
+            name: "Dallas Cowboys".to_string(),
+            abbreviation: "DAL".to_string(),
+            city: "Dallas".to_string(),
+            conference: Conference::NFC,
+            division: Division::NFCEast,
+        };
+
+        let created = create_team(State(state.clone()), Json(request)).await.unwrap().0;
+
+        // Now get it by ID
+        let result = get_team(State(state), Path(created.id)).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap().0;
+        assert_eq!(response.id, created.id);
+        assert_eq!(response.name, "Dallas Cowboys");
+    }
+
+    #[tokio::test]
+    async fn test_get_team_not_found() {
+        let (state, _pool) = setup_test_state().await;
+
+        let result = get_team(State(state), Path(Uuid::new_v4())).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_list_teams() {
+        let (state, _pool): (AppState, PgPool) = setup_test_state().await;
+
+        // Create two teams
+        let team1 = CreateTeamRequest {
+            name: "Dallas Cowboys".to_string(),
+            abbreviation: "DAL".to_string(),
+            city: "Dallas".to_string(),
+            conference: Conference::NFC,
+            division: Division::NFCEast,
+        };
+
+        let team2 = CreateTeamRequest {
+            name: "Kansas City Chiefs".to_string(),
+            abbreviation: "KC".to_string(),
+            city: "Kansas City".to_string(),
+            conference: Conference::AFC,
+            division: Division::AFCWest,
+        };
+
+        create_team(State(state.clone()), Json(team1)).await.unwrap();
+        create_team(State(state.clone()), Json(team2)).await.unwrap();
+
+        // List all teams
+        let result = list_teams(State(state)).await;
+        assert!(result.is_ok());
+
+        let teams = result.unwrap().0;
+        assert_eq!(teams.len(), 2);
+    }
+}
