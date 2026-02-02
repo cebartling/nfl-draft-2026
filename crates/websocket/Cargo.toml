@@ -1,0 +1,19 @@
+[package]
+name = "websocket"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Workspace dependencies
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+futures-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+
+# Local crates
+domain = { path = "../domain" }
