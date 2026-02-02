@@ -13,18 +13,23 @@ NFL Draft Simulator 2026 - A full-stack application for simulating NFL drafts wi
 
 ## Architecture
 
-### Cargo Workspace Structure
+### Monorepo Structure
 
-This project uses a **multi-crate workspace** pattern for clear separation of concerns:
+This is a **monorepo** containing multiple projects:
 
 ```
-crates/
-├── api/          # Axum web server (routes, handlers, middleware)
-├── domain/       # Business logic, services, domain models
-├── db/           # Database layer (SQLx repositories)
-└── websocket/    # WebSocket connection management
+back-end/         # Rust backend (Cargo workspace)
+├── crates/
+│   ├── api/      # Axum web server (routes, handlers, middleware)
+│   ├── domain/   # Business logic, services, domain models
+│   ├── db/       # Database layer (SQLx repositories)
+│   └── websocket/ # WebSocket connection management
+├── migrations/   # SQLx database migrations
+└── docker-compose.yml  # PostgreSQL development environment
 
-frontend/         # SvelteKit application
+frontend/         # SvelteKit application (to be added)
+
+documentation/    # Architecture and planning docs
 ```
 
 **Key Architectural Patterns:**
@@ -47,6 +52,8 @@ The database is organized into logical domains:
 
 **Start services:**
 ```bash
+cd back-end
+
 # Start PostgreSQL only
 docker compose up -d postgres
 
@@ -65,6 +72,8 @@ docker compose down -v
 
 **Database access:**
 ```bash
+cd back-end
+
 # Connect to PostgreSQL via psql
 docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
 
@@ -76,13 +85,15 @@ docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
 
 **Initial Setup:**
 ```bash
+cd back-end
+
 # Copy environment variables
 cp .env.example .env
 
 # Start PostgreSQL
 docker compose up -d postgres
 
-# Install sqlx-cli for migrations
+# Install sqlx-cli for migrations (if not already installed)
 cargo install sqlx-cli --no-default-features --features postgres
 
 # Run migrations
@@ -91,6 +102,8 @@ sqlx migrate run
 
 **Development:**
 ```bash
+cd back-end
+
 # Build entire workspace
 cargo build --workspace
 
@@ -110,6 +123,8 @@ cargo clippy --workspace -- -D warnings
 
 **Database Migrations:**
 ```bash
+cd back-end
+
 # Create new migration
 sqlx migrate add create_table_name
 
@@ -170,12 +185,12 @@ npm run test -- path/to/test.test.ts
 
 When adding a new feature that spans the stack:
 
-1. **Domain Model** (`crates/domain/src/models/`): Define the core entity
-2. **Repository Trait** (`crates/domain/src/repositories/`): Define data access interface
-3. **Service** (`crates/domain/src/services/`): Implement business logic
-4. **DB Repository** (`crates/db/src/repositories/`): Implement trait with SQLx
-5. **API Handler** (`crates/api/src/handlers/`): Create HTTP endpoint
-6. **Route** (`crates/api/src/routes/`): Wire up the handler
+1. **Domain Model** (`back-end/crates/domain/src/models/`): Define the core entity
+2. **Repository Trait** (`back-end/crates/domain/src/repositories/`): Define data access interface
+3. **Service** (`back-end/crates/domain/src/services/`): Implement business logic
+4. **DB Repository** (`back-end/crates/db/src/repositories/`): Implement trait with SQLx
+5. **API Handler** (`back-end/crates/api/src/handlers/`): Create HTTP endpoint
+6. **Route** (`back-end/crates/api/src/routes/`): Wire up the handler
 
 This order ensures you're always coding against abstractions, not concrete implementations.
 
@@ -231,7 +246,7 @@ Types in `lib/types/` should mirror Rust structs from the backend for end-to-end
 
 ### WebSocket Integration
 
-**Backend** (`crates/websocket/`):
+**Backend** (`back-end/crates/websocket/`):
 - Connection manager using DashMap for concurrent access
 - Broadcasting to all clients in a session
 - Reconnection handled client-side
