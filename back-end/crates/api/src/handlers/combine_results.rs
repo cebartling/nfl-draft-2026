@@ -176,13 +176,13 @@ pub async fn update_combine_results(
         .await?
         .ok_or_else(|| ApiError::NotFound(format!("Combine results with id {} not found", id)))?;
 
-    // Update fields
-    results.forty_yard_dash = req.forty_yard_dash;
-    results.bench_press = req.bench_press;
-    results.vertical_jump = req.vertical_jump;
-    results.broad_jump = req.broad_jump;
-    results.three_cone_drill = req.three_cone_drill;
-    results.twenty_yard_shuttle = req.twenty_yard_shuttle;
+    // Update fields with validation
+    results.update_forty_yard_dash(req.forty_yard_dash)?;
+    results.update_bench_press(req.bench_press)?;
+    results.update_vertical_jump(req.vertical_jump)?;
+    results.update_broad_jump(req.broad_jump)?;
+    results.update_three_cone_drill(req.three_cone_drill)?;
+    results.update_twenty_yard_shuttle(req.twenty_yard_shuttle)?;
 
     let updated = state.combine_results_repo.update(&results).await?;
 

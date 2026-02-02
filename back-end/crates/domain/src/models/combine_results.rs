@@ -76,6 +76,61 @@ impl CombineResults {
         Ok(self)
     }
 
+    // Update methods for modifying existing results
+    pub fn update_forty_yard_dash(&mut self, time: Option<f64>) -> DomainResult<()> {
+        if let Some(t) = time {
+            Self::validate_forty_dash(t)?;
+        }
+        self.forty_yard_dash = time;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_bench_press(&mut self, reps: Option<i32>) -> DomainResult<()> {
+        if let Some(r) = reps {
+            Self::validate_bench_press(r)?;
+        }
+        self.bench_press = reps;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_vertical_jump(&mut self, inches: Option<f64>) -> DomainResult<()> {
+        if let Some(i) = inches {
+            Self::validate_vertical_jump(i)?;
+        }
+        self.vertical_jump = inches;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_broad_jump(&mut self, inches: Option<i32>) -> DomainResult<()> {
+        if let Some(i) = inches {
+            Self::validate_broad_jump(i)?;
+        }
+        self.broad_jump = inches;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_three_cone_drill(&mut self, time: Option<f64>) -> DomainResult<()> {
+        if let Some(t) = time {
+            Self::validate_three_cone_drill(t)?;
+        }
+        self.three_cone_drill = time;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_twenty_yard_shuttle(&mut self, time: Option<f64>) -> DomainResult<()> {
+        if let Some(t) = time {
+            Self::validate_twenty_yard_shuttle(t)?;
+        }
+        self.twenty_yard_shuttle = time;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
     fn validate_year(year: i32) -> DomainResult<()> {
         if year < 2000 || year > 2100 {
             return Err(DomainError::ValidationError(
