@@ -98,6 +98,24 @@ impl ScoutingReport {
         self
     }
 
+    pub fn update_grade(&mut self, grade: f64) -> DomainResult<()> {
+        Self::validate_grade(grade)?;
+        self.grade = grade;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_notes(&mut self, notes: String) -> DomainResult<()> {
+        if notes.len() > 5000 {
+            return Err(DomainError::ValidationError(
+                "Notes cannot exceed 5000 characters".to_string(),
+            ));
+        }
+        self.notes = Some(notes);
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
     fn validate_grade(grade: f64) -> DomainResult<()> {
         if grade < 0.0 || grade > 10.0 {
             return Err(DomainError::ValidationError(

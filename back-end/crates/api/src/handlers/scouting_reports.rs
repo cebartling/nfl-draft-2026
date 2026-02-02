@@ -187,12 +187,12 @@ pub async fn update_scouting_report(
         .await?
         .ok_or_else(|| ApiError::NotFound(format!("Scouting report with id {} not found", id)))?;
 
-    // Update fields
+    // Update fields with validation
     if let Some(grade) = req.grade {
-        report.grade = grade;
+        report.update_grade(grade)?;
     }
     if let Some(notes) = req.notes {
-        report.notes = Some(notes);
+        report.update_notes(notes)?;
     }
     if let Some(fit_grade) = req.fit_grade {
         report.fit_grade = Some(fit_grade);
