@@ -1,4 +1,5 @@
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -65,7 +66,7 @@ pub async fn get_team(
 pub async fn create_team(
     State(state): State<AppState>,
     Json(payload): Json<CreateTeamRequest>,
-) -> ApiResult<Json<TeamResponse>> {
+) -> ApiResult<(StatusCode, Json<TeamResponse>)> {
     let team = Team::new(
         payload.name,
         payload.abbreviation,
@@ -75,7 +76,7 @@ pub async fn create_team(
     )?;
 
     let created = state.team_repo.create(&team).await?;
-    Ok(Json(TeamResponse::from(created)))
+    Ok((StatusCode::CREATED, Json(TeamResponse::from(created))))
 }
 
 #[cfg(test)]
@@ -125,9 +126,9 @@ mod tests {
         let result = create_team(State(state), Json(request)).await;
         assert!(result.is_ok());
 
-        let response = result.unwrap().0;
-        assert_eq!(response.name, "Dallas Cowboys");
-        assert_eq!(response.abbreviation, "DAL");
+        let (_status, response) = result.unwrap();
+        assert_eq!(response.0.name, "Dallas Cowboys");
+        assert_eq!(response.0.abbreviation, "DAL");
     }
 
     #[tokio::test]
@@ -143,14 +144,14 @@ mod tests {
             division: Division::NFCEast,
         };
 
-        let created = create_team(State(state.clone()), Json(request)).await.unwrap().0;
+        let (_status, created) = create_team(State(state.clone()), Json(request)).await.unwrap();
 
         // Now get it by ID
-        let result = get_team(State(state), Path(created.id)).await;
+        let result = get_team(State(state), Path(created.0.id)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap().0;
-        assert_eq!(response.id, created.id);
+        assert_eq!(response.id, created.0.id);
         assert_eq!(response.name, "Dallas Cowboys");
     }
 

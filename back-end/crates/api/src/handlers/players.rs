@@ -1,4 +1,5 @@
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -73,7 +74,7 @@ pub async fn get_player(
 pub async fn create_player(
     State(state): State<AppState>,
     Json(payload): Json<CreatePlayerRequest>,
-) -> ApiResult<Json<PlayerResponse>> {
+) -> ApiResult<(StatusCode, Json<PlayerResponse>)> {
     let mut player = Player::new(
         payload.first_name,
         payload.last_name,
@@ -91,7 +92,7 @@ pub async fn create_player(
     }
 
     let created = state.player_repo.create(&player).await?;
-    Ok(Json(PlayerResponse::from(created)))
+    Ok((StatusCode::CREATED, Json(PlayerResponse::from(created))))
 }
 
 #[cfg(test)]
@@ -143,11 +144,11 @@ mod tests {
         let result = create_player(State(state), Json(request)).await;
         assert!(result.is_ok());
 
-        let response = result.unwrap().0;
-        assert_eq!(response.first_name, "John");
-        assert_eq!(response.last_name, "Doe");
-        assert_eq!(response.position, Position::QB);
-        assert_eq!(response.college, Some("Texas".to_string()));
+        let (_status, response) = result.unwrap();
+        assert_eq!(response.0.first_name, "John");
+        assert_eq!(response.0.last_name, "Doe");
+        assert_eq!(response.0.position, Position::QB);
+        assert_eq!(response.0.college, Some("Texas".to_string()));
     }
 
     #[tokio::test]
@@ -167,9 +168,9 @@ mod tests {
         let result = create_player(State(state), Json(request)).await;
         assert!(result.is_ok());
 
-        let response = result.unwrap().0;
-        assert_eq!(response.first_name, "Jane");
-        assert_eq!(response.college, None);
+        let (_status, response) = result.unwrap();
+        assert_eq!(response.0.first_name, "Jane");
+        assert_eq!(response.0.college, None);
     }
 
     #[tokio::test]
@@ -187,14 +188,14 @@ mod tests {
             draft_year: 2026,
         };
 
-        let created = create_player(State(state.clone()), Json(request)).await.unwrap().0;
+        let (_status, created) = create_player(State(state.clone()), Json(request)).await.unwrap();
 
         // Now get it by ID
-        let result = get_player(State(state), Path(created.id)).await;
+        let result = get_player(State(state), Path(created.0.id)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap().0;
-        assert_eq!(response.id, created.id);
+        assert_eq!(response.id, created.0.id);
         assert_eq!(response.first_name, "John");
     }
 
