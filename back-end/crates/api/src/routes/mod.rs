@@ -39,6 +39,12 @@ pub fn create_router(state: AppState) -> Router {
         .route("/drafts/{id}/complete", post(handlers::drafts::complete_draft))
         // Draft Picks
         .route("/picks/{id}/make", post(handlers::drafts::make_pick))
+        // Draft Sessions
+        .route("/sessions", post(handlers::sessions::create_session))
+        .route("/sessions/{id}", get(handlers::sessions::get_session))
+        .route("/sessions/{id}/start", post(handlers::sessions::start_session))
+        .route("/sessions/{id}/pause", post(handlers::sessions::pause_session))
+        .route("/sessions/{id}/events", get(handlers::sessions::get_session_events))
         // Combine Results
         .route("/combine-results", post(handlers::combine_results::create_combine_results))
         .route("/combine-results/{id}",

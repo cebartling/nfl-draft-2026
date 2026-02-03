@@ -5,3 +5,4 @@ pub mod drafts;
 pub mod combine_results;
 pub mod scouting_reports;
 pub mod team_needs;
+pub mod sessions;

@@ -4,12 +4,15 @@ use std::sync::Arc;
 use domain::repositories::{
     TeamRepository, PlayerRepository, DraftRepository, DraftPickRepository,
     CombineResultsRepository, ScoutingReportRepository, TeamNeedRepository,
+    SessionRepository, EventRepository,
 };
 use domain::services::DraftEngine;
 use db::repositories::{
     SqlxTeamRepository, SqlxPlayerRepository, SqlxDraftRepository, SqlxDraftPickRepository,
     SqlxCombineResultsRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
+    SessionRepo, EventRepo,
 };
+use websocket::ConnectionManager;
 
 /// Application state shared across all handlers
 #[derive(Clone)]
@@ -21,7 +24,10 @@ pub struct AppState {
     pub combine_results_repo: Arc<dyn CombineResultsRepository>,
     pub scouting_report_repo: Arc<dyn ScoutingReportRepository>,
     pub team_need_repo: Arc<dyn TeamNeedRepository>,
+    pub session_repo: Arc<dyn SessionRepository>,
+    pub event_repo: Arc<dyn EventRepository>,
     pub draft_engine: Arc<DraftEngine>,
+    pub ws_manager: ConnectionManager,
 }
 
 impl AppState {
@@ -32,7 +38,9 @@ impl AppState {
         let draft_pick_repo: Arc<dyn DraftPickRepository> = Arc::new(SqlxDraftPickRepository::new(pool.clone()));
         let combine_results_repo: Arc<dyn CombineResultsRepository> = Arc::new(SqlxCombineResultsRepository::new(pool.clone()));
         let scouting_report_repo: Arc<dyn ScoutingReportRepository> = Arc::new(SqlxScoutingReportRepository::new(pool.clone()));
-        let team_need_repo: Arc<dyn TeamNeedRepository> = Arc::new(SqlxTeamNeedRepository::new(pool));
+        let team_need_repo: Arc<dyn TeamNeedRepository> = Arc::new(SqlxTeamNeedRepository::new(pool.clone()));
+        let session_repo: Arc<dyn SessionRepository> = Arc::new(SessionRepo::new(pool.clone()));
+        let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool));
 
         let draft_engine = Arc::new(DraftEngine::new(
             draft_repo.clone(),
@@ -40,6 +48,8 @@ impl AppState {
             team_repo.clone(),
             player_repo.clone(),
         ));
+
+        let ws_manager = ConnectionManager::new();
 
         Self {
             team_repo,
@@ -49,7 +59,10 @@ impl AppState {
             combine_results_repo,
             scouting_report_repo,
             team_need_repo,
+            session_repo,
+            event_repo,
             draft_engine,
+            ws_manager,
         }
     }
 }
