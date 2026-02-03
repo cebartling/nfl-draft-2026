@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use uuid::Uuid;
 use crate::errors::{DomainError, DomainResult};
-use crate::models::{PickTrade, TradeProposal};
+use crate::models::{ChartType, PickTrade, TradeProposal};
 use crate::repositories::{DraftPickRepository, TeamRepository, TradeRepository};
-use crate::services::trade_value::{ChartType, TradeValueChart};
+use crate::services::trade_value::TradeValueChart;
 
 pub struct TradeEngine {
     trade_repo: Arc<dyn TradeRepository>,

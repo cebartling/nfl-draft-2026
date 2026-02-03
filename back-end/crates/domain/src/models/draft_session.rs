@@ -4,7 +4,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
-use crate::services::trade_value::ChartType;
+use super::ChartType;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum SessionStatus {

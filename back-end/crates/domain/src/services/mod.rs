@@ -12,4 +12,4 @@ pub use draft_engine::DraftEngine;
 pub use draft_strategy::DraftStrategyService;
 pub use player_evaluation::PlayerEvaluationService;
 pub use trade_engine::TradeEngine;
-pub use trade_value::{ChartType, TradeValueChart};
+pub use trade_value::TradeValueChart;

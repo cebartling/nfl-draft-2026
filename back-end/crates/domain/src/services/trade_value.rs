@@ -46,7 +46,8 @@
 //! ## Usage
 //!
 //! ```rust
-//! use domain::services::trade_value::{ChartType, TradeValueChart};
+//! use domain::models::ChartType;
+//! use domain::services::TradeValueChart;
 //!
 //! let chart = ChartType::JimmyJohnson.create_chart();
 //! let pick1_value = chart.calculate_pick_value(1).unwrap();
@@ -78,7 +79,7 @@
 //! Phase 6.1 completion: 2026-02-02
 
 use crate::errors::{DomainError, DomainResult};
-use serde::{Deserialize, Serialize};
+use crate::models::ChartType;
 
 /// Trait for trade value calculation strategies
 pub trait TradeValueChart: Send + Sync {
@@ -101,17 +102,6 @@ pub trait TradeValueChart: Send + Sync {
 
         difference_percent <= threshold_percent
     }
-}
-
-/// Enum for selecting chart type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ChartType {
-    JimmyJohnson,
-    RichHill,
-    ChaseStudartAV,
-    FitzgeraldSpielberger,
-    PffWar,
-    SurplusValue,
 }
 
 impl ChartType {

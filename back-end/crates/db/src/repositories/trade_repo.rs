@@ -2,9 +2,8 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 use uuid::Uuid;
 use domain::errors::DomainResult;
-use domain::models::{PickTrade, PickTradeDetail, TradeDirection, TradeProposal};
+use domain::models::{ChartType, PickTrade, PickTradeDetail, TradeDirection, TradeProposal};
 use domain::repositories::TradeRepository;
-use domain::services::ChartType;
 use crate::errors::DbError;
 use crate::models::{PickTradeDb, PickTradeDetailDb};
 

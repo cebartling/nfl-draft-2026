@@ -8,8 +8,7 @@ use uuid::Uuid;
 
 use crate::error::ApiResult;
 use crate::state::AppState;
-use domain::models::{DraftEvent, DraftSession};
-use domain::services::trade_value::ChartType;
+use domain::models::{ChartType, DraftEvent, DraftSession};
 
 // DTOs for session endpoints
 

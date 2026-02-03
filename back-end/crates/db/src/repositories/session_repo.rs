@@ -4,9 +4,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use domain::errors::{DomainError, DomainResult};
-use domain::models::{DraftSession, SessionStatus};
+use domain::models::{ChartType, DraftSession, SessionStatus};
 use domain::repositories::SessionRepository;
-use domain::services::trade_value::ChartType;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct DraftSessionDb {
