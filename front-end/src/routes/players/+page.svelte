@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
@@ -67,7 +67,6 @@
 
 	async function handleSelectPlayer(player: Player) {
 		await goto(`/players/${player.id}`);
-		await invalidateAll();
 	}
 </script>
 

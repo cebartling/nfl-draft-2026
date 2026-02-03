@@ -1,5 +1,3 @@
-type _LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
 class Logger {
 	private isDevelopment = import.meta.env.DEV;
 

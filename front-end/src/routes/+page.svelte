@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { draftsApi } from '$lib/api';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
@@ -58,7 +58,6 @@
 			type="button"
 			onclick={async () => {
 				await goto('/drafts/new');
-				await invalidateAll();
 			}}
 			class="bg-white text-blue-600 hover:bg-gray-100 font-semibold py-3 px-6 rounded-lg transition-colors"
 		>
@@ -105,7 +104,6 @@
 							type="button"
 							onclick={async () => {
 								await goto('/drafts/new');
-								await invalidateAll();
 							}}
 							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 						>
@@ -120,7 +118,6 @@
 							clickable
 							onclick={async () => {
 								await goto(`/drafts/${draft.id}`);
-								await invalidateAll();
 							}}
 						>
 							<div class="space-y-3">
@@ -157,7 +154,6 @@
 											onclick={async (e) => {
 												e.stopPropagation();
 												await goto(`/sessions/${draft.id}`);
-												await invalidateAll();
 											}}
 											class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors"
 										>

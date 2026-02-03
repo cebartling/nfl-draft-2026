@@ -19,11 +19,14 @@
 
 <div class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
 	{#each toastState.toasts as toast (toast.id)}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
 			class="pointer-events-auto animate-slide-in {typeColors[
 				toast.type
 			]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md cursor-pointer"
-			role="button"
+			role="alert"
+			aria-live="polite"
 			onclick={() => toastState.remove(toast.id)}
 			onkeydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') {

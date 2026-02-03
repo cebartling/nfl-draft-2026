@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { draftsApi } from '$lib/api';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
@@ -59,7 +59,6 @@
 		if (!draft) return;
 		// Navigate to session - the session layout will handle creation
 		await goto(`/sessions/${draft.id}`);
-		await invalidateAll();
 	}
 </script>
 
@@ -70,7 +69,6 @@
 			type="button"
 			onclick={async () => {
 				await goto('/drafts');
-				await invalidateAll();
 			}}
 			class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
 		>
@@ -103,7 +101,6 @@
 				type="button"
 				onclick={async () => {
 					await goto('/drafts');
-					await invalidateAll();
 				}}
 				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 			>
