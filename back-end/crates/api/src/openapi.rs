@@ -1,7 +1,7 @@
 use utoipa::OpenApi;
 
 use crate::handlers::{drafts, health, players, teams, trades};
-use domain::models::{Conference, Division, DraftStatus, Position};
+use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -53,6 +53,7 @@ use domain::models::{Conference, Division, DraftStatus, Position};
     components(
         schemas(
             // Domain models
+            ChartType,
             Conference,
             Division,
             Position,

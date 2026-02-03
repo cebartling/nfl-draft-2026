@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+use utoipa::ToSchema;
 
 /// Trade value chart selection
 ///
@@ -15,7 +16,7 @@ use std::str::FromStr;
 /// - **FitzgeraldSpielberger**: Contract value based on rookie APY analysis
 /// - **PffWar**: Expected performance using PFF's WAR metric
 /// - **SurplusValue**: Economic efficiency (value minus cost)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum ChartType {
     JimmyJohnson,
     RichHill,
