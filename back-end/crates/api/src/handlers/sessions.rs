@@ -27,6 +27,8 @@ pub struct SessionResponse {
     pub current_pick_number: i32,
     pub time_per_pick_seconds: i32,
     pub auto_pick_enabled: bool,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
 }
 
 impl From<DraftSession> for SessionResponse {
@@ -38,6 +40,8 @@ impl From<DraftSession> for SessionResponse {
             current_pick_number: session.current_pick_number,
             time_per_pick_seconds: session.time_per_pick_seconds,
             auto_pick_enabled: session.auto_pick_enabled,
+            started_at: session.started_at.map(|dt| dt.to_rfc3339()),
+            completed_at: session.completed_at.map(|dt| dt.to_rfc3339()),
         }
     }
 }
