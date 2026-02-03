@@ -147,9 +147,8 @@ test.describe('Draft Room', () => {
 		await page.goto('/drafts');
 		await page.waitForLoadState('networkidle');
 
-		// Look for session controls (Start, Pause, etc.)
-		const controls = page.locator('button', { hasText: /Start|Pause|Resume|Stop/i });
-		// Don't assert as this requires active session
+		// Look for session controls (Start, Pause, etc.) - would need active session to assert
+		// const controls = page.locator('button', { hasText: /Start|Pause|Resume|Stop/i });
 	});
 
 	test.skip('should update clock countdown', async ({ page }) => {
@@ -160,20 +159,14 @@ test.describe('Draft Room', () => {
 		await page.goto('/drafts');
 		await page.waitForLoadState('networkidle');
 
-		// Get initial clock time
-		const clockElement = page.locator('text=/\\d+:\\d+/');
-		if (await clockElement.isVisible()) {
-			const initialTime = await clockElement.textContent();
-
-			// Wait 2 seconds
-			await page.waitForTimeout(2000);
-
-			// Get updated clock time
-			const updatedTime = await clockElement.textContent();
-
-			// Verify time decreased (if session is active)
-			// expect(updatedTime).not.toBe(initialTime);
-		}
+		// Would need to check clock countdown (requires active session)
+		// const clockElement = page.locator('text=/\\d+:\\d+/');
+		// if (await clockElement.isVisible()) {
+		// 	const initialTime = await clockElement.textContent();
+		// 	await page.waitForTimeout(2000);
+		// 	const updatedTime = await clockElement.textContent();
+		// 	expect(updatedTime).not.toBe(initialTime);
+		// }
 	});
 
 	test.skip('should show red clock when time is low', async ({ page }) => {
@@ -181,9 +174,8 @@ test.describe('Draft Room', () => {
 		await page.goto('/drafts');
 		await page.waitForLoadState('networkidle');
 
-		// Look for red clock styling
-		const redClock = page.locator('.text-red-600');
-		// Don't assert as this requires specific timing
+		// Look for red clock styling (requires specific timing, so don't assert)
+		// const redClock = page.locator('.text-red-600');
 	});
 });
 
