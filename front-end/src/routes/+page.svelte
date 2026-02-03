@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { draftsApi } from '$lib/api';
@@ -16,7 +17,7 @@
 			drafts = await draftsApi.list();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load drafts';
-			console.error('Failed to load drafts:', e);
+			logger.error('Failed to load drafts:', e);
 		} finally {
 			loading = false;
 		}

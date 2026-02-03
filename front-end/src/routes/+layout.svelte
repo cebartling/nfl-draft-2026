@@ -4,6 +4,8 @@
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
+
+	let mobileMenuOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -56,8 +58,10 @@
 				<div class="md:hidden">
 					<button
 						type="button"
+						onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
 						class="text-gray-700 hover:text-blue-600 focus:outline-none"
 						aria-label="Menu"
+						aria-expanded={mobileMenuOpen}
 					>
 						<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -73,34 +77,40 @@
 		</div>
 
 		<!-- Mobile Menu (hidden by default) -->
+		{#if mobileMenuOpen}
 		<div class="md:hidden border-t border-gray-200">
 			<div class="px-2 pt-2 pb-3 space-y-1">
 				<a
 					href="/"
+					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
 					Home
 				</a>
 				<a
 					href="/drafts"
+					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
 					Drafts
 				</a>
 				<a
 					href="/players"
+					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
 					Players
 				</a>
 				<a
 					href="/teams"
+					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
 					Teams
 				</a>
 			</div>
 		</div>
+		{/if}
 	</nav>
 
 	<!-- Main Content -->

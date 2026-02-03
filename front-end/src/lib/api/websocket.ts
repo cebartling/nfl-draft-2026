@@ -4,6 +4,7 @@ import {
 	type ClientMessage,
 	type ServerMessage,
 } from '$lib/types';
+import { logger } from '$lib/utils/logger';
 
 /**
  * WebSocket connection state
@@ -55,7 +56,7 @@ export class WebSocketClient {
 	 */
 	connect(): void {
 		if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
-			console.warn('WebSocket is already connected or connecting');
+			logger.warn('WebSocket is already connected or connecting');
 			return;
 		}
 
@@ -67,7 +68,7 @@ export class WebSocketClient {
 			this.ws = new WebSocket(this.url);
 
 			this.ws.onopen = () => {
-				console.log('WebSocket connected');
+				logger.info('WebSocket connected');
 				this.reconnectAttempts = 0;
 				this.setState(WebSocketState.Connected);
 				this.startPingInterval();
@@ -85,25 +86,25 @@ export class WebSocketClient {
 						}
 						this.notifyMessageHandlers(result.data);
 					} else {
-						console.error('Invalid message format:', result.error);
+						logger.error('Invalid message format:', result.error);
 					}
 				} catch (error) {
-					console.error('Failed to parse WebSocket message:', error);
+					logger.error('Failed to parse WebSocket message:', error);
 				}
 			};
 
 			this.ws.onerror = (error) => {
-				console.error('WebSocket error:', error);
+				logger.error('WebSocket error:', error);
 			};
 
 			this.ws.onclose = () => {
-				console.log('WebSocket disconnected');
+				logger.info('WebSocket disconnected');
 				this.setState(WebSocketState.Disconnected);
 				this.stopPingInterval();
 				this.attemptReconnect();
 			};
 		} catch (error) {
-			console.error('Failed to create WebSocket connection:', error);
+			logger.error('Failed to create WebSocket connection:', error);
 			this.setState(WebSocketState.Disconnected);
 			this.attemptReconnect();
 		}
@@ -131,14 +132,14 @@ export class WebSocketClient {
 	 */
 	send(message: ClientMessage): void {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-			console.error('WebSocket is not connected');
+			logger.error('WebSocket is not connected');
 			return;
 		}
 
 		// Validate message before sending
 		const result = ClientMessageSchema.safeParse(message);
 		if (!result.success) {
-			console.error('Invalid message format:', result.error);
+			logger.error('Invalid message format:', result.error);
 			return;
 		}
 
@@ -186,7 +187,7 @@ export class WebSocketClient {
 	 */
 	private attemptReconnect(): void {
 		if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-			console.error('Max reconnection attempts reached');
+			logger.error('Max reconnection attempts reached');
 			return;
 		}
 
@@ -194,7 +195,7 @@ export class WebSocketClient {
 		const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 16000);
 		this.reconnectAttempts++;
 
-		console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+		logger.info(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
 		this.reconnectTimeoutId = setTimeout(() => {
 			this.connect();
@@ -239,7 +240,7 @@ export class WebSocketClient {
 			try {
 				handler(message);
 			} catch (error) {
-				console.error('Error in message handler:', error);
+				logger.error('Error in message handler:', error);
 			}
 		});
 	}
@@ -252,7 +253,7 @@ export class WebSocketClient {
 			try {
 				handler(state);
 			} catch (error) {
-				console.error('Error in state change handler:', error);
+				logger.error('Error in state change handler:', error);
 			}
 		});
 	}

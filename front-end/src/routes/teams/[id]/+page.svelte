@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -24,7 +25,7 @@
 			team = await teamsApi.get(teamId);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load team';
-			console.error('Failed to load team:', e);
+			logger.error('Failed to load team:', e);
 		} finally {
 			loading = false;
 		}
@@ -35,7 +36,7 @@
 			// For now, we'll just show empty picks
 			teamPicks = [];
 		} catch (e) {
-			console.error('Failed to load team picks:', e);
+			logger.error('Failed to load team picks:', e);
 		} finally {
 			picksLoading = false;
 		}

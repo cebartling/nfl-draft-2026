@@ -52,7 +52,7 @@
 				type="text"
 				placeholder="Search by name or college..."
 				bind:value={searchQuery}
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 			/>
 		</div>
 

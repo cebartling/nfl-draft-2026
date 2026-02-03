@@ -3,6 +3,7 @@
 	import { LoadingSpinner, Badge } from '$components/ui';
 	import { tradesApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { TradeProposal, TradeStatus } from '$types';
 
 	interface Props {
@@ -31,7 +32,7 @@
 				trades = data;
 			})
 			.catch((err) => {
-				console.error('Failed to load trades:', err);
+				logger.error('Failed to load trades:', err);
 				toastState.error('Failed to load trades');
 			})
 			.finally(() => {

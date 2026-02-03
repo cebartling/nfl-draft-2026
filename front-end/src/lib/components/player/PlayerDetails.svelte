@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Badge, LoadingSpinner } from '$components/ui';
 	import { playersApi } from '$api';
+	import { logger } from '$lib/utils/logger';
 	import type { Player, ScoutingReport, CombineResults } from '$types';
 
 	interface Props {
@@ -41,7 +42,7 @@
 					scoutingReports = reports;
 				})
 				.catch((err) => {
-					console.error('Failed to load scouting reports:', err);
+					logger.error('Failed to load scouting reports:', err);
 				})
 				.finally(() => {
 					isLoadingScouting = false;
@@ -59,7 +60,7 @@
 					combineResults = results;
 				})
 				.catch((err) => {
-					console.error('Failed to load combine results:', err);
+					logger.error('Failed to load combine results:', err);
 				})
 				.finally(() => {
 					isLoadingCombine = false;

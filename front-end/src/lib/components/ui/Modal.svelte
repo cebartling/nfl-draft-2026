@@ -17,6 +17,8 @@
 		children,
 	}: Props = $props();
 
+	let dialogElement: HTMLDivElement;
+
 	const widthClasses = {
 		sm: 'max-w-sm',
 		md: 'max-w-md',
@@ -24,6 +26,12 @@
 		xl: 'max-w-xl',
 		full: 'max-w-full mx-4',
 	};
+
+	$effect(() => {
+		if (open && dialogElement) {
+			dialogElement.focus();
+		}
+	});
 
 	function handleClose() {
 		open = false;
@@ -47,6 +55,7 @@
 
 {#if open}
 	<div
+		bind:this={dialogElement}
 		class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black bg-opacity-50 animate-fade-in"
 		onclick={handleBackdropClick}
 		onkeydown={handleKeydown}

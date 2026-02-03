@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -22,7 +23,7 @@
 			draft = await draftsApi.get(draftId);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load draft';
-			console.error('Failed to load draft:', e);
+			logger.error('Failed to load draft:', e);
 		} finally {
 			loading = false;
 		}
@@ -31,7 +32,7 @@
 		try {
 			picks = await draftsApi.getPicks(draftId);
 		} catch (e) {
-			console.error('Failed to load picks:', e);
+			logger.error('Failed to load picks:', e);
 		} finally {
 			picksLoading = false;
 		}

@@ -4,6 +4,7 @@
 	import type { DraftPick, Player, Team } from '$types';
 	import { teamsApi, playersApi } from '$api';
 	import { draftState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 
 	interface Props {
 		picks: DraftPick[];
@@ -64,7 +65,7 @@
 			),
 		])
 			.catch((err) => {
-				console.error('Failed to load data:', err);
+				logger.error('Failed to load data:', err);
 			})
 			.finally(() => {
 				isLoading = false;

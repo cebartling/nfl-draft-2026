@@ -1,3 +1,4 @@
+import { logger } from '$lib/utils/logger';
 import { draftsApi, sessionsApi } from '$lib/api';
 import type { Draft, DraftSession, DraftPick } from '$lib/types';
 
@@ -72,7 +73,7 @@ export class DraftState {
 			this.picks = picks;
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to load draft';
-			console.error('Failed to load draft:', err);
+			logger.error('Failed to load draft:', err);
 		} finally {
 			this.isLoading = false;
 		}
@@ -95,7 +96,7 @@ export class DraftState {
 			}
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to load session';
-			console.error('Failed to load session:', err);
+			logger.error('Failed to load session:', err);
 		} finally {
 			this.isLoading = false;
 		}
@@ -113,7 +114,7 @@ export class DraftState {
 			this.session = session;
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to start session';
-			console.error('Failed to start session:', err);
+			logger.error('Failed to start session:', err);
 		} finally {
 			this.isLoading = false;
 		}
@@ -131,7 +132,7 @@ export class DraftState {
 			this.session = session;
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to pause session';
-			console.error('Failed to pause session:', err);
+			logger.error('Failed to pause session:', err);
 		} finally {
 			this.isLoading = false;
 		}

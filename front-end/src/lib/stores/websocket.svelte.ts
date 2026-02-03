@@ -1,6 +1,7 @@
 import { wsClient, WebSocketState } from '$lib/api';
-import type { ServerMessage } from '$lib/types';
+import type { ServerMessage, SessionStatus } from '$lib/types';
 import { draftState } from './draft.svelte';
+import { logger } from '$lib/utils/logger';
 
 /**
  * WebSocket state management using Svelte 5 runes
@@ -38,7 +39,7 @@ export class WebSocketStateManager {
 	 */
 	subscribeToSession(sessionId: string): void {
 		if (!wsClient.isConnected()) {
-			console.warn('WebSocket not connected, cannot subscribe');
+			logger.warn('WebSocket not connected, cannot subscribe');
 			return;
 		}
 
@@ -77,11 +78,11 @@ export class WebSocketStateManager {
 	private handleMessage(message: ServerMessage): void {
 		switch (message.type) {
 			case 'subscribed':
-				console.log('Subscribed to session:', message.session_id);
+				logger.info('Subscribed to session:', message.session_id);
 				break;
 
 			case 'pick_made':
-				console.log('Pick made:', message);
+				logger.info('Pick made:', message);
 				// Update draft state with the new pick
 				draftState.updatePickFromWS({
 					pick_id: message.pick_id,
@@ -97,23 +98,23 @@ export class WebSocketStateManager {
 				break;
 
 			case 'draft_status':
-				console.log('Draft status changed:', message.status);
+				logger.info('Draft status changed:', message.status);
 				// Update session status if needed
 				if (draftState.session) {
 					draftState.session = {
 						...draftState.session,
-						status: message.status as any,
+						status: message.status as SessionStatus,
 					};
 				}
 				break;
 
 			case 'trade_proposed':
-				console.log('Trade proposed:', message);
+				logger.info('Trade proposed:', message);
 				// Trade proposals are handled by trade-specific UI
 				break;
 
 			case 'trade_executed':
-				console.log('Trade executed:', message);
+				logger.info('Trade executed:', message);
 				// Reload draft picks to reflect trade
 				if (draftState.draft) {
 					draftState.loadDraft(draftState.draft.id);
@@ -121,11 +122,11 @@ export class WebSocketStateManager {
 				break;
 
 			case 'trade_rejected':
-				console.log('Trade rejected:', message);
+				logger.info('Trade rejected:', message);
 				break;
 
 			case 'error':
-				console.error('WebSocket error:', message.message);
+				logger.error('WebSocket error:', message.message);
 				this.error = message.message;
 				break;
 

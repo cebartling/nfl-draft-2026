@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { teamsApi } from '$lib/api';
@@ -16,7 +17,7 @@
 			teams = await teamsApi.list();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load teams';
-			console.error('Failed to load teams:', e);
+			logger.error('Failed to load teams:', e);
 		} finally {
 			loading = false;
 		}

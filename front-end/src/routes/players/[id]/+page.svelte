@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -15,7 +16,7 @@
 			await playersState.loadPlayer(playerId);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load player';
-			console.error('Failed to load player:', e);
+			logger.error('Failed to load player:', e);
 		} finally {
 			loading = false;
 		}

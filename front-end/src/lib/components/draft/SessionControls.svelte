@@ -119,7 +119,7 @@
 			<select
 				id="chart-type"
 				bind:value={selectedChartType}
-				class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				disabled={draftState.session?.status === 'InProgress'}
 			>
 				{#each chartTypes as chartType}
@@ -139,7 +139,7 @@
 				id="auto-pick"
 				type="checkbox"
 				bind:checked={autoPickEnabled}
-				class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+				class="h-5 w-5 rounded border border-gray-300 text-blue-600 focus:ring-blue-500"
 				disabled={draftState.session?.status === 'InProgress'}
 			/>
 		</div>

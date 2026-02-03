@@ -2,6 +2,7 @@
 	import { Badge, Button, LoadingSpinner } from '$components/ui';
 	import { teamsApi, tradesApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { TradeProposal, Team } from '$types';
 	import dayjs from 'dayjs';
 
@@ -43,7 +44,7 @@
 				toTeam = to;
 			})
 			.catch((err) => {
-				console.error('Failed to load teams:', err);
+				logger.error('Failed to load teams:', err);
 			})
 			.finally(() => {
 				isLoading = false;
@@ -61,7 +62,7 @@
 			onUpdate?.();
 		} catch (err) {
 			toastState.error('Failed to accept trade');
-			console.error('Failed to accept trade:', err);
+			logger.error('Failed to accept trade:', err);
 		} finally {
 			isAccepting = false;
 		}
@@ -78,7 +79,7 @@
 			onUpdate?.();
 		} catch (err) {
 			toastState.error('Failed to reject trade');
-			console.error('Failed to reject trade:', err);
+			logger.error('Failed to reject trade:', err);
 		} finally {
 			isRejecting = false;
 		}

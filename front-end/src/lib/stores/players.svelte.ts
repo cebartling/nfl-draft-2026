@@ -1,3 +1,4 @@
+import { logger } from '$lib/utils/logger';
 import { playersApi } from '$lib/api';
 import type { Player, Position } from '$lib/types';
 
@@ -58,7 +59,7 @@ export class PlayersState {
 			this.allPlayers = players;
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to load players';
-			console.error('Failed to load players:', err);
+			logger.error('Failed to load players:', err);
 		} finally {
 			this.isLoading = false;
 		}
@@ -84,7 +85,7 @@ export class PlayersState {
 			}
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to load player';
-			console.error('Failed to load player:', err);
+			logger.error('Failed to load player:', err);
 		} finally {
 			this.isLoading = false;
 		}

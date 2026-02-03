@@ -2,6 +2,7 @@
 	import { Button, Badge, LoadingSpinner, Modal } from '$components/ui';
 	import { teamsApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { TeamNeed, Position } from '$types';
 	import { PositionSchema } from '$types';
 
@@ -33,7 +34,7 @@
 					needs = data;
 				})
 				.catch((err) => {
-					console.error('Failed to load team needs:', err);
+					logger.error('Failed to load team needs:', err);
 					toastState.error('Failed to load team needs');
 				})
 				.finally(() => {
@@ -65,7 +66,7 @@
 			showAddModal = false;
 		} catch (err) {
 			toastState.error('Failed to add team need');
-			console.error('Failed to add team need:', err);
+			logger.error('Failed to add team need:', err);
 		} finally {
 			isSubmitting = false;
 		}
@@ -143,7 +144,7 @@
 			<select
 				id="position"
 				bind:value={newPosition}
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				required
 			>
 				{#each positions as position}
@@ -180,7 +181,7 @@
 				id="notes"
 				bind:value={newNotes}
 				rows="3"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="Additional details about this need..."
 			></textarea>
 		</div>

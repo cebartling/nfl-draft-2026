@@ -2,6 +2,7 @@
 	import { Button } from '$components/ui';
 	import { playersApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { Player } from '$types';
 
 	interface Props {
@@ -49,7 +50,7 @@
 			onSuccess?.();
 		} catch (err) {
 			toastState.error('Failed to create scouting report');
-			console.error('Failed to create scouting report:', err);
+			logger.error('Failed to create scouting report:', err);
 		} finally {
 			isSubmitting = false;
 		}
@@ -94,7 +95,7 @@
 				id="notes"
 				bind:value={notes}
 				rows="4"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="Overall evaluation and observations..."
 			></textarea>
 		</div>
@@ -108,7 +109,7 @@
 				id="strengths"
 				bind:value={strengths}
 				rows="3"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="What does this player do well?"
 			></textarea>
 		</div>
@@ -122,7 +123,7 @@
 				id="weaknesses"
 				bind:value={weaknesses}
 				rows="3"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="What areas need improvement?"
 			></textarea>
 		</div>

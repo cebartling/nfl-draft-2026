@@ -2,6 +2,7 @@
 	import { Button, Badge, LoadingSpinner } from '$components/ui';
 	import { teamsApi, tradesApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { Team, DraftPick } from '$types';
 
 	interface Props {
@@ -37,7 +38,7 @@
 				teams = data;
 			})
 			.catch((err) => {
-				console.error('Failed to load teams:', err);
+				logger.error('Failed to load teams:', err);
 				toastState.error('Failed to load teams');
 			})
 			.finally(() => {
@@ -101,7 +102,7 @@
 			onSuccess?.();
 		} catch (err) {
 			toastState.error('Failed to create trade proposal');
-			console.error('Failed to create trade proposal:', err);
+			logger.error('Failed to create trade proposal:', err);
 		} finally {
 			isSubmitting = false;
 		}
@@ -126,7 +127,7 @@
 					<select
 						id="from-team"
 						bind:value={fromTeamId}
-						class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+						class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 						required
 					>
 						<option value="">Select a team</option>
@@ -145,7 +146,7 @@
 					<select
 						id="to-team"
 						bind:value={toTeamId}
-						class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+						class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 						required
 					>
 						<option value="">Select a team</option>
@@ -171,6 +172,7 @@
 								{#each fromTeamPicks as pick}
 									<button
 										type="button"
+										aria-label="Select pick Round {pick.round} Pick {pick.pick_number}"
 										class="w-full p-3 text-left hover:bg-gray-50 transition-colors {fromTeamPickIds.includes(
 											pick.id
 										)
@@ -228,6 +230,7 @@
 								{#each toTeamPicks as pick}
 									<button
 										type="button"
+										aria-label="Select pick Round {pick.round} Pick {pick.pick_number}"
 										class="w-full p-3 text-left hover:bg-gray-50 transition-colors {toTeamPickIds.includes(
 											pick.id
 										)

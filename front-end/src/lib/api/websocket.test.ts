@@ -75,8 +75,13 @@ describe('WebSocketClient', () => {
 			writable: true,
 		});
 
-		// Mock WebSocket constructor
+		// Mock WebSocket constructor with constants
 		globalThis.WebSocket = class {
+			static CONNECTING = 0;
+			static OPEN = 1;
+			static CLOSING = 2;
+			static CLOSED = 3;
+
 			constructor(url: string) {
 				mockWebSocket = new MockWebSocket(url);
 				return mockWebSocket as any;
@@ -87,10 +92,15 @@ describe('WebSocketClient', () => {
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
-		vi.unstubAllGlobals();
+		// Clear all timers before disconnecting
+		vi.clearAllTimers();
 		if (client) {
 			client.disconnect();
+		}
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+		if (vi.isFakeTimers()) {
+			vi.useRealTimers();
 		}
 	});
 
@@ -130,7 +140,7 @@ describe('WebSocketClient', () => {
 	describe('connect', () => {
 		it('should create WebSocket connection', () => {
 			client.connect();
-			expect(WebSocket).toHaveBeenCalledWith('ws://localhost:5173/ws');
+			expect(mockWebSocket.url).toBe('ws://localhost:5173/ws');
 			expect(client.getState()).toBe(WebSocketState.Connecting);
 		});
 
@@ -142,18 +152,22 @@ describe('WebSocketClient', () => {
 		});
 
 		it('should not reconnect if already connecting', () => {
-			const connectSpy = vi.spyOn(WebSocket.prototype as any, 'constructor');
+			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 			client.connect();
 			client.connect(); // Try to connect again
-			expect(connectSpy).toHaveBeenCalledTimes(1);
+
+			expect(warnSpy).toHaveBeenCalledWith('[WARN] WebSocket is already connected or connecting');
 		});
 
 		it('should not reconnect if already open', () => {
-			const connectSpy = vi.spyOn(WebSocket.prototype as any, 'constructor');
+			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 			client.connect();
 			mockWebSocket.simulateOpen();
 			client.connect(); // Try to connect again
-			expect(connectSpy).toHaveBeenCalledTimes(1);
+
+			expect(warnSpy).toHaveBeenCalledWith('[WARN] WebSocket is already connected or connecting');
 		});
 	});
 
@@ -184,15 +198,33 @@ describe('WebSocketClient', () => {
 
 	describe('send', () => {
 		it('should send valid message when connected', () => {
-			client.connect();
+			const sendSpy = vi.fn();
+
+			// Set up WebSocket mock with proper constants
+			globalThis.WebSocket = class {
+				static CONNECTING = 0;
+				static OPEN = 1;
+				static CLOSING = 2;
+				static CLOSED = 3;
+				readyState = 0;
+
+				constructor(public url: string) {
+					mockWebSocket = new MockWebSocket(url);
+					mockWebSocket.send = sendSpy;
+					return mockWebSocket as any;
+				}
+			} as any;
+
+			const testClient = new WebSocketClient('/ws');
+			testClient.connect();
 			mockWebSocket.simulateOpen();
 
-			const sendSpy = vi.spyOn(mockWebSocket, 'send');
 			const message: ClientMessage = { type: 'ping' };
-
-			client.send(message);
+			testClient.send(message);
 
 			expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(message));
+
+			testClient.disconnect();
 		});
 
 		it('should not send message when disconnected', () => {
@@ -201,19 +233,39 @@ describe('WebSocketClient', () => {
 
 			client.send(message);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('WebSocket is not connected');
+			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] WebSocket is not connected');
 		});
 
 		it('should validate message before sending', () => {
-			client.connect();
+			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+			const sendSpy = vi.fn();
+
+			// Set up WebSocket mock with proper constants
+			globalThis.WebSocket = class {
+				static CONNECTING = 0;
+				static OPEN = 1;
+				static CLOSING = 2;
+				static CLOSED = 3;
+				readyState = 0;
+
+				constructor(public url: string) {
+					mockWebSocket = new MockWebSocket(url);
+					mockWebSocket.send = sendSpy;
+					return mockWebSocket as any;
+				}
+			} as any;
+
+			const testClient = new WebSocketClient('/ws');
+			testClient.connect();
 			mockWebSocket.simulateOpen();
 
-			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 			const invalidMessage = { type: 'invalid' } as unknown as ClientMessage;
+			testClient.send(invalidMessage);
 
-			client.send(invalidMessage);
+			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Invalid message format:', expect.any(Object));
+			expect(sendSpy).not.toHaveBeenCalled();
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Invalid message format:', expect.any(Object));
+			testClient.disconnect();
 		});
 	});
 
@@ -260,7 +312,7 @@ describe('WebSocketClient', () => {
 			const invalidMessage = { type: 'invalid' };
 			mockWebSocket.simulateMessage(invalidMessage);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Invalid message format:', expect.any(Object));
+			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Invalid message format:', expect.any(Object));
 			expect(handler).not.toHaveBeenCalled();
 		});
 
@@ -276,7 +328,7 @@ describe('WebSocketClient', () => {
 				mockWebSocket.onmessage(new MessageEvent('message', { data: 'not json' }));
 			}
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to parse WebSocket message:', expect.any(Error));
+			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Failed to parse WebSocket message:', expect.any(Error));
 			expect(handler).not.toHaveBeenCalled();
 		});
 	});
@@ -353,13 +405,13 @@ describe('WebSocketClient', () => {
 
 			mockWebSocket.simulateMessage(message);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Error in message handler:', expect.any(Error));
+			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Error in message handler:', expect.any(Error));
 		});
 	});
 
 	describe('reconnection', () => {
 		it('should attempt reconnection on close', async () => {
-			vi.useFakeTimers();
+			vi.useFakeTimers({ shouldAdvanceTime: true });
 
 			client.connect();
 			mockWebSocket.simulateOpen();
@@ -368,14 +420,16 @@ describe('WebSocketClient', () => {
 			expect(client.getState()).toBe(WebSocketState.Disconnected);
 
 			// Wait for first reconnection attempt (1s)
-			vi.advanceTimersByTime(1000);
+			await vi.advanceTimersByTimeAsync(1000);
+			await vi.runAllTimersAsync();
+
 			expect(client.getState()).toBe(WebSocketState.Reconnecting);
 
 			vi.useRealTimers();
 		});
 
 		it('should use exponential backoff for reconnection', async () => {
-			vi.useFakeTimers();
+			vi.useFakeTimers({ shouldAdvanceTime: true });
 			const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
 			client.connect();
@@ -383,14 +437,16 @@ describe('WebSocketClient', () => {
 			mockWebSocket.simulateClose();
 
 			// First attempt: 1s
-			vi.advanceTimersByTime(1000);
+			await vi.advanceTimersByTimeAsync(1000);
+			await vi.runAllTimersAsync();
 			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Reconnecting in 1000ms'));
 
 			// Simulate failure
 			mockWebSocket.simulateClose();
 
 			// Second attempt: 2s
-			vi.advanceTimersByTime(2000);
+			await vi.advanceTimersByTimeAsync(2000);
+			await vi.runAllTimersAsync();
 			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Reconnecting in 2000ms'));
 
 			vi.useRealTimers();
@@ -399,6 +455,7 @@ describe('WebSocketClient', () => {
 		it('should stop reconnecting after max attempts', () => {
 			vi.useFakeTimers();
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+			const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
 			client.connect();
 			mockWebSocket.simulateOpen();
@@ -409,7 +466,10 @@ describe('WebSocketClient', () => {
 				vi.advanceTimersByTime(Math.pow(2, i) * 1000);
 			}
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Max reconnection attempts reached');
+			// The 6th close should trigger max attempts error
+			mockWebSocket.simulateClose();
+
+			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Max reconnection attempts reached');
 
 			vi.useRealTimers();
 		});
@@ -419,16 +479,36 @@ describe('WebSocketClient', () => {
 		it('should send ping messages periodically', () => {
 			vi.useFakeTimers();
 
-			client.connect();
+			const sendSpy = vi.fn();
+
+			// Set up WebSocket mock with proper constants
+			globalThis.WebSocket = class {
+				static CONNECTING = 0;
+				static OPEN = 1;
+				static CLOSING = 2;
+				static CLOSED = 3;
+				readyState = 0;
+
+				constructor(public url: string) {
+					mockWebSocket = new MockWebSocket(url);
+					mockWebSocket.send = sendSpy;
+					return mockWebSocket as any;
+				}
+			} as any;
+
+			const testClient = new WebSocketClient('/ws');
+			testClient.connect();
 			mockWebSocket.simulateOpen();
 
-			const sendSpy = vi.spyOn(mockWebSocket, 'send');
+			// Clear any calls from the open event
+			sendSpy.mockClear();
 
 			// Advance time by 30 seconds (ping interval)
 			vi.advanceTimersByTime(30000);
 
 			expect(sendSpy).toHaveBeenCalledWith(JSON.stringify({ type: 'ping' }));
 
+			testClient.disconnect();
 			vi.useRealTimers();
 		});
 
@@ -439,6 +519,7 @@ describe('WebSocketClient', () => {
 			mockWebSocket.simulateOpen();
 
 			const sendSpy = vi.spyOn(mockWebSocket, 'send');
+			sendSpy.mockClear();
 
 			client.disconnect();
 
