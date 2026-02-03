@@ -472,6 +472,10 @@ async fn test_create_session_with_all_chart_types() {
         "SurplusValue",
     ];
 
+    // Note: Drafts are created in the loop for simplicity. If the test panics,
+    // cleanup_database() won't run and these drafts will remain. This is acceptable
+    // since cleanup_database() is comprehensive and cleans all tables. A more robust
+    // pattern would create all drafts upfront, but this matches the existing test style.
     for (idx, chart) in charts.iter().enumerate() {
         // Create a draft with unique year
         let draft_id = Uuid::new_v4();
