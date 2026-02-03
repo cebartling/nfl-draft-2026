@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { page } from '$app/stores';
 	import { draftState } from '$stores/draft.svelte';
 	import { playersState } from '$stores/players.svelte';
@@ -24,7 +25,7 @@
 		try {
 			await playersState.loadAll();
 		} catch (error) {
-			console.error('Failed to load players:', error);
+			logger.error('Failed to load players:', error);
 		} finally {
 			players_loading = false;
 		}
@@ -52,7 +53,7 @@
 			// Clear selection after successful pick
 			selectedPlayer = null;
 		} catch (error) {
-			console.error('Failed to make pick:', error);
+			logger.error('Failed to make pick:', error);
 		} finally {
 			making_pick = false;
 		}
@@ -69,7 +70,7 @@
 		<h1 class="text-3xl font-bold text-gray-800">Draft Room</h1>
 		<div class="flex items-center gap-2">
 			<Badge variant={websocketState.isConnected ? 'success' : 'danger'}>
-				{websocketState.isConnected ? 'Connected' : 'Disconnected'}
+				{websocketState.isConnected ? '● Connected' : '○ Disconnected'}
 			</Badge>
 			{#if websocketState.lastMessage}
 				<span class="text-sm text-gray-600">
@@ -88,8 +89,8 @@
 		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 			<!-- Left Column: Draft Clock and Session Controls -->
 			<div class="lg:col-span-3 space-y-4">
-				<DraftClock sessionId={sessionId} />
-				<SessionControls sessionId={sessionId} />
+				<DraftClock {sessionId} />
+				<SessionControls {sessionId} />
 
 				<!-- Current Pick Info -->
 				{#if draftState.currentPick}
@@ -115,7 +116,8 @@
 						<h3 class="text-sm font-semibold text-gray-600 mb-2">SELECTED PLAYER</h3>
 						<div class="space-y-2">
 							<div class="text-lg font-bold text-gray-800">
-								{selectedPlayer.first_name} {selectedPlayer.last_name}
+								{selectedPlayer.first_name}
+								{selectedPlayer.last_name}
 							</div>
 							<div class="text-sm text-gray-600">
 								{selectedPlayer.position} - {selectedPlayer.college}

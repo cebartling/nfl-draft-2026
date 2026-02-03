@@ -33,15 +33,11 @@
 	const hoverClasses = 'hover:shadow-lg transition-shadow cursor-pointer';
 
 	const cardClasses = $derived(
-		clsx(
-			baseClasses,
-			paddingClasses[padding],
-			(hover || clickable) && hoverClasses,
-			className
-		)
+		clsx(baseClasses, paddingClasses[padding], (hover || clickable) && hoverClasses, className)
 	);
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
 	class={cardClasses}
 	role={onclick ? 'button' : undefined}

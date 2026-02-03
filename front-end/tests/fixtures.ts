@@ -249,7 +249,9 @@ export function generateDraftPicks(numRounds: number = 7, numTeams: number = 32)
 /**
  * Helper function to create a mock draft session
  */
-export function createMockSession(status: 'NotStarted' | 'InProgress' | 'Paused' | 'Completed' = 'NotStarted') {
+export function createMockSession(
+	status: 'NotStarted' | 'InProgress' | 'Paused' | 'Completed' = 'NotStarted'
+) {
 	return {
 		id: 'session-1111',
 		draft_id: mockDraft.id,

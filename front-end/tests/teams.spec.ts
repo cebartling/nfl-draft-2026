@@ -74,7 +74,9 @@ test.describe('Teams Page', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Look for division filters (if available)
-		const divisionFilter = page.locator('button, select', { hasText: /East|West|North|South/i });
+		const divisionFilter = page.locator('button, select', {
+			hasText: /East|West|North|South/i,
+		});
 		if (await divisionFilter.first().isVisible()) {
 			await divisionFilter.first().click();
 
@@ -118,7 +120,9 @@ test.describe('Team Details Page', () => {
 
 			// Verify team name is displayed
 			if (teamName) {
-				await expect(page.locator('h1, h2')).toContainText(teamName.trim(), { timeout: 5000 });
+				await expect(page.locator('h1, h2')).toContainText(teamName.trim(), {
+					timeout: 5000,
+				});
 			}
 		}
 	});
@@ -153,7 +157,9 @@ test.describe('Team Details Page', () => {
 			await page.waitForLoadState('networkidle');
 
 			// Check for conference/division info
-			await expect(page.locator('text=/AFC|NFC/i')).toBeVisible({ timeout: 5000 });
+			await expect(page.locator('text=/AFC|NFC/i')).toBeVisible({
+				timeout: 5000,
+			});
 		}
 	});
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Badge, LoadingSpinner } from '$components/ui';
 	import { playersApi } from '$api';
+	import { logger } from '$lib/utils/logger';
 	import type { Player, ScoutingReport, CombineResults } from '$types';
 
 	interface Props {
@@ -41,7 +42,7 @@
 					scoutingReports = reports;
 				})
 				.catch((err) => {
-					console.error('Failed to load scouting reports:', err);
+					logger.error('Failed to load scouting reports:', err);
 				})
 				.finally(() => {
 					isLoadingScouting = false;
@@ -59,7 +60,7 @@
 					combineResults = results;
 				})
 				.catch((err) => {
-					console.error('Failed to load combine results:', err);
+					logger.error('Failed to load combine results:', err);
 				})
 				.finally(() => {
 					isLoadingCombine = false;
@@ -74,7 +75,8 @@
 		<div class="flex items-start justify-between">
 			<div>
 				<h1 class="text-3xl font-bold mb-2">
-					{player.first_name} {player.last_name}
+					{player.first_name}
+					{player.last_name}
 				</h1>
 				<p class="text-blue-100">{player.college || 'N/A'}</p>
 			</div>
@@ -89,8 +91,7 @@
 		<nav class="flex -mb-px">
 			<button
 				type="button"
-				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab ===
-				'overview'
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab === 'overview'
 					? 'border-blue-600 text-blue-600'
 					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
 				onclick={() => (activeTab = 'overview')}
@@ -99,8 +100,7 @@
 			</button>
 			<button
 				type="button"
-				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab ===
-				'scouting'
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab === 'scouting'
 					? 'border-blue-600 text-blue-600'
 					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
 				onclick={() => (activeTab = 'scouting')}
@@ -109,8 +109,7 @@
 			</button>
 			<button
 				type="button"
-				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab ===
-				'combine'
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab === 'combine'
 					? 'border-blue-600 text-blue-600'
 					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
 				onclick={() => (activeTab = 'combine')}
@@ -165,7 +164,7 @@
 				<p class="text-center text-gray-500 py-12">No scouting reports available</p>
 			{:else}
 				<div class="space-y-4">
-					{#each scoutingReports as report}
+					{#each scoutingReports as report (report.id)}
 						<div class="border border-gray-200 rounded-lg p-4">
 							<div class="flex items-center justify-between mb-3">
 								<Badge variant="info" size="lg">

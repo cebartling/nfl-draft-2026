@@ -7,11 +7,7 @@
 		children?: import('svelte').Snippet;
 	}
 
-	let {
-		variant = 'default',
-		size = 'md',
-		children,
-	}: Props = $props();
+	let { variant = 'default', size = 'md', children }: Props = $props();
 
 	const baseClasses = 'inline-flex items-center font-medium rounded-full';
 
@@ -30,13 +26,7 @@
 		lg: 'px-3 py-1 text-base',
 	};
 
-	const badgeClasses = $derived(
-		clsx(
-			baseClasses,
-			variantClasses[variant],
-			sizeClasses[size]
-		)
-	);
+	const badgeClasses = $derived(clsx(baseClasses, variantClasses[variant], sizeClasses[size]));
 </script>
 
 <span class={badgeClasses}>

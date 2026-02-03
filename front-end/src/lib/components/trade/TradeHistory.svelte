@@ -3,6 +3,7 @@
 	import { LoadingSpinner, Badge } from '$components/ui';
 	import { tradesApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { TradeProposal, TradeStatus } from '$types';
 
 	interface Props {
@@ -17,9 +18,7 @@
 	let selectedStatus = $state<TradeStatus | 'all'>('all');
 
 	const filteredTrades = $derived(
-		selectedStatus === 'all'
-			? trades
-			: trades.filter((t) => t.trade.status === selectedStatus)
+		selectedStatus === 'all' ? trades : trades.filter((t) => t.trade.status === selectedStatus)
 	);
 
 	// Load trades
@@ -31,7 +30,7 @@
 				trades = data;
 			})
 			.catch((err) => {
-				console.error('Failed to load trades:', err);
+				logger.error('Failed to load trades:', err);
 				toastState.error('Failed to load trades');
 			})
 			.finally(() => {
@@ -62,7 +61,7 @@
 	<div class="mb-6">
 		<p class="text-sm font-medium text-gray-700 mb-3">Filter by Status</p>
 		<div class="flex flex-wrap gap-2">
-			{#each statusOptions as option}
+			{#each statusOptions as option (option.value)}
 				<button
 					type="button"
 					class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {selectedStatus ===
@@ -80,7 +79,8 @@
 	<!-- Results Count -->
 	<div class="mb-4">
 		<p class="text-sm text-gray-600">
-			{filteredTrades.length} {filteredTrades.length === 1 ? 'trade' : 'trades'}
+			{filteredTrades.length}
+			{filteredTrades.length === 1 ? 'trade' : 'trades'}
 		</p>
 	</div>
 
@@ -94,11 +94,7 @@
 	{:else}
 		<div class="space-y-4">
 			{#each filteredTrades as proposal (proposal.trade.id)}
-				<TradeProposalCard
-					{proposal}
-					{currentTeamId}
-					onUpdate={loadTrades}
-				/>
+				<TradeProposalCard {proposal} {currentTeamId} onUpdate={loadTrades} />
 			{/each}
 		</div>
 	{/if}

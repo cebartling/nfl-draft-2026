@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { teamsApi } from '$lib/api';
@@ -16,7 +17,7 @@
 			teams = await teamsApi.list();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load teams';
-			console.error('Failed to load teams:', e);
+			logger.error('Failed to load teams:', e);
 		} finally {
 			loading = false;
 		}
@@ -26,7 +27,7 @@
 	let teamsByConference = $derived(() => {
 		const groups: Record<string, Team[]> = {
 			AFC: [],
-			NFC: []
+			NFC: [],
 		};
 
 		teams.forEach((team) => {
@@ -68,8 +69,8 @@
 		return groups;
 	});
 
-	function handleSelectTeam(team: Team) {
-		goto(`/teams/${team.id}`);
+	async function handleSelectTeam(team: Team) {
+		await goto(`/teams/${team.id}`);
 	}
 </script>
 
@@ -128,7 +129,7 @@
 		<!-- Teams Grouped by Conference -->
 		{#if groupBy === 'conference'}
 			<div class="space-y-6">
-				{#each Object.entries(teamsByConference()) as [conference, conferenceTeams]}
+				{#each Object.entries(teamsByConference()) as [conference, conferenceTeams] (conference)}
 					<div class="bg-white rounded-lg shadow p-6">
 						<h2 class="text-2xl font-bold text-gray-800 mb-4">
 							{conference}
@@ -145,7 +146,7 @@
 		<!-- Teams Grouped by Division -->
 		{#if groupBy === 'division'}
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{#each Object.entries(teamsByDivision()).sort() as [division, divisionTeams]}
+				{#each Object.entries(teamsByDivision()).sort() as [division, divisionTeams] (division)}
 					<div class="bg-white rounded-lg shadow p-6">
 						<h2 class="text-xl font-bold text-gray-800 mb-4">
 							{division}

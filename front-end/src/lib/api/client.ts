@@ -1,3 +1,4 @@
+import { logger } from '$lib/utils/logger';
 import { z } from 'zod';
 import { ApiErrorSchema, type ApiError } from '$lib/types';
 
@@ -119,7 +120,7 @@ export class ApiClient {
 		const result = schema.safeParse(data);
 
 		if (!result.success) {
-			console.error('Schema validation failed:', result.error);
+			logger.error('Schema validation failed:', result.error);
 			throw new ApiClientError(
 				'Response validation failed: ' + result.error.message,
 				response.status

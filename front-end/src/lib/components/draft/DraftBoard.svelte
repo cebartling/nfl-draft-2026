@@ -4,6 +4,7 @@
 	import type { DraftPick, Player, Team } from '$types';
 	import { teamsApi, playersApi } from '$api';
 	import { draftState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 
 	interface Props {
 		picks: DraftPick[];
@@ -64,7 +65,7 @@
 			),
 		])
 			.catch((err) => {
-				console.error('Failed to load data:', err);
+				logger.error('Failed to load data:', err);
 			})
 			.finally(() => {
 				isLoading = false;
@@ -83,7 +84,7 @@
 		<p class="text-center text-gray-500 py-12">No picks available</p>
 	{:else}
 		<div class="space-y-8 max-h-[800px] overflow-y-auto">
-			{#each rounds as round}
+			{#each rounds as round (round)}
 				<div>
 					<div class="flex items-center space-x-3 mb-4">
 						<Badge variant="info" size="lg">
@@ -96,11 +97,11 @@
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 						{#each picksByRound[round] as pick (pick.id)}
 							{@const team = teams.get(pick.current_team_id)}
-							{@const player = pick.player_id ? players.get(pick.player_id) ?? null : null}
+							{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
 							{#if team}
 								<PickCard
 									{pick}
-									player={player}
+									{player}
 									{team}
 									highlight={pick.overall_pick === draftState.currentPickNumber}
 								/>

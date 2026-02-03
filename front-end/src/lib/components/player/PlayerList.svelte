@@ -23,8 +23,7 @@
 				player.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				player.college?.toLowerCase().includes(searchQuery.toLowerCase());
 
-			const matchesPosition =
-				selectedPosition === 'all' || player.position === selectedPosition;
+			const matchesPosition = selectedPosition === 'all' || player.position === selectedPosition;
 
 			return matchesSearch && matchesPosition;
 		})
@@ -52,17 +51,17 @@
 				type="text"
 				placeholder="Search by name or college..."
 				bind:value={searchQuery}
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 			/>
 		</div>
 
 		<!-- Position Filters -->
 		<div class="space-y-3">
-			{#each getPositionGroups() as group}
+			{#each getPositionGroups() as group (group.label)}
 				<div>
 					<p class="text-sm font-medium text-gray-700 mb-2">{group.label}</p>
 					<div class="flex flex-wrap gap-2">
-						{#each group.positions as position}
+						{#each group.positions as position (position)}
 							<button
 								type="button"
 								class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors {selectedPosition ===
@@ -83,7 +82,8 @@
 	<!-- Results Count -->
 	<div class="flex items-center justify-between mb-4">
 		<p class="text-sm text-gray-600">
-			{filteredPlayers.length} {filteredPlayers.length === 1 ? 'player' : 'players'}
+			{filteredPlayers.length}
+			{filteredPlayers.length === 1 ? 'player' : 'players'}
 		</p>
 		{#if searchQuery || selectedPosition !== 'all'}
 			<Button

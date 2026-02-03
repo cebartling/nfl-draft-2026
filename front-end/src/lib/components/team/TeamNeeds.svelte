@@ -2,6 +2,7 @@
 	import { Button, Badge, LoadingSpinner, Modal } from '$components/ui';
 	import { teamsApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { TeamNeed, Position } from '$types';
 	import { PositionSchema } from '$types';
 
@@ -33,7 +34,7 @@
 					needs = data;
 				})
 				.catch((err) => {
-					console.error('Failed to load team needs:', err);
+					logger.error('Failed to load team needs:', err);
 					toastState.error('Failed to load team needs');
 				})
 				.finally(() => {
@@ -65,7 +66,7 @@
 			showAddModal = false;
 		} catch (err) {
 			toastState.error('Failed to add team need');
-			console.error('Failed to add team need:', err);
+			logger.error('Failed to add team need:', err);
 		} finally {
 			isSubmitting = false;
 		}
@@ -90,9 +91,7 @@
 <div class="bg-white rounded-lg shadow-md p-6">
 	<div class="flex items-center justify-between mb-6">
 		<h2 class="text-xl font-semibold text-gray-900">Team Needs</h2>
-		<Button variant="primary" size="sm" onclick={() => (showAddModal = true)}>
-			Add Need
-		</Button>
+		<Button variant="primary" size="sm" onclick={() => (showAddModal = true)}>Add Need</Button>
 	</div>
 
 	{#if isLoading}
@@ -137,16 +136,14 @@
 <Modal bind:open={showAddModal} title="Add Team Need" width="md">
 	<form onsubmit={handleAddNeed} class="space-y-4">
 		<div>
-			<label for="position" class="block text-sm font-medium text-gray-700 mb-2">
-				Position
-			</label>
+			<label for="position" class="block text-sm font-medium text-gray-700 mb-2"> Position </label>
 			<select
 				id="position"
 				bind:value={newPosition}
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				required
 			>
-				{#each positions as position}
+				{#each positions as position (position)}
 					<option value={position}>{position}</option>
 				{/each}
 			</select>
@@ -173,28 +170,19 @@
 		</div>
 
 		<div>
-			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-				Notes
-			</label>
+			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2"> Notes </label>
 			<textarea
 				id="notes"
 				bind:value={newNotes}
 				rows="3"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="Additional details about this need..."
 			></textarea>
 		</div>
 
 		<div class="flex justify-end space-x-3">
-			<Button variant="secondary" onclick={() => (showAddModal = false)}>
-				Cancel
-			</Button>
-			<Button
-				type="submit"
-				variant="primary"
-				disabled={isSubmitting}
-				loading={isSubmitting}
-			>
+			<Button variant="secondary" onclick={() => (showAddModal = false)}>Cancel</Button>
+			<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 				Add Need
 			</Button>
 		</div>

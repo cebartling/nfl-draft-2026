@@ -2,6 +2,7 @@
 	import { Button } from '$components/ui';
 	import { playersApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { Player } from '$types';
 
 	interface Props {
@@ -49,7 +50,7 @@
 			onSuccess?.();
 		} catch (err) {
 			toastState.error('Failed to create scouting report');
-			console.error('Failed to create scouting report:', err);
+			logger.error('Failed to create scouting report:', err);
 		} finally {
 			isSubmitting = false;
 		}
@@ -58,7 +59,8 @@
 
 <div class="bg-white rounded-lg shadow-md p-6">
 	<h3 class="text-xl font-semibold text-gray-900 mb-6">
-		Create Scouting Report for {player.first_name} {player.last_name}
+		Create Scouting Report for {player.first_name}
+		{player.last_name}
 	</h3>
 
 	<form onsubmit={handleSubmit} class="space-y-6">
@@ -87,14 +89,12 @@
 
 		<!-- Notes -->
 		<div>
-			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-				Notes
-			</label>
+			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2"> Notes </label>
 			<textarea
 				id="notes"
 				bind:value={notes}
 				rows="4"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="Overall evaluation and observations..."
 			></textarea>
 		</div>
@@ -108,7 +108,7 @@
 				id="strengths"
 				bind:value={strengths}
 				rows="3"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="What does this player do well?"
 			></textarea>
 		</div>
@@ -122,19 +122,14 @@
 				id="weaknesses"
 				bind:value={weaknesses}
 				rows="3"
-				class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				placeholder="What areas need improvement?"
 			></textarea>
 		</div>
 
 		<!-- Submit Button -->
 		<div class="flex justify-end">
-			<Button
-				type="submit"
-				variant="primary"
-				disabled={isSubmitting}
-				loading={isSubmitting}
-			>
+			<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 				Create Report
 			</Button>
 		</div>

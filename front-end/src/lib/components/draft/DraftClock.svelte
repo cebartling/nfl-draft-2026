@@ -3,6 +3,7 @@
 	import { teamsApi } from '$api';
 	import { Badge, LoadingSpinner } from '$components/ui';
 	import type { Team, UUID } from '$types';
+	import { logger } from '$lib/utils/logger';
 
 	interface Props {
 		sessionId: UUID;
@@ -46,7 +47,7 @@
 					team = t;
 				})
 				.catch((err) => {
-					console.error('Failed to load team:', err);
+					logger.error('Failed to load team:', err);
 				})
 				.finally(() => {
 					isLoading = false;

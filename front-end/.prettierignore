@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+.svelte-kit/
+build/
+dist/
+.output/
+
+# Generated files
+.vite/
+vite.config.*.timestamp-*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Documentation (usually pre-formatted)
+CHANGELOG.md

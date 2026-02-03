@@ -2,6 +2,7 @@
 	import { Button, Badge, LoadingSpinner } from '$components/ui';
 	import { teamsApi, tradesApi } from '$api';
 	import { toastState } from '$stores';
+	import { logger } from '$lib/utils/logger';
 	import type { Team, DraftPick } from '$types';
 
 	interface Props {
@@ -20,13 +21,9 @@
 	let isLoadingTeams = $state(false);
 	let isSubmitting = $state(false);
 
-	const fromTeamPicks = $derived(
-		availablePicks.filter((p) => p.current_team_id === fromTeamId)
-	);
+	const fromTeamPicks = $derived(availablePicks.filter((p) => p.current_team_id === fromTeamId));
 
-	const toTeamPicks = $derived(
-		availablePicks.filter((p) => p.current_team_id === toTeamId)
-	);
+	const toTeamPicks = $derived(availablePicks.filter((p) => p.current_team_id === toTeamId));
 
 	// Load teams
 	$effect(() => {
@@ -37,7 +34,7 @@
 				teams = data;
 			})
 			.catch((err) => {
-				console.error('Failed to load teams:', err);
+				logger.error('Failed to load teams:', err);
 				toastState.error('Failed to load teams');
 			})
 			.finally(() => {
@@ -101,7 +98,7 @@
 			onSuccess?.();
 		} catch (err) {
 			toastState.error('Failed to create trade proposal');
-			console.error('Failed to create trade proposal:', err);
+			logger.error('Failed to create trade proposal:', err);
 		} finally {
 			isSubmitting = false;
 		}
@@ -126,13 +123,14 @@
 					<select
 						id="from-team"
 						bind:value={fromTeamId}
-						class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+						class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 						required
 					>
 						<option value="">Select a team</option>
-						{#each teams as team}
+						{#each teams as team (team.id)}
 							<option value={team.id}>
-								{team.city} {team.name}
+								{team.city}
+								{team.name}
 							</option>
 						{/each}
 					</select>
@@ -145,13 +143,14 @@
 					<select
 						id="to-team"
 						bind:value={toTeamId}
-						class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+						class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 						required
 					>
 						<option value="">Select a team</option>
-						{#each teams as team}
+						{#each teams as team (team.id)}
 							<option value={team.id}>
-								{team.city} {team.name}
+								{team.city}
+								{team.name}
 							</option>
 						{/each}
 					</select>
@@ -168,9 +167,10 @@
 					<div class="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
 						{#if fromTeamId && fromTeamPicks.length > 0}
 							<div class="divide-y divide-gray-200">
-								{#each fromTeamPicks as pick}
+								{#each fromTeamPicks as pick (pick.id)}
 									<button
 										type="button"
+										aria-label="Select pick Round {pick.round} Pick {pick.pick_number}"
 										class="w-full p-3 text-left hover:bg-gray-50 transition-colors {fromTeamPickIds.includes(
 											pick.id
 										)
@@ -193,11 +193,7 @@
 												</p>
 											</div>
 											{#if fromTeamPickIds.includes(pick.id)}
-												<svg
-													class="w-5 h-5 text-blue-600"
-													fill="currentColor"
-													viewBox="0 0 20 20"
-												>
+												<svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
 													<path
 														fill-rule="evenodd"
 														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -225,9 +221,10 @@
 					<div class="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
 						{#if toTeamId && toTeamPicks.length > 0}
 							<div class="divide-y divide-gray-200">
-								{#each toTeamPicks as pick}
+								{#each toTeamPicks as pick (pick.id)}
 									<button
 										type="button"
+										aria-label="Select pick Round {pick.round} Pick {pick.pick_number}"
 										class="w-full p-3 text-left hover:bg-gray-50 transition-colors {toTeamPickIds.includes(
 											pick.id
 										)
@@ -250,11 +247,7 @@
 												</p>
 											</div>
 											{#if toTeamPickIds.includes(pick.id)}
-												<svg
-													class="w-5 h-5 text-blue-600"
-													fill="currentColor"
-													viewBox="0 0 20 20"
-												>
+												<svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
 													<path
 														fill-rule="evenodd"
 														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -277,12 +270,7 @@
 
 			<!-- Submit Button -->
 			<div class="flex justify-end">
-				<Button
-					type="submit"
-					variant="primary"
-					disabled={isSubmitting}
-					loading={isSubmitting}
-				>
+				<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 					Propose Trade
 				</Button>
 			</div>

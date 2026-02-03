@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -15,7 +16,7 @@
 			await playersState.loadPlayer(playerId);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load player';
-			console.error('Failed to load player:', e);
+			logger.error('Failed to load player:', e);
 		} finally {
 			loading = false;
 		}
@@ -31,16 +32,13 @@
 	<div>
 		<button
 			type="button"
-			onclick={() => goto('/players')}
+			onclick={async () => {
+				await goto('/players');
+			}}
 			class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
 		>
 			<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M15 19l-7-7 7-7"
-				/>
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 			</svg>
 			Back to Players
 		</button>
@@ -66,7 +64,9 @@
 			<p class="text-gray-600 mb-4">{error}</p>
 			<button
 				type="button"
-				onclick={() => goto('/players')}
+				onclick={async () => {
+					await goto('/players');
+				}}
 				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 			>
 				Back to Players

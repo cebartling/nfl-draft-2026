@@ -24,6 +24,13 @@ export default defineConfig({
 		globals: true,
 		environment: 'jsdom',
 		setupFiles: ['./vitest.setup.ts'],
+		exclude: [
+			'**/node_modules/**',
+			'**/dist/**',
+			'**/.svelte-kit/**',
+			'**/tests/**', // Exclude Playwright E2E tests
+			'**/*.spec.ts', // Exclude Playwright spec files
+		],
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'html', 'json'],

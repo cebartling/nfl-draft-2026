@@ -119,10 +119,10 @@
 			<select
 				id="chart-type"
 				bind:value={selectedChartType}
-				class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				disabled={draftState.session?.status === 'InProgress'}
 			>
-				{#each chartTypes as chartType}
+				{#each chartTypes as chartType (chartType)}
 					<option value={chartType}>
 						{chartType.replace(/([A-Z])/g, ' $1').trim()}
 					</option>
@@ -132,14 +132,12 @@
 
 		<!-- Auto-pick Toggle -->
 		<div class="flex items-center justify-between">
-			<label for="auto-pick" class="text-sm font-medium text-gray-700">
-				Auto-pick Enabled
-			</label>
+			<label for="auto-pick" class="text-sm font-medium text-gray-700"> Auto-pick Enabled </label>
 			<input
 				id="auto-pick"
 				type="checkbox"
 				bind:checked={autoPickEnabled}
-				class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+				class="h-5 w-5 rounded border border-gray-300 text-blue-600 focus:ring-blue-500"
 				disabled={draftState.session?.status === 'InProgress'}
 			/>
 		</div>

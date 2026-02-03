@@ -67,7 +67,7 @@ export const DraftEventSchema = z.object({
 	id: UUIDSchema,
 	session_id: UUIDSchema,
 	event_type: z.string(),
-	event_data: z.record(z.string(), z.any()),
+	event_data: z.record(z.string(), z.unknown()),
 	created_at: z.string(),
 });
 export type DraftEvent = z.infer<typeof DraftEventSchema>;

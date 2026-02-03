@@ -81,7 +81,9 @@ test.describe('Draft Room', () => {
 			await firstPlayer.click();
 
 			// Confirm pick
-			const confirmButton = page.locator('button', { hasText: /Confirm|Draft|Select/i });
+			const confirmButton = page.locator('button', {
+				hasText: /Confirm|Draft|Select/i,
+			});
 			if (await confirmButton.isVisible()) {
 				await confirmButton.click();
 
@@ -129,7 +131,7 @@ test.describe('Draft Room', () => {
 				try {
 					const data = JSON.parse(event.payload as string);
 					messages.push(data);
-				} catch (e) {
+				} catch (_e) {
 					// Ignore non-JSON frames
 				}
 			});

@@ -29,11 +29,15 @@ npm install
 ### Development
 
 \`\`\`bash
+
 # Start dev server
+
 npm run dev
 
 # Open http://localhost:5173
+
 # API requests proxy to http://localhost:8000
+
 \`\`\`
 
 ## 📦 Tech Stack
@@ -52,31 +56,36 @@ npm run dev
 \`\`\`
 front-end/
 ├── src/
-│   ├── lib/
-│   │   ├── api/              # API client (teams, players, drafts, etc.)
-│   │   ├── components/       # Svelte components (ui, draft, player, team, trade)
-│   │   ├── stores/           # State management (Svelte 5 runes)
-│   │   └── types/            # TypeScript types + Zod schemas
-│   ├── routes/               # SvelteKit file-based routing
-│   └── app.css               # Global styles + Tailwind directives
-├── tests/                    # E2E tests (Playwright)
-├── build/                    # Production build output
-└── *.config.{ts,js}          # Configuration files
+│ ├── lib/
+│ │ ├── api/ # API client (teams, players, drafts, etc.)
+│ │ ├── components/ # Svelte components (ui, draft, player, team, trade)
+│ │ ├── stores/ # State management (Svelte 5 runes)
+│ │ └── types/ # TypeScript types + Zod schemas
+│ ├── routes/ # SvelteKit file-based routing
+│ └── app.css # Global styles + Tailwind directives
+├── tests/ # E2E tests (Playwright)
+├── build/ # Production build output
+└── \*.config.{ts,js} # Configuration files
 \`\`\`
 
 ## 🧪 Testing
 
 \`\`\`bash
+
 # Run all unit tests
+
 npm run test
 
 # Run E2E tests (requires backend)
+
 npm run test:e2e
 
 # Type check
+
 npm run check
 
 # Lint
+
 npm run lint
 \`\`\`
 
@@ -88,22 +97,22 @@ npm run lint
 
 \`\`\`typescript
 server: {
-  proxy: {
-    '/api': 'http://localhost:8000',
-    '/ws': { target: 'ws://localhost:8000', ws: true }
-  }
+proxy: {
+'/api': 'http://localhost:8000',
+'/ws': { target: 'ws://localhost:8000', ws: true }
+}
 }
 \`\`\`
 
 ## 🗂️ Key Routes
 
-| Route | Description |
-|-------|-------------|
-| `/` | Home page |
-| `/drafts` | All drafts |
+| Route            | Description                |
+| ---------------- | -------------------------- |
+| `/`              | Home page                  |
+| `/drafts`        | All drafts                 |
 | `/sessions/[id]` | **Draft room** (WebSocket) |
-| `/players` | Player list |
-| `/teams` | Team list |
+| `/players`       | Player list                |
+| `/teams`         | Team list                  |
 
 ## 🌐 API Integration
 
@@ -134,7 +143,7 @@ import { draftState } from '$stores';
 
 // Reactive state
 $effect(() => {
-  console.log('Pick:', draftState.currentPickNumber);
+console.log('Pick:', draftState.currentPickNumber);
 });
 
 // Async methods
@@ -153,17 +162,21 @@ await draftState.loadDraft(draftId);
 
 \`\`\`bash
 npm run build
+
 # Deploy build/ directory to static host
+
 \`\`\`
 
 ## 🐛 Troubleshooting
 
 ### WebSocket Connection Failed
+
 - Ensure backend is running
 - Verify session ID is valid UUID
 - Check browser console for errors
 
 ### API 404 Errors
+
 - Check backend is running at `http://localhost:8000`
 - Verify Vite proxy configuration
 

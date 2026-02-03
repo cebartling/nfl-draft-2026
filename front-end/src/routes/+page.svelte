@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { draftsApi } from '$lib/api';
@@ -16,13 +17,15 @@
 			drafts = await draftsApi.list();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load drafts';
-			console.error('Failed to load drafts:', e);
+			logger.error('Failed to load drafts:', e);
 		} finally {
 			loading = false;
 		}
 	});
 
-	function getStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' {
+	function getStatusVariant(
+		status: string
+	): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' {
 		switch (status) {
 			case 'NotStarted':
 				return 'primary';
@@ -53,7 +56,9 @@
 		</p>
 		<button
 			type="button"
-			onclick={() => goto('/drafts/new')}
+			onclick={async () => {
+				await goto('/drafts/new');
+			}}
 			class="bg-white text-blue-600 hover:bg-gray-100 font-semibold py-3 px-6 rounded-lg transition-colors"
 		>
 			Create New Draft
@@ -82,7 +87,11 @@
 		<div class="space-y-4">
 			<div class="flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-gray-800">Recent Drafts</h2>
-				<a href="/drafts" class="text-blue-600 hover:text-blue-700 font-medium">
+				<a
+					href="/drafts"
+					data-sveltekit-reload
+					class="text-blue-600 hover:text-blue-700 font-medium"
+				>
 					View All
 				</a>
 			</div>
@@ -93,7 +102,9 @@
 						<p class="text-gray-600 mb-4">No drafts yet. Create your first draft to get started!</p>
 						<button
 							type="button"
-							onclick={() => goto('/drafts/new')}
+							onclick={async () => {
+								await goto('/drafts/new');
+							}}
 							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 						>
 							Create Draft
@@ -102,8 +113,13 @@
 				</Card>
 			{:else}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each drafts.slice(0, 5) as draft}
-						<Card clickable onclick={() => goto(`/drafts/${draft.id}`)}>
+					{#each drafts.slice(0, 5) as draft (draft.id)}
+						<Card
+							clickable
+							onclick={async () => {
+								await goto(`/drafts/${draft.id}`);
+							}}
+						>
 							<div class="space-y-3">
 								<div class="flex items-start justify-between">
 									<h3 class="text-lg font-semibold text-gray-800">
@@ -135,9 +151,9 @@
 									<div class="pt-2 border-t border-gray-200">
 										<button
 											type="button"
-											onclick={(e) => {
+											onclick={async (e) => {
 												e.stopPropagation();
-												goto(`/sessions/${draft.id}`);
+												await goto(`/sessions/${draft.id}`);
 											}}
 											class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors"
 										>
@@ -166,7 +182,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-green-600">
-							{drafts.filter(d => d.status === 'InProgress').length}
+							{drafts.filter((d) => d.status === 'InProgress').length}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Active Drafts</div>
 					</div>
@@ -174,7 +190,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-gray-600">
-							{drafts.filter(d => d.status === 'Completed').length}
+							{drafts.filter((d) => d.status === 'Completed').length}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Completed Drafts</div>
 					</div>

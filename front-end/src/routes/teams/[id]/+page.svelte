@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -24,7 +25,7 @@
 			team = await teamsApi.get(teamId);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load team';
-			console.error('Failed to load team:', e);
+			logger.error('Failed to load team:', e);
 		} finally {
 			loading = false;
 		}
@@ -35,7 +36,7 @@
 			// For now, we'll just show empty picks
 			teamPicks = [];
 		} catch (e) {
-			console.error('Failed to load team picks:', e);
+			logger.error('Failed to load team picks:', e);
 		} finally {
 			picksLoading = false;
 		}
@@ -47,16 +48,13 @@
 	<div>
 		<button
 			type="button"
-			onclick={() => goto('/teams')}
+			onclick={async () => {
+				await goto('/teams');
+			}}
 			class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
 		>
 			<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M15 19l-7-7 7-7"
-				/>
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 			</svg>
 			Back to Teams
 		</button>
@@ -82,7 +80,9 @@
 			<p class="text-gray-600 mb-4">{error}</p>
 			<button
 				type="button"
-				onclick={() => goto('/teams')}
+				onclick={async () => {
+					await goto('/teams');
+				}}
 				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 			>
 				Back to Teams
@@ -94,7 +94,8 @@
 			<div class="flex items-center gap-6">
 				<div class="flex-1">
 					<h1 class="text-3xl font-bold text-gray-800">
-						{team.city} {team.name}
+						{team.city}
+						{team.name}
 					</h1>
 					<div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
 						<span>{team.conference} {team.division}</span>
@@ -134,7 +135,7 @@
 				</div>
 			{:else}
 				<div class="space-y-2">
-					{#each teamPicks as pick}
+					{#each teamPicks as pick (pick.id)}
 						<Card>
 							<div class="flex items-center justify-between">
 								<div>

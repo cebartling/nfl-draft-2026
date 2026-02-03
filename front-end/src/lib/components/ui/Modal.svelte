@@ -9,13 +9,9 @@
 		children?: import('svelte').Snippet;
 	}
 
-	let {
-		open = $bindable(false),
-		onClose,
-		width = 'md',
-		title,
-		children,
-	}: Props = $props();
+	let { open = $bindable(false), onClose, width = 'md', title, children }: Props = $props();
+
+	let dialogElement = $state<HTMLDivElement | undefined>();
 
 	const widthClasses = {
 		sm: 'max-w-sm',
@@ -24,6 +20,12 @@
 		xl: 'max-w-xl',
 		full: 'max-w-full mx-4',
 	};
+
+	$effect(() => {
+		if (open && dialogElement) {
+			dialogElement.focus();
+		}
+	});
 
 	function handleClose() {
 		open = false;
@@ -47,6 +49,7 @@
 
 {#if open}
 	<div
+		bind:this={dialogElement}
 		class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black bg-opacity-50 animate-fade-in"
 		onclick={handleBackdropClick}
 		onkeydown={handleKeydown}
@@ -55,12 +58,7 @@
 		aria-labelledby={title ? 'modal-title' : undefined}
 		tabindex="-1"
 	>
-		<div
-			class={clsx(
-				'bg-white rounded-lg shadow-xl w-full animate-slide-in',
-				widthClasses[width]
-			)}
-		>
+		<div class={clsx('bg-white rounded-lg shadow-xl w-full animate-slide-in', widthClasses[width])}>
 			<div class="flex items-center justify-between p-6 border-b border-gray-200">
 				{#if title}
 					<h2 id="modal-title" class="text-xl font-semibold text-gray-900">
@@ -75,12 +73,7 @@
 					onclick={handleClose}
 					aria-label="Close modal"
 				>
-					<svg
-						class="w-6 h-6"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"

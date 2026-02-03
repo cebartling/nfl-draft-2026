@@ -14,6 +14,7 @@
 	}
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
 	class="bg-white rounded-lg shadow-md p-4 transition-all {onSelect
 		? 'hover:shadow-lg cursor-pointer'
@@ -31,7 +32,8 @@
 	<div class="flex items-start justify-between mb-3">
 		<div class="flex-1">
 			<h3 class="text-lg font-semibold text-gray-900">
-				{team.city} {team.name}
+				{team.city}
+				{team.name}
 			</h3>
 			<p class="text-sm text-gray-600">{team.abbreviation}</p>
 		</div>

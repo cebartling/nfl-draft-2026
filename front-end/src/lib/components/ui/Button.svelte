@@ -21,7 +21,8 @@
 		children,
 	}: Props = $props();
 
-	const baseClasses = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center';
+	const baseClasses =
+		'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center';
 
 	const variantClasses = {
 		primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
@@ -47,12 +48,7 @@
 	);
 </script>
 
-<button
-	{type}
-	class={buttonClasses}
-	disabled={disabled || loading}
-	onclick={onclick}
->
+<button {type} class={buttonClasses} disabled={disabled || loading} {onclick}>
 	{#if loading}
 		<svg
 			class="animate-spin h-5 w-5 mr-2"
@@ -60,13 +56,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 		>
-			<circle
-				class="opacity-25"
-				cx="12"
-				cy="12"
-				r="10"
-				stroke="currentColor"
-				stroke-width="4"
+			<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 			></circle>
 			<path
 				class="opacity-75"
