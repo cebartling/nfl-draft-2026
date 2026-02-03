@@ -1,3 +1,4 @@
+pub mod chart_type;
 pub mod combine_results;
 pub mod draft;
 pub mod draft_event;
@@ -7,7 +8,9 @@ pub mod player;
 pub mod scouting_report;
 pub mod team;
 pub mod team_need;
+pub mod trade;
 
+pub use chart_type::ChartType;
 pub use combine_results::CombineResults;
 pub use draft::{Draft, DraftPick, DraftStatus};
 pub use draft_event::{DraftEvent, EventType};
@@ -17,3 +20,4 @@ pub use player::{Player, Position};
 pub use scouting_report::{FitGrade, ScoutingReport};
 pub use team::{Conference, Division, Team};
 pub use team_need::TeamNeed;
+pub use trade::{PickTrade, PickTradeDetail, TradeDirection, TradeProposal, TradeStatus};

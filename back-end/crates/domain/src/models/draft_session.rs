@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
+use super::ChartType;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum SessionStatus {
@@ -32,6 +33,7 @@ pub struct DraftSession {
     pub current_pick_number: i32,
     pub time_per_pick_seconds: i32,
     pub auto_pick_enabled: bool,
+    pub chart_type: ChartType,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub started_at: Option<DateTime<Utc>>,
@@ -43,6 +45,7 @@ impl DraftSession {
         draft_id: Uuid,
         time_per_pick_seconds: i32,
         auto_pick_enabled: bool,
+        chart_type: ChartType,
     ) -> DomainResult<Self> {
         Self::validate_time_per_pick(time_per_pick_seconds)?;
 
@@ -54,11 +57,26 @@ impl DraftSession {
             current_pick_number: 1,
             time_per_pick_seconds,
             auto_pick_enabled,
+            chart_type,
             created_at: now,
             updated_at: now,
             started_at: None,
             completed_at: None,
         })
+    }
+
+    /// Convenience constructor with default chart type
+    pub fn new_with_default_chart(
+        draft_id: Uuid,
+        time_per_pick_seconds: i32,
+        auto_pick_enabled: bool,
+    ) -> DomainResult<Self> {
+        Self::new(
+            draft_id,
+            time_per_pick_seconds,
+            auto_pick_enabled,
+            ChartType::JimmyJohnson,
+        )
     }
 
     /// Set the session status directly, bypassing state validation.
@@ -158,7 +176,7 @@ mod tests {
     #[test]
     fn test_create_session() {
         let draft_id = Uuid::new_v4();
-        let session = DraftSession::new(draft_id, 300, false).unwrap();
+        let session = DraftSession::new_with_default_chart(draft_id, 300, false).unwrap();
 
         assert_eq!(session.draft_id, draft_id);
         assert_eq!(session.status, SessionStatus::NotStarted);
@@ -174,25 +192,25 @@ mod tests {
         let draft_id = Uuid::new_v4();
 
         // Too short
-        let result = DraftSession::new(draft_id, 5, false);
+        let result = DraftSession::new_with_default_chart(draft_id, 5, false);
         assert!(result.is_err());
 
         // Too long
-        let result = DraftSession::new(draft_id, 3601, false);
+        let result = DraftSession::new_with_default_chart(draft_id, 3601, false);
         assert!(result.is_err());
 
         // Valid range
-        let result = DraftSession::new(draft_id, 10, false);
+        let result = DraftSession::new_with_default_chart(draft_id, 10, false);
         assert!(result.is_ok());
 
-        let result = DraftSession::new(draft_id, 3600, false);
+        let result = DraftSession::new_with_default_chart(draft_id, 3600, false);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_session_lifecycle() {
         let draft_id = Uuid::new_v4();
-        let mut session = DraftSession::new(draft_id, 300, false).unwrap();
+        let mut session = DraftSession::new_with_default_chart(draft_id, 300, false).unwrap();
 
         // Start session
         assert!(session.start().is_ok());
@@ -231,7 +249,7 @@ mod tests {
     #[test]
     fn test_advance_pick() {
         let draft_id = Uuid::new_v4();
-        let mut session = DraftSession::new(draft_id, 300, false).unwrap();
+        let mut session = DraftSession::new_with_default_chart(draft_id, 300, false).unwrap();
 
         // Cannot advance before starting
         assert!(session.advance_pick().is_err());

@@ -96,6 +96,7 @@ fn json_to_position_values(json: &JsonValue) -> DbResult<PositionValueMap> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use domain::models::Position;
 
     #[test]
     fn test_domain_to_db_conversion() {

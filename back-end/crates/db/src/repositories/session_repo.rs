@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use domain::errors::{DomainError, DomainResult};
-use domain::models::{DraftSession, SessionStatus};
+use domain::models::{ChartType, DraftSession, SessionStatus};
 use domain::repositories::SessionRepository;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -15,6 +15,7 @@ struct DraftSessionDb {
     current_pick_number: i32,
     time_per_pick_seconds: i32,
     auto_pick_enabled: bool,
+    chart_type: String,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     started_at: Option<DateTime<Utc>>,
@@ -31,6 +32,9 @@ impl From<DraftSessionDb> for DraftSession {
             _ => SessionStatus::NotStarted, // Default fallback
         };
 
+        let chart_type = db.chart_type.parse()
+            .unwrap_or(ChartType::JimmyJohnson); // Default fallback
+
         DraftSession {
             id: db.id,
             draft_id: db.draft_id,
@@ -38,6 +42,7 @@ impl From<DraftSessionDb> for DraftSession {
             current_pick_number: db.current_pick_number,
             time_per_pick_seconds: db.time_per_pick_seconds,
             auto_pick_enabled: db.auto_pick_enabled,
+            chart_type,
             created_at: db.created_at,
             updated_at: db.updated_at,
             started_at: db.started_at,
@@ -59,14 +64,16 @@ impl SessionRepo {
 #[async_trait]
 impl SessionRepository for SessionRepo {
     async fn create(&self, session: &DraftSession) -> DomainResult<DraftSession> {
+        let chart_type_str = session.chart_type.to_string();
+
         let db_session = sqlx::query_as!(
             DraftSessionDb,
             r#"
             INSERT INTO draft_sessions (
                 id, draft_id, status, current_pick_number, time_per_pick_seconds,
-                auto_pick_enabled, created_at, updated_at, started_at, completed_at
+                auto_pick_enabled, chart_type, created_at, updated_at, started_at, completed_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
             "#,
             session.id,
@@ -75,6 +82,7 @@ impl SessionRepository for SessionRepo {
             session.current_pick_number,
             session.time_per_pick_seconds,
             session.auto_pick_enabled,
+            chart_type_str,
             session.created_at,
             session.updated_at,
             session.started_at,
@@ -122,6 +130,8 @@ impl SessionRepository for SessionRepo {
     }
 
     async fn update(&self, session: &DraftSession) -> DomainResult<DraftSession> {
+        let chart_type_str = session.chart_type.to_string();
+
         let db_session = sqlx::query_as!(
             DraftSessionDb,
             r#"
@@ -130,9 +140,10 @@ impl SessionRepository for SessionRepo {
                 current_pick_number = $3,
                 time_per_pick_seconds = $4,
                 auto_pick_enabled = $5,
-                updated_at = $6,
-                started_at = $7,
-                completed_at = $8
+                chart_type = $6,
+                updated_at = $7,
+                started_at = $8,
+                completed_at = $9
             WHERE id = $1
             RETURNING *
             "#,
@@ -141,6 +152,7 @@ impl SessionRepository for SessionRepo {
             session.current_pick_number,
             session.time_per_pick_seconds,
             session.auto_pick_enabled,
+            chart_type_str,
             session.updated_at,
             session.started_at,
             session.completed_at,
@@ -237,7 +249,7 @@ mod tests {
         .unwrap();
 
         // Create session
-        let session = DraftSession::new(draft_id, 300, false).unwrap();
+        let session = DraftSession::new_with_default_chart(draft_id, 300, false).unwrap();
         let created = repo.create(&session).await.unwrap();
 
         assert_eq!(created.id, session.id);
@@ -286,7 +298,7 @@ mod tests {
         .unwrap();
 
         // Create and start session
-        let mut session = DraftSession::new(draft_id, 300, false).unwrap();
+        let mut session = DraftSession::new_with_default_chart(draft_id, 300, false).unwrap();
         repo.create(&session).await.unwrap();
 
         session.start().unwrap();
@@ -331,8 +343,8 @@ mod tests {
         .unwrap();
 
         // Create sessions
-        let session1 = DraftSession::new(draft_id_1, 300, false).unwrap();
-        let mut session2 = DraftSession::new(draft_id_2, 180, true).unwrap();
+        let session1 = DraftSession::new_with_default_chart(draft_id_1, 300, false).unwrap();
+        let mut session2 = DraftSession::new_with_default_chart(draft_id_2, 180, true).unwrap();
         session2.start().unwrap();
 
         repo.create(&session1).await.unwrap();

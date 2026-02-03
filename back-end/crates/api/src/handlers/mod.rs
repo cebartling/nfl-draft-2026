@@ -6,3 +6,4 @@ pub mod scouting_reports;
 pub mod sessions;
 pub mod team_needs;
 pub mod teams;
+pub mod trades;

@@ -116,6 +116,15 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::team_needs::get_team_need)
                 .put(handlers::team_needs::update_team_need)
                 .delete(handlers::team_needs::delete_team_need),
+        )
+        // Trades
+        .route("/trades", post(handlers::trades::propose_trade))
+        .route("/trades/{id}", get(handlers::trades::get_trade))
+        .route("/trades/{id}/accept", post(handlers::trades::accept_trade))
+        .route("/trades/{id}/reject", post(handlers::trades::reject_trade))
+        .route(
+            "/teams/{team_id}/pending-trades",
+            get(handlers::trades::get_pending_trades),
         );
 
     // Create stateful routes
