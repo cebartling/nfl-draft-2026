@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 /// Trade value chart selection
 ///
@@ -21,4 +23,34 @@ pub enum ChartType {
     FitzgeraldSpielberger,
     PffWar,
     SurplusValue,
+}
+
+impl fmt::Display for ChartType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            ChartType::JimmyJohnson => "JimmyJohnson",
+            ChartType::RichHill => "RichHill",
+            ChartType::ChaseStudartAV => "ChaseStudartAV",
+            ChartType::FitzgeraldSpielberger => "FitzgeraldSpielberger",
+            ChartType::PffWar => "PffWar",
+            ChartType::SurplusValue => "SurplusValue",
+        };
+        write!(f, "{}", name)
+    }
+}
+
+impl FromStr for ChartType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "JimmyJohnson" => Ok(ChartType::JimmyJohnson),
+            "RichHill" => Ok(ChartType::RichHill),
+            "ChaseStudartAV" => Ok(ChartType::ChaseStudartAV),
+            "FitzgeraldSpielberger" => Ok(ChartType::FitzgeraldSpielberger),
+            "PffWar" => Ok(ChartType::PffWar),
+            "SurplusValue" => Ok(ChartType::SurplusValue),
+            _ => Err(format!("Invalid chart type: {}", s)),
+        }
+    }
 }

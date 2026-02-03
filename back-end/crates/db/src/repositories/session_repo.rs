@@ -32,7 +32,7 @@ impl From<DraftSessionDb> for DraftSession {
             _ => SessionStatus::NotStarted, // Default fallback
         };
 
-        let chart_type = serde_json::from_str(&format!("\"{}\"", db.chart_type))
+        let chart_type = db.chart_type.parse()
             .unwrap_or(ChartType::JimmyJohnson); // Default fallback
 
         DraftSession {
@@ -64,10 +64,7 @@ impl SessionRepo {
 #[async_trait]
 impl SessionRepository for SessionRepo {
     async fn create(&self, session: &DraftSession) -> DomainResult<DraftSession> {
-        let chart_type_str = serde_json::to_string(&session.chart_type)
-            .map_err(|e| DomainError::DatabaseError(e.to_string()))?
-            .trim_matches('"')
-            .to_string();
+        let chart_type_str = session.chart_type.to_string();
 
         let db_session = sqlx::query_as!(
             DraftSessionDb,
@@ -133,10 +130,7 @@ impl SessionRepository for SessionRepo {
     }
 
     async fn update(&self, session: &DraftSession) -> DomainResult<DraftSession> {
-        let chart_type_str = serde_json::to_string(&session.chart_type)
-            .map_err(|e| DomainError::DatabaseError(e.to_string()))?
-            .trim_matches('"')
-            .to_string();
+        let chart_type_str = session.chart_type.to_string();
 
         let db_session = sqlx::query_as!(
             DraftSessionDb,
