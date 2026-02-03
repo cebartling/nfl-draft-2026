@@ -19,7 +19,7 @@ impl SqlxTradeRepository {
 
 #[async_trait]
 impl TradeRepository for SqlxTradeRepository {
-    async fn create_trade(&self, proposal: &TradeProposal) -> DomainResult<TradeProposal> {
+    async fn create_trade(&self, proposal: &TradeProposal, chart_type: ChartType) -> DomainResult<TradeProposal> {
         let trade_db = PickTradeDb::from_domain(&proposal.trade);
 
         // Transaction for atomic creation
@@ -56,8 +56,8 @@ impl TradeRepository for SqlxTradeRepository {
         .await
         .map_err(DbError::DatabaseError)?;
 
-        // Use Jimmy Johnson chart for calculating pick values
-        let value_chart = ChartType::JimmyJohnson.create_chart();
+        // Use the specified chart type for calculating individual pick values
+        let value_chart = chart_type.create_chart();
 
         // Insert trade details for each pick
         for (pick_id, direction) in proposal.from_team_picks.iter()

@@ -1,12 +1,16 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 use crate::errors::DomainResult;
-use crate::models::{PickTrade, TradeProposal};
+use crate::models::{ChartType, PickTrade, TradeProposal};
 
 #[async_trait]
 pub trait TradeRepository: Send + Sync {
-    /// Create trade with details (atomic transaction)
-    async fn create_trade(&self, proposal: &TradeProposal) -> DomainResult<TradeProposal>;
+    /// Create trade with details (atomic transaction) using specified chart type for individual pick values
+    ///
+    /// # Arguments
+    /// * `proposal` - The trade proposal to create
+    /// * `chart_type` - The chart type used to calculate individual pick values
+    async fn create_trade(&self, proposal: &TradeProposal, chart_type: ChartType) -> DomainResult<TradeProposal>;
 
     /// Find trade by ID
     async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<PickTrade>>;

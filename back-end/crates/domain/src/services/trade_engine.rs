@@ -92,8 +92,8 @@ impl TradeEngine {
             to_team_value,
         )?;
 
-        // Save to database
-        self.trade_repo.create_trade(&proposal).await
+        // Save to database, passing the chart type used for value calculation
+        self.trade_repo.create_trade(&proposal, chart_type).await
     }
 
     /// Accept trade and auto-execute (transfer picks)
