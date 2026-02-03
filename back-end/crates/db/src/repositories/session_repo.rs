@@ -221,9 +221,14 @@ mod tests {
 
         // Create a draft first
         let draft_id = Uuid::new_v4();
+        let draft_year = 2026 + (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() % 100) as i32;
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
-            draft_id
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            draft_id,
+            draft_year
         )
         .execute(&pool)
         .await
@@ -263,9 +268,14 @@ mod tests {
 
         // Create a draft first
         let draft_id = Uuid::new_v4();
+        let draft_year = 2026 + (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() % 100) as i32;
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
-            draft_id
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            draft_id,
+            draft_year
         )
         .execute(&pool)
         .await
@@ -298,11 +308,17 @@ mod tests {
         // Create drafts
         let draft_id_1 = Uuid::new_v4();
         let draft_id_2 = Uuid::new_v4();
+        let base_year = 2026 + (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() % 100) as i32;
 
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32), ($2, 2027, 'NotStarted', 7, 32)",
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32), ($3, $4, 'NotStarted', 7, 32)",
             draft_id_1,
-            draft_id_2
+            base_year,
+            draft_id_2,
+            base_year + 1
         )
         .execute(&pool)
         .await
