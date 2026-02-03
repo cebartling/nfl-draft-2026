@@ -67,7 +67,11 @@ impl AutoPickService {
         // Select player with highest final score
         let selected = scored_players
             .iter()
-            .max_by(|a, b| a.final_score.partial_cmp(&b.final_score).unwrap())
+            .max_by(|a, b| {
+                a.final_score
+                    .partial_cmp(&b.final_score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
             .unwrap();
 
         Ok((selected.player_id, scored_players))
@@ -130,7 +134,11 @@ impl AutoPickService {
         }
 
         // Sort by final score descending
-        scores.sort_by(|a, b| b.final_score.partial_cmp(&a.final_score).unwrap());
+        scores.sort_by(|a, b| {
+            b.final_score
+                .partial_cmp(&a.final_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(scores)
     }
