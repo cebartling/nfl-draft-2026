@@ -22,6 +22,20 @@ CREATE INDEX idx_draft_sessions_draft_id ON draft_sessions(draft_id);
 -- Index for querying active sessions
 CREATE INDEX idx_draft_sessions_status ON draft_sessions(status);
 
+-- Trigger to update updated_at timestamp for draft_sessions
+CREATE OR REPLACE FUNCTION update_draft_sessions_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER draft_sessions_updated_at
+    BEFORE UPDATE ON draft_sessions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_draft_sessions_updated_at();
+
 -- Draft Events: Event sourcing for complete audit trail
 CREATE TABLE draft_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
