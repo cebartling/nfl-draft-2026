@@ -54,6 +54,10 @@ pub async fn spawn_app() -> (String, sqlx::PgPool) {
 /// Cleans up the test database by deleting all data in the correct order
 pub async fn cleanup_database(pool: &sqlx::PgPool) {
     // Delete in order of foreign key dependencies
+    sqlx::query!("DELETE FROM draft_strategies")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup draft_strategies");
     sqlx::query!("DELETE FROM draft_events")
         .execute(pool)
         .await
@@ -99,4 +103,16 @@ pub fn create_client() -> Client {
         .connect_timeout(Duration::from_secs(5))
         .build()
         .expect("Failed to create HTTP client")
+}
+
+/// Sets up a test database pool (without spawning HTTP server)
+/// Useful for integration tests that don't need HTTP
+pub async fn setup_test_pool() -> sqlx::PgPool {
+    let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+        "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+    });
+
+    db::create_pool(&database_url)
+        .await
+        .expect("Failed to create test pool")
 }
