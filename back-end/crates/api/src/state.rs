@@ -1,9 +1,15 @@
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use domain::repositories::{TeamRepository, PlayerRepository, DraftRepository, DraftPickRepository};
+use domain::repositories::{
+    TeamRepository, PlayerRepository, DraftRepository, DraftPickRepository,
+    CombineResultsRepository, ScoutingReportRepository, TeamNeedRepository,
+};
 use domain::services::DraftEngine;
-use db::repositories::{SqlxTeamRepository, SqlxPlayerRepository, SqlxDraftRepository, SqlxDraftPickRepository};
+use db::repositories::{
+    SqlxTeamRepository, SqlxPlayerRepository, SqlxDraftRepository, SqlxDraftPickRepository,
+    SqlxCombineResultsRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
+};
 
 /// Application state shared across all handlers
 #[derive(Clone)]
@@ -12,6 +18,9 @@ pub struct AppState {
     pub player_repo: Arc<dyn PlayerRepository>,
     pub draft_repo: Arc<dyn DraftRepository>,
     pub draft_pick_repo: Arc<dyn DraftPickRepository>,
+    pub combine_results_repo: Arc<dyn CombineResultsRepository>,
+    pub scouting_report_repo: Arc<dyn ScoutingReportRepository>,
+    pub team_need_repo: Arc<dyn TeamNeedRepository>,
     pub draft_engine: Arc<DraftEngine>,
 }
 
@@ -20,7 +29,10 @@ impl AppState {
         let team_repo: Arc<dyn TeamRepository> = Arc::new(SqlxTeamRepository::new(pool.clone()));
         let player_repo: Arc<dyn PlayerRepository> = Arc::new(SqlxPlayerRepository::new(pool.clone()));
         let draft_repo: Arc<dyn DraftRepository> = Arc::new(SqlxDraftRepository::new(pool.clone()));
-        let draft_pick_repo: Arc<dyn DraftPickRepository> = Arc::new(SqlxDraftPickRepository::new(pool));
+        let draft_pick_repo: Arc<dyn DraftPickRepository> = Arc::new(SqlxDraftPickRepository::new(pool.clone()));
+        let combine_results_repo: Arc<dyn CombineResultsRepository> = Arc::new(SqlxCombineResultsRepository::new(pool.clone()));
+        let scouting_report_repo: Arc<dyn ScoutingReportRepository> = Arc::new(SqlxScoutingReportRepository::new(pool.clone()));
+        let team_need_repo: Arc<dyn TeamNeedRepository> = Arc::new(SqlxTeamNeedRepository::new(pool));
 
         let draft_engine = Arc::new(DraftEngine::new(
             draft_repo.clone(),
@@ -34,6 +46,9 @@ impl AppState {
             player_repo,
             draft_repo,
             draft_pick_repo,
+            combine_results_repo,
+            scouting_report_repo,
+            team_need_repo,
             draft_engine,
         }
     }
