@@ -123,12 +123,15 @@
 				<div class="text-center">
 					<p class="text-sm font-medium text-gray-600 mb-2">From</p>
 					<p class="text-lg font-bold text-gray-900">
-						{fromTeam.city} {fromTeam.name}
+						{fromTeam.city}
+						{fromTeam.name}
 					</p>
 					<p class="text-sm text-gray-600">{fromTeam.abbreviation}</p>
 				</div>
 				<div class="border border-gray-200 rounded-lg p-3">
-					<p class="text-xs font-medium text-gray-600 mb-2">Picks ({proposal.from_team_picks.length})</p>
+					<p class="text-xs font-medium text-gray-600 mb-2">
+						Picks ({proposal.from_team_picks.length})
+					</p>
 					<div class="space-y-1">
 						{#each proposal.from_team_picks as pick (pick.pick_id)}
 							<div class="text-sm text-gray-900">
@@ -147,12 +150,7 @@
 
 			<!-- Arrow -->
 			<div class="flex items-center justify-center">
-				<svg
-					class="w-8 h-8 text-gray-400"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
+				<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -167,12 +165,15 @@
 				<div class="text-center">
 					<p class="text-sm font-medium text-gray-600 mb-2">To</p>
 					<p class="text-lg font-bold text-gray-900">
-						{toTeam.city} {toTeam.name}
+						{toTeam.city}
+						{toTeam.name}
 					</p>
 					<p class="text-sm text-gray-600">{toTeam.abbreviation}</p>
 				</div>
 				<div class="border border-gray-200 rounded-lg p-3">
-					<p class="text-xs font-medium text-gray-600 mb-2">Picks ({proposal.to_team_picks.length})</p>
+					<p class="text-xs font-medium text-gray-600 mb-2">
+						Picks ({proposal.to_team_picks.length})
+					</p>
 					<div class="space-y-1">
 						{#each proposal.to_team_picks as pick (pick.pick_id)}
 							<div class="text-sm text-gray-900">

@@ -14,7 +14,11 @@ import {
  * Type guard for errors with HTTP status codes
  */
 function hasStatus(error: unknown): error is Error & { status: number } {
-	return error instanceof Error && 'status' in error && typeof (error as Error & { status?: unknown }).status === 'number';
+	return (
+		error instanceof Error &&
+		'status' in error &&
+		typeof (error as Error & { status?: unknown }).status === 'number'
+	);
 }
 
 /**
@@ -59,7 +63,9 @@ export const playersApi = {
 	/**
 	 * Create a scouting report
 	 */
-	async createScoutingReport(report: Omit<ScoutingReport, 'id' | 'created_at' | 'updated_at'>): Promise<ScoutingReport> {
+	async createScoutingReport(
+		report: Omit<ScoutingReport, 'id' | 'created_at' | 'updated_at'>
+	): Promise<ScoutingReport> {
 		return apiClient.post('/scouting-reports', report, ScoutingReportSchema);
 	},
 

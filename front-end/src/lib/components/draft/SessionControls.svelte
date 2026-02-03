@@ -132,9 +132,7 @@
 
 		<!-- Auto-pick Toggle -->
 		<div class="flex items-center justify-between">
-			<label for="auto-pick" class="text-sm font-medium text-gray-700">
-				Auto-pick Enabled
-			</label>
+			<label for="auto-pick" class="text-sm font-medium text-gray-700"> Auto-pick Enabled </label>
 			<input
 				id="auto-pick"
 				type="checkbox"

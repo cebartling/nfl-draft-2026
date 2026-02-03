@@ -21,13 +21,9 @@
 	let isLoadingTeams = $state(false);
 	let isSubmitting = $state(false);
 
-	const fromTeamPicks = $derived(
-		availablePicks.filter((p) => p.current_team_id === fromTeamId)
-	);
+	const fromTeamPicks = $derived(availablePicks.filter((p) => p.current_team_id === fromTeamId));
 
-	const toTeamPicks = $derived(
-		availablePicks.filter((p) => p.current_team_id === toTeamId)
-	);
+	const toTeamPicks = $derived(availablePicks.filter((p) => p.current_team_id === toTeamId));
 
 	// Load teams
 	$effect(() => {
@@ -133,7 +129,8 @@
 						<option value="">Select a team</option>
 						{#each teams as team (team.id)}
 							<option value={team.id}>
-								{team.city} {team.name}
+								{team.city}
+								{team.name}
 							</option>
 						{/each}
 					</select>
@@ -152,7 +149,8 @@
 						<option value="">Select a team</option>
 						{#each teams as team (team.id)}
 							<option value={team.id}>
-								{team.city} {team.name}
+								{team.city}
+								{team.name}
 							</option>
 						{/each}
 					</select>
@@ -195,11 +193,7 @@
 												</p>
 											</div>
 											{#if fromTeamPickIds.includes(pick.id)}
-												<svg
-													class="w-5 h-5 text-blue-600"
-													fill="currentColor"
-													viewBox="0 0 20 20"
-												>
+												<svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
 													<path
 														fill-rule="evenodd"
 														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -253,11 +247,7 @@
 												</p>
 											</div>
 											{#if toTeamPickIds.includes(pick.id)}
-												<svg
-													class="w-5 h-5 text-blue-600"
-													fill="currentColor"
-													viewBox="0 0 20 20"
-												>
+												<svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
 													<path
 														fill-rule="evenodd"
 														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -280,12 +270,7 @@
 
 			<!-- Submit Button -->
 			<div class="flex justify-end">
-				<Button
-					type="submit"
-					variant="primary"
-					disabled={isSubmitting}
-					loading={isSubmitting}
-				>
+				<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 					Propose Trade
 				</Button>
 			</div>

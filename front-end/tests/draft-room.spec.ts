@@ -81,7 +81,9 @@ test.describe('Draft Room', () => {
 			await firstPlayer.click();
 
 			// Confirm pick
-			const confirmButton = page.locator('button', { hasText: /Confirm|Draft|Select/i });
+			const confirmButton = page.locator('button', {
+				hasText: /Confirm|Draft|Select/i,
+			});
 			if (await confirmButton.isVisible()) {
 				await confirmButton.click();
 

@@ -52,7 +52,10 @@ describe('ApiClient', () => {
 		});
 
 		it('should throw ApiClientError on 404', async () => {
-			const errorData = { error: 'Not found', details: 'Resource does not exist' };
+			const errorData = {
+				error: 'Not found',
+				details: 'Resource does not exist',
+			};
 
 			fetchMock.mockResolvedValue({
 				ok: false,
@@ -165,7 +168,10 @@ describe('ApiClient', () => {
 
 		it('should throw ApiClientError on 409 conflict', async () => {
 			const requestData = { name: 'Duplicate' };
-			const errorData = { error: 'Conflict', details: 'Resource already exists' };
+			const errorData = {
+				error: 'Conflict',
+				details: 'Resource already exists',
+			};
 
 			fetchMock.mockResolvedValue({
 				ok: false,
@@ -279,7 +285,10 @@ describe('ApiClient', () => {
 		});
 
 		it('should create error with apiError details', () => {
-			const apiError = { error: 'Not found', details: 'Resource does not exist' };
+			const apiError = {
+				error: 'Not found',
+				details: 'Resource does not exist',
+			};
 			const error = new ApiClientError('Test error', 404, apiError);
 
 			expect(error.message).toBe('Test error');

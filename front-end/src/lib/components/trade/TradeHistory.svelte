@@ -18,9 +18,7 @@
 	let selectedStatus = $state<TradeStatus | 'all'>('all');
 
 	const filteredTrades = $derived(
-		selectedStatus === 'all'
-			? trades
-			: trades.filter((t) => t.trade.status === selectedStatus)
+		selectedStatus === 'all' ? trades : trades.filter((t) => t.trade.status === selectedStatus)
 	);
 
 	// Load trades
@@ -81,7 +79,8 @@
 	<!-- Results Count -->
 	<div class="mb-4">
 		<p class="text-sm text-gray-600">
-			{filteredTrades.length} {filteredTrades.length === 1 ? 'trade' : 'trades'}
+			{filteredTrades.length}
+			{filteredTrades.length === 1 ? 'trade' : 'trades'}
 		</p>
 	</div>
 
@@ -95,11 +94,7 @@
 	{:else}
 		<div class="space-y-4">
 			{#each filteredTrades as proposal (proposal.trade.id)}
-				<TradeProposalCard
-					{proposal}
-					{currentTeamId}
-					onUpdate={loadTrades}
-				/>
+				<TradeProposalCard {proposal} {currentTeamId} onUpdate={loadTrades} />
 			{/each}
 		</div>
 	{/if}

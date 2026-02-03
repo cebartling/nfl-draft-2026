@@ -262,7 +262,10 @@ describe('WebSocketClient', () => {
 			const invalidMessage = { type: 'invalid' } as unknown as ClientMessage;
 			testClient.send(invalidMessage);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Invalid message format:', expect.any(Object));
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				'[ERROR] Invalid message format:',
+				expect.any(Object)
+			);
 			expect(sendSpy).not.toHaveBeenCalled();
 
 			testClient.disconnect();
@@ -312,7 +315,10 @@ describe('WebSocketClient', () => {
 			const invalidMessage = { type: 'invalid' };
 			mockWebSocket.simulateMessage(invalidMessage);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Invalid message format:', expect.any(Object));
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				'[ERROR] Invalid message format:',
+				expect.any(Object)
+			);
 			expect(handler).not.toHaveBeenCalled();
 		});
 
@@ -328,7 +334,10 @@ describe('WebSocketClient', () => {
 				mockWebSocket.onmessage(new MessageEvent('message', { data: 'not json' }));
 			}
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Failed to parse WebSocket message:', expect.any(Error));
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				'[ERROR] Failed to parse WebSocket message:',
+				expect.any(Error)
+			);
 			expect(handler).not.toHaveBeenCalled();
 		});
 	});
@@ -405,7 +414,10 @@ describe('WebSocketClient', () => {
 
 			mockWebSocket.simulateMessage(message);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] Error in message handler:', expect.any(Error));
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				'[ERROR] Error in message handler:',
+				expect.any(Error)
+			);
 		});
 	});
 

@@ -59,7 +59,8 @@
 
 <div class="bg-white rounded-lg shadow-md p-6">
 	<h3 class="text-xl font-semibold text-gray-900 mb-6">
-		Create Scouting Report for {player.first_name} {player.last_name}
+		Create Scouting Report for {player.first_name}
+		{player.last_name}
 	</h3>
 
 	<form onsubmit={handleSubmit} class="space-y-6">
@@ -88,9 +89,7 @@
 
 		<!-- Notes -->
 		<div>
-			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-				Notes
-			</label>
+			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2"> Notes </label>
 			<textarea
 				id="notes"
 				bind:value={notes}
@@ -130,12 +129,7 @@
 
 		<!-- Submit Button -->
 		<div class="flex justify-end">
-			<Button
-				type="submit"
-				variant="primary"
-				disabled={isSubmitting}
-				loading={isSubmitting}
-			>
+			<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 				Create Report
 			</Button>
 		</div>

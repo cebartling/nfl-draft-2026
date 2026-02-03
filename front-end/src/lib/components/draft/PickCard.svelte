@@ -10,12 +10,7 @@
 		highlight?: boolean;
 	}
 
-	let {
-		pick,
-		player,
-		team,
-		highlight = false,
-	}: Props = $props();
+	let { pick, player, team, highlight = false }: Props = $props();
 </script>
 
 <div
@@ -49,7 +44,8 @@
 			<p class="text-sm font-medium text-gray-600">Player</p>
 			{#if player}
 				<p class="text-base font-semibold text-gray-900">
-					{player.first_name} {player.last_name}
+					{player.first_name}
+					{player.last_name}
 				</p>
 				<p class="text-sm text-gray-600">
 					{player.position} - {player.college || 'N/A'}

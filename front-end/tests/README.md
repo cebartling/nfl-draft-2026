@@ -5,6 +5,7 @@ This directory contains the comprehensive test suite for the NFL Draft Simulator
 ## Test Structure
 
 ### Unit Tests (API Layer)
+
 Located in `src/lib/api/*.test.ts`
 
 - **client.test.ts** - Tests for ApiClient class
@@ -31,6 +32,7 @@ Located in `src/lib/api/*.test.ts`
   - Ping/pong keepalive
 
 ### Unit Tests (State Management)
+
 Located in `src/lib/stores/*.test.ts`
 
 - **toast.test.ts** - Tests for toast notification state
@@ -39,6 +41,7 @@ Located in `src/lib/stores/*.test.ts`
   - Toast types (success, error, info, warning)
 
 ### Component Tests
+
 Located in `src/lib/components/**/*.test.ts`
 
 - **ui/Button.test.ts** - Tests for Button component
@@ -48,6 +51,7 @@ Located in `src/lib/components/**/*.test.ts`
   - Click handling
 
 ### E2E Tests (Playwright)
+
 Located in `tests/*.spec.ts`
 
 - **home.spec.ts** - Home page tests
@@ -88,6 +92,7 @@ npm run test -- --coverage
 ### E2E Tests (Playwright)
 
 **Prerequisites:**
+
 - Backend server must be running on `http://localhost:8000`
 - Database must be seeded with test data
 
@@ -125,21 +130,25 @@ Test fixtures are located in `tests/fixtures.ts` and provide:
 ## Mocking Strategy
 
 ### API Tests
+
 - Use `vi.spyOn()` to mock apiClient methods
 - Mock fetch with `vi.fn()`
 - Create mock responses matching Zod schemas
 
 ### WebSocket Tests
+
 - Mock WebSocket class with custom implementation
 - Simulate connection events (open, close, error)
 - Simulate message events with test data
 
 ### Component Tests
+
 - Use `@testing-library/svelte` for rendering
 - Use `@testing-library/user-event` for interactions
 - Mock stores and API modules as needed
 
 ### E2E Tests
+
 - Use real backend API (requires backend running)
 - Seed database with known test data
 - Clean up test data after tests
@@ -147,6 +156,7 @@ Test fixtures are located in `tests/fixtures.ts` and provide:
 ## CI/CD Integration
 
 Tests are configured to run in CI with:
+
 - Retries: 2 attempts for flaky tests
 - Single worker for database stability
 - Screenshots on failure
@@ -156,51 +166,54 @@ Tests are configured to run in CI with:
 ## Writing New Tests
 
 ### Unit Test Example
+
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('MyModule', () => {
-  beforeEach(() => {
-    // Setup
-  });
+	beforeEach(() => {
+		// Setup
+	});
 
-  it('should do something', () => {
-    // Arrange
-    const input = 'test';
+	it('should do something', () => {
+		// Arrange
+		const input = 'test';
 
-    // Act
-    const result = myFunction(input);
+		// Act
+		const result = myFunction(input);
 
-    // Assert
-    expect(result).toBe('expected');
-  });
+		// Assert
+		expect(result).toBe('expected');
+	});
 });
 ```
 
 ### Component Test Example
+
 ```typescript
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
 it('should render component', async () => {
-  const user = userEvent.setup();
-  render(MyComponent, { props: { name: 'Test' } });
+	const user = userEvent.setup();
+	render(MyComponent, { props: { name: 'Test' } });
 
-  const button = screen.getByRole('button');
-  await user.click(button);
+	const button = screen.getByRole('button');
+	await user.click(button);
 
-  expect(screen.getByText('Clicked')).toBeInTheDocument();
+	expect(screen.getByText('Clicked')).toBeInTheDocument();
 });
 ```
 
 ### E2E Test Example
+
 ```typescript
 import { test, expect } from '@playwright/test';
 
 test('should navigate to page', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('link', { name: 'Teams' }).click();
-  await expect(page).toHaveURL('/teams');
+	await page.goto('/');
+	await page.getByRole('link', { name: 'Teams' }).click();
+	await expect(page).toHaveURL('/teams');
 });
 ```
 

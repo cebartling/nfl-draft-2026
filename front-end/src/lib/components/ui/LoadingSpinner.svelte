@@ -6,10 +6,7 @@
 		color?: 'primary' | 'secondary' | 'white';
 	}
 
-	let {
-		size = 'md',
-		color = 'primary',
-	}: Props = $props();
+	let { size = 'md', color = 'primary' }: Props = $props();
 
 	const sizeClasses = {
 		sm: 'h-4 w-4',
@@ -23,29 +20,12 @@
 		white: 'text-white',
 	};
 
-	const spinnerClasses = $derived(
-		clsx(
-			'animate-spin',
-			sizeClasses[size],
-			colorClasses[color]
-		)
-	);
+	const spinnerClasses = $derived(clsx('animate-spin', sizeClasses[size], colorClasses[color]));
 </script>
 
 <div class="flex items-center justify-center" role="status" aria-label="Loading">
-	<svg
-		class={spinnerClasses}
-		xmlns="http://www.w3.org/2000/svg"
-		fill="none"
-		viewBox="0 0 24 24"
-	>
-		<circle
-			class="opacity-25"
-			cx="12"
-			cy="12"
-			r="10"
-			stroke="currentColor"
-			stroke-width="4"
+	<svg class={spinnerClasses} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+		<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 		></circle>
 		<path
 			class="opacity-75"

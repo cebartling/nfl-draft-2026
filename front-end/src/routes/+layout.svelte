@@ -82,42 +82,42 @@
 
 		<!-- Mobile Menu (hidden by default) -->
 		{#if mobileMenuOpen}
-		<div class="md:hidden border-t border-gray-200">
-			<div class="px-2 pt-2 pb-3 space-y-1">
-				<a
-					href="/"
-					data-sveltekit-reload
-					onclick={() => (mobileMenuOpen = false)}
-					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-				>
-					Home
-				</a>
-				<a
-					href="/drafts"
-					data-sveltekit-reload
-					onclick={() => (mobileMenuOpen = false)}
-					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-				>
-					Drafts
-				</a>
-				<a
-					href="/players"
-					data-sveltekit-reload
-					onclick={() => (mobileMenuOpen = false)}
-					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-				>
-					Players
-				</a>
-				<a
-					href="/teams"
-					data-sveltekit-reload
-					onclick={() => (mobileMenuOpen = false)}
-					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-				>
-					Teams
-				</a>
+			<div class="md:hidden border-t border-gray-200">
+				<div class="px-2 pt-2 pb-3 space-y-1">
+					<a
+						href="/"
+						data-sveltekit-reload
+						onclick={() => (mobileMenuOpen = false)}
+						class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+					>
+						Home
+					</a>
+					<a
+						href="/drafts"
+						data-sveltekit-reload
+						onclick={() => (mobileMenuOpen = false)}
+						class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+					>
+						Drafts
+					</a>
+					<a
+						href="/players"
+						data-sveltekit-reload
+						onclick={() => (mobileMenuOpen = false)}
+						class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+					>
+						Players
+					</a>
+					<a
+						href="/teams"
+						data-sveltekit-reload
+						onclick={() => (mobileMenuOpen = false)}
+						class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+					>
+						Teams
+					</a>
+				</div>
 			</div>
-		</div>
 		{/if}
 	</nav>
 

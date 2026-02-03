@@ -78,9 +78,7 @@
 									</span>
 								</div>
 								<svg
-									class="w-5 h-5 text-gray-400 transition-transform {expandedDivisions.has(
-										division
-									)
+									class="w-5 h-5 text-gray-400 transition-transform {expandedDivisions.has(division)
 										? 'rotate-180'
 										: ''}"
 									fill="none"

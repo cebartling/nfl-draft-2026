@@ -37,12 +37,14 @@ src/routes/
 **Purpose**: Provides consistent layout across all pages
 
 **Features**:
+
 - Sticky navigation bar with links to Home, Drafts, Players, Teams
 - Responsive mobile menu
 - Global toast notifications
 - Max-width content container (max-w-7xl)
 
 **Components Used**:
+
 - `Toast` - Global notification system
 
 ### Home Page (`+page.svelte`)
@@ -50,6 +52,7 @@ src/routes/
 **Purpose**: Landing page and dashboard
 
 **Features**:
+
 - Hero section with call-to-action
 - Recent drafts (up to 5 most recent)
 - Quick statistics (total, active, completed drafts)
@@ -57,10 +60,12 @@ src/routes/
 - Create new draft button
 
 **State Management**:
+
 - Fetches drafts using `draftsApi.list()`
 - Sorts by created date (most recent first)
 
 **Components Used**:
+
 - `Card` - Content containers
 - `Badge` - Status indicators
 - `LoadingSpinner` - Loading states
@@ -70,6 +75,7 @@ src/routes/
 **Purpose**: View and manage all drafts
 
 **Features**:
+
 - Filter by status (all, pending, active, completed)
 - Create new draft button
 - Draft cards showing:
@@ -78,11 +84,13 @@ src/routes/
   - Action buttons (Start Draft / Join Session / View Results)
 
 **State Management**:
+
 - Fetches drafts using `draftsApi.list()`
 - Filters locally by status
 - Sorts by year (most recent first)
 
 **Components Used**:
+
 - `Card` - Draft cards
 - `Badge` - Status badges
 - `LoadingSpinner` - Loading states
@@ -92,6 +100,7 @@ src/routes/
 **Purpose**: View draft details and results
 
 **Features**:
+
 - Draft header with status and details
 - Draft progress bar
 - Draft board showing all picks
@@ -99,10 +108,12 @@ src/routes/
 - Start/Join session buttons
 
 **State Management**:
+
 - Fetches draft using `draftsApi.get(draftId)`
 - Fetches picks using `draftsApi.getPicks(draftId)`
 
 **Components Used**:
+
 - `DraftBoard` - Display all picks
 - `Card` - Content sections
 - `Badge` - Status indicators
@@ -113,11 +124,13 @@ src/routes/
 **Purpose**: Manage session lifecycle and WebSocket connection
 
 **Features**:
+
 - Loads draft session on mount
 - Connects WebSocket for real-time updates
 - Disconnects WebSocket on unmount
 
 **State Management**:
+
 - `draftState.loadSession(sessionId)` - Load session
 - `wsState.connect(sessionId)` - Connect WebSocket
 - `wsState.disconnect()` - Cleanup on unmount
@@ -127,6 +140,7 @@ src/routes/
 **Purpose**: Real-time draft room with live updates
 
 **Features**:
+
 - 3-column layout (desktop) / stacked (mobile):
   - Left: Draft clock, session controls, current pick info, selected player
   - Center: Draft board with all picks
@@ -136,12 +150,14 @@ src/routes/
 - Real-time updates via WebSocket
 
 **State Management**:
+
 - `draftState` - Current session, picks, current team/pick
 - `playersState` - All players
 - `wsState` - WebSocket connection and messages
 - Filters available players by excluding picked players
 
 **Components Used**:
+
 - `DraftClock` - Pick timer
 - `SessionControls` - Start/pause/stop controls
 - `DraftBoard` - Pick history
@@ -150,6 +166,7 @@ src/routes/
 - `LoadingSpinner` - Loading states
 
 **API Calls**:
+
 - `playersState.loadAll()` - Load all players
 - `draftsApi.makePick()` - Submit pick
 
@@ -158,6 +175,7 @@ src/routes/
 **Purpose**: Browse and search players
 
 **Features**:
+
 - Search by name or college
 - Filter by position group (offense, defense, special teams)
 - Filter by specific position
@@ -165,14 +183,17 @@ src/routes/
 - Player count indicator
 
 **State Management**:
+
 - `playersState.loadAll()` - Load all players
 - Local filtering and search
 
 **Components Used**:
+
 - `PlayerList` - Display players
 - `LoadingSpinner` - Loading states
 
 **Navigation**:
+
 - Click player to view details at `/players/[id]`
 
 ### Player Details (`/players/[id]`)
@@ -180,14 +201,17 @@ src/routes/
 **Purpose**: View detailed player information
 
 **Features**:
+
 - Back button to players list
 - Player details with stats, combine results, scouting reports
 - Error state for not found
 
 **State Management**:
+
 - `playersState.loadPlayer(playerId)` - Load player
 
 **Components Used**:
+
 - `PlayerDetails` - Display all player information
 - `LoadingSpinner` - Loading states
 
@@ -196,19 +220,23 @@ src/routes/
 **Purpose**: View all NFL teams
 
 **Features**:
+
 - Group by conference or division (toggle)
 - Organized team cards
 - Team count indicator
 
 **State Management**:
+
 - Fetches teams using `teamsApi.list()`
 - Groups locally by conference or division
 
 **Components Used**:
+
 - `TeamList` - Display teams
 - `LoadingSpinner` - Loading states
 
 **Navigation**:
+
 - Click team to view details at `/teams/[id]`
 
 ### Team Details (`/teams/[id]`)
@@ -216,6 +244,7 @@ src/routes/
 **Purpose**: View team information and needs
 
 **Features**:
+
 - Back button to teams list
 - Team information card
 - Team needs analysis
@@ -224,10 +253,12 @@ src/routes/
 - Error state for not found
 
 **State Management**:
+
 - Fetches team using `teamsApi.get(teamId)`
 - Loads team picks (when available)
 
 **Components Used**:
+
 - `TeamCard` - Team information
 - `TeamNeeds` - Position needs
 - `Card` - Content sections
@@ -246,11 +277,11 @@ let loading = $state(true);
 let error = $state<string | null>(null);
 
 let filtered = $derived(() => {
-  // Computed value based on state
+	// Computed value based on state
 });
 
 $effect(() => {
-  // Side effects when dependencies change
+	// Side effects when dependencies change
 });
 ```
 
@@ -300,11 +331,11 @@ Routes use `onMount` and `onDestroy` for lifecycle management:
 import { onMount, onDestroy } from 'svelte';
 
 onMount(async () => {
-  // Load data
+	// Load data
 });
 
 onDestroy(() => {
-  // Cleanup
+	// Cleanup
 });
 ```
 

@@ -141,11 +141,7 @@ export class DraftState {
 	/**
 	 * Update a pick from WebSocket message
 	 */
-	updatePickFromWS(pickData: {
-		pick_id: string;
-		player_id: string;
-		team_id: string;
-	}): void {
+	updatePickFromWS(pickData: { pick_id: string; player_id: string; team_id: string }): void {
 		const pickIndex = this.picks.findIndex((pick) => pick.id === pickData.pick_id);
 		if (pickIndex !== -1) {
 			// Update the pick with the player

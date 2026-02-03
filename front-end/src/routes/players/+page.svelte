@@ -26,14 +26,14 @@
 	const positionGroups = {
 		offense: ['QB', 'RB', 'WR', 'TE', 'OL', 'OT', 'OG', 'C'],
 		defense: ['DL', 'DE', 'DT', 'LB', 'ILB', 'OLB', 'CB', 'S', 'FS', 'SS'],
-		special_teams: ['K', 'P', 'LS']
+		special_teams: ['K', 'P', 'LS'],
 	};
 
 	// All positions
 	const allPositions = [
 		...positionGroups.offense,
 		...positionGroups.defense,
-		...positionGroups.special_teams
+		...positionGroups.special_teams,
 	];
 
 	// Filter players
@@ -53,8 +53,7 @@
 
 		// Filter by position group
 		if (selectedGroup !== 'all') {
-			const positions =
-				positionGroups[selectedGroup as keyof typeof positionGroups] || [];
+			const positions = positionGroups[selectedGroup as keyof typeof positionGroups] || [];
 			players = players.filter((p) => positions.includes(p.position));
 		}
 
@@ -91,9 +90,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<!-- Search -->
 				<div>
-					<label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-						Search
-					</label>
+					<label for="search" class="block text-sm font-medium text-gray-700 mb-1"> Search </label>
 					<input
 						id="search"
 						type="text"
@@ -144,19 +141,19 @@
 				<div class="mt-4 flex items-center gap-2">
 					<span class="text-sm text-gray-600">Active filters:</span>
 					{#if searchQuery}
-						<span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+						<span
+							class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
+						>
 							Search: "{searchQuery}"
-							<button
-								type="button"
-								onclick={() => (searchQuery = '')}
-								class="hover:text-blue-900"
-							>
+							<button type="button" onclick={() => (searchQuery = '')} class="hover:text-blue-900">
 								×
 							</button>
 						</span>
 					{/if}
 					{#if selectedGroup !== 'all'}
-						<span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+						<span
+							class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
+						>
 							Group: {selectedGroup}
 							<button
 								type="button"
@@ -168,7 +165,9 @@
 						</span>
 					{/if}
 					{#if selectedPosition !== 'all'}
-						<span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+						<span
+							class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
+						>
 							Position: {selectedPosition}
 							<button
 								type="button"
@@ -197,9 +196,7 @@
 		<!-- Player List -->
 		<div class="bg-white rounded-lg shadow p-4">
 			{#if filteredPlayers().length === 0}
-				<div class="text-center py-8 text-gray-600">
-					No players found matching your filters.
-				</div>
+				<div class="text-center py-8 text-gray-600">No players found matching your filters.</div>
 			{:else}
 				<PlayerList
 					players={filteredPlayers()}

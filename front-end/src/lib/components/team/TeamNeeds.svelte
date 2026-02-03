@@ -91,9 +91,7 @@
 <div class="bg-white rounded-lg shadow-md p-6">
 	<div class="flex items-center justify-between mb-6">
 		<h2 class="text-xl font-semibold text-gray-900">Team Needs</h2>
-		<Button variant="primary" size="sm" onclick={() => (showAddModal = true)}>
-			Add Need
-		</Button>
+		<Button variant="primary" size="sm" onclick={() => (showAddModal = true)}>Add Need</Button>
 	</div>
 
 	{#if isLoading}
@@ -138,9 +136,7 @@
 <Modal bind:open={showAddModal} title="Add Team Need" width="md">
 	<form onsubmit={handleAddNeed} class="space-y-4">
 		<div>
-			<label for="position" class="block text-sm font-medium text-gray-700 mb-2">
-				Position
-			</label>
+			<label for="position" class="block text-sm font-medium text-gray-700 mb-2"> Position </label>
 			<select
 				id="position"
 				bind:value={newPosition}
@@ -174,9 +170,7 @@
 		</div>
 
 		<div>
-			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-				Notes
-			</label>
+			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2"> Notes </label>
 			<textarea
 				id="notes"
 				bind:value={newNotes}
@@ -187,15 +181,8 @@
 		</div>
 
 		<div class="flex justify-end space-x-3">
-			<Button variant="secondary" onclick={() => (showAddModal = false)}>
-				Cancel
-			</Button>
-			<Button
-				type="submit"
-				variant="primary"
-				disabled={isSubmitting}
-				loading={isSubmitting}
-			>
+			<Button variant="secondary" onclick={() => (showAddModal = false)}>Cancel</Button>
+			<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 				Add Need
 			</Button>
 		</div>

@@ -168,7 +168,22 @@ describe('playersApi', () => {
 		});
 
 		it('should work with all valid positions', async () => {
-			const positions: Position[] = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C', 'DE', 'DT', 'LB', 'CB', 'S', 'K', 'P'];
+			const positions: Position[] = [
+				'QB',
+				'RB',
+				'WR',
+				'TE',
+				'OT',
+				'OG',
+				'C',
+				'DE',
+				'DT',
+				'LB',
+				'CB',
+				'S',
+				'K',
+				'P',
+			];
 
 			for (const position of positions) {
 				mockGet.mockResolvedValueOnce([]);
@@ -208,7 +223,10 @@ describe('playersApi', () => {
 
 			const result = await playersApi.getScoutingReports(playerId);
 
-			expect(mockGet).toHaveBeenCalledWith(`/players/${playerId}/scouting-reports`, expect.any(Object));
+			expect(mockGet).toHaveBeenCalledWith(
+				`/players/${playerId}/scouting-reports`,
+				expect.any(Object)
+			);
 			expect(result).toEqual(mockReports);
 		});
 
@@ -278,7 +296,10 @@ describe('playersApi', () => {
 
 			const result = await playersApi.getCombineResults(playerId);
 
-			expect(mockGet).toHaveBeenCalledWith(`/players/${playerId}/combine-results`, expect.any(Object));
+			expect(mockGet).toHaveBeenCalledWith(
+				`/players/${playerId}/combine-results`,
+				expect.any(Object)
+			);
 			expect(result).toEqual(mockResults);
 		});
 

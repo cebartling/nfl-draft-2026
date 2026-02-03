@@ -33,12 +33,7 @@
 	const hoverClasses = 'hover:shadow-lg transition-shadow cursor-pointer';
 
 	const cardClasses = $derived(
-		clsx(
-			baseClasses,
-			paddingClasses[padding],
-			(hover || clickable) && hoverClasses,
-			className
-		)
+		clsx(baseClasses, paddingClasses[padding], (hover || clickable) && hoverClasses, className)
 	);
 </script>
 

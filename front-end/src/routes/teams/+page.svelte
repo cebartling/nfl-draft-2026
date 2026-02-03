@@ -27,7 +27,7 @@
 	let teamsByConference = $derived(() => {
 		const groups: Record<string, Team[]> = {
 			AFC: [],
-			NFC: []
+			NFC: [],
 		};
 
 		teams.forEach((team) => {

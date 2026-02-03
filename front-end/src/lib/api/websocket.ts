@@ -55,7 +55,10 @@ export class WebSocketClient {
 	 * Connect to the WebSocket server
 	 */
 	connect(): void {
-		if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
+		if (
+			this.ws &&
+			(this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)
+		) {
 			logger.warn('WebSocket is already connected or connecting');
 			return;
 		}
@@ -195,7 +198,9 @@ export class WebSocketClient {
 		const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 16000);
 		this.reconnectAttempts++;
 
-		logger.info(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+		logger.info(
+			`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+		);
 
 		this.reconnectTimeoutId = setTimeout(() => {
 			this.connect();

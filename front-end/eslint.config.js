@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import ts from 'typescript-eslint';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
+import prettier from 'eslint-config-prettier';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -174,4 +175,7 @@ export default [
 			'no-console': 'off',
 		},
 	},
+
+	// Prettier integration (must be last to override conflicting rules)
+	prettier,
 ];

@@ -44,7 +44,8 @@
 	<div class="flex items-start justify-between mb-3">
 		<div class="flex-1">
 			<h3 class="text-lg font-semibold text-gray-900">
-				{player.first_name} {player.last_name}
+				{player.first_name}
+				{player.last_name}
 			</h3>
 			<p class="text-sm text-gray-600">{player.college || 'N/A'}</p>
 		</div>

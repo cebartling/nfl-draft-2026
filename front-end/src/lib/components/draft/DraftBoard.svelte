@@ -97,11 +97,11 @@
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 						{#each picksByRound[round] as pick (pick.id)}
 							{@const team = teams.get(pick.current_team_id)}
-							{@const player = pick.player_id ? players.get(pick.player_id) ?? null : null}
+							{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
 							{#if team}
 								<PickCard
 									{pick}
-									player={player}
+									{player}
 									{team}
 									highlight={pick.overall_pick === draftState.currentPickNumber}
 								/>

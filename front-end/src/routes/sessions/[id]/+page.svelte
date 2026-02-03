@@ -89,8 +89,8 @@
 		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 			<!-- Left Column: Draft Clock and Session Controls -->
 			<div class="lg:col-span-3 space-y-4">
-				<DraftClock sessionId={sessionId} />
-				<SessionControls sessionId={sessionId} />
+				<DraftClock {sessionId} />
+				<SessionControls {sessionId} />
 
 				<!-- Current Pick Info -->
 				{#if draftState.currentPick}
@@ -116,7 +116,8 @@
 						<h3 class="text-sm font-semibold text-gray-600 mb-2">SELECTED PLAYER</h3>
 						<div class="space-y-2">
 							<div class="text-lg font-bold text-gray-800">
-								{selectedPlayer.first_name} {selectedPlayer.last_name}
+								{selectedPlayer.first_name}
+								{selectedPlayer.last_name}
 							</div>
 							<div class="text-sm text-gray-600">
 								{selectedPlayer.position} - {selectedPlayer.college}

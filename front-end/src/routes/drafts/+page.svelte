@@ -24,7 +24,9 @@
 		}
 	});
 
-	function getStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' {
+	function getStatusVariant(
+		status: string
+	): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' {
 		switch (status) {
 			case 'NotStarted':
 				return 'primary';
@@ -167,10 +169,13 @@
 		{:else}
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 				{#each filteredDrafts() as draft (draft.id)}
-					<Card clickable onclick={async () => {
-						await goto(`/drafts/${draft.id}`);
-						await invalidateAll();
-					}}>
+					<Card
+						clickable
+						onclick={async () => {
+							await goto(`/drafts/${draft.id}`);
+							await invalidateAll();
+						}}
+					>
 						<div class="space-y-3">
 							<div class="flex items-start justify-between">
 								<h3 class="text-xl font-semibold text-gray-800">

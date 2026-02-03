@@ -23,8 +23,7 @@
 				player.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				player.college?.toLowerCase().includes(searchQuery.toLowerCase());
 
-			const matchesPosition =
-				selectedPosition === 'all' || player.position === selectedPosition;
+			const matchesPosition = selectedPosition === 'all' || player.position === selectedPosition;
 
 			return matchesSearch && matchesPosition;
 		})
@@ -83,7 +82,8 @@
 	<!-- Results Count -->
 	<div class="flex items-center justify-between mb-4">
 		<p class="text-sm text-gray-600">
-			{filteredPlayers.length} {filteredPlayers.length === 1 ? 'player' : 'players'}
+			{filteredPlayers.length}
+			{filteredPlayers.length === 1 ? 'player' : 'players'}
 		</p>
 		{#if searchQuery || selectedPosition !== 'all'}
 			<Button

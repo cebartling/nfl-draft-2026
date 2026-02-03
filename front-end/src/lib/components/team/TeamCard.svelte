@@ -32,7 +32,8 @@
 	<div class="flex items-start justify-between mb-3">
 		<div class="flex-1">
 			<h3 class="text-lg font-semibold text-gray-900">
-				{team.city} {team.name}
+				{team.city}
+				{team.name}
 			</h3>
 			<p class="text-sm text-gray-600">{team.abbreviation}</p>
 		</div>
