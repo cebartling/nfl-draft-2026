@@ -134,10 +134,9 @@ test.describe('Team Details Page', () => {
 			await firstTeam.click();
 			await page.waitForLoadState('networkidle');
 
-			// Check for needs section
-			const needsSection = page.locator('text=/Needs|Draft Needs|Team Needs/i');
-			// Team might not have needs, so just check if the section exists or not
-			// Don't assert, just verify page loaded
+			// Check for needs section (team might not have needs, so don't assert)
+			// const needsSection = page.locator('text=/Needs|Draft Needs|Team Needs/i');
+			// Just verify page loaded
 			await expect(page.locator('h1, h2')).toBeVisible();
 		}
 	});
@@ -188,9 +187,9 @@ test.describe('Team Details Page', () => {
 			await firstTeam.click();
 			await page.waitForLoadState('networkidle');
 
-			// Check for logo image (might not exist)
-			const logo = page.locator('img[alt*="logo" i]');
-			// Don't assert, just verify page loaded
+			// Check for logo image (might not exist, so don't assert)
+			// const logo = page.locator('img[alt*="logo" i]');
+			// Just verify page loaded
 			await expect(page.locator('h1, h2')).toBeVisible();
 		}
 	});

@@ -93,9 +93,8 @@ test.describe('Players Page', () => {
 		await page.goto('/players');
 
 		// Loading spinner might be visible briefly
-		// This is a timing-sensitive test
-		const spinner = page.locator('.animate-spin');
-		// Don't assert on spinner as it might be too fast
+		// This is a timing-sensitive test, so we don't assert on it
+		// const spinner = page.locator('.animate-spin');
 		// Just verify the page eventually loads
 		await expect(page.locator('h1')).toBeVisible();
 	});
