@@ -84,7 +84,7 @@
 		<p class="text-center text-gray-500 py-12">No picks available</p>
 	{:else}
 		<div class="space-y-8 max-h-[800px] overflow-y-auto">
-			{#each rounds as round}
+			{#each rounds as round (round)}
 				<div>
 					<div class="flex items-center space-x-3 mb-4">
 						<Badge variant="info" size="lg">

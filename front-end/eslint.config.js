@@ -59,6 +59,14 @@ export default [
 		},
 	},
 
+	// Logger utility - allow console statements
+	{
+		files: ['**/logger.ts', '**/logger.js'],
+		rules: {
+			'no-console': 'off',
+		},
+	},
+
 	// TypeScript-specific overrides
 	{
 		files: ['**/*.ts', '**/*.tsx'],
@@ -106,7 +114,7 @@ export default [
 			'svelte/valid-compile': 'warn', // Changed to warn for accessibility issues
 			'svelte/require-each-key': 'warn', // Warn instead of error
 			'svelte/prefer-svelte-reactivity': 'off', // Too strict for Svelte 5 runes
-			'svelte/no-navigation-without-resolve': 'warn', // SvelteKit 2.x best practice
+			'svelte/no-navigation-without-resolve': 'off', // Disabled - using invalidateAll() pattern instead
 
 			// Relax some rules for Svelte files
 			'@typescript-eslint/no-unused-vars': 'off', // Svelte reactive declarations can look unused

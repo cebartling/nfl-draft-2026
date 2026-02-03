@@ -147,7 +147,7 @@
 				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				required
 			>
-				{#each positions as position}
+				{#each positions as position (position)}
 					<option value={position}>{position}</option>
 				{/each}
 			</select>

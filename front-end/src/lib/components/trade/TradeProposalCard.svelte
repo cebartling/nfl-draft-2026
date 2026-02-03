@@ -130,7 +130,7 @@
 				<div class="border border-gray-200 rounded-lg p-3">
 					<p class="text-xs font-medium text-gray-600 mb-2">Picks ({proposal.from_team_picks.length})</p>
 					<div class="space-y-1">
-						{#each proposal.from_team_picks as pick}
+						{#each proposal.from_team_picks as pick (pick.pick_id)}
 							<div class="text-sm text-gray-900">
 								Round {pick.pick_id.slice(0, 8)}...
 								<span class="text-xs text-gray-500">(Value: {pick.pick_value})</span>
@@ -174,7 +174,7 @@
 				<div class="border border-gray-200 rounded-lg p-3">
 					<p class="text-xs font-medium text-gray-600 mb-2">Picks ({proposal.to_team_picks.length})</p>
 					<div class="space-y-1">
-						{#each proposal.to_team_picks as pick}
+						{#each proposal.to_team_picks as pick (pick.pick_id)}
 							<div class="text-sm text-gray-900">
 								Round {pick.pick_id.slice(0, 8)}...
 								<span class="text-xs text-gray-500">(Value: {pick.pick_value})</span>

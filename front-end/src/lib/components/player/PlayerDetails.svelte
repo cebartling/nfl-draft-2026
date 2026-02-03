@@ -166,7 +166,7 @@
 				<p class="text-center text-gray-500 py-12">No scouting reports available</p>
 			{:else}
 				<div class="space-y-4">
-					{#each scoutingReports as report}
+					{#each scoutingReports as report (report.id)}
 						<div class="border border-gray-200 rounded-lg p-4">
 							<div class="flex items-center justify-between mb-3">
 								<Badge variant="info" size="lg">

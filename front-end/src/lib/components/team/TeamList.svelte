@@ -50,7 +50,7 @@
 	<h2 class="text-2xl font-bold text-gray-900 mb-6">NFL Teams</h2>
 
 	<div class="space-y-6">
-		{#each Array.from(groupedTeams()) as [conference, divisions]}
+		{#each Array.from(groupedTeams()) as [conference, divisions] (conference)}
 			<div>
 				<div class="flex items-center space-x-3 mb-4">
 					<Badge variant={getConferenceColor(conference)} size="lg">
@@ -62,7 +62,7 @@
 				</div>
 
 				<div class="space-y-4">
-					{#each Array.from(divisions) as [division, divisionTeams]}
+					{#each Array.from(divisions) as [division, divisionTeams] (division)}
 						<div class="border border-gray-200 rounded-lg overflow-hidden">
 							<button
 								type="button"

@@ -11,6 +11,13 @@ import {
 } from '$lib/types';
 
 /**
+ * Type guard for errors with HTTP status codes
+ */
+function hasStatus(error: unknown): error is Error & { status: number } {
+	return error instanceof Error && 'status' in error && typeof (error as Error & { status?: unknown }).status === 'number';
+}
+
+/**
  * Players API module
  */
 export const playersApi = {
@@ -64,7 +71,7 @@ export const playersApi = {
 			return await apiClient.get(`/players/${playerId}/combine-results`, CombineResultsSchema);
 		} catch (error) {
 			// Return null if no combine results found (404)
-			if (error instanceof Error && 'status' in error && (error as any).status === 404) {
+			if (hasStatus(error) && error.status === 404) {
 				return null;
 			}
 			throw error;

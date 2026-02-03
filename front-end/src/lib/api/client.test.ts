@@ -33,7 +33,7 @@ describe('ApiClient', () => {
 			const mockData = { id: '123', name: 'Test' };
 			const schema = z.object({ id: z.string(), name: z.string() });
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: true,
 				status: 200,
 				headers: new Headers({ 'content-type': 'application/json' }),
@@ -54,7 +54,7 @@ describe('ApiClient', () => {
 		it('should throw ApiClientError on 404', async () => {
 			const errorData = { error: 'Not found', details: 'Resource does not exist' };
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: false,
 				status: 404,
 				statusText: 'Not Found',
@@ -72,7 +72,7 @@ describe('ApiClient', () => {
 		});
 
 		it('should throw ApiClientError on 500', async () => {
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: false,
 				status: 500,
 				statusText: 'Internal Server Error',
@@ -102,7 +102,7 @@ describe('ApiClient', () => {
 			const mockData = { id: 123, name: 'Test' }; // id is number, not string
 			const schema = z.object({ id: z.string(), name: z.string() });
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: true,
 				status: 200,
 				headers: new Headers({ 'content-type': 'application/json' }),
@@ -123,7 +123,7 @@ describe('ApiClient', () => {
 			const mockResponse = { id: '123', name: 'Test' };
 			const schema = z.object({ id: z.string(), name: z.string() });
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: true,
 				status: 201,
 				headers: new Headers({ 'content-type': 'application/json' }),
@@ -146,7 +146,7 @@ describe('ApiClient', () => {
 			const requestData = { name: '' };
 			const errorData = { error: 'Bad Request', details: 'Name is required' };
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: false,
 				status: 400,
 				statusText: 'Bad Request',
@@ -167,7 +167,7 @@ describe('ApiClient', () => {
 			const requestData = { name: 'Duplicate' };
 			const errorData = { error: 'Conflict', details: 'Resource already exists' };
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: false,
 				status: 409,
 				statusText: 'Conflict',
@@ -191,7 +191,7 @@ describe('ApiClient', () => {
 			const mockResponse = { id: '123', name: 'Updated' };
 			const schema = z.object({ id: z.string(), name: z.string() });
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: true,
 				status: 200,
 				headers: new Headers({ 'content-type': 'application/json' }),
@@ -214,7 +214,7 @@ describe('ApiClient', () => {
 			const requestData = { name: 'Updated' };
 			const errorData = { error: 'Not found' };
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: false,
 				status: 404,
 				statusText: 'Not Found',
@@ -233,7 +233,7 @@ describe('ApiClient', () => {
 			const mockResponse = { success: true };
 			const schema = z.object({ success: z.boolean() });
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: true,
 				status: 200,
 				headers: new Headers({ 'content-type': 'application/json' }),
@@ -254,7 +254,7 @@ describe('ApiClient', () => {
 		it('should throw ApiClientError on 404', async () => {
 			const errorData = { error: 'Not found' };
 
-			fetchMock.mockResolvedValueOnce({
+			fetchMock.mockResolvedValue({
 				ok: false,
 				status: 404,
 				statusText: 'Not Found',

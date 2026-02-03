@@ -20,7 +20,7 @@
 	{#each toastState.toasts as toast (toast.id)}
 		<div
 			class="pointer-events-auto animate-slide-in {typeColors[toast.type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md cursor-pointer"
-			role="alert"
+			role="button"
 			onclick={() => toastState.remove(toast.id)}
 			onkeydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') {

@@ -122,7 +122,7 @@
 				class="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
 				disabled={draftState.session?.status === 'InProgress'}
 			>
-				{#each chartTypes as chartType}
+				{#each chartTypes as chartType (chartType)}
 					<option value={chartType}>
 						{chartType.replace(/([A-Z])/g, ' $1').trim()}
 					</option>

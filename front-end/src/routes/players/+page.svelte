@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
@@ -66,8 +66,9 @@
 		return players;
 	});
 
-	function handleSelectPlayer(player: Player) {
-		goto(`/players/${player.id}`);
+	async function handleSelectPlayer(player: Player) {
+		await goto(`/players/${player.id}`);
+		await invalidateAll();
 	}
 </script>
 
@@ -131,7 +132,7 @@
 						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
 						<option value="all">All Positions</option>
-						{#each allPositions as position}
+						{#each allPositions as position (position)}
 							<option value={position}>{position}</option>
 						{/each}
 					</select>

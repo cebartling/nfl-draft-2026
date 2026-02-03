@@ -58,11 +58,11 @@
 
 		<!-- Position Filters -->
 		<div class="space-y-3">
-			{#each getPositionGroups() as group}
+			{#each getPositionGroups() as group (group.label)}
 				<div>
 					<p class="text-sm font-medium text-gray-700 mb-2">{group.label}</p>
 					<div class="flex flex-wrap gap-2">
-						{#each group.positions as position}
+						{#each group.positions as position (position)}
 							<button
 								type="button"
 								class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors {selectedPosition ===

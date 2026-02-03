@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { draftsApi } from '$lib/api';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
@@ -54,7 +54,10 @@
 		</p>
 		<button
 			type="button"
-			onclick={() => goto('/drafts/new')}
+			onclick={async () => {
+				await goto('/drafts/new');
+				await invalidateAll();
+			}}
 			class="bg-white text-blue-600 hover:bg-gray-100 font-semibold py-3 px-6 rounded-lg transition-colors"
 		>
 			Create New Draft
@@ -83,7 +86,7 @@
 		<div class="space-y-4">
 			<div class="flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-gray-800">Recent Drafts</h2>
-				<a href="/drafts" class="text-blue-600 hover:text-blue-700 font-medium">
+				<a href="/drafts" data-sveltekit-reload class="text-blue-600 hover:text-blue-700 font-medium">
 					View All
 				</a>
 			</div>
@@ -94,7 +97,10 @@
 						<p class="text-gray-600 mb-4">No drafts yet. Create your first draft to get started!</p>
 						<button
 							type="button"
-							onclick={() => goto('/drafts/new')}
+							onclick={async () => {
+								await goto('/drafts/new');
+								await invalidateAll();
+							}}
 							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 						>
 							Create Draft
@@ -103,8 +109,11 @@
 				</Card>
 			{:else}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each drafts.slice(0, 5) as draft}
-						<Card clickable onclick={() => goto(`/drafts/${draft.id}`)}>
+					{#each drafts.slice(0, 5) as draft (draft.id)}
+						<Card clickable onclick={async () => {
+							await goto(`/drafts/${draft.id}`);
+							await invalidateAll();
+						}}>
 							<div class="space-y-3">
 								<div class="flex items-start justify-between">
 									<h3 class="text-lg font-semibold text-gray-800">
@@ -136,9 +145,10 @@
 									<div class="pt-2 border-t border-gray-200">
 										<button
 											type="button"
-											onclick={(e) => {
+											onclick={async (e) => {
 												e.stopPropagation();
-												goto(`/sessions/${draft.id}`);
+												await goto(`/sessions/${draft.id}`);
+												await invalidateAll();
 											}}
 											class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors"
 										>

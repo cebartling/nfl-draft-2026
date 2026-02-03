@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { draftsApi } from '$lib/api';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
@@ -58,7 +58,10 @@
 		<h1 class="text-3xl font-bold text-gray-800">Drafts</h1>
 		<button
 			type="button"
-			onclick={() => goto('/drafts/new')}
+			onclick={async () => {
+				await goto('/drafts/new');
+				await invalidateAll();
+			}}
 			class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
 		>
 			Create New Draft
@@ -142,7 +145,10 @@
 					{#if filterStatus === 'all'}
 						<button
 							type="button"
-							onclick={() => goto('/drafts/new')}
+							onclick={async () => {
+								await goto('/drafts/new');
+								await invalidateAll();
+							}}
 							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 						>
 							Create Draft
@@ -160,8 +166,11 @@
 			</Card>
 		{:else}
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-				{#each filteredDrafts() as draft}
-					<Card clickable onclick={() => goto(`/drafts/${draft.id}`)}>
+				{#each filteredDrafts() as draft (draft.id)}
+					<Card clickable onclick={async () => {
+						await goto(`/drafts/${draft.id}`);
+						await invalidateAll();
+					}}>
 						<div class="space-y-3">
 							<div class="flex items-start justify-between">
 								<h3 class="text-xl font-semibold text-gray-800">
@@ -207,9 +216,10 @@
 								{#if draft.status === 'InProgress'}
 									<button
 										type="button"
-										onclick={(e) => {
+										onclick={async (e) => {
 											e.stopPropagation();
-											goto(`/sessions/${draft.id}`);
+											await goto(`/sessions/${draft.id}`);
+											await invalidateAll();
 										}}
 										class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors"
 									>
@@ -218,9 +228,10 @@
 								{:else if draft.status === 'NotStarted'}
 									<button
 										type="button"
-										onclick={(e) => {
+										onclick={async (e) => {
 											e.stopPropagation();
-											goto(`/sessions/${draft.id}`);
+											await goto(`/sessions/${draft.id}`);
+											await invalidateAll();
 										}}
 										class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
 									>
@@ -229,9 +240,10 @@
 								{:else}
 									<button
 										type="button"
-										onclick={(e) => {
+										onclick={async (e) => {
 											e.stopPropagation();
-											goto(`/drafts/${draft.id}`);
+											await goto(`/drafts/${draft.id}`);
+											await invalidateAll();
 										}}
 										class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded transition-colors"
 									>

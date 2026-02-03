@@ -17,7 +17,7 @@
 		children,
 	}: Props = $props();
 
-	let dialogElement: HTMLDivElement;
+	let dialogElement = $state<HTMLDivElement | undefined>();
 
 	const widthClasses = {
 		sm: 'max-w-sm',

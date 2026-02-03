@@ -129,7 +129,7 @@ test.describe('Draft Room', () => {
 				try {
 					const data = JSON.parse(event.payload as string);
 					messages.push(data);
-				} catch (e) {
+				} catch (_e) {
 					// Ignore non-JSON frames
 				}
 			});

@@ -20,7 +20,7 @@
 			<div class="flex items-center justify-between h-16">
 				<!-- Logo/Title -->
 				<div class="flex items-center">
-					<a href="/" class="flex items-center space-x-2">
+					<a href="/" data-sveltekit-reload class="flex items-center space-x-2">
 						<div class="text-2xl font-bold text-blue-600">NFL</div>
 						<div class="text-2xl font-bold text-gray-800">Draft 2026</div>
 					</a>
@@ -30,24 +30,28 @@
 				<div class="hidden md:flex items-center space-x-8">
 					<a
 						href="/"
+						data-sveltekit-reload
 						class="text-gray-700 hover:text-blue-600 font-medium transition-colors"
 					>
 						Home
 					</a>
 					<a
 						href="/drafts"
+						data-sveltekit-reload
 						class="text-gray-700 hover:text-blue-600 font-medium transition-colors"
 					>
 						Drafts
 					</a>
 					<a
 						href="/players"
+						data-sveltekit-reload
 						class="text-gray-700 hover:text-blue-600 font-medium transition-colors"
 					>
 						Players
 					</a>
 					<a
 						href="/teams"
+						data-sveltekit-reload
 						class="text-gray-700 hover:text-blue-600 font-medium transition-colors"
 					>
 						Teams
@@ -82,6 +86,7 @@
 			<div class="px-2 pt-2 pb-3 space-y-1">
 				<a
 					href="/"
+					data-sveltekit-reload
 					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
@@ -89,6 +94,7 @@
 				</a>
 				<a
 					href="/drafts"
+					data-sveltekit-reload
 					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
@@ -96,6 +102,7 @@
 				</a>
 				<a
 					href="/players"
+					data-sveltekit-reload
 					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>
@@ -103,6 +110,7 @@
 				</a>
 				<a
 					href="/teams"
+					data-sveltekit-reload
 					onclick={() => (mobileMenuOpen = false)}
 					class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 				>

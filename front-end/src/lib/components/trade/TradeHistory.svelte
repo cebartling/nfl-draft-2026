@@ -63,7 +63,7 @@
 	<div class="mb-6">
 		<p class="text-sm font-medium text-gray-700 mb-3">Filter by Status</p>
 		<div class="flex flex-wrap gap-2">
-			{#each statusOptions as option}
+			{#each statusOptions as option (option.value)}
 				<button
 					type="button"
 					class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {selectedStatus ===

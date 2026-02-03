@@ -131,7 +131,7 @@
 						required
 					>
 						<option value="">Select a team</option>
-						{#each teams as team}
+						{#each teams as team (team.id)}
 							<option value={team.id}>
 								{team.city} {team.name}
 							</option>
@@ -150,7 +150,7 @@
 						required
 					>
 						<option value="">Select a team</option>
-						{#each teams as team}
+						{#each teams as team (team.id)}
 							<option value={team.id}>
 								{team.city} {team.name}
 							</option>
@@ -169,7 +169,7 @@
 					<div class="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
 						{#if fromTeamId && fromTeamPicks.length > 0}
 							<div class="divide-y divide-gray-200">
-								{#each fromTeamPicks as pick}
+								{#each fromTeamPicks as pick (pick.id)}
 									<button
 										type="button"
 										aria-label="Select pick Round {pick.round} Pick {pick.pick_number}"
@@ -227,7 +227,7 @@
 					<div class="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
 						{#if toTeamId && toTeamPicks.length > 0}
 							<div class="divide-y divide-gray-200">
-								{#each toTeamPicks as pick}
+								{#each toTeamPicks as pick (pick.id)}
 									<button
 										type="button"
 										aria-label="Select pick Round {pick.round} Pick {pick.pick_number}"

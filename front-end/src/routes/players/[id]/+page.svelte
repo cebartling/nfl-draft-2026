@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { playersState } from '$stores/players.svelte';
 	import PlayerDetails from '$components/player/PlayerDetails.svelte';
@@ -32,7 +32,10 @@
 	<div>
 		<button
 			type="button"
-			onclick={() => goto('/players')}
+			onclick={async () => {
+				await goto('/players');
+				await invalidateAll();
+			}}
 			class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
 		>
 			<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +70,10 @@
 			<p class="text-gray-600 mb-4">{error}</p>
 			<button
 				type="button"
-				onclick={() => goto('/players')}
+				onclick={async () => {
+					await goto('/players');
+					await invalidateAll();
+				}}
 				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 			>
 				Back to Players

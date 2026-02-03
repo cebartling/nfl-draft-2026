@@ -17,7 +17,7 @@ class MockWebSocket {
 
 	constructor(public url: string) {}
 
-	send(data: string): void {
+	send(_data: string): void {
 		if (this.readyState !== MockWebSocket.OPEN) {
 			throw new Error('WebSocket is not open');
 		}
@@ -455,7 +455,7 @@ describe('WebSocketClient', () => {
 		it('should stop reconnecting after max attempts', () => {
 			vi.useFakeTimers();
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+			const _consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
 			client.connect();
 			mockWebSocket.simulateOpen();
