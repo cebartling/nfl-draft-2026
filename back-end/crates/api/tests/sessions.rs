@@ -362,3 +362,149 @@ async fn test_session_lifecycle() {
 
     common::cleanup_database(&pool).await;
 }
+
+#[tokio::test]
+async fn test_create_session_with_default_chart() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create a draft first
+    let draft_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create session without specifying chart_type (should default to JimmyJohnson)
+    let request_body = json!({
+        "draft_id": draft_id,
+        "time_per_pick_seconds": 300,
+        "auto_pick_enabled": false
+    });
+
+    let response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&request_body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let session: Value = response.json().await.unwrap();
+    assert_eq!(session["chart_type"], "JimmyJohnson");
+
+    let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
+
+    // Verify in database
+    let db_session = sqlx::query!("SELECT chart_type FROM draft_sessions WHERE id = $1", session_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    assert_eq!(db_session.chart_type, "JimmyJohnson");
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
+async fn test_create_session_with_explicit_chart() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create a draft first
+    let draft_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create session with RichHill chart
+    let request_body = json!({
+        "draft_id": draft_id,
+        "time_per_pick_seconds": 300,
+        "auto_pick_enabled": false,
+        "chart_type": "RichHill"
+    });
+
+    let response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&request_body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let session: Value = response.json().await.unwrap();
+    assert_eq!(session["chart_type"], "RichHill");
+
+    let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
+
+    // Verify in database
+    let db_session = sqlx::query!("SELECT chart_type FROM draft_sessions WHERE id = $1", session_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    assert_eq!(db_session.chart_type, "RichHill");
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
+async fn test_create_session_with_all_chart_types() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    let charts = vec![
+        "JimmyJohnson",
+        "RichHill",
+        "ChaseStudartAV",
+        "FitzgeraldSpielberger",
+        "PffWar",
+        "SurplusValue",
+    ];
+
+    for (idx, chart) in charts.iter().enumerate() {
+        // Create a draft with unique year
+        let draft_id = Uuid::new_v4();
+        let year = 2026 + idx as i32;
+        sqlx::query!(
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            draft_id,
+            year
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Create session with specific chart
+        let request_body = json!({
+            "draft_id": draft_id,
+            "time_per_pick_seconds": 300,
+            "auto_pick_enabled": false,
+            "chart_type": chart
+        });
+
+        let response = client
+            .post(&format!("{}/api/v1/sessions", app_url))
+            .json(&request_body)
+            .send()
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let session: Value = response.json().await.unwrap();
+        assert_eq!(session["chart_type"], *chart);
+    }
+
+    common::cleanup_database(&pool).await;
+}

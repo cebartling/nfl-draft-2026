@@ -9,7 +9,7 @@ pub struct TradeEngine {
     trade_repo: Arc<dyn TradeRepository>,
     pick_repo: Arc<dyn DraftPickRepository>,
     team_repo: Arc<dyn TeamRepository>,
-    value_chart: Box<dyn TradeValueChart>,
+    default_chart_type: ChartType,
     fairness_threshold_percent: i32,  // Default: 15%
 }
 
@@ -18,13 +18,13 @@ impl TradeEngine {
         trade_repo: Arc<dyn TradeRepository>,
         pick_repo: Arc<dyn DraftPickRepository>,
         team_repo: Arc<dyn TeamRepository>,
-        chart_type: ChartType,
+        default_chart_type: ChartType,
     ) -> Self {
         Self {
             trade_repo,
             pick_repo,
             team_repo,
-            value_chart: chart_type.create_chart(),
+            default_chart_type,
             fairness_threshold_percent: 15,
         }
     }
@@ -38,23 +38,7 @@ impl TradeEngine {
         Self::new(trade_repo, pick_repo, team_repo, ChartType::JimmyJohnson)
     }
 
-    /// Create with custom chart implementation
-    pub fn with_custom_chart(
-        trade_repo: Arc<dyn TradeRepository>,
-        pick_repo: Arc<dyn DraftPickRepository>,
-        team_repo: Arc<dyn TeamRepository>,
-        chart: Box<dyn TradeValueChart>,
-    ) -> Self {
-        Self {
-            trade_repo,
-            pick_repo,
-            team_repo,
-            value_chart: chart,
-            fairness_threshold_percent: 15,
-        }
-    }
-
-    /// Propose a trade with value validation
+    /// Propose a trade with value validation using specified chart type
     pub async fn propose_trade(
         &self,
         session_id: Uuid,
@@ -62,6 +46,7 @@ impl TradeEngine {
         to_team_id: Uuid,
         from_team_picks: Vec<Uuid>,
         to_team_picks: Vec<Uuid>,
+        chart_type: Option<ChartType>,
     ) -> DomainResult<TradeProposal> {
         // Validate teams exist
         self.validate_team_exists(from_team_id).await?;
@@ -76,19 +61,23 @@ impl TradeEngine {
             None,
         ).await?;
 
+        // Create chart instance for this trade
+        let chart_type = chart_type.unwrap_or(self.default_chart_type);
+        let value_chart = chart_type.create_chart();
+
         // Calculate trade values
-        let from_team_value = self.calculate_total_value(&from_team_picks).await?;
-        let to_team_value = self.calculate_total_value(&to_team_picks).await?;
+        let from_team_value = self.calculate_total_value_with_chart(&from_team_picks, &*value_chart).await?;
+        let to_team_value = self.calculate_total_value_with_chart(&to_team_picks, &*value_chart).await?;
 
         // Validate trade fairness
-        if !self.value_chart.is_trade_fair(
+        if !value_chart.is_trade_fair(
             from_team_value,
             to_team_value,
             self.fairness_threshold_percent,
         ) {
             return Err(DomainError::ValidationError(format!(
-                "Trade is not fair: {} points vs {} points (threshold: {}%)",
-                from_team_value, to_team_value, self.fairness_threshold_percent
+                "Trade is not fair using {} chart: {} points vs {} points (threshold: {}%)",
+                value_chart.name(), from_team_value, to_team_value, self.fairness_threshold_percent
             )));
         }
 
@@ -226,14 +215,18 @@ impl TradeEngine {
         Ok(())
     }
 
-    async fn calculate_total_value(&self, pick_ids: &[Uuid]) -> DomainResult<i32> {
+    async fn calculate_total_value_with_chart(
+        &self,
+        pick_ids: &[Uuid],
+        value_chart: &dyn TradeValueChart,
+    ) -> DomainResult<i32> {
         let mut total_value = 0;
 
         for pick_id in pick_ids {
             let pick = self.pick_repo.find_by_id(*pick_id).await?
                 .ok_or_else(|| DomainError::NotFound(format!("Pick {} not found", pick_id)))?;
 
-            let value = self.value_chart.calculate_pick_value(pick.overall_pick)?;
+            let value = value_chart.calculate_pick_value(pick.overall_pick)?;
             total_value += value;
         }
 

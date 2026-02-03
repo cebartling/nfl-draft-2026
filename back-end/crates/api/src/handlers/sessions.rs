@@ -9,14 +9,21 @@ use uuid::Uuid;
 use crate::error::ApiResult;
 use crate::state::AppState;
 use domain::models::{DraftEvent, DraftSession};
+use domain::services::trade_value::ChartType;
 
 // DTOs for session endpoints
+
+fn default_chart_type() -> ChartType {
+    ChartType::JimmyJohnson
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSessionRequest {
     pub draft_id: Uuid,
     pub time_per_pick_seconds: i32,
     pub auto_pick_enabled: bool,
+    #[serde(default = "default_chart_type")]
+    pub chart_type: ChartType,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,6 +34,7 @@ pub struct SessionResponse {
     pub current_pick_number: i32,
     pub time_per_pick_seconds: i32,
     pub auto_pick_enabled: bool,
+    pub chart_type: ChartType,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
 }
@@ -40,6 +48,7 @@ impl From<DraftSession> for SessionResponse {
             current_pick_number: session.current_pick_number,
             time_per_pick_seconds: session.time_per_pick_seconds,
             auto_pick_enabled: session.auto_pick_enabled,
+            chart_type: session.chart_type,
             started_at: session.started_at.map(|dt| dt.to_rfc3339()),
             completed_at: session.completed_at.map(|dt| dt.to_rfc3339()),
         }
@@ -79,6 +88,7 @@ pub async fn create_session(
         req.draft_id,
         req.time_per_pick_seconds,
         req.auto_pick_enabled,
+        req.chart_type,
     )?;
 
     let created = state.session_repo.create(&session).await?;

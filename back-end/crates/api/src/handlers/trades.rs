@@ -82,12 +82,19 @@ pub async fn propose_trade(
     State(state): State<AppState>,
     Json(payload): Json<ProposeTradeRequest>,
 ) -> ApiResult<(StatusCode, Json<TradeProposalResponse>)> {
+    // Fetch session to get its chart type
+    let session = state.session_repo
+        .find_by_id(payload.session_id)
+        .await?
+        .ok_or_else(|| crate::error::ApiError::NotFound(format!("Session {} not found", payload.session_id)))?;
+
     let proposal = state.trade_engine.propose_trade(
         payload.session_id,
         payload.from_team_id,
         payload.to_team_id,
         payload.from_team_picks.clone(),
         payload.to_team_picks.clone(),
+        Some(session.chart_type),
     ).await?;
 
     // Create and store draft event for audit trail
