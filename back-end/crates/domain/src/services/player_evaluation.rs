@@ -74,7 +74,7 @@ impl PlayerEvaluationService {
         }
 
         // Sort by score descending
-        scored_players.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        scored_players.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         Ok(scored_players)
     }
