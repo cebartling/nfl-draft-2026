@@ -6,14 +6,9 @@ use uuid::Uuid;
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessage {
     /// Subscribe to a draft session
-    Subscribe {
-        session_id: Uuid,
-    },
+    Subscribe { session_id: Uuid },
     /// Make a draft pick
-    MakePick {
-        session_id: Uuid,
-        player_id: Uuid,
-    },
+    MakePick { session_id: Uuid, player_id: Uuid },
     /// Propose a trade
     ProposeTrade {
         session_id: Uuid,
@@ -30,9 +25,7 @@ pub enum ClientMessage {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerMessage {
     /// Confirmation of successful subscription
-    Subscribed {
-        session_id: Uuid,
-    },
+    Subscribed { session_id: Uuid },
     /// A pick was made
     PickMade {
         session_id: Uuid,
@@ -51,10 +44,7 @@ pub enum ServerMessage {
         current_pick_number: i32,
     },
     /// Draft status changed
-    DraftStatus {
-        session_id: Uuid,
-        status: String,
-    },
+    DraftStatus { session_id: Uuid, status: String },
     /// Trade was proposed
     TradeProposed {
         session_id: Uuid,
@@ -63,14 +53,9 @@ pub enum ServerMessage {
         to_team_id: Uuid,
     },
     /// Trade was executed
-    TradeExecuted {
-        session_id: Uuid,
-        trade_id: Uuid,
-    },
+    TradeExecuted { session_id: Uuid, trade_id: Uuid },
     /// Error occurred
-    Error {
-        message: String,
-    },
+    Error { message: String },
     /// Pong response to ping
     Pong,
 }
@@ -155,7 +140,12 @@ impl ServerMessage {
         ServerMessage::DraftStatus { session_id, status }
     }
 
-    pub fn trade_proposed(session_id: Uuid, trade_id: Uuid, from_team_id: Uuid, to_team_id: Uuid) -> Self {
+    pub fn trade_proposed(
+        session_id: Uuid,
+        trade_id: Uuid,
+        from_team_id: Uuid,
+        to_team_id: Uuid,
+    ) -> Self {
         ServerMessage::TradeProposed {
             session_id,
             trade_id,

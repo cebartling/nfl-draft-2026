@@ -38,10 +38,7 @@ impl PlayerEvaluationService {
             })?;
 
         // Get combine results (get first one if multiple)
-        let combine_results_list = self
-            .combine_repo
-            .find_by_player_id(player.id)
-            .await?;
+        let combine_results_list = self.combine_repo.find_by_player_id(player.id).await?;
         let combine_results = combine_results_list.first();
 
         // Calculate components
@@ -87,58 +84,142 @@ impl PlayerEvaluationService {
         match position {
             // QB: Agility > Speed
             Position::QB => {
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.35).unwrap_or(17.5);
-                let shuttle = combine.twenty_yard_shuttle.map(|t| Self::normalize_shuttle(t) * 0.35).unwrap_or(17.5);
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.30).unwrap_or(15.0);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.35)
+                    .unwrap_or(17.5);
+                let shuttle = combine
+                    .twenty_yard_shuttle
+                    .map(|t| Self::normalize_shuttle(t) * 0.35)
+                    .unwrap_or(17.5);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.30)
+                    .unwrap_or(15.0);
                 cone + shuttle + forty
             }
             // WR/RB: Speed > Strength
             Position::WR | Position::RB => {
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.40).unwrap_or(20.0);
-                let vertical = combine.vertical_jump.map(|j| Self::normalize_vertical_jump(j) * 0.30).unwrap_or(15.0);
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.20).unwrap_or(10.0);
-                let shuttle = combine.twenty_yard_shuttle.map(|t| Self::normalize_shuttle(t) * 0.10).unwrap_or(5.0);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.40)
+                    .unwrap_or(20.0);
+                let vertical = combine
+                    .vertical_jump
+                    .map(|j| Self::normalize_vertical_jump(j) * 0.30)
+                    .unwrap_or(15.0);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.20)
+                    .unwrap_or(10.0);
+                let shuttle = combine
+                    .twenty_yard_shuttle
+                    .map(|t| Self::normalize_shuttle(t) * 0.10)
+                    .unwrap_or(5.0);
                 forty + vertical + cone + shuttle
             }
             // OL: Strength > Speed
             Position::OT | Position::OG | Position::C => {
-                let bench = combine.bench_press.map(|r| Self::normalize_bench_press(r) * 0.40).unwrap_or(20.0);
-                let broad = combine.broad_jump.map(|j| Self::normalize_broad_jump(j) * 0.30).unwrap_or(15.0);
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.20).unwrap_or(10.0);
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.10).unwrap_or(5.0);
+                let bench = combine
+                    .bench_press
+                    .map(|r| Self::normalize_bench_press(r) * 0.40)
+                    .unwrap_or(20.0);
+                let broad = combine
+                    .broad_jump
+                    .map(|j| Self::normalize_broad_jump(j) * 0.30)
+                    .unwrap_or(15.0);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.20)
+                    .unwrap_or(10.0);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.10)
+                    .unwrap_or(5.0);
                 bench + broad + forty + cone
             }
             // DL: Balance of speed and strength
             Position::DE | Position::DT => {
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.30).unwrap_or(15.0);
-                let bench = combine.bench_press.map(|r| Self::normalize_bench_press(r) * 0.25).unwrap_or(12.5);
-                let vertical = combine.vertical_jump.map(|j| Self::normalize_vertical_jump(j) * 0.25).unwrap_or(12.5);
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.20).unwrap_or(10.0);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.30)
+                    .unwrap_or(15.0);
+                let bench = combine
+                    .bench_press
+                    .map(|r| Self::normalize_bench_press(r) * 0.25)
+                    .unwrap_or(12.5);
+                let vertical = combine
+                    .vertical_jump
+                    .map(|j| Self::normalize_vertical_jump(j) * 0.25)
+                    .unwrap_or(12.5);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.20)
+                    .unwrap_or(10.0);
                 forty + bench + vertical + cone
             }
             // LB: Balance
             Position::LB => {
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.30).unwrap_or(15.0);
-                let bench = combine.bench_press.map(|r| Self::normalize_bench_press(r) * 0.20).unwrap_or(10.0);
-                let vertical = combine.vertical_jump.map(|j| Self::normalize_vertical_jump(j) * 0.20).unwrap_or(10.0);
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.15).unwrap_or(7.5);
-                let shuttle = combine.twenty_yard_shuttle.map(|t| Self::normalize_shuttle(t) * 0.15).unwrap_or(7.5);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.30)
+                    .unwrap_or(15.0);
+                let bench = combine
+                    .bench_press
+                    .map(|r| Self::normalize_bench_press(r) * 0.20)
+                    .unwrap_or(10.0);
+                let vertical = combine
+                    .vertical_jump
+                    .map(|j| Self::normalize_vertical_jump(j) * 0.20)
+                    .unwrap_or(10.0);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.15)
+                    .unwrap_or(7.5);
+                let shuttle = combine
+                    .twenty_yard_shuttle
+                    .map(|t| Self::normalize_shuttle(t) * 0.15)
+                    .unwrap_or(7.5);
                 forty + bench + vertical + cone + shuttle
             }
             // DB: Speed and agility
             Position::CB | Position::S => {
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.40).unwrap_or(20.0);
-                let vertical = combine.vertical_jump.map(|j| Self::normalize_vertical_jump(j) * 0.20).unwrap_or(10.0);
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.20).unwrap_or(10.0);
-                let shuttle = combine.twenty_yard_shuttle.map(|t| Self::normalize_shuttle(t) * 0.20).unwrap_or(10.0);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.40)
+                    .unwrap_or(20.0);
+                let vertical = combine
+                    .vertical_jump
+                    .map(|j| Self::normalize_vertical_jump(j) * 0.20)
+                    .unwrap_or(10.0);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.20)
+                    .unwrap_or(10.0);
+                let shuttle = combine
+                    .twenty_yard_shuttle
+                    .map(|t| Self::normalize_shuttle(t) * 0.20)
+                    .unwrap_or(10.0);
                 forty + vertical + cone + shuttle
             }
             // TE: Balance
             Position::TE => {
-                let forty = combine.forty_yard_dash.map(|t| Self::normalize_forty_dash(t) * 0.30).unwrap_or(15.0);
-                let vertical = combine.vertical_jump.map(|j| Self::normalize_vertical_jump(j) * 0.25).unwrap_or(12.5);
-                let bench = combine.bench_press.map(|r| Self::normalize_bench_press(r) * 0.25).unwrap_or(12.5);
-                let cone = combine.three_cone_drill.map(|t| Self::normalize_cone_drill(t) * 0.20).unwrap_or(10.0);
+                let forty = combine
+                    .forty_yard_dash
+                    .map(|t| Self::normalize_forty_dash(t) * 0.30)
+                    .unwrap_or(15.0);
+                let vertical = combine
+                    .vertical_jump
+                    .map(|j| Self::normalize_vertical_jump(j) * 0.25)
+                    .unwrap_or(12.5);
+                let bench = combine
+                    .bench_press
+                    .map(|r| Self::normalize_bench_press(r) * 0.25)
+                    .unwrap_or(12.5);
+                let cone = combine
+                    .three_cone_drill
+                    .map(|t| Self::normalize_cone_drill(t) * 0.20)
+                    .unwrap_or(10.0);
                 forty + vertical + bench + cone
             }
             // K/P: Use default score
@@ -212,8 +293,8 @@ impl PlayerEvaluationService {
 mod tests {
     use super::*;
     use crate::models::FitGrade;
-    use mockall::predicate::*;
     use mockall::mock;
+    use mockall::predicate::*;
 
     mock! {
         ScoutingReportRepo {}
@@ -245,13 +326,7 @@ mod tests {
     }
 
     fn create_test_player(position: Position) -> Player {
-        Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            position,
-            2026,
-        )
-        .unwrap()
+        Player::new("John".to_string(), "Doe".to_string(), position, 2026).unwrap()
     }
 
     fn create_test_scouting_report(
@@ -277,14 +352,8 @@ mod tests {
         let player = create_test_player(Position::QB);
         let team_id = Uuid::new_v4();
 
-        let scouting_report = create_test_scouting_report(
-            player.id,
-            team_id,
-            8.5,
-            Some(FitGrade::A),
-            false,
-            false,
-        );
+        let scouting_report =
+            create_test_scouting_report(player.id, team_id, 8.5, Some(FitGrade::A), false, false);
 
         let combine = CombineResults::new(player.id, 2026)
             .unwrap()
@@ -325,14 +394,8 @@ mod tests {
         let team_id = Uuid::new_v4();
 
         // Report with both injury and character concerns
-        let scouting_report = create_test_scouting_report(
-            player.id,
-            team_id,
-            8.5,
-            Some(FitGrade::A),
-            true,
-            true,
-        );
+        let scouting_report =
+            create_test_scouting_report(player.id, team_id, 8.5, Some(FitGrade::A), true, true);
 
         scouting_mock
             .expect_find_by_team_and_player()
@@ -380,16 +443,31 @@ mod tests {
         let player_id = Uuid::new_v4();
         let team_id = Uuid::new_v4();
 
-        let report_a = create_test_scouting_report(player_id, team_id, 8.0, Some(FitGrade::A), false, false);
-        assert_eq!(PlayerEvaluationService::calculate_fit_score(&report_a), 100.0);
+        let report_a =
+            create_test_scouting_report(player_id, team_id, 8.0, Some(FitGrade::A), false, false);
+        assert_eq!(
+            PlayerEvaluationService::calculate_fit_score(&report_a),
+            100.0
+        );
 
-        let report_b = create_test_scouting_report(player_id, team_id, 8.0, Some(FitGrade::B), false, false);
-        assert_eq!(PlayerEvaluationService::calculate_fit_score(&report_b), 80.0);
+        let report_b =
+            create_test_scouting_report(player_id, team_id, 8.0, Some(FitGrade::B), false, false);
+        assert_eq!(
+            PlayerEvaluationService::calculate_fit_score(&report_b),
+            80.0
+        );
 
-        let report_f = create_test_scouting_report(player_id, team_id, 8.0, Some(FitGrade::F), false, false);
-        assert_eq!(PlayerEvaluationService::calculate_fit_score(&report_f), 20.0);
+        let report_f =
+            create_test_scouting_report(player_id, team_id, 8.0, Some(FitGrade::F), false, false);
+        assert_eq!(
+            PlayerEvaluationService::calculate_fit_score(&report_f),
+            20.0
+        );
 
         let report_none = create_test_scouting_report(player_id, team_id, 8.0, None, false, false);
-        assert_eq!(PlayerEvaluationService::calculate_fit_score(&report_none), 60.0);
+        assert_eq!(
+            PlayerEvaluationService::calculate_fit_score(&report_none),
+            60.0
+        );
     }
 }

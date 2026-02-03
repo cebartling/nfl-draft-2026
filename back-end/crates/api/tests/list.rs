@@ -76,7 +76,8 @@ async fn test_list_endpoints() {
         .await
         .expect("Failed to list players");
     assert_eq!(players_response.status(), 200);
-    let players: Vec<serde_json::Value> = players_response.json().await.expect("Failed to parse JSON");
+    let players: Vec<serde_json::Value> =
+        players_response.json().await.expect("Failed to parse JSON");
     assert!(!players.is_empty());
 
     // Verify players count in database
@@ -94,7 +95,8 @@ async fn test_list_endpoints() {
         .await
         .expect("Failed to list drafts");
     assert_eq!(drafts_response.status(), 200);
-    let drafts: Vec<serde_json::Value> = drafts_response.json().await.expect("Failed to parse JSON");
+    let drafts: Vec<serde_json::Value> =
+        drafts_response.json().await.expect("Failed to parse JSON");
     assert!(!drafts.is_empty());
 
     // Verify drafts count in database

@@ -156,17 +156,18 @@ impl TeamNeedRepository for SqlxTeamNeedRepository {
 mod tests {
     use super::*;
     use crate::create_pool;
-    use domain::models::{Team, Conference, Division, Position};
-    use domain::repositories::TeamRepository;
     use crate::repositories::SqlxTeamRepository;
+    use domain::models::{Conference, Division, Position, Team};
+    use domain::repositories::TeamRepository;
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup_team_needs(pool: &PgPool) {

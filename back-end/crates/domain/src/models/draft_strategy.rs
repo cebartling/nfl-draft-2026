@@ -87,16 +87,21 @@ impl DraftStrategy {
         self.position_values
             .as_ref()
             .and_then(|map| map.get(&position).copied())
-            .unwrap_or_else(|| Self::default_position_values().get(&position).copied().unwrap_or(1.0))
+            .unwrap_or_else(|| {
+                Self::default_position_values()
+                    .get(&position)
+                    .copied()
+                    .unwrap_or(1.0)
+            })
     }
 
     fn validate_weights(bpa_weight: i32, need_weight: i32) -> DomainResult<()> {
-        if bpa_weight < 0 || bpa_weight > 100 {
+        if !(0..=100).contains(&bpa_weight) {
             return Err(DomainError::ValidationError(
                 "BPA weight must be between 0 and 100".to_string(),
             ));
         }
-        if need_weight < 0 || need_weight > 100 {
+        if !(0..=100).contains(&need_weight) {
             return Err(DomainError::ValidationError(
                 "Need weight must be between 0 and 100".to_string(),
             ));
@@ -110,7 +115,7 @@ impl DraftStrategy {
     }
 
     fn validate_risk_tolerance(risk_tolerance: i32) -> DomainResult<()> {
-        if risk_tolerance < 0 || risk_tolerance > 10 {
+        if !(0..=10).contains(&risk_tolerance) {
             return Err(DomainError::ValidationError(
                 "Risk tolerance must be between 0 and 10".to_string(),
             ));

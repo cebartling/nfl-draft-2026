@@ -12,7 +12,10 @@ async fn test_error_handling() {
 
     // Try to get non-existent team
     let response = client
-        .get(&format!("{}/api/v1/teams/00000000-0000-0000-0000-000000000000", base_url))
+        .get(&format!(
+            "{}/api/v1/teams/00000000-0000-0000-0000-000000000000",
+            base_url
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -71,9 +74,10 @@ async fn test_error_handling() {
     assert_eq!(response.status(), 409);
 
     // Verify still only one draft in database
-    let db_draft_count_after = sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to count drafts");
+    let db_draft_count_after =
+        sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
+            .fetch_one(&pool)
+            .await
+            .expect("Failed to count drafts");
     assert_eq!(db_draft_count_after.count.unwrap(), 1);
 }

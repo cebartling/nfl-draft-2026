@@ -177,10 +177,12 @@ mod tests {
         // Create draft and session first
         let draft_id = Uuid::new_v4();
         let session_id = Uuid::new_v4();
-        let draft_year = 2026 + (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() % 100) as i32;
+        let draft_year = 2026
+            + (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 100) as i32;
 
         sqlx::query!(
             "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
@@ -201,7 +203,8 @@ mod tests {
         .unwrap();
 
         // Create event
-        let event = DraftEvent::session_created(session_id, draft_id, serde_json::json!({"test": "data"}));
+        let event =
+            DraftEvent::session_created(session_id, draft_id, serde_json::json!({"test": "data"}));
         let created = repo.create(&event).await.unwrap();
 
         assert_eq!(created.id, event.id);
@@ -230,10 +233,12 @@ mod tests {
         // Create draft and session first
         let draft_id = Uuid::new_v4();
         let session_id = Uuid::new_v4();
-        let draft_year = 2026 + (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() % 100) as i32;
+        let draft_year = 2026
+            + (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 100) as i32;
 
         sqlx::query!(
             "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
@@ -292,10 +297,12 @@ mod tests {
         // Create draft and session first
         let draft_id = Uuid::new_v4();
         let session_id = Uuid::new_v4();
-        let draft_year = 2026 + (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() % 100) as i32;
+        let draft_year = 2026
+            + (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 100) as i32;
 
         sqlx::query!(
             "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
@@ -331,7 +338,9 @@ mod tests {
             .unwrap();
 
         assert_eq!(clock_events.len(), 2);
-        assert!(clock_events.iter().all(|e| e.event_type == EventType::ClockUpdate));
+        assert!(clock_events
+            .iter()
+            .all(|e| e.event_type == EventType::ClockUpdate));
 
         cleanup_events(&pool).await;
         sqlx::query!("DELETE FROM drafts WHERE id = $1", draft_id)

@@ -88,7 +88,8 @@ pub async fn create_draft(
     State(state): State<AppState>,
     Json(payload): Json<CreateDraftRequest>,
 ) -> ApiResult<(StatusCode, Json<DraftResponse>)> {
-    let draft = state.draft_engine
+    let draft = state
+        .draft_engine
         .create_draft(payload.year, payload.rounds, payload.picks_per_round)
         .await?;
 
@@ -104,9 +105,7 @@ pub async fn create_draft(
     ),
     tag = "drafts"
 )]
-pub async fn list_drafts(
-    State(state): State<AppState>,
-) -> ApiResult<Json<Vec<DraftResponse>>> {
+pub async fn list_drafts(State(state): State<AppState>) -> ApiResult<Json<Vec<DraftResponse>>> {
     let drafts = state.draft_engine.get_all_drafts().await?;
     let response: Vec<DraftResponse> = drafts.into_iter().map(DraftResponse::from).collect();
     Ok(Json(response))
@@ -129,7 +128,8 @@ pub async fn get_draft(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<DraftResponse>> {
-    let draft = state.draft_engine
+    let draft = state
+        .draft_engine
         .get_draft(id)
         .await?
         .ok_or_else(|| ApiError::NotFound(format!("Draft with id {} not found", id)))?;
@@ -312,16 +312,17 @@ pub async fn complete_draft(
 mod tests {
     use super::*;
     use axum::extract::State;
-    use sqlx::PgPool;
     use domain::models::{Conference, Division, Position};
+    use sqlx::PgPool;
 
     async fn setup_test_state() -> (AppState, PgPool) {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
+        let pool = db::create_pool(&database_url)
+            .await
+            .expect("Failed to create pool");
         let state = AppState::new(pool.clone());
 
         // Cleanup
@@ -376,7 +377,9 @@ mod tests {
             rounds: 7,
             picks_per_round: 32,
         };
-        let (_status, created) = create_draft(State(state.clone()), Json(request)).await.unwrap();
+        let (_status, created) = create_draft(State(state.clone()), Json(request))
+            .await
+            .unwrap();
 
         // Get draft
         let result = get_draft(State(state), Path(created.0.id)).await;
@@ -397,14 +400,18 @@ mod tests {
             rounds: 7,
             picks_per_round: 32,
         };
-        create_draft(State(state.clone()), Json(request1)).await.unwrap();
+        create_draft(State(state.clone()), Json(request1))
+            .await
+            .unwrap();
 
         let request2 = CreateDraftRequest {
             year: 2027,
             rounds: 7,
             picks_per_round: 32,
         };
-        create_draft(State(state.clone()), Json(request2)).await.unwrap();
+        create_draft(State(state.clone()), Json(request2))
+            .await
+            .unwrap();
 
         // List all drafts
         let result = list_drafts(State(state)).await;
@@ -426,7 +433,8 @@ mod tests {
             "City A".to_string(),
             Conference::AFC,
             Division::AFCEast,
-        ).unwrap();
+        )
+        .unwrap();
         state.team_repo.create(&team1).await.unwrap();
 
         let team2 = Team::new(
@@ -435,7 +443,8 @@ mod tests {
             "City B".to_string(),
             Conference::NFC,
             Division::NFCEast,
-        ).unwrap();
+        )
+        .unwrap();
         state.team_repo.create(&team2).await.unwrap();
 
         // Create draft
@@ -444,7 +453,9 @@ mod tests {
             rounds: 7,
             picks_per_round: 2, // 2 teams
         };
-        let (_status, created) = create_draft(State(state.clone()), Json(request)).await.unwrap();
+        let (_status, created) = create_draft(State(state.clone()), Json(request))
+            .await
+            .unwrap();
 
         // Initialize picks
         let result = initialize_draft_picks(State(state), Path(created.0.id)).await;
@@ -469,17 +480,14 @@ mod tests {
             "City A".to_string(),
             Conference::AFC,
             Division::AFCEast,
-        ).unwrap();
+        )
+        .unwrap();
         let created_team = state.team_repo.create(&team).await.unwrap();
 
         // Create player
         use domain::models::Player;
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        ).unwrap();
+        let player =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
         let created_player = state.player_repo.create(&player).await.unwrap();
 
         // Create draft
@@ -488,10 +496,15 @@ mod tests {
             rounds: 1,
             picks_per_round: 1,
         };
-        let (_status, created_draft) = create_draft(State(state.clone()), Json(request)).await.unwrap();
+        let (_status, created_draft) = create_draft(State(state.clone()), Json(request))
+            .await
+            .unwrap();
 
         // Initialize picks
-        let (_status, picks) = initialize_draft_picks(State(state.clone()), Path(created_draft.0.id)).await.unwrap();
+        let (_status, picks) =
+            initialize_draft_picks(State(state.clone()), Path(created_draft.0.id))
+                .await
+                .unwrap();
         let pick_id = picks.0[0].id;
 
         // Make pick

@@ -100,7 +100,10 @@ pub async fn create_combine_results(
 
     let created = state.combine_results_repo.create(&results).await?;
 
-    Ok((StatusCode::CREATED, Json(CombineResultsResponse::from(created))))
+    Ok((
+        StatusCode::CREATED,
+        Json(CombineResultsResponse::from(created)),
+    ))
 }
 
 /// GET /api/v1/combine-results/:id - Get combine results by ID
@@ -145,8 +148,14 @@ pub async fn get_player_combine_results(
     State(state): State<AppState>,
     Path(player_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<CombineResultsResponse>>> {
-    let results = state.combine_results_repo.find_by_player_id(player_id).await?;
-    let response: Vec<CombineResultsResponse> = results.into_iter().map(CombineResultsResponse::from).collect();
+    let results = state
+        .combine_results_repo
+        .find_by_player_id(player_id)
+        .await?;
+    let response: Vec<CombineResultsResponse> = results
+        .into_iter()
+        .map(CombineResultsResponse::from)
+        .collect();
     Ok(Json(response))
 }
 
@@ -218,11 +227,9 @@ mod tests {
     use domain::repositories::PlayerRepository;
 
     async fn setup_test_state() -> AppState {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test"
-                    .to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
         let pool = db::create_pool(&database_url)
             .await
@@ -231,15 +238,9 @@ mod tests {
         AppState::new(pool)
     }
 
-
     async fn create_test_player(state: &AppState) -> Player {
-        let player = Player::new(
-            "Test".to_string(),
-            "Player".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap();
+        let player =
+            Player::new("Test".to_string(), "Player".to_string(), Position::QB, 2026).unwrap();
         state.player_repo.create(&player).await.unwrap()
     }
 

@@ -7,10 +7,9 @@ use tokio::sync::oneshot;
 /// Spawns the API server on an ephemeral port and returns the base URL and database pool
 pub async fn spawn_app() -> (String, sqlx::PgPool) {
     // Setup database
-    let database_url = std::env::var("TEST_DATABASE_URL")
-        .unwrap_or_else(|_| {
-            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-        });
+    let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+        "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+    });
 
     let pool = db::create_pool(&database_url)
         .await

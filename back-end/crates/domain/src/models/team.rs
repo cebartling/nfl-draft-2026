@@ -172,7 +172,10 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
@@ -187,7 +190,10 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
@@ -201,7 +207,10 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
@@ -215,7 +224,10 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
@@ -229,7 +241,10 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
@@ -244,7 +259,10 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]

@@ -116,7 +116,7 @@ impl Player {
     }
 
     fn validate_draft_year(year: i32) -> DomainResult<()> {
-        if year < 1936 || year > 2100 {
+        if !(1936..=2100).contains(&year) {
             return Err(DomainError::ValidationError(
                 "Draft year must be between 1936 and 2100".to_string(),
             ));
@@ -125,7 +125,7 @@ impl Player {
     }
 
     fn validate_height(height_inches: i32) -> DomainResult<()> {
-        if height_inches < 60 || height_inches > 90 {
+        if !(60..=90).contains(&height_inches) {
             return Err(DomainError::ValidationError(
                 "Height must be between 60 and 90 inches".to_string(),
             ));
@@ -134,7 +134,7 @@ impl Player {
     }
 
     fn validate_weight(weight_pounds: i32) -> DomainResult<()> {
-        if weight_pounds < 150 || weight_pounds > 400 {
+        if !(150..=400).contains(&weight_pounds) {
             return Err(DomainError::ValidationError(
                 "Weight must be between 150 and 400 pounds".to_string(),
             ));
@@ -149,12 +149,7 @@ mod tests {
 
     #[test]
     fn test_create_valid_player() {
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        );
+        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026);
 
         assert!(player.is_ok());
         let player = player.unwrap();
@@ -168,66 +163,50 @@ mod tests {
 
     #[test]
     fn test_player_first_name_cannot_be_empty() {
-        let result = Player::new(
-            "".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        );
+        let result = Player::new("".to_string(), "Doe".to_string(), Position::QB, 2026);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
     fn test_player_last_name_cannot_be_empty() {
-        let result = Player::new(
-            "John".to_string(),
-            "".to_string(),
-            Position::QB,
-            2026,
-        );
+        let result = Player::new("John".to_string(), "".to_string(), Position::QB, 2026);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
     fn test_player_name_cannot_exceed_100_chars() {
         let long_name = "a".repeat(101);
-        let result = Player::new(
-            long_name,
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        );
+        let result = Player::new(long_name, "Doe".to_string(), Position::QB, 2026);
 
         assert!(result.is_err());
     }
 
     #[test]
     fn test_invalid_draft_year() {
-        let result = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            1935,
-        );
+        let result = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 1935);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
     fn test_player_with_college() {
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap()
-        .with_college("University of Texas".to_string());
+        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026)
+            .unwrap()
+            .with_college("University of Texas".to_string());
 
         assert!(player.is_ok());
         let player = player.unwrap();
@@ -236,14 +215,9 @@ mod tests {
 
     #[test]
     fn test_player_with_physical_stats() {
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap()
-        .with_physical_stats(75, 220);
+        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026)
+            .unwrap()
+            .with_physical_stats(75, 220);
 
         assert!(player.is_ok());
         let player = player.unwrap();
@@ -253,50 +227,51 @@ mod tests {
 
     #[test]
     fn test_invalid_height() {
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap()
-        .with_physical_stats(50, 220);
+        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026)
+            .unwrap()
+            .with_physical_stats(50, 220);
 
         assert!(player.is_err());
-        assert!(matches!(player.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            player.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
     fn test_invalid_weight() {
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap()
-        .with_physical_stats(75, 100);
+        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026)
+            .unwrap()
+            .with_physical_stats(75, 100);
 
         assert!(player.is_err());
-        assert!(matches!(player.unwrap_err(), DomainError::ValidationError(_)));
+        assert!(matches!(
+            player.unwrap_err(),
+            DomainError::ValidationError(_)
+        ));
     }
 
     #[test]
     fn test_all_positions_valid() {
         let positions = vec![
-            Position::QB, Position::RB, Position::WR, Position::TE,
-            Position::OT, Position::OG, Position::C,
-            Position::DE, Position::DT, Position::LB, Position::CB, Position::S,
-            Position::K, Position::P,
+            Position::QB,
+            Position::RB,
+            Position::WR,
+            Position::TE,
+            Position::OT,
+            Position::OG,
+            Position::C,
+            Position::DE,
+            Position::DT,
+            Position::LB,
+            Position::CB,
+            Position::S,
+            Position::K,
+            Position::P,
         ];
 
         for pos in positions {
-            let result = Player::new(
-                "Test".to_string(),
-                "Player".to_string(),
-                pos,
-                2026,
-            );
+            let result = Player::new("Test".to_string(), "Player".to_string(), pos, 2026);
             assert!(result.is_ok());
         }
     }

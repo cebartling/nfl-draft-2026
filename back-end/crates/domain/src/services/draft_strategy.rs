@@ -97,8 +97,8 @@ impl DraftStrategyService {
 mod tests {
     use super::*;
     use crate::models::TeamNeed;
-    use mockall::predicate::*;
     use mockall::mock;
+    use mockall::predicate::*;
 
     mock! {
         DraftStrategyRepo {}
@@ -219,7 +219,10 @@ mod tests {
 
         let service = DraftStrategyService::new(Arc::new(strategy_mock), Arc::new(need_mock));
 
-        let score = service.calculate_need_score(&player, team_id).await.unwrap();
+        let score = service
+            .calculate_need_score(&player, team_id)
+            .await
+            .unwrap();
 
         // Priority 1: (11 - 1) * 10 = 100
         assert_eq!(score, 100.0);
@@ -244,7 +247,10 @@ mod tests {
 
         let service = DraftStrategyService::new(Arc::new(strategy_mock), Arc::new(need_mock));
 
-        let score = service.calculate_need_score(&player, team_id).await.unwrap();
+        let score = service
+            .calculate_need_score(&player, team_id)
+            .await
+            .unwrap();
 
         // Priority 10: (11 - 10) * 10 = 10
         assert_eq!(score, 10.0);
@@ -272,7 +278,10 @@ mod tests {
 
         let service = DraftStrategyService::new(Arc::new(strategy_mock), Arc::new(need_mock));
 
-        let score = service.calculate_need_score(&player, team_id).await.unwrap();
+        let score = service
+            .calculate_need_score(&player, team_id)
+            .await
+            .unwrap();
 
         // No matching need = low score
         assert_eq!(score, 10.0);

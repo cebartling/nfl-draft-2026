@@ -3,7 +3,8 @@ use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
 use crate::models::{Draft, DraftPick, Player};
-use crate::repositories::{DraftRepository, DraftPickRepository, PlayerRepository, TeamRepository};
+use crate::repositories::{DraftPickRepository, DraftRepository, PlayerRepository, TeamRepository};
+use crate::services::AutoPickService;
 
 /// Draft engine service for managing draft operations
 pub struct DraftEngine {
@@ -11,6 +12,7 @@ pub struct DraftEngine {
     pick_repo: Arc<dyn DraftPickRepository>,
     team_repo: Arc<dyn TeamRepository>,
     player_repo: Arc<dyn PlayerRepository>,
+    auto_pick_service: Option<Arc<AutoPickService>>,
 }
 
 impl DraftEngine {
@@ -25,16 +27,28 @@ impl DraftEngine {
             pick_repo,
             team_repo,
             player_repo,
+            auto_pick_service: None,
         }
     }
 
+    pub fn with_auto_pick(mut self, auto_pick_service: Arc<AutoPickService>) -> Self {
+        self.auto_pick_service = Some(auto_pick_service);
+        self
+    }
+
     /// Create a new draft
-    pub async fn create_draft(&self, year: i32, rounds: i32, picks_per_round: i32) -> DomainResult<Draft> {
+    pub async fn create_draft(
+        &self,
+        year: i32,
+        rounds: i32,
+        picks_per_round: i32,
+    ) -> DomainResult<Draft> {
         // Check if draft already exists for this year
         if let Some(_existing) = self.draft_repo.find_by_year(year).await? {
-            return Err(DomainError::DuplicateEntry(
-                format!("Draft for year {} already exists", year)
-            ));
+            return Err(DomainError::DuplicateEntry(format!(
+                "Draft for year {} already exists",
+                year
+            )));
         }
 
         let draft = Draft::new(year, rounds, picks_per_round)?;
@@ -46,35 +60,35 @@ impl DraftEngine {
     /// For now, we'll use a simple team ordering - in Phase 5 this will be based on standings
     pub async fn initialize_picks(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>> {
         // Get the draft
-        let draft = self.draft_repo.find_by_id(draft_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+        let draft = self.draft_repo.find_by_id(draft_id).await?.ok_or_else(|| {
+            DomainError::NotFound(format!("Draft with id {} not found", draft_id))
+        })?;
 
         // Check if picks have already been initialized
         let existing_picks = self.pick_repo.find_by_draft_id(draft_id).await?;
         if !existing_picks.is_empty() {
-            return Err(DomainError::ValidationError(
-                format!("Draft picks have already been initialized for draft {}", draft_id)
-            ));
+            return Err(DomainError::ValidationError(format!(
+                "Draft picks have already been initialized for draft {}",
+                draft_id
+            )));
         }
 
         // Get all teams
         let teams = self.team_repo.find_all().await?;
-        
+
         if teams.is_empty() {
             return Err(DomainError::ValidationError(
-                "Cannot initialize draft picks: no teams found".to_string()
+                "Cannot initialize draft picks: no teams found".to_string(),
             ));
         }
 
         // Validate picks_per_round matches team count
         if teams.len() != draft.picks_per_round as usize {
-            return Err(DomainError::ValidationError(
-                format!(
-                    "Draft configured for {} picks per round but {} teams exist",
-                    draft.picks_per_round,
-                    teams.len()
-                )
-            ));
+            return Err(DomainError::ValidationError(format!(
+                "Draft configured for {} picks per round but {} teams exist",
+                draft.picks_per_round,
+                teams.len()
+            )));
         }
 
         // Generate all picks
@@ -115,7 +129,11 @@ impl DraftEngine {
     }
 
     /// Get available players for drafting (not yet picked in this draft)
-    pub async fn get_available_players(&self, draft_id: Uuid, draft_year: i32) -> DomainResult<Vec<Player>> {
+    pub async fn get_available_players(
+        &self,
+        draft_id: Uuid,
+        draft_year: i32,
+    ) -> DomainResult<Vec<Player>> {
         // Get all players eligible for the draft year
         let all_players = self.player_repo.find_by_draft_year(draft_year).await?;
 
@@ -123,10 +141,8 @@ impl DraftEngine {
         let picks = self.pick_repo.find_by_draft_id(draft_id).await?;
 
         // Get IDs of already picked players
-        let picked_player_ids: std::collections::HashSet<Uuid> = picks
-            .iter()
-            .filter_map(|pick| pick.player_id)
-            .collect();
+        let picked_player_ids: std::collections::HashSet<Uuid> =
+            picks.iter().filter_map(|pick| pick.player_id).collect();
 
         // Filter out picked players
         let available_players = all_players
@@ -140,26 +156,37 @@ impl DraftEngine {
     /// Make a draft pick
     pub async fn make_pick(&self, pick_id: Uuid, player_id: Uuid) -> DomainResult<DraftPick> {
         // Get the pick
-        let mut pick = self.pick_repo.find_by_id(pick_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Pick with id {} not found", pick_id)))?;
+        let mut pick =
+            self.pick_repo.find_by_id(pick_id).await?.ok_or_else(|| {
+                DomainError::NotFound(format!("Pick with id {} not found", pick_id))
+            })?;
 
         // Verify player exists
-        let player = self.player_repo.find_by_id(player_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Player with id {} not found", player_id)))?;
+        let player = self
+            .player_repo
+            .find_by_id(player_id)
+            .await?
+            .ok_or_else(|| {
+                DomainError::NotFound(format!("Player with id {} not found", player_id))
+            })?;
 
         // Verify player is draft eligible for this draft year
-        let draft = self.draft_repo.find_by_id(pick.draft_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Draft not found")))?;
+        let draft = self
+            .draft_repo
+            .find_by_id(pick.draft_id)
+            .await?
+            .ok_or_else(|| DomainError::NotFound("Draft not found".to_string()))?;
 
         if player.draft_year != draft.year {
-            return Err(DomainError::ValidationError(
-                format!("Player is eligible for {} draft, not {}", player.draft_year, draft.year)
-            ));
+            return Err(DomainError::ValidationError(format!(
+                "Player is eligible for {} draft, not {}",
+                player.draft_year, draft.year
+            )));
         }
 
         if !player.draft_eligible {
             return Err(DomainError::ValidationError(
-                "Player is not draft eligible".to_string()
+                "Player is not draft eligible".to_string(),
             ));
         }
 
@@ -172,8 +199,9 @@ impl DraftEngine {
 
     /// Start a draft
     pub async fn start_draft(&self, draft_id: Uuid) -> DomainResult<Draft> {
-        let mut draft = self.draft_repo.find_by_id(draft_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+        let mut draft = self.draft_repo.find_by_id(draft_id).await?.ok_or_else(|| {
+            DomainError::NotFound(format!("Draft with id {} not found", draft_id))
+        })?;
 
         draft.start()?;
         self.draft_repo.update(&draft).await
@@ -181,8 +209,9 @@ impl DraftEngine {
 
     /// Pause a draft
     pub async fn pause_draft(&self, draft_id: Uuid) -> DomainResult<Draft> {
-        let mut draft = self.draft_repo.find_by_id(draft_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+        let mut draft = self.draft_repo.find_by_id(draft_id).await?.ok_or_else(|| {
+            DomainError::NotFound(format!("Draft with id {} not found", draft_id))
+        })?;
 
         draft.pause()?;
         self.draft_repo.update(&draft).await
@@ -190,8 +219,9 @@ impl DraftEngine {
 
     /// Complete a draft
     pub async fn complete_draft(&self, draft_id: Uuid) -> DomainResult<Draft> {
-        let mut draft = self.draft_repo.find_by_id(draft_id).await?
-            .ok_or_else(|| DomainError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+        let mut draft = self.draft_repo.find_by_id(draft_id).await?.ok_or_else(|| {
+            DomainError::NotFound(format!("Draft with id {} not found", draft_id))
+        })?;
 
         draft.complete()?;
         self.draft_repo.update(&draft).await
@@ -210,6 +240,46 @@ impl DraftEngine {
     /// Get all drafts
     pub async fn get_all_drafts(&self) -> DomainResult<Vec<Draft>> {
         self.draft_repo.find_all().await
+    }
+
+    /// Execute an auto-pick decision for a given pick
+    /// This uses the AI draft engine to select the best available player
+    pub async fn execute_auto_pick(&self, pick_id: Uuid) -> DomainResult<DraftPick> {
+        let auto_pick_service = self.auto_pick_service.as_ref().ok_or_else(|| {
+            DomainError::InternalError("Auto-pick service not configured".to_string())
+        })?;
+
+        // Get the pick
+        let pick =
+            self.pick_repo.find_by_id(pick_id).await?.ok_or_else(|| {
+                DomainError::NotFound(format!("Pick with id {} not found", pick_id))
+            })?;
+
+        // Get the draft
+        let draft = self
+            .draft_repo
+            .find_by_id(pick.draft_id)
+            .await?
+            .ok_or_else(|| DomainError::NotFound("Draft not found".to_string()))?;
+
+        // Get available players
+        let available_players = self
+            .get_available_players(pick.draft_id, draft.year)
+            .await?;
+
+        if available_players.is_empty() {
+            return Err(DomainError::ValidationError(
+                "No available players to pick from".to_string(),
+            ));
+        }
+
+        // Use auto-pick service to decide
+        let (selected_player_id, _scores) = auto_pick_service
+            .decide_pick(pick.team_id, pick.draft_id, &available_players)
+            .await?;
+
+        // Make the pick
+        self.make_pick(pick_id, selected_player_id).await
     }
 }
 
@@ -287,10 +357,8 @@ mod tests {
             .expect_find_by_year()
             .with(eq(2026))
             .returning(|_| Ok(None));
-        
-        draft_repo
-            .expect_create()
-            .returning(|d| Ok(d.clone()));
+
+        draft_repo.expect_create().returning(|d| Ok(d.clone()));
 
         let engine = DraftEngine::new(
             Arc::new(draft_repo),
@@ -311,7 +379,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_duplicate_draft() {
         let existing_draft = Draft::new(2026, 7, 32).unwrap();
-        
+
         let mut draft_repo = MockDraftRepo::new();
         draft_repo
             .expect_find_by_year()
@@ -340,7 +408,8 @@ mod tests {
             "City A".to_string(),
             Conference::AFC,
             Division::AFCEast,
-        ).unwrap();
+        )
+        .unwrap();
 
         let team2 = Team::new(
             "Team B".to_string(),
@@ -348,7 +417,8 @@ mod tests {
             "City B".to_string(),
             Conference::NFC,
             Division::NFCEast,
-        ).unwrap();
+        )
+        .unwrap();
 
         let mut draft_repo = MockDraftRepo::new();
         draft_repo

@@ -345,19 +345,25 @@ mod tests {
         let mut did_expire = false;
 
         // Run manager until expiration
-        manager.run(|sid, time, expired| {
-            assert_eq!(sid, session_id);
-            tick_count += 1;
+        manager
+            .run(|sid, time, expired| {
+                assert_eq!(sid, session_id);
+                tick_count += 1;
 
-            // On the last tick, time will be 0 and expired will be true
-            if expired {
-                assert_eq!(time, 0);
-                did_expire = true;
-            }
-        }).await;
+                // On the last tick, time will be 0 and expired will be true
+                if expired {
+                    assert_eq!(time, 0);
+                    did_expire = true;
+                }
+            })
+            .await;
 
         // Should have at least 3 ticks (one for each second)
-        assert!(tick_count >= 3, "Expected at least 3 ticks, got {}", tick_count);
+        assert!(
+            tick_count >= 3,
+            "Expected at least 3 ticks, got {}",
+            tick_count
+        );
         assert!(did_expire);
         assert_eq!(clock.time_remaining().await, 0);
     }

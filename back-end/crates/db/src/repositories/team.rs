@@ -170,16 +170,17 @@ impl TeamRepository for SqlxTeamRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use domain::models::{Conference, Division};
     use crate::create_pool;
+    use domain::models::{Conference, Division};
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup_teams(pool: &PgPool) {
@@ -231,7 +232,9 @@ mod tests {
         )
         .unwrap();
 
-        repo.create(&team1).await.expect("First create should succeed");
+        repo.create(&team1)
+            .await
+            .expect("First create should succeed");
 
         let team2 = Team::new(
             "Different Team".to_string(),

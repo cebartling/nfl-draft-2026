@@ -132,7 +132,7 @@ impl CombineResults {
     }
 
     fn validate_year(year: i32) -> DomainResult<()> {
-        if year < 2000 || year > 2100 {
+        if !(2000..=2100).contains(&year) {
             return Err(DomainError::ValidationError(
                 "Combine year must be between 2000 and 2100".to_string(),
             ));
@@ -141,7 +141,7 @@ impl CombineResults {
     }
 
     fn validate_forty_dash(time: f64) -> DomainResult<()> {
-        if time < 4.0 || time > 6.0 {
+        if !(4.0..=6.0).contains(&time) {
             return Err(DomainError::ValidationError(
                 "40-yard dash time must be between 4.0 and 6.0 seconds".to_string(),
             ));
@@ -150,7 +150,7 @@ impl CombineResults {
     }
 
     fn validate_bench_press(reps: i32) -> DomainResult<()> {
-        if reps < 0 || reps > 50 {
+        if !(0..=50).contains(&reps) {
             return Err(DomainError::ValidationError(
                 "Bench press reps must be between 0 and 50".to_string(),
             ));
@@ -159,7 +159,7 @@ impl CombineResults {
     }
 
     fn validate_vertical_jump(inches: f64) -> DomainResult<()> {
-        if inches < 20.0 || inches > 50.0 {
+        if !(20.0..=50.0).contains(&inches) {
             return Err(DomainError::ValidationError(
                 "Vertical jump must be between 20 and 50 inches".to_string(),
             ));
@@ -168,7 +168,7 @@ impl CombineResults {
     }
 
     fn validate_broad_jump(inches: i32) -> DomainResult<()> {
-        if inches < 80 || inches > 150 {
+        if !(80..=150).contains(&inches) {
             return Err(DomainError::ValidationError(
                 "Broad jump must be between 80 and 150 inches".to_string(),
             ));
@@ -177,7 +177,7 @@ impl CombineResults {
     }
 
     fn validate_three_cone_drill(time: f64) -> DomainResult<()> {
-        if time < 6.0 || time > 9.0 {
+        if !(6.0..=9.0).contains(&time) {
             return Err(DomainError::ValidationError(
                 "Three cone drill time must be between 6.0 and 9.0 seconds".to_string(),
             ));
@@ -186,7 +186,7 @@ impl CombineResults {
     }
 
     fn validate_twenty_yard_shuttle(time: f64) -> DomainResult<()> {
-        if time < 3.5 || time > 6.0 {
+        if !(3.5..=6.0).contains(&time) {
             return Err(DomainError::ValidationError(
                 "20-yard shuttle time must be between 3.5 and 6.0 seconds".to_string(),
             ));

@@ -45,7 +45,8 @@ async fn test_create_and_get_team_need() {
 
     assert_eq!(create_response.status(), 201);
 
-    let created_need: serde_json::Value = create_response.json().await.expect("Failed to parse JSON");
+    let created_need: serde_json::Value =
+        create_response.json().await.expect("Failed to parse JSON");
     let need_id = created_need["id"].as_str().expect("Missing need id");
 
     // Validate need was persisted in database
@@ -155,7 +156,8 @@ async fn test_list_team_needs() {
 
     assert_eq!(list_response.status(), 200);
 
-    let needs_list: Vec<serde_json::Value> = list_response.json().await.expect("Failed to parse JSON");
+    let needs_list: Vec<serde_json::Value> =
+        list_response.json().await.expect("Failed to parse JSON");
     assert_eq!(needs_list.len(), 3);
 
     // Verify database count matches

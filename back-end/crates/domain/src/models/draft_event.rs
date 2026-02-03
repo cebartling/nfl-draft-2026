@@ -97,7 +97,11 @@ impl DraftEvent {
     }
 
     pub fn session_completed(session_id: Uuid) -> Self {
-        Self::new(session_id, EventType::SessionCompleted, serde_json::json!({}))
+        Self::new(
+            session_id,
+            EventType::SessionCompleted,
+            serde_json::json!({}),
+        )
     }
 
     pub fn pick_made(
@@ -125,7 +129,12 @@ impl DraftEvent {
         Self::new(session_id, EventType::ClockUpdate, data)
     }
 
-    pub fn trade_proposed(session_id: Uuid, trade_id: Uuid, from_team: Uuid, to_team: Uuid) -> Self {
+    pub fn trade_proposed(
+        session_id: Uuid,
+        trade_id: Uuid,
+        from_team: Uuid,
+        to_team: Uuid,
+    ) -> Self {
         let data = serde_json::json!({
             "trade_id": trade_id,
             "from_team": from_team,
@@ -157,8 +166,14 @@ mod tests {
     fn test_event_type_from_str() {
         use std::str::FromStr;
 
-        assert_eq!(EventType::from_str("SessionCreated").unwrap(), EventType::SessionCreated);
-        assert_eq!(EventType::from_str("PickMade").unwrap(), EventType::PickMade);
+        assert_eq!(
+            EventType::from_str("SessionCreated").unwrap(),
+            EventType::SessionCreated
+        );
+        assert_eq!(
+            EventType::from_str("PickMade").unwrap(),
+            EventType::PickMade
+        );
         assert!(EventType::from_str("Invalid").is_err());
     }
 

@@ -58,7 +58,10 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
                     ));
                 }
                 if db_err.is_foreign_key_violation() {
-                    return DbError::NotFound(format!("Player with id {} not found", results.player_id));
+                    return DbError::NotFound(format!(
+                        "Player with id {} not found",
+                        results.player_id
+                    ));
                 }
             }
             DbError::DatabaseError(e)
@@ -189,17 +192,18 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
 mod tests {
     use super::*;
     use crate::create_pool;
+    use crate::repositories::SqlxPlayerRepository;
     use domain::models::Player;
     use domain::repositories::PlayerRepository;
-    use crate::repositories::SqlxPlayerRepository;
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup_combine_results(pool: &PgPool) {

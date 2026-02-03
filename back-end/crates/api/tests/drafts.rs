@@ -112,7 +112,10 @@ async fn test_draft_flow() {
 
     // Initialize draft picks
     let init_response = client
-        .post(&format!("{}/api/v1/drafts/{}/initialize", base_url, draft_id))
+        .post(&format!(
+            "{}/api/v1/drafts/{}/initialize",
+            base_url, draft_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -137,14 +140,20 @@ async fn test_draft_flow() {
 
     // Get next pick
     let next_pick_response = client
-        .get(&format!("{}/api/v1/drafts/{}/picks/next", base_url, draft_id))
+        .get(&format!(
+            "{}/api/v1/drafts/{}/picks/next",
+            base_url, draft_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
         .expect("Failed to get next pick");
     assert_eq!(next_pick_response.status(), 200);
 
-    let next_pick: serde_json::Value = next_pick_response.json().await.expect("Failed to parse JSON");
+    let next_pick: serde_json::Value = next_pick_response
+        .json()
+        .await
+        .expect("Failed to parse JSON");
     let pick_id = next_pick["id"].as_str().expect("Missing pick id");
 
     // Start draft
@@ -156,7 +165,8 @@ async fn test_draft_flow() {
         .expect("Failed to start draft");
     assert_eq!(start_response.status(), 200);
 
-    let started_draft: serde_json::Value = start_response.json().await.expect("Failed to parse JSON");
+    let started_draft: serde_json::Value =
+        start_response.json().await.expect("Failed to parse JSON");
     assert_eq!(started_draft["status"], "InProgress");
 
     // Verify draft status was updated in database
@@ -181,7 +191,10 @@ async fn test_draft_flow() {
         .expect("Failed to make pick");
     assert_eq!(make_pick_response.status(), 200);
 
-    let made_pick: serde_json::Value = make_pick_response.json().await.expect("Failed to parse JSON");
+    let made_pick: serde_json::Value = make_pick_response
+        .json()
+        .await
+        .expect("Failed to parse JSON");
     assert_eq!(made_pick["player_id"], player_id);
     assert!(made_pick["picked_at"].is_string());
 
@@ -193,7 +206,10 @@ async fn test_draft_flow() {
     .fetch_one(&pool)
     .await
     .expect("Failed to fetch pick");
-    assert_eq!(db_pick.player_id, Some(uuid::Uuid::parse_str(player_id).expect("Invalid UUID")));
+    assert_eq!(
+        db_pick.player_id,
+        Some(uuid::Uuid::parse_str(player_id).expect("Invalid UUID"))
+    );
     assert!(db_pick.picked_at.is_some());
 
     // Pause draft
@@ -205,7 +221,8 @@ async fn test_draft_flow() {
         .expect("Failed to pause draft");
     assert_eq!(pause_response.status(), 200);
 
-    let paused_draft: serde_json::Value = pause_response.json().await.expect("Failed to parse JSON");
+    let paused_draft: serde_json::Value =
+        pause_response.json().await.expect("Failed to parse JSON");
     assert_eq!(paused_draft["status"], "Paused");
 
     // Verify pause status in database
@@ -236,7 +253,10 @@ async fn test_draft_flow() {
         .expect("Failed to complete draft");
     assert_eq!(complete_response.status(), 200);
 
-    let completed_draft: serde_json::Value = complete_response.json().await.expect("Failed to parse JSON");
+    let completed_draft: serde_json::Value = complete_response
+        .json()
+        .await
+        .expect("Failed to parse JSON");
     assert_eq!(completed_draft["status"], "Completed");
 
     // Verify completed status in database

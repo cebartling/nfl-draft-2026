@@ -176,17 +176,18 @@ impl DraftStrategyRepository for SqlxDraftStrategyRepository {
 mod tests {
     use super::*;
     use crate::create_pool;
-    use domain::models::{Team, Conference, Division, Draft};
-    use domain::repositories::{TeamRepository, DraftRepository};
-    use crate::repositories::{SqlxTeamRepository, SqlxDraftRepository};
+    use crate::repositories::{SqlxDraftRepository, SqlxTeamRepository};
+    use domain::models::{Conference, Division, Draft, Team};
+    use domain::repositories::{DraftRepository, TeamRepository};
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup_draft_strategies(pool: &PgPool) {
@@ -299,7 +300,10 @@ mod tests {
         let strategy = DraftStrategy::default_strategy(team.id, draft.id);
         repo.create(&strategy).await.unwrap();
 
-        let found = repo.find_by_team_and_draft(team.id, draft.id).await.unwrap();
+        let found = repo
+            .find_by_team_and_draft(team.id, draft.id)
+            .await
+            .unwrap();
 
         assert!(found.is_some());
         let found = found.unwrap();

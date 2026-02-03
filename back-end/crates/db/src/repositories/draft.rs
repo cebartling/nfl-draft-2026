@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use domain::errors::DomainResult;
 use domain::models::{Draft, DraftPick, DraftStatus};
-use domain::repositories::{DraftRepository, DraftPickRepository};
+use domain::repositories::{DraftPickRepository, DraftRepository};
 
 use crate::errors::DbError;
 use crate::models::{DraftDb, DraftPickDb};
@@ -312,7 +312,11 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             .map_err(Into::into)
     }
 
-    async fn find_by_draft_and_round(&self, draft_id: Uuid, round: i32) -> DomainResult<Vec<DraftPick>> {
+    async fn find_by_draft_and_round(
+        &self,
+        draft_id: Uuid,
+        round: i32,
+    ) -> DomainResult<Vec<DraftPick>> {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
@@ -335,7 +339,11 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             .map_err(Into::into)
     }
 
-    async fn find_by_draft_and_team(&self, draft_id: Uuid, team_id: Uuid) -> DomainResult<Vec<DraftPick>> {
+    async fn find_by_draft_and_team(
+        &self,
+        draft_id: Uuid,
+        team_id: Uuid,
+    ) -> DomainResult<Vec<DraftPick>> {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
@@ -463,23 +471,33 @@ impl DraftPickRepository for SqlxDraftPickRepository {
 mod tests {
     use super::*;
     use crate::create_pool;
+    use crate::repositories::SqlxTeamRepository;
     use domain::models::{Conference, Division, Team};
     use domain::repositories::TeamRepository;
-    use crate::repositories::SqlxTeamRepository;
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup(pool: &PgPool) {
-        sqlx::query!("DELETE FROM draft_picks").execute(pool).await.expect("Failed to cleanup picks");
-        sqlx::query!("DELETE FROM drafts").execute(pool).await.expect("Failed to cleanup drafts");
-        sqlx::query!("DELETE FROM teams").execute(pool).await.expect("Failed to cleanup teams");
+        sqlx::query!("DELETE FROM draft_picks")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup picks");
+        sqlx::query!("DELETE FROM drafts")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup drafts");
+        sqlx::query!("DELETE FROM teams")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup teams");
     }
 
     #[tokio::test]
@@ -580,7 +598,8 @@ mod tests {
             "Dallas".to_string(),
             Conference::NFC,
             Division::NFCEast,
-        ).unwrap();
+        )
+        .unwrap();
         let created_team = team_repo.create(&team).await.unwrap();
 
         // Create pick
@@ -612,7 +631,8 @@ mod tests {
             "Dallas".to_string(),
             Conference::NFC,
             Division::NFCEast,
-        ).unwrap();
+        )
+        .unwrap();
         let created_team = team_repo.create(&team).await.unwrap();
 
         // Create two picks

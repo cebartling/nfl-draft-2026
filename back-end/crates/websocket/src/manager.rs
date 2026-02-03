@@ -78,7 +78,8 @@ impl ConnectionManager {
         });
 
         // Clean up empty sessions
-        self.sessions.retain(|_, connections| !connections.is_empty());
+        self.sessions
+            .retain(|_, connections| !connections.is_empty());
     }
 
     /// Broadcast a message to all connections in a session
@@ -162,10 +163,7 @@ impl ConnectionManager {
 
     /// Get the number of connections in a session
     pub fn session_connection_count(&self, session_id: Uuid) -> usize {
-        self.sessions
-            .get(&session_id)
-            .map(|s| s.len())
-            .unwrap_or(0)
+        self.sessions.get(&session_id).map(|s| s.len()).unwrap_or(0)
     }
 
     /// Get total number of active connections

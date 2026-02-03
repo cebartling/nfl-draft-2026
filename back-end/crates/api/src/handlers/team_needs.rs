@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use domain::models::{TeamNeed, Position};
+use domain::models::{Position, TeamNeed};
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -170,15 +170,13 @@ pub async fn delete_team_need(
 mod tests {
     use super::*;
     use crate::state::AppState;
-    use domain::models::{Team, Conference, Division};
+    use domain::models::{Conference, Division, Team};
     use domain::repositories::TeamRepository;
 
     async fn setup_test_state() -> AppState {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test"
-                    .to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
         let pool = db::create_pool(&database_url)
             .await
@@ -305,11 +303,14 @@ mod tests {
             .await
             .unwrap();
 
-        let update_request = UpdateTeamNeedRequest {
-            priority: 5,
-        };
+        let update_request = UpdateTeamNeedRequest { priority: 5 };
 
-        let result = update_team_need(State(state.clone()), Path(created_response.id), Json(update_request)).await;
+        let result = update_team_need(
+            State(state.clone()),
+            Path(created_response.id),
+            Json(update_request),
+        )
+        .await;
         assert!(result.is_ok());
 
         let response = result.unwrap();

@@ -201,17 +201,18 @@ impl ScoutingReportRepository for SqlxScoutingReportRepository {
 mod tests {
     use super::*;
     use crate::create_pool;
-    use domain::models::{Player, Team, Conference, Division, FitGrade};
-    use domain::repositories::{PlayerRepository, TeamRepository};
     use crate::repositories::{SqlxPlayerRepository, SqlxTeamRepository};
+    use domain::models::{Conference, Division, FitGrade, Player, Team};
+    use domain::repositories::{PlayerRepository, TeamRepository};
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup_scouting_reports(pool: &PgPool) {
@@ -324,12 +325,18 @@ mod tests {
 
         let player1 = create_test_player(&pool).await;
         let player_repo = SqlxPlayerRepository::new(pool.clone());
-        let player2 = player_repo.create(&Player::new(
-            "Second".to_string(),
-            "Player".to_string(),
-            domain::models::Position::RB,
-            2026,
-        ).unwrap()).await.unwrap();
+        let player2 = player_repo
+            .create(
+                &Player::new(
+                    "Second".to_string(),
+                    "Player".to_string(),
+                    domain::models::Position::RB,
+                    2026,
+                )
+                .unwrap(),
+            )
+            .await
+            .unwrap();
 
         let team = create_test_team(&pool, "TST").await;
         let repo = SqlxScoutingReportRepository::new(pool.clone());
@@ -394,7 +401,10 @@ mod tests {
         let report = ScoutingReport::new(player.id, team.id, 8.5).unwrap();
         repo.create(&report).await.unwrap();
 
-        let found = repo.find_by_team_and_player(team.id, player.id).await.unwrap();
+        let found = repo
+            .find_by_team_and_player(team.id, player.id)
+            .await
+            .unwrap();
 
         assert!(found.is_some());
         let found = found.unwrap();
