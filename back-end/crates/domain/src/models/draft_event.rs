@@ -16,6 +16,7 @@ pub enum EventType {
     ClockUpdate,
     TradeProposed,
     TradeExecuted,
+    TradeRejected,
 }
 
 impl std::fmt::Display for EventType {
@@ -30,6 +31,7 @@ impl std::fmt::Display for EventType {
             EventType::ClockUpdate => write!(f, "ClockUpdate"),
             EventType::TradeProposed => write!(f, "TradeProposed"),
             EventType::TradeExecuted => write!(f, "TradeExecuted"),
+            EventType::TradeRejected => write!(f, "TradeRejected"),
         }
     }
 }
@@ -48,6 +50,7 @@ impl std::str::FromStr for EventType {
             "ClockUpdate" => Ok(EventType::ClockUpdate),
             "TradeProposed" => Ok(EventType::TradeProposed),
             "TradeExecuted" => Ok(EventType::TradeExecuted),
+            "TradeRejected" => Ok(EventType::TradeRejected),
             _ => Err(DomainError::ValidationError(format!(
                 "Invalid event type: {}",
                 s
@@ -148,6 +151,14 @@ impl DraftEvent {
             "trade_id": trade_id,
         });
         Self::new(session_id, EventType::TradeExecuted, data)
+    }
+
+    pub fn trade_rejected(session_id: Uuid, trade_id: Uuid, rejecting_team_id: Uuid) -> Self {
+        let data = serde_json::json!({
+            "trade_id": trade_id,
+            "rejecting_team_id": rejecting_team_id,
+        });
+        Self::new(session_id, EventType::TradeRejected, data)
     }
 }
 

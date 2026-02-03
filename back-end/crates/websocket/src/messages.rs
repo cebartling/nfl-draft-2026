@@ -51,9 +51,26 @@ pub enum ServerMessage {
         trade_id: Uuid,
         from_team_id: Uuid,
         to_team_id: Uuid,
+        from_team_name: String,
+        to_team_name: String,
+        from_team_picks: Vec<Uuid>,
+        to_team_picks: Vec<Uuid>,
+        from_team_value: i32,
+        to_team_value: i32,
     },
-    /// Trade was executed
-    TradeExecuted { session_id: Uuid, trade_id: Uuid },
+    /// Trade was executed (accepted)
+    TradeExecuted {
+        session_id: Uuid,
+        trade_id: Uuid,
+        from_team_id: Uuid,
+        to_team_id: Uuid,
+    },
+    /// Trade was rejected
+    TradeRejected {
+        session_id: Uuid,
+        trade_id: Uuid,
+        rejecting_team_id: Uuid,
+    },
     /// Error occurred
     Error { message: String },
     /// Pong response to ping
@@ -145,8 +162,34 @@ impl ServerMessage {
         trade_id: Uuid,
         from_team_id: Uuid,
         to_team_id: Uuid,
+        from_team_name: String,
+        to_team_name: String,
+        from_team_picks: Vec<Uuid>,
+        to_team_picks: Vec<Uuid>,
+        from_team_value: i32,
+        to_team_value: i32,
     ) -> Self {
         ServerMessage::TradeProposed {
+            session_id,
+            trade_id,
+            from_team_id,
+            to_team_id,
+            from_team_name,
+            to_team_name,
+            from_team_picks,
+            to_team_picks,
+            from_team_value,
+            to_team_value,
+        }
+    }
+
+    pub fn trade_executed(
+        session_id: Uuid,
+        trade_id: Uuid,
+        from_team_id: Uuid,
+        to_team_id: Uuid,
+    ) -> Self {
+        ServerMessage::TradeExecuted {
             session_id,
             trade_id,
             from_team_id,
@@ -154,10 +197,15 @@ impl ServerMessage {
         }
     }
 
-    pub fn trade_executed(session_id: Uuid, trade_id: Uuid) -> Self {
-        ServerMessage::TradeExecuted {
+    pub fn trade_rejected(
+        session_id: Uuid,
+        trade_id: Uuid,
+        rejecting_team_id: Uuid,
+    ) -> Self {
+        ServerMessage::TradeRejected {
             session_id,
             trade_id,
+            rejecting_team_id,
         }
     }
 

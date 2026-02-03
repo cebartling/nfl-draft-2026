@@ -4,9 +4,10 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
-use domain::models::{PickTrade, TradeProposal};
+use domain::models::{DraftEvent, PickTrade, TradeProposal};
 use crate::error::ApiResult;
 use crate::state::AppState;
+use websocket::ServerMessage;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProposeTradeRequest {
@@ -85,9 +86,41 @@ pub async fn propose_trade(
         payload.session_id,
         payload.from_team_id,
         payload.to_team_id,
-        payload.from_team_picks,
-        payload.to_team_picks,
+        payload.from_team_picks.clone(),
+        payload.to_team_picks.clone(),
     ).await?;
+
+    // Create and store draft event for audit trail
+    let event = DraftEvent::trade_proposed(
+        payload.session_id,
+        proposal.trade.id,
+        payload.from_team_id,
+        payload.to_team_id,
+    );
+    state.event_repo.create(&event).await?;
+
+    // Fetch team names for the WebSocket message
+    let from_team = state.team_repo.find_by_id(payload.from_team_id).await?
+        .ok_or_else(|| crate::error::ApiError::NotFound(format!("From team {} not found", payload.from_team_id)))?;
+    let to_team = state.team_repo.find_by_id(payload.to_team_id).await?
+        .ok_or_else(|| crate::error::ApiError::NotFound(format!("To team {} not found", payload.to_team_id)))?;
+
+    // Broadcast to all WebSocket clients in session
+    state.ws_manager.broadcast_to_session(
+        payload.session_id,
+        ServerMessage::trade_proposed(
+            payload.session_id,
+            proposal.trade.id,
+            payload.from_team_id,
+            payload.to_team_id,
+            from_team.name,
+            to_team.name,
+            payload.from_team_picks,
+            payload.to_team_picks,
+            proposal.trade.from_team_value,
+            proposal.trade.to_team_value,
+        ),
+    ).await;
 
     Ok((StatusCode::CREATED, Json(proposal.into())))
 }
@@ -107,6 +140,22 @@ pub async fn accept_trade(
     Json(payload): Json<TradeActionRequest>,
 ) -> ApiResult<Json<TradeResponse>> {
     let trade = state.trade_engine.accept_trade(id, payload.team_id).await?;
+
+    // Create and store draft event
+    let event = DraftEvent::trade_executed(trade.session_id, trade.id);
+    state.event_repo.create(&event).await?;
+
+    // Broadcast trade execution to session
+    state.ws_manager.broadcast_to_session(
+        trade.session_id,
+        ServerMessage::trade_executed(
+            trade.session_id,
+            trade.id,
+            trade.from_team_id,
+            trade.to_team_id,
+        ),
+    ).await;
+
     Ok(Json(trade.into()))
 }
 
@@ -123,6 +172,21 @@ pub async fn reject_trade(
     Json(payload): Json<TradeActionRequest>,
 ) -> ApiResult<Json<TradeResponse>> {
     let trade = state.trade_engine.reject_trade(id, payload.team_id).await?;
+
+    // Create and store draft event for rejection
+    let event = DraftEvent::trade_rejected(trade.session_id, trade.id, payload.team_id);
+    state.event_repo.create(&event).await?;
+
+    // Broadcast trade rejection to session
+    state.ws_manager.broadcast_to_session(
+        trade.session_id,
+        ServerMessage::trade_rejected(
+            trade.session_id,
+            trade.id,
+            payload.team_id,
+        ),
+    ).await;
+
     Ok(Json(trade.into()))
 }
 
