@@ -1,0 +1,258 @@
+<script lang="ts">
+	import { Badge, LoadingSpinner } from '$components/ui';
+	import { playersApi } from '$api';
+	import type { Player, ScoutingReport, CombineResults } from '$types';
+
+	interface Props {
+		player: Player;
+	}
+
+	let { player }: Props = $props();
+
+	let activeTab = $state<'overview' | 'scouting' | 'combine'>('overview');
+	let scoutingReports = $state<ScoutingReport[]>([]);
+	let combineResults = $state<CombineResults | null>(null);
+	let isLoadingScouting = $state(false);
+	let isLoadingCombine = $state(false);
+
+	function formatHeight(inches?: number): string {
+		if (!inches) return 'N/A';
+		const feet = Math.floor(inches / 12);
+		const remainingInches = inches % 12;
+		return `${feet}'${remainingInches}"`;
+	}
+
+	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
+		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
+		const defensePositions = ['DE', 'DT', 'LB', 'CB', 'S'];
+
+		if (offensePositions.includes(position)) return 'primary';
+		if (defensePositions.includes(position)) return 'danger';
+		return 'info';
+	}
+
+	// Load scouting reports when switching to scouting tab
+	$effect(() => {
+		if (activeTab === 'scouting' && scoutingReports.length === 0) {
+			isLoadingScouting = true;
+			playersApi
+				.getScoutingReports(player.id)
+				.then((reports) => {
+					scoutingReports = reports;
+				})
+				.catch((err) => {
+					console.error('Failed to load scouting reports:', err);
+				})
+				.finally(() => {
+					isLoadingScouting = false;
+				});
+		}
+	});
+
+	// Load combine results when switching to combine tab
+	$effect(() => {
+		if (activeTab === 'combine' && combineResults === null && !isLoadingCombine) {
+			isLoadingCombine = true;
+			playersApi
+				.getCombineResults(player.id)
+				.then((results) => {
+					combineResults = results;
+				})
+				.catch((err) => {
+					console.error('Failed to load combine results:', err);
+				})
+				.finally(() => {
+					isLoadingCombine = false;
+				});
+		}
+	});
+</script>
+
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+	<!-- Header -->
+	<div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+		<div class="flex items-start justify-between">
+			<div>
+				<h1 class="text-3xl font-bold mb-2">
+					{player.first_name} {player.last_name}
+				</h1>
+				<p class="text-blue-100">{player.college || 'N/A'}</p>
+			</div>
+			<Badge variant={getPositionColor(player.position)} size="lg">
+				{player.position}
+			</Badge>
+		</div>
+	</div>
+
+	<!-- Tabs -->
+	<div class="border-b border-gray-200">
+		<nav class="flex -mb-px">
+			<button
+				type="button"
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab ===
+				'overview'
+					? 'border-blue-600 text-blue-600'
+					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+				onclick={() => (activeTab = 'overview')}
+			>
+				Overview
+			</button>
+			<button
+				type="button"
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab ===
+				'scouting'
+					? 'border-blue-600 text-blue-600'
+					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+				onclick={() => (activeTab = 'scouting')}
+			>
+				Scouting Reports
+			</button>
+			<button
+				type="button"
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab ===
+				'combine'
+					? 'border-blue-600 text-blue-600'
+					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+				onclick={() => (activeTab = 'combine')}
+			>
+				Combine Results
+			</button>
+		</nav>
+	</div>
+
+	<!-- Tab Content -->
+	<div class="p-6">
+		{#if activeTab === 'overview'}
+			<div class="space-y-6">
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+					<div>
+						<p class="text-sm font-medium text-gray-600 mb-1">Height</p>
+						<p class="text-lg font-semibold text-gray-900">
+							{formatHeight(player.height_inches)}
+						</p>
+					</div>
+					<div>
+						<p class="text-sm font-medium text-gray-600 mb-1">Weight</p>
+						<p class="text-lg font-semibold text-gray-900">
+							{player.weight_pounds ? `${player.weight_pounds} lbs` : 'N/A'}
+						</p>
+					</div>
+					<div>
+						<p class="text-sm font-medium text-gray-600 mb-1">Draft Year</p>
+						<p class="text-lg font-semibold text-gray-900">{player.draft_year}</p>
+					</div>
+					<div>
+						<p class="text-sm font-medium text-gray-600 mb-1">Projected Round</p>
+						<p class="text-lg font-semibold text-gray-900">
+							{player.projected_round ? `Round ${player.projected_round}` : 'N/A'}
+						</p>
+					</div>
+				</div>
+
+				<div>
+					<p class="text-sm font-medium text-gray-600 mb-1">Draft Eligible</p>
+					<Badge variant={player.draft_eligible ? 'success' : 'danger'}>
+						{player.draft_eligible ? 'Yes' : 'No'}
+					</Badge>
+				</div>
+			</div>
+		{:else if activeTab === 'scouting'}
+			{#if isLoadingScouting}
+				<div class="flex justify-center py-12">
+					<LoadingSpinner size="lg" />
+				</div>
+			{:else if scoutingReports.length === 0}
+				<p class="text-center text-gray-500 py-12">No scouting reports available</p>
+			{:else}
+				<div class="space-y-4">
+					{#each scoutingReports as report}
+						<div class="border border-gray-200 rounded-lg p-4">
+							<div class="flex items-center justify-between mb-3">
+								<Badge variant="info" size="lg">
+									Grade: {report.grade}/100
+								</Badge>
+							</div>
+							{#if report.notes}
+								<div class="mb-3">
+									<p class="text-sm font-medium text-gray-600 mb-1">Notes</p>
+									<p class="text-sm text-gray-900">{report.notes}</p>
+								</div>
+							{/if}
+							{#if report.strengths}
+								<div class="mb-3">
+									<p class="text-sm font-medium text-gray-600 mb-1">Strengths</p>
+									<p class="text-sm text-gray-900">{report.strengths}</p>
+								</div>
+							{/if}
+							{#if report.weaknesses}
+								<div>
+									<p class="text-sm font-medium text-gray-600 mb-1">Weaknesses</p>
+									<p class="text-sm text-gray-900">{report.weaknesses}</p>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+		{:else if activeTab === 'combine'}
+			{#if isLoadingCombine}
+				<div class="flex justify-center py-12">
+					<LoadingSpinner size="lg" />
+				</div>
+			{:else if !combineResults}
+				<p class="text-center text-gray-500 py-12">No combine results available</p>
+			{:else}
+				<div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+					{#if combineResults.forty_yard_dash}
+						<div>
+							<p class="text-sm font-medium text-gray-600 mb-1">40-Yard Dash</p>
+							<p class="text-lg font-semibold text-gray-900">
+								{combineResults.forty_yard_dash.toFixed(2)}s
+							</p>
+						</div>
+					{/if}
+					{#if combineResults.bench_press}
+						<div>
+							<p class="text-sm font-medium text-gray-600 mb-1">Bench Press</p>
+							<p class="text-lg font-semibold text-gray-900">
+								{combineResults.bench_press} reps
+							</p>
+						</div>
+					{/if}
+					{#if combineResults.vertical_jump}
+						<div>
+							<p class="text-sm font-medium text-gray-600 mb-1">Vertical Jump</p>
+							<p class="text-lg font-semibold text-gray-900">
+								{combineResults.vertical_jump}"
+							</p>
+						</div>
+					{/if}
+					{#if combineResults.broad_jump}
+						<div>
+							<p class="text-sm font-medium text-gray-600 mb-1">Broad Jump</p>
+							<p class="text-lg font-semibold text-gray-900">
+								{combineResults.broad_jump}"
+							</p>
+						</div>
+					{/if}
+					{#if combineResults.three_cone_drill}
+						<div>
+							<p class="text-sm font-medium text-gray-600 mb-1">3-Cone Drill</p>
+							<p class="text-lg font-semibold text-gray-900">
+								{combineResults.three_cone_drill.toFixed(2)}s
+							</p>
+						</div>
+					{/if}
+					{#if combineResults.shuttle_run}
+						<div>
+							<p class="text-sm font-medium text-gray-600 mb-1">Shuttle Run</p>
+							<p class="text-lg font-semibold text-gray-900">
+								{combineResults.shuttle_run.toFixed(2)}s
+							</p>
+						</div>
+					{/if}
+				</div>
+			{/if}
+		{/if}
+	</div>
+</div>
