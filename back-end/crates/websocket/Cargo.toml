@@ -14,6 +14,7 @@ serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 tracing.workspace = true
+dashmap.workspace = true
 
 # Local crates
 domain = { path = "../domain" }

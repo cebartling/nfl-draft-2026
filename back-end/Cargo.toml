@@ -49,6 +49,7 @@ dotenvy = "0.15"
 # Utilities
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
+dashmap = "6.1"
 
 # Testing
 mockall = "0.13"
