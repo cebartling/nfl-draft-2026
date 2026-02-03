@@ -67,12 +67,13 @@ impl TradeEngine {
         self.validate_team_exists(from_team_id).await?;
         self.validate_team_exists(to_team_id).await?;
 
-        // Validate picks ownership and availability
+        // Validate picks ownership and availability (no trade to exclude)
         self.validate_picks_for_trade(
             from_team_id,
             to_team_id,
             &from_team_picks,
             &to_team_picks,
+            None,
         ).await?;
 
         // Calculate trade values
@@ -122,12 +123,13 @@ impl TradeEngine {
         // Accept trade
         trade_proposal.trade.accept()?;
 
-        // Re-validate picks before execution (prevent race conditions)
+        // Re-validate picks before execution (prevent race conditions, excluding current trade)
         self.validate_picks_for_trade(
             trade_proposal.trade.from_team_id,
             trade_proposal.trade.to_team_id,
             &trade_proposal.from_team_picks,
             &trade_proposal.to_team_picks,
+            Some(trade_id),
         ).await?;
 
         // Execute trade (atomic pick transfer)
@@ -181,15 +183,16 @@ impl TradeEngine {
         to_team_id: Uuid,
         from_team_picks: &[Uuid],
         to_team_picks: &[Uuid],
+        exclude_trade_id: Option<Uuid>,
     ) -> DomainResult<()> {
         for pick_id in from_team_picks {
             self.validate_pick_ownership(*pick_id, from_team_id).await?;
-            self.validate_pick_not_traded(*pick_id).await?;
+            self.validate_pick_not_traded(*pick_id, exclude_trade_id).await?;
         }
 
         for pick_id in to_team_picks {
             self.validate_pick_ownership(*pick_id, to_team_id).await?;
-            self.validate_pick_not_traded(*pick_id).await?;
+            self.validate_pick_not_traded(*pick_id, exclude_trade_id).await?;
         }
 
         Ok(())
@@ -214,8 +217,8 @@ impl TradeEngine {
         Ok(())
     }
 
-    async fn validate_pick_not_traded(&self, pick_id: Uuid) -> DomainResult<()> {
-        if self.trade_repo.is_pick_in_active_trade(pick_id).await? {
+    async fn validate_pick_not_traded(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<()> {
+        if self.trade_repo.is_pick_in_active_trade(pick_id, exclude_trade_id).await? {
             return Err(DomainError::ValidationError(
                 format!("Pick {} is already in an active trade", pick_id)
             ));

@@ -23,8 +23,8 @@ pub trait TradeRepository: Send + Sync {
     /// Update trade status
     async fn update(&self, trade: &PickTrade) -> DomainResult<PickTrade>;
 
-    /// Check if pick is in any active (Proposed) trade
-    async fn is_pick_in_active_trade(&self, pick_id: Uuid) -> DomainResult<bool>;
+    /// Check if pick is in any active (Proposed) trade, optionally excluding a specific trade
+    async fn is_pick_in_active_trade(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<bool>;
 
     /// Transfer pick ownership (atomic)
     async fn transfer_picks(

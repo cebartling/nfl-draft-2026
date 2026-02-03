@@ -237,23 +237,46 @@ impl TradeRepository for SqlxTradeRepository {
         result.to_domain().map_err(Into::into)
     }
 
-    async fn is_pick_in_active_trade(&self, pick_id: Uuid) -> DomainResult<bool> {
-        let result = sqlx::query!(
-            r#"
-            SELECT EXISTS(
-                SELECT 1
-                FROM pick_trade_details ptd
-                JOIN pick_trades pt ON pt.id = ptd.trade_id
-                WHERE ptd.pick_id = $1 AND pt.status = 'Proposed'
-            ) as "exists!"
-            "#,
-            pick_id
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(DbError::DatabaseError)?;
+    async fn is_pick_in_active_trade(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<bool> {
+        let exists = match exclude_trade_id {
+            Some(exclude_id) => {
+                let result = sqlx::query!(
+                    r#"
+                    SELECT EXISTS(
+                        SELECT 1
+                        FROM pick_trade_details ptd
+                        JOIN pick_trades pt ON pt.id = ptd.trade_id
+                        WHERE ptd.pick_id = $1 AND pt.status = 'Proposed' AND pt.id != $2
+                    ) as "exists!"
+                    "#,
+                    pick_id,
+                    exclude_id
+                )
+                .fetch_one(&self.pool)
+                .await
+                .map_err(DbError::DatabaseError)?;
+                result.exists
+            }
+            None => {
+                let result = sqlx::query!(
+                    r#"
+                    SELECT EXISTS(
+                        SELECT 1
+                        FROM pick_trade_details ptd
+                        JOIN pick_trades pt ON pt.id = ptd.trade_id
+                        WHERE ptd.pick_id = $1 AND pt.status = 'Proposed'
+                    ) as "exists!"
+                    "#,
+                    pick_id
+                )
+                .fetch_one(&self.pool)
+                .await
+                .map_err(DbError::DatabaseError)?;
+                result.exists
+            }
+        };
 
-        Ok(result.exists)
+        Ok(exists)
     }
 
     async fn transfer_picks(
