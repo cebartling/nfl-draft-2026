@@ -39,6 +39,10 @@ impl IntoResponse for ApiError {
                         tracing::error!("Internal error: {}", msg);
                         (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
                     }
+                    DomainError::DatabaseError(msg) => {
+                        tracing::error!("Database error: {}", msg);
+                        (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
+                    }
                 }
             }
         };

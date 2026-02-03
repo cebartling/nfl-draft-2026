@@ -55,6 +55,14 @@ pub async fn spawn_app() -> (String, sqlx::PgPool) {
 /// Cleans up the test database by deleting all data in the correct order
 pub async fn cleanup_database(pool: &sqlx::PgPool) {
     // Delete in order of foreign key dependencies
+    sqlx::query!("DELETE FROM draft_events")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup draft_events");
+    sqlx::query!("DELETE FROM draft_sessions")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup draft_sessions");
     sqlx::query!("DELETE FROM draft_picks")
         .execute(pool)
         .await

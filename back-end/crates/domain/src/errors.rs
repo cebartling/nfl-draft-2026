@@ -16,6 +16,9 @@ pub enum DomainError {
 
     #[error("Internal error: {0}")]
     InternalError(String),
+
+    #[error("Database error: {0}")]
+    DatabaseError(String),
 }
 
 pub type DomainResult<T> = Result<T, DomainError>;
