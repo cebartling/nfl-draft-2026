@@ -417,7 +417,7 @@ async fn test_pick_in_active_trade_cannot_be_traded_again() {
     // Create session
     let session_id = uuid::Uuid::new_v4();
     sqlx::query!(
-        "INSERT INTO draft_sessions (id, draft_id, status, created_at, updated_at) VALUES ($1, $2, 'NotStarted', NOW(), NOW())",
+        "INSERT INTO draft_sessions (id, draft_id, status, chart_type, created_at, updated_at) VALUES ($1, $2, 'NotStarted', 'JimmyJohnson', NOW(), NOW())",
         session_id,
         draft_id
     )
@@ -799,8 +799,8 @@ async fn create_draft_and_session(
     let session_id = uuid::Uuid::new_v4();
     sqlx::query!(
         r#"
-        INSERT INTO draft_sessions (id, draft_id, status, created_at, updated_at)
-        VALUES ($1, $2, 'NotStarted', NOW(), NOW())
+        INSERT INTO draft_sessions (id, draft_id, status, chart_type, created_at, updated_at)
+        VALUES ($1, $2, 'NotStarted', 'JimmyJohnson', NOW(), NOW())
         "#,
         session_id,
         draft_id
