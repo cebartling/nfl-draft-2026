@@ -7,6 +7,7 @@ pub mod scouting_report;
 pub mod session_repository;
 pub mod team;
 pub mod team_need;
+pub mod trade;
 
 pub use combine_results::CombineResultsRepository;
 pub use draft::{DraftPickRepository, DraftRepository};
@@ -17,3 +18,4 @@ pub use scouting_report::ScoutingReportRepository;
 pub use session_repository::SessionRepository;
 pub use team::TeamRepository;
 pub use team_need::TeamNeedRepository;
+pub use trade::TradeRepository;

@@ -7,6 +7,7 @@ pub mod scouting_report_repo;
 pub mod session_repo;
 pub mod team;
 pub mod team_need_repo;
+pub mod trade_repo;
 
 pub use combine_results_repo::SqlxCombineResultsRepository;
 pub use draft::{SqlxDraftPickRepository, SqlxDraftRepository};
@@ -17,3 +18,4 @@ pub use scouting_report_repo::SqlxScoutingReportRepository;
 pub use session_repo::SessionRepo;
 pub use team::SqlxTeamRepository;
 pub use team_need_repo::SqlxTeamNeedRepository;
+pub use trade_repo::SqlxTradeRepository;
