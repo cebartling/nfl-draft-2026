@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 pub enum Position {
     // Offense
     QB,
