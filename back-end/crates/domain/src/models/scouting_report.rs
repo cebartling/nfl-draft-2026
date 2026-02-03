@@ -116,6 +116,24 @@ impl ScoutingReport {
         Ok(())
     }
 
+    pub fn update_fit_grade(&mut self, fit_grade: FitGrade) -> DomainResult<()> {
+        self.fit_grade = Some(fit_grade);
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_injury_concern(&mut self, concern: bool) -> DomainResult<()> {
+        self.injury_concern = concern;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_character_concern(&mut self, concern: bool) -> DomainResult<()> {
+        self.character_concern = concern;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
     fn validate_grade(grade: f64) -> DomainResult<()> {
         if grade < 0.0 || grade > 10.0 {
             return Err(DomainError::ValidationError(

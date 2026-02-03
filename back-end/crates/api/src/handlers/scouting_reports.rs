@@ -195,13 +195,13 @@ pub async fn update_scouting_report(
         report.update_notes(notes)?;
     }
     if let Some(fit_grade) = req.fit_grade {
-        report.fit_grade = Some(fit_grade);
+        report.update_fit_grade(fit_grade)?;
     }
     if let Some(concern) = req.injury_concern {
-        report.injury_concern = concern;
+        report.update_injury_concern(concern)?;
     }
     if let Some(concern) = req.character_concern {
-        report.character_concern = concern;
+        report.update_character_concern(concern)?;
     }
 
     let updated = state.scouting_report_repo.update(&report).await?;
