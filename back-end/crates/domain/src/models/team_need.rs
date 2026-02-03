@@ -39,7 +39,7 @@ impl TeamNeed {
     }
 
     fn validate_priority(priority: i32) -> DomainResult<()> {
-        if priority < 1 || priority > 10 {
+        if !(1..=10).contains(&priority) {
             return Err(DomainError::ValidationError(
                 "Priority must be between 1 and 10".to_string(),
             ));

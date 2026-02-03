@@ -213,14 +213,18 @@ async fn test_team_needs_to_scouting_workflow() {
     assert_eq!(needs[1]["position"], "WR"); // Priority 2
 
     let reports_response = client
-        .get(&format!("{}/api/v1/teams/{}/scouting-reports", base_url, team_id))
+        .get(&format!(
+            "{}/api/v1/teams/{}/scouting-reports",
+            base_url, team_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
         .expect("Failed to get scouting reports");
 
     assert_eq!(reports_response.status(), 200);
-    let reports: Vec<serde_json::Value> = reports_response.json().await.expect("Failed to parse JSON");
+    let reports: Vec<serde_json::Value> =
+        reports_response.json().await.expect("Failed to parse JSON");
     assert_eq!(reports.len(), 4);
 
     // Verify database consistency
@@ -402,18 +406,23 @@ async fn test_multiple_teams_scouting_same_player() {
 
     // Query player's scouting reports across all teams
     let reports_response = client
-        .get(&format!("{}/api/v1/players/{}/scouting-reports", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/scouting-reports",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
         .expect("Failed to get player scouting reports");
 
     assert_eq!(reports_response.status(), 200);
-    let reports: Vec<serde_json::Value> = reports_response.json().await.expect("Failed to parse JSON");
+    let reports: Vec<serde_json::Value> =
+        reports_response.json().await.expect("Failed to parse JSON");
     assert_eq!(reports.len(), 3);
 
     // Verify different grades from different teams
-    let grades: Vec<f64> = reports.iter()
+    let grades: Vec<f64> = reports
+        .iter()
         .map(|r| r["grade"].as_f64().unwrap())
         .collect();
 
@@ -442,14 +451,18 @@ async fn test_multiple_teams_scouting_same_player() {
 
     // Each team can query their own report
     let team1_reports = client
-        .get(&format!("{}/api/v1/teams/{}/scouting-reports", base_url, team1_id))
+        .get(&format!(
+            "{}/api/v1/teams/{}/scouting-reports",
+            base_url, team1_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
         .expect("Failed to get team1 reports");
 
     assert_eq!(team1_reports.status(), 200);
-    let team1_data: Vec<serde_json::Value> = team1_reports.json().await.expect("Failed to parse JSON");
+    let team1_data: Vec<serde_json::Value> =
+        team1_reports.json().await.expect("Failed to parse JSON");
     assert_eq!(team1_data.len(), 1);
     assert_eq!(team1_data[0]["grade"], 9.5);
     assert_eq!(team1_data[0]["fit_grade"], "A");
@@ -894,7 +907,10 @@ async fn test_team_draft_board_generation() {
     assert_eq!(needs_response.status(), 200);
 
     let reports_response = client
-        .get(&format!("{}/api/v1/teams/{}/scouting-reports", base_url, team_id))
+        .get(&format!(
+            "{}/api/v1/teams/{}/scouting-reports",
+            base_url, team_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await

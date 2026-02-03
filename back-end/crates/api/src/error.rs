@@ -26,7 +26,10 @@ impl IntoResponse for ApiError {
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::InternalError(msg) => {
                 tracing::error!("Internal error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".to_string(),
+                )
             }
             ApiError::DomainError(err) => {
                 use domain::errors::DomainError;
@@ -37,11 +40,17 @@ impl IntoResponse for ApiError {
                     DomainError::InvalidState(msg) => (StatusCode::BAD_REQUEST, msg),
                     DomainError::InternalError(msg) => {
                         tracing::error!("Internal error: {}", msg);
-                        (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Internal server error".to_string(),
+                        )
                     }
                     DomainError::DatabaseError(msg) => {
                         tracing::error!("Database error: {}", msg);
-                        (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Internal server error".to_string(),
+                        )
                     }
                 }
             }

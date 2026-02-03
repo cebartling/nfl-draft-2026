@@ -79,7 +79,10 @@ async fn test_complete_player_evaluation_workflow() {
     .await
     .expect("Combine results not found in database");
 
-    assert_eq!(db_combine.player_id, uuid::Uuid::parse_str(player_id).unwrap());
+    assert_eq!(
+        db_combine.player_id,
+        uuid::Uuid::parse_str(player_id).unwrap()
+    );
     assert_eq!(db_combine.year, 2026);
     assert_eq!(db_combine.forty_yard_dash, Some(4.65));
 
@@ -169,7 +172,10 @@ async fn test_complete_player_evaluation_workflow() {
 
     // Get combine results for player
     let combine_list = client
-        .get(&format!("{}/api/v1/players/{}/combine-results", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/combine-results",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -182,7 +188,10 @@ async fn test_complete_player_evaluation_workflow() {
 
     // Get scouting reports for player
     let reports_list = client
-        .get(&format!("{}/api/v1/players/{}/scouting-reports", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/scouting-reports",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -346,7 +355,10 @@ async fn test_player_deletion_cascades_to_combine_and_scouting() {
     .await
     .expect("Database query failed");
 
-    assert!(combine_check.is_none(), "Combine results should be cascade deleted");
+    assert!(
+        combine_check.is_none(),
+        "Combine results should be cascade deleted"
+    );
 
     // Verify scouting reports are cascaded deleted
     let report_check = sqlx::query!(
@@ -357,7 +369,10 @@ async fn test_player_deletion_cascades_to_combine_and_scouting() {
     .await
     .expect("Database query failed");
 
-    assert!(report_check.is_none(), "Scouting reports should be cascade deleted");
+    assert!(
+        report_check.is_none(),
+        "Scouting reports should be cascade deleted"
+    );
 
     // Verify API returns 404 for all resources after cascade delete
     let player_get = client
@@ -370,7 +385,10 @@ async fn test_player_deletion_cascades_to_combine_and_scouting() {
     assert_eq!(player_get.status(), 404);
 
     let combine_get = client
-        .get(&format!("{}/api/v1/combine-results/{}", base_url, combine_id))
+        .get(&format!(
+            "{}/api/v1/combine-results/{}",
+            base_url, combine_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -379,7 +397,10 @@ async fn test_player_deletion_cascades_to_combine_and_scouting() {
     assert_eq!(combine_get.status(), 404);
 
     let report_get = client
-        .get(&format!("{}/api/v1/scouting-reports/{}", base_url, report_id))
+        .get(&format!(
+            "{}/api/v1/scouting-reports/{}",
+            base_url, report_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -548,7 +569,10 @@ async fn test_query_player_with_all_related_data() {
     assert_eq!(player_data["first_name"], "Shedeur");
 
     let combine_get = client
-        .get(&format!("{}/api/v1/players/{}/combine-results", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/combine-results",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -562,7 +586,10 @@ async fn test_query_player_with_all_related_data() {
     assert_eq!(combines[1]["year"], 2025);
 
     let reports_get = client
-        .get(&format!("{}/api/v1/players/{}/scouting-reports", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/scouting-reports",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -642,7 +669,10 @@ async fn test_multiple_combine_years_for_player() {
 
     // Query all combine results
     let list_response = client
-        .get(&format!("{}/api/v1/players/{}/combine-results", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/combine-results",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -759,7 +789,10 @@ async fn test_player_without_combine_results() {
 
     // Query combine results - should return empty list (not error)
     let combine_get = client
-        .get(&format!("{}/api/v1/players/{}/combine-results", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/combine-results",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -771,7 +804,10 @@ async fn test_player_without_combine_results() {
 
     // Query scouting reports - should return the report
     let reports_get = client
-        .get(&format!("{}/api/v1/players/{}/scouting-reports", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/scouting-reports",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await

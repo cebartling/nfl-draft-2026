@@ -29,7 +29,8 @@ async fn test_create_and_get_player() {
 
     assert_eq!(create_response.status(), 201);
 
-    let created_player: serde_json::Value = create_response.json().await.expect("Failed to parse JSON");
+    let created_player: serde_json::Value =
+        create_response.json().await.expect("Failed to parse JSON");
     let player_id = created_player["id"].as_str().expect("Missing player id");
 
     // Validate player was persisted in database

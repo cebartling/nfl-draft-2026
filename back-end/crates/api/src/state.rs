@@ -1,17 +1,17 @@
 use sqlx::PgPool;
 use std::sync::Arc;
 
+use db::repositories::{
+    EventRepo, SessionRepo, SqlxCombineResultsRepository, SqlxDraftPickRepository,
+    SqlxDraftRepository, SqlxPlayerRepository, SqlxScoutingReportRepository,
+    SqlxTeamNeedRepository, SqlxTeamRepository,
+};
 use domain::repositories::{
-    TeamRepository, PlayerRepository, DraftRepository, DraftPickRepository,
-    CombineResultsRepository, ScoutingReportRepository, TeamNeedRepository,
-    SessionRepository, EventRepository,
+    CombineResultsRepository, DraftPickRepository, DraftRepository, EventRepository,
+    PlayerRepository, ScoutingReportRepository, SessionRepository, TeamNeedRepository,
+    TeamRepository,
 };
 use domain::services::DraftEngine;
-use db::repositories::{
-    SqlxTeamRepository, SqlxPlayerRepository, SqlxDraftRepository, SqlxDraftPickRepository,
-    SqlxCombineResultsRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
-    SessionRepo, EventRepo,
-};
 use websocket::ConnectionManager;
 
 /// Application state shared across all handlers
@@ -33,12 +33,17 @@ pub struct AppState {
 impl AppState {
     pub fn new(pool: PgPool) -> Self {
         let team_repo: Arc<dyn TeamRepository> = Arc::new(SqlxTeamRepository::new(pool.clone()));
-        let player_repo: Arc<dyn PlayerRepository> = Arc::new(SqlxPlayerRepository::new(pool.clone()));
+        let player_repo: Arc<dyn PlayerRepository> =
+            Arc::new(SqlxPlayerRepository::new(pool.clone()));
         let draft_repo: Arc<dyn DraftRepository> = Arc::new(SqlxDraftRepository::new(pool.clone()));
-        let draft_pick_repo: Arc<dyn DraftPickRepository> = Arc::new(SqlxDraftPickRepository::new(pool.clone()));
-        let combine_results_repo: Arc<dyn CombineResultsRepository> = Arc::new(SqlxCombineResultsRepository::new(pool.clone()));
-        let scouting_report_repo: Arc<dyn ScoutingReportRepository> = Arc::new(SqlxScoutingReportRepository::new(pool.clone()));
-        let team_need_repo: Arc<dyn TeamNeedRepository> = Arc::new(SqlxTeamNeedRepository::new(pool.clone()));
+        let draft_pick_repo: Arc<dyn DraftPickRepository> =
+            Arc::new(SqlxDraftPickRepository::new(pool.clone()));
+        let combine_results_repo: Arc<dyn CombineResultsRepository> =
+            Arc::new(SqlxCombineResultsRepository::new(pool.clone()));
+        let scouting_report_repo: Arc<dyn ScoutingReportRepository> =
+            Arc::new(SqlxScoutingReportRepository::new(pool.clone()));
+        let team_need_repo: Arc<dyn TeamNeedRepository> =
+            Arc::new(SqlxTeamNeedRepository::new(pool.clone()));
         let session_repo: Arc<dyn SessionRepository> = Arc::new(SessionRepo::new(pool.clone()));
         let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool));
 
@@ -73,10 +78,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_app_state_creation() {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string());
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
+        let pool = db::create_pool(&database_url)
+            .await
+            .expect("Failed to create pool");
         let state = AppState::new(pool);
 
         // Just verify state was created successfully

@@ -126,7 +126,7 @@ impl Draft {
     }
 
     fn validate_year(year: i32) -> DomainResult<()> {
-        if year < 2000 || year > 2100 {
+        if !(2000..=2100).contains(&year) {
             return Err(DomainError::ValidationError(
                 "Draft year must be between 2000 and 2100".to_string(),
             ));
@@ -135,7 +135,7 @@ impl Draft {
     }
 
     fn validate_rounds(rounds: i32) -> DomainResult<()> {
-        if rounds < 1 || rounds > 20 {
+        if !(1..=20).contains(&rounds) {
             return Err(DomainError::ValidationError(
                 "Rounds must be between 1 and 20".to_string(),
             ));
@@ -144,7 +144,7 @@ impl Draft {
     }
 
     fn validate_picks_per_round(picks_per_round: i32) -> DomainResult<()> {
-        if picks_per_round < 1 || picks_per_round > 100 {
+        if !(1..=100).contains(&picks_per_round) {
             return Err(DomainError::ValidationError(
                 "Picks per round must be between 1 and 100".to_string(),
             ));

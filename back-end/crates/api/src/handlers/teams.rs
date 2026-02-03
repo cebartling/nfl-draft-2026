@@ -117,12 +117,13 @@ mod tests {
     use sqlx::PgPool;
 
     async fn setup_test_state() -> (AppState, PgPool) {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        let pool = db::create_pool(&database_url).await.expect("Failed to create pool");
+        let pool = db::create_pool(&database_url)
+            .await
+            .expect("Failed to create pool");
         let state = AppState::new(pool.clone());
 
         // Cleanup (delete in order of foreign key dependencies)
@@ -175,7 +176,9 @@ mod tests {
             division: Division::NFCEast,
         };
 
-        let (_status, created) = create_team(State(state.clone()), Json(request)).await.unwrap();
+        let (_status, created) = create_team(State(state.clone()), Json(request))
+            .await
+            .unwrap();
 
         // Now get it by ID
         let result = get_team(State(state), Path(created.0.id)).await;
@@ -215,8 +218,12 @@ mod tests {
             division: Division::AFCWest,
         };
 
-        create_team(State(state.clone()), Json(team1)).await.unwrap();
-        create_team(State(state.clone()), Json(team2)).await.unwrap();
+        create_team(State(state.clone()), Json(team1))
+            .await
+            .unwrap();
+        create_team(State(state.clone()), Json(team2))
+            .await
+            .unwrap();
 
         // List all teams
         let result = list_teams(State(state)).await;

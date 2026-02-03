@@ -111,8 +111,14 @@ mod tests {
         assert_eq!(division_to_string(&Division::AFCEast), "AFC East");
         assert_eq!(division_to_string(&Division::NFCWest), "NFC West");
 
-        assert!(matches!(string_to_division("AFC East"), Ok(Division::AFCEast)));
-        assert!(matches!(string_to_division("NFC West"), Ok(Division::NFCWest)));
+        assert!(matches!(
+            string_to_division("AFC East"),
+            Ok(Division::AFCEast)
+        ));
+        assert!(matches!(
+            string_to_division("NFC West"),
+            Ok(Division::NFCWest)
+        ));
         assert!(string_to_division("INVALID").is_err());
     }
 
@@ -124,7 +130,8 @@ mod tests {
             "Dallas".to_string(),
             Conference::NFC,
             Division::NFCEast,
-        ).unwrap();
+        )
+        .unwrap();
 
         let team_db = TeamDb::from_domain(&team);
         assert_eq!(team_db.name, "Dallas Cowboys");

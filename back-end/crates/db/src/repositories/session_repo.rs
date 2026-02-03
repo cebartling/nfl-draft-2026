@@ -221,10 +221,12 @@ mod tests {
 
         // Create a draft first
         let draft_id = Uuid::new_v4();
-        let draft_year = 2026 + (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() % 100) as i32;
+        let draft_year = 2026
+            + (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 100) as i32;
         sqlx::query!(
             "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
             draft_id,
@@ -268,10 +270,12 @@ mod tests {
 
         // Create a draft first
         let draft_id = Uuid::new_v4();
-        let draft_year = 2026 + (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() % 100) as i32;
+        let draft_year = 2026
+            + (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 100) as i32;
         sqlx::query!(
             "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
             draft_id,
@@ -308,10 +312,12 @@ mod tests {
         // Create drafts
         let draft_id_1 = Uuid::new_v4();
         let draft_id_2 = Uuid::new_v4();
-        let base_year = 2026 + (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() % 100) as i32;
+        let base_year = 2026
+            + (std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                % 100) as i32;
 
         sqlx::query!(
             "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32), ($3, $4, 'NotStarted', 7, 32)",
@@ -342,9 +348,13 @@ mod tests {
         assert_eq!(in_progress[0].status, SessionStatus::InProgress);
 
         cleanup_sessions(&pool).await;
-        sqlx::query!("DELETE FROM drafts WHERE id IN ($1, $2)", draft_id_1, draft_id_2)
-            .execute(&pool)
-            .await
-            .unwrap();
+        sqlx::query!(
+            "DELETE FROM drafts WHERE id IN ($1, $2)",
+            draft_id_1,
+            draft_id_2
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
     }
 }

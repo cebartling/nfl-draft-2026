@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use domain::models::{ScoutingReport, FitGrade};
+use domain::models::{FitGrade, ScoutingReport};
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -90,7 +90,10 @@ pub async fn create_scouting_report(
 
     let created = state.scouting_report_repo.create(&report).await?;
 
-    Ok((StatusCode::CREATED, Json(ScoutingReportResponse::from(created))))
+    Ok((
+        StatusCode::CREATED,
+        Json(ScoutingReportResponse::from(created)),
+    ))
 }
 
 /// GET /api/v1/scouting-reports/:id - Get scouting report by ID
@@ -136,7 +139,10 @@ pub async fn get_team_scouting_reports(
     Path(team_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<ScoutingReportResponse>>> {
     let reports = state.scouting_report_repo.find_by_team_id(team_id).await?;
-    let response: Vec<ScoutingReportResponse> = reports.into_iter().map(ScoutingReportResponse::from).collect();
+    let response: Vec<ScoutingReportResponse> = reports
+        .into_iter()
+        .map(ScoutingReportResponse::from)
+        .collect();
     Ok(Json(response))
 }
 
@@ -156,8 +162,14 @@ pub async fn get_player_scouting_reports(
     State(state): State<AppState>,
     Path(player_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<ScoutingReportResponse>>> {
-    let reports = state.scouting_report_repo.find_by_player_id(player_id).await?;
-    let response: Vec<ScoutingReportResponse> = reports.into_iter().map(ScoutingReportResponse::from).collect();
+    let reports = state
+        .scouting_report_repo
+        .find_by_player_id(player_id)
+        .await?;
+    let response: Vec<ScoutingReportResponse> = reports
+        .into_iter()
+        .map(ScoutingReportResponse::from)
+        .collect();
     Ok(Json(response))
 }
 
@@ -234,15 +246,13 @@ pub async fn delete_scouting_report(
 mod tests {
     use super::*;
     use crate::state::AppState;
-    use domain::models::{Player, Team, Conference, Division, Position};
+    use domain::models::{Conference, Division, Player, Position, Team};
     use domain::repositories::{PlayerRepository, TeamRepository};
 
     async fn setup_test_state() -> AppState {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test"
-                    .to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
         let pool = db::create_pool(&database_url)
             .await
@@ -252,13 +262,8 @@ mod tests {
     }
 
     async fn create_test_player(state: &AppState) -> Player {
-        let player = Player::new(
-            "Test".to_string(),
-            "Player".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap();
+        let player =
+            Player::new("Test".to_string(), "Player".to_string(), Position::QB, 2026).unwrap();
         state.player_repo.create(&player).await.unwrap()
     }
 
@@ -336,12 +341,18 @@ mod tests {
 
         let player1 = create_test_player(&state).await;
         let player_repo = &state.player_repo;
-        let player2 = player_repo.create(&Player::new(
-            "Second".to_string(),
-            "Player".to_string(),
-            Position::RB,
-            2026,
-        ).unwrap()).await.unwrap();
+        let player2 = player_repo
+            .create(
+                &Player::new(
+                    "Second".to_string(),
+                    "Player".to_string(),
+                    Position::RB,
+                    2026,
+                )
+                .unwrap(),
+            )
+            .await
+            .unwrap();
 
         let team = create_test_team(&state, "SR3").await;
 

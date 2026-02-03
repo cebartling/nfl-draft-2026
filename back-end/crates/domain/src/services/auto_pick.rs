@@ -144,10 +144,10 @@ impl AutoPickService {
         strategy: &crate::models::DraftStrategy,
     ) -> String {
         format!(
-            "{} {} ({}): BPA={:.1}, Need={:.1}, PosValue={:.2}, Final={:.1} ({}% BPA / {}% Need)",
+            "{} {} ({:?}): BPA={:.1}, Need={:.1}, PosValue={:.2}, Final={:.1} ({}% BPA / {}% Need)",
             player.first_name,
             player.last_name,
-            format!("{:?}", player.position),
+            player.position,
             bpa_score,
             need_score,
             position_value,
@@ -161,13 +161,13 @@ impl AutoPickService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{DraftStrategy, Position, ScoutingReport, TeamNeed, CombineResults};
+    use crate::models::{CombineResults, DraftStrategy, Position, ScoutingReport, TeamNeed};
     use crate::repositories::{
         CombineResultsRepository, DraftStrategyRepository, ScoutingReportRepository,
         TeamNeedRepository,
     };
-    use mockall::predicate::*;
     use mockall::mock;
+    use mockall::predicate::*;
 
     mock! {
         ScoutingReportRepo {}
@@ -440,9 +440,7 @@ mod tests {
             .returning(|_| Ok(vec![]));
 
         // No specific needs
-        need_mock
-            .expect_find_by_team_id()
-            .returning(|_| Ok(vec![]));
+        need_mock.expect_find_by_team_id().returning(|_| Ok(vec![]));
 
         // Setup services
         let player_eval = Arc::new(PlayerEvaluationService::new(

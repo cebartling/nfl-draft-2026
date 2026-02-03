@@ -27,7 +27,8 @@ async fn test_create_and_get_team() {
 
     assert_eq!(create_response.status(), 201);
 
-    let created_team: serde_json::Value = create_response.json().await.expect("Failed to parse JSON");
+    let created_team: serde_json::Value =
+        create_response.json().await.expect("Failed to parse JSON");
     let team_id = created_team["id"].as_str().expect("Missing team id");
 
     // Validate team was persisted in database

@@ -74,7 +74,8 @@ pub(crate) fn position_to_string(position: &Position) -> String {
         Position::S => "S",
         Position::K => "K",
         Position::P => "P",
-    }.to_string()
+    }
+    .to_string()
 }
 
 pub(crate) fn string_to_position(s: &str) -> DbResult<Position> {
@@ -114,10 +115,20 @@ mod tests {
     #[test]
     fn test_all_positions_map_correctly() {
         let positions = vec![
-            Position::QB, Position::RB, Position::WR, Position::TE,
-            Position::OT, Position::OG, Position::C,
-            Position::DE, Position::DT, Position::LB, Position::CB, Position::S,
-            Position::K, Position::P,
+            Position::QB,
+            Position::RB,
+            Position::WR,
+            Position::TE,
+            Position::OT,
+            Position::OG,
+            Position::C,
+            Position::DE,
+            Position::DT,
+            Position::LB,
+            Position::CB,
+            Position::S,
+            Position::K,
+            Position::P,
         ];
 
         for pos in positions {
@@ -130,12 +141,8 @@ mod tests {
 
     #[test]
     fn test_domain_to_db_conversion() {
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        ).unwrap();
+        let player =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
 
         let player_db = PlayerDb::from_domain(&player);
         assert_eq!(player_db.first_name, "John");

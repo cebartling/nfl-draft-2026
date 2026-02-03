@@ -135,7 +135,7 @@ impl ScoutingReport {
     }
 
     fn validate_grade(grade: f64) -> DomainResult<()> {
-        if grade < 0.0 || grade > 10.0 {
+        if !(0.0..=10.0).contains(&grade) {
             return Err(DomainError::ValidationError(
                 "Grade must be between 0.0 and 10.0".to_string(),
             ));

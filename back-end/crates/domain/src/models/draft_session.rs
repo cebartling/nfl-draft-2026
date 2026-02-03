@@ -39,7 +39,11 @@ pub struct DraftSession {
 }
 
 impl DraftSession {
-    pub fn new(draft_id: Uuid, time_per_pick_seconds: i32, auto_pick_enabled: bool) -> DomainResult<Self> {
+    pub fn new(
+        draft_id: Uuid,
+        time_per_pick_seconds: i32,
+        auto_pick_enabled: bool,
+    ) -> DomainResult<Self> {
         Self::validate_time_per_pick(time_per_pick_seconds)?;
 
         let now = Utc::now();
@@ -138,7 +142,7 @@ impl DraftSession {
     }
 
     fn validate_time_per_pick(time_per_pick_seconds: i32) -> DomainResult<()> {
-        if time_per_pick_seconds < 10 || time_per_pick_seconds > 3600 {
+        if !(10..=3600).contains(&time_per_pick_seconds) {
             return Err(DomainError::ValidationError(
                 "Time per pick must be between 10 and 3600 seconds".to_string(),
             ));

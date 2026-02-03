@@ -17,7 +17,7 @@ async fn test_health_check() {
         .expect("Failed to execute request");
 
     assert_eq!(response.status(), 200);
-    
+
     let body: serde_json::Value = response.json().await.expect("Failed to parse JSON");
     assert_eq!(body["status"], "healthy");
 }

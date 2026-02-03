@@ -105,7 +105,10 @@ fn string_to_status(s: &str) -> DbResult<DraftStatus> {
         "InProgress" => Ok(DraftStatus::InProgress),
         "Paused" => Ok(DraftStatus::Paused),
         "Completed" => Ok(DraftStatus::Completed),
-        _ => Err(DbError::MappingError(format!("Invalid draft status: {}", s))),
+        _ => Err(DbError::MappingError(format!(
+            "Invalid draft status: {}",
+            s
+        ))),
     }
 }
 
@@ -120,10 +123,22 @@ mod tests {
         assert_eq!(status_to_string(&DraftStatus::Paused), "Paused");
         assert_eq!(status_to_string(&DraftStatus::Completed), "Completed");
 
-        assert!(matches!(string_to_status("NotStarted"), Ok(DraftStatus::NotStarted)));
-        assert!(matches!(string_to_status("InProgress"), Ok(DraftStatus::InProgress)));
-        assert!(matches!(string_to_status("Paused"), Ok(DraftStatus::Paused)));
-        assert!(matches!(string_to_status("Completed"), Ok(DraftStatus::Completed)));
+        assert!(matches!(
+            string_to_status("NotStarted"),
+            Ok(DraftStatus::NotStarted)
+        ));
+        assert!(matches!(
+            string_to_status("InProgress"),
+            Ok(DraftStatus::InProgress)
+        ));
+        assert!(matches!(
+            string_to_status("Paused"),
+            Ok(DraftStatus::Paused)
+        ));
+        assert!(matches!(
+            string_to_status("Completed"),
+            Ok(DraftStatus::Completed)
+        ));
         assert!(string_to_status("INVALID").is_err());
     }
 

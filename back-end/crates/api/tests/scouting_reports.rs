@@ -66,7 +66,8 @@ async fn test_create_and_get_scouting_report() {
 
     assert_eq!(create_response.status(), 201);
 
-    let created_report: serde_json::Value = create_response.json().await.expect("Failed to parse JSON");
+    let created_report: serde_json::Value =
+        create_response.json().await.expect("Failed to parse JSON");
     let report_id = created_report["id"].as_str().expect("Missing report id");
 
     // Validate report was persisted in database
@@ -82,17 +83,26 @@ async fn test_create_and_get_scouting_report() {
     .await
     .expect("Scouting report not found in database");
 
-    assert_eq!(db_report.player_id, uuid::Uuid::parse_str(player_id).unwrap());
+    assert_eq!(
+        db_report.player_id,
+        uuid::Uuid::parse_str(player_id).unwrap()
+    );
     assert_eq!(db_report.team_id, uuid::Uuid::parse_str(team_id).unwrap());
     assert_eq!(db_report.grade, 8.5);
-    assert_eq!(db_report.notes, Some("Excellent arm strength and accuracy".to_string()));
+    assert_eq!(
+        db_report.notes,
+        Some("Excellent arm strength and accuracy".to_string())
+    );
     assert_eq!(db_report.fit_grade, Some("A".to_string()));
     assert_eq!(db_report.injury_concern, false);
     assert_eq!(db_report.character_concern, false);
 
     // Get scouting report via API
     let get_response = client
-        .get(&format!("{}/api/v1/scouting-reports/{}", base_url, report_id))
+        .get(&format!(
+            "{}/api/v1/scouting-reports/{}",
+            base_url, report_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -108,7 +118,10 @@ async fn test_create_and_get_scouting_report() {
 
     // Verify API response matches database
     assert_eq!(report["grade"].as_f64().unwrap(), db_report.grade);
-    assert_eq!(report["injury_concern"].as_bool().unwrap(), db_report.injury_concern);
+    assert_eq!(
+        report["injury_concern"].as_bool().unwrap(),
+        db_report.injury_concern
+    );
 
     common::cleanup_database(&pool).await;
 }
@@ -198,7 +211,10 @@ async fn test_get_team_scouting_reports() {
 
     // Get all scouting reports for team
     let list_response = client
-        .get(&format!("{}/api/v1/teams/{}/scouting-reports", base_url, team_id))
+        .get(&format!(
+            "{}/api/v1/teams/{}/scouting-reports",
+            base_url, team_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -206,7 +222,8 @@ async fn test_get_team_scouting_reports() {
 
     assert_eq!(list_response.status(), 200);
 
-    let reports_list: Vec<serde_json::Value> = list_response.json().await.expect("Failed to parse JSON");
+    let reports_list: Vec<serde_json::Value> =
+        list_response.json().await.expect("Failed to parse JSON");
     assert_eq!(reports_list.len(), 2);
 
     // Verify database count matches
@@ -313,7 +330,10 @@ async fn test_get_player_scouting_reports() {
 
     // Get all scouting reports for player
     let list_response = client
-        .get(&format!("{}/api/v1/players/{}/scouting-reports", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/scouting-reports",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -321,7 +341,8 @@ async fn test_get_player_scouting_reports() {
 
     assert_eq!(list_response.status(), 200);
 
-    let reports_list: Vec<serde_json::Value> = list_response.json().await.expect("Failed to parse JSON");
+    let reports_list: Vec<serde_json::Value> =
+        list_response.json().await.expect("Failed to parse JSON");
     assert_eq!(reports_list.len(), 2);
 
     // Verify database count matches
@@ -397,7 +418,10 @@ async fn test_update_scouting_report() {
 
     // Update scouting report
     let update_response = client
-        .put(&format!("{}/api/v1/scouting-reports/{}", base_url, report_id))
+        .put(&format!(
+            "{}/api/v1/scouting-reports/{}",
+            base_url, report_id
+        ))
         .json(&json!({
             "grade": 8.5,
             "notes": "Improved after further review",
@@ -426,7 +450,10 @@ async fn test_update_scouting_report() {
     .expect("Scouting report not found in database");
 
     assert_eq!(db_report.grade, 8.5);
-    assert_eq!(db_report.notes, Some("Improved after further review".to_string()));
+    assert_eq!(
+        db_report.notes,
+        Some("Improved after further review".to_string())
+    );
     assert_eq!(db_report.fit_grade, Some("A".to_string()));
     assert_eq!(db_report.injury_concern, true);
 
@@ -492,7 +519,10 @@ async fn test_delete_scouting_report() {
 
     // Delete scouting report
     let delete_response = client
-        .delete(&format!("{}/api/v1/scouting-reports/{}", base_url, report_id))
+        .delete(&format!(
+            "{}/api/v1/scouting-reports/{}",
+            base_url, report_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -513,7 +543,10 @@ async fn test_delete_scouting_report() {
 
     // Verify 404 on subsequent GET
     let get_response = client
-        .get(&format!("{}/api/v1/scouting-reports/{}", base_url, report_id))
+        .get(&format!(
+            "{}/api/v1/scouting-reports/{}",
+            base_url, report_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await

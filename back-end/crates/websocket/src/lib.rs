@@ -1,5 +1,5 @@
-pub mod messages;
 pub mod manager;
+pub mod messages;
 
-pub use messages::{ClientMessage, ServerMessage};
 pub use manager::{Connection, ConnectionManager, WsSender};
+pub use messages::{ClientMessage, ServerMessage};

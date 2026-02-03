@@ -1,10 +1,10 @@
 use chrono::{DateTime, Utc};
-use sqlx::FromRow;
 use sqlx::types::JsonValue;
+use sqlx::FromRow;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use domain::models::{DraftStrategy, Position, PositionValueMap};
+use domain::models::{DraftStrategy, PositionValueMap};
 
 use crate::errors::{DbError, DbResult};
 use crate::models::player::{position_to_string, string_to_position};
@@ -163,6 +163,9 @@ mod tests {
 
         let original_values = original.position_values.unwrap();
         let roundtrip_values = roundtrip.position_values.unwrap();
-        assert_eq!(original_values.get(&Position::QB), roundtrip_values.get(&Position::QB));
+        assert_eq!(
+            original_values.get(&Position::QB),
+            roundtrip_values.get(&Position::QB)
+        );
     }
 }

@@ -216,12 +216,13 @@ mod tests {
     use crate::create_pool;
 
     async fn setup_test_pool() -> PgPool {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| {
-                "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-            });
+        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+        });
 
-        create_pool(&database_url).await.expect("Failed to create pool")
+        create_pool(&database_url)
+            .await
+            .expect("Failed to create pool")
     }
 
     async fn cleanup_players(pool: &PgPool) {
@@ -238,13 +239,8 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap();
+        let player =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
 
         let result = repo.create(&player).await;
         assert!(result.is_ok());
@@ -264,13 +260,8 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let player = Player::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            Position::QB,
-            2026,
-        )
-        .unwrap();
+        let player =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
 
         let created = repo.create(&player).await.unwrap();
 
@@ -292,8 +283,10 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let player1 = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
-        let player2 = Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2026).unwrap();
+        let player1 =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
+        let player2 =
+            Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2026).unwrap();
 
         repo.create(&player1).await.unwrap();
         repo.create(&player2).await.unwrap();
@@ -331,8 +324,10 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let player2026 = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
-        let player2027 = Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2027).unwrap();
+        let player2026 =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
+        let player2027 =
+            Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2027).unwrap();
 
         repo.create(&player2026).await.unwrap();
         repo.create(&player2027).await.unwrap();
@@ -351,8 +346,10 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let mut eligible = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
-        let mut not_eligible = Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2026).unwrap();
+        let mut eligible =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
+        let mut not_eligible =
+            Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2026).unwrap();
         not_eligible.draft_eligible = false;
 
         repo.create(&eligible).await.unwrap();
@@ -372,7 +369,8 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
+        let player =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
         let mut created = repo.create(&player).await.unwrap();
 
         // Update the player
@@ -392,7 +390,8 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let player = Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
+        let player =
+            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
         let created = repo.create(&player).await.unwrap();
 
         // Delete the player

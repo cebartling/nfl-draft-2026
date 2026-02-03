@@ -44,13 +44,10 @@ async fn test_create_session() {
     let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
 
     // Verify session was created in database
-    let db_session = sqlx::query!(
-        "SELECT * FROM draft_sessions WHERE id = $1",
-        session_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_session = sqlx::query!("SELECT * FROM draft_sessions WHERE id = $1", session_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
 
     assert_eq!(db_session.draft_id, draft_id);
     assert_eq!(db_session.status, "NotStarted");
@@ -151,13 +148,10 @@ async fn test_start_session() {
     assert_eq!(session["status"], "InProgress");
 
     // Verify in database
-    let db_session = sqlx::query!(
-        "SELECT * FROM draft_sessions WHERE id = $1",
-        session_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_session = sqlx::query!("SELECT * FROM draft_sessions WHERE id = $1", session_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
 
     assert_eq!(db_session.status, "InProgress");
     assert!(db_session.started_at.is_some());
@@ -215,13 +209,10 @@ async fn test_pause_session() {
     assert_eq!(session["status"], "Paused");
 
     // Verify in database
-    let db_session = sqlx::query!(
-        "SELECT * FROM draft_sessions WHERE id = $1",
-        session_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_session = sqlx::query!("SELECT * FROM draft_sessions WHERE id = $1", session_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
 
     assert_eq!(db_session.status, "Paused");
 
@@ -286,7 +277,10 @@ async fn test_get_session_events() {
 
     // Get events via API
     let response = client
-        .get(&format!("{}/api/v1/sessions/{}/events", app_url, session_id))
+        .get(&format!(
+            "{}/api/v1/sessions/{}/events",
+            app_url, session_id
+        ))
         .send()
         .await
         .unwrap();
@@ -355,7 +349,10 @@ async fn test_session_lifecycle() {
 
     // Verify all events were recorded
     let events_response = client
-        .get(&format!("{}/api/v1/sessions/{}/events", app_url, session_id))
+        .get(&format!(
+            "{}/api/v1/sessions/{}/events",
+            app_url, session_id
+        ))
         .send()
         .await
         .unwrap();

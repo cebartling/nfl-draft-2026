@@ -31,8 +31,7 @@ impl Config {
     pub fn from_env() -> anyhow::Result<Self> {
         dotenvy::dotenv().ok();
 
-        let database_url = std::env::var("DATABASE_URL")
-            .expect("DATABASE_URL must be set");
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
         let host = std::env::var("API_HOST").unwrap_or_else(|_| default_host());
         let port = std::env::var("API_PORT")

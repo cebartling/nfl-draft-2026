@@ -51,7 +51,8 @@ async fn test_create_and_get_combine_results() {
 
     assert_eq!(create_response.status(), 201);
 
-    let created_results: serde_json::Value = create_response.json().await.expect("Failed to parse JSON");
+    let created_results: serde_json::Value =
+        create_response.json().await.expect("Failed to parse JSON");
     let results_id = created_results["id"].as_str().expect("Missing results id");
 
     // Validate results were persisted in database
@@ -68,7 +69,10 @@ async fn test_create_and_get_combine_results() {
     .await
     .expect("Combine results not found in database");
 
-    assert_eq!(db_results.player_id, uuid::Uuid::parse_str(player_id).unwrap());
+    assert_eq!(
+        db_results.player_id,
+        uuid::Uuid::parse_str(player_id).unwrap()
+    );
     assert_eq!(db_results.year, 2026);
     assert_eq!(db_results.forty_yard_dash, Some(4.52));
     assert_eq!(db_results.bench_press, Some(20));
@@ -79,7 +83,10 @@ async fn test_create_and_get_combine_results() {
 
     // Get combine results via API
     let get_response = client
-        .get(&format!("{}/api/v1/combine-results/{}", base_url, results_id))
+        .get(&format!(
+            "{}/api/v1/combine-results/{}",
+            base_url, results_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -95,7 +102,10 @@ async fn test_create_and_get_combine_results() {
 
     // Verify API response matches database
     assert_eq!(results["year"].as_i64().unwrap(), db_results.year as i64);
-    assert_eq!(results["forty_yard_dash"].as_f64().unwrap(), db_results.forty_yard_dash.unwrap());
+    assert_eq!(
+        results["forty_yard_dash"].as_f64().unwrap(),
+        db_results.forty_yard_dash.unwrap()
+    );
 
     common::cleanup_database(&pool).await;
 }
@@ -151,7 +161,10 @@ async fn test_get_player_combine_results() {
 
     // Get all combine results for player
     let list_response = client
-        .get(&format!("{}/api/v1/players/{}/combine-results", base_url, player_id))
+        .get(&format!(
+            "{}/api/v1/players/{}/combine-results",
+            base_url, player_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -159,7 +172,8 @@ async fn test_get_player_combine_results() {
 
     assert_eq!(list_response.status(), 200);
 
-    let results_list: Vec<serde_json::Value> = list_response.json().await.expect("Failed to parse JSON");
+    let results_list: Vec<serde_json::Value> =
+        list_response.json().await.expect("Failed to parse JSON");
     assert_eq!(results_list.len(), 2);
 
     // Verify database count matches
@@ -221,7 +235,10 @@ async fn test_update_combine_results() {
 
     // Update combine results
     let update_response = client
-        .put(&format!("{}/api/v1/combine-results/{}", base_url, results_id))
+        .put(&format!(
+            "{}/api/v1/combine-results/{}",
+            base_url, results_id
+        ))
         .json(&json!({
             "forty_yard_dash": 4.52,
             "bench_press": 25,
@@ -296,7 +313,10 @@ async fn test_delete_combine_results() {
 
     // Delete combine results
     let delete_response = client
-        .delete(&format!("{}/api/v1/combine-results/{}", base_url, results_id))
+        .delete(&format!(
+            "{}/api/v1/combine-results/{}",
+            base_url, results_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -317,7 +337,10 @@ async fn test_delete_combine_results() {
 
     // Verify 404 on subsequent GET
     let get_response = client
-        .get(&format!("{}/api/v1/combine-results/{}", base_url, results_id))
+        .get(&format!(
+            "{}/api/v1/combine-results/{}",
+            base_url, results_id
+        ))
         .timeout(Duration::from_secs(5))
         .send()
         .await

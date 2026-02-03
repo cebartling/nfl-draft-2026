@@ -51,10 +51,18 @@ pub trait DraftPickRepository: Send + Sync {
     async fn find_by_draft_id(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>>;
 
     /// Get picks for a draft in a specific round
-    async fn find_by_draft_and_round(&self, draft_id: Uuid, round: i32) -> DomainResult<Vec<DraftPick>>;
+    async fn find_by_draft_and_round(
+        &self,
+        draft_id: Uuid,
+        round: i32,
+    ) -> DomainResult<Vec<DraftPick>>;
 
     /// Get picks for a specific team in a draft
-    async fn find_by_draft_and_team(&self, draft_id: Uuid, team_id: Uuid) -> DomainResult<Vec<DraftPick>>;
+    async fn find_by_draft_and_team(
+        &self,
+        draft_id: Uuid,
+        team_id: Uuid,
+    ) -> DomainResult<Vec<DraftPick>>;
 
     /// Get the next available pick for a draft
     async fn find_next_pick(&self, draft_id: Uuid) -> DomainResult<Option<DraftPick>>;
