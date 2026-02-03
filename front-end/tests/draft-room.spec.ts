@@ -30,9 +30,8 @@ test.describe('Draft Room', () => {
 		await page.goto('/drafts');
 		await page.waitForLoadState('networkidle');
 
-		// Look for draft clock component
-		const draftClock = page.locator('text=/Draft Clock|Time Remaining/i');
-		// Don't assert as this requires active session
+		// Look for draft clock component (would need active session to assert)
+		// const draftClock = page.locator('text=/Draft Clock|Time Remaining/i');
 	});
 
 	test.skip('should display draft board', async ({ page }) => {
@@ -40,9 +39,8 @@ test.describe('Draft Room', () => {
 		await page.goto('/drafts');
 		await page.waitForLoadState('networkidle');
 
-		// Look for draft board
-		const draftBoard = page.locator('text=/Draft Board|Round|Pick/i');
-		// Don't assert as this requires active session
+		// Look for draft board (would need active session to assert)
+		// const draftBoard = page.locator('text=/Draft Board|Round|Pick/i');
 	});
 
 	test.skip('should display available players', async ({ page }) => {
@@ -50,9 +48,8 @@ test.describe('Draft Room', () => {
 		await page.goto('/drafts');
 		await page.waitForLoadState('networkidle');
 
-		// Look for player list
-		const playerList = page.locator('text=/Available Players/i');
-		// Don't assert as this requires active session
+		// Look for player list (would need active session to assert)
+		// const playerList = page.locator('text=/Available Players/i');
 	});
 
 	test.skip('should filter available players by position', async ({ page }) => {

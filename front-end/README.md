@@ -19,12 +19,12 @@ A comprehensive, production-ready SvelteKit frontend application for the NFL Dra
 - Node.js 18+ and npm
 - Backend API running at `http://localhost:8000` (see `back-end/` directory)
 
-###Installation
+### Installation
 
-\`\`\`bash
+```bash
 cd front-end
 npm install
-\`\`\`
+```
 
 ### Development
 
