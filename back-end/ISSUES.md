@@ -67,30 +67,33 @@ is within a reasonable range.
 
 ## LOW Severity
 
-### 9. Lossy position mapping
+### 9. ~~Lossy position mapping~~ (Resolved)
 
-**File:** `crates/seed-data/src/position_mapper.rs:21`
+**File:** `crates/seed-data/src/position_mapper.rs`
 
-`OLB/ILB/MLB -> LB` loses sub-position specificity. The original position
-string is not preserved.
+**Fix:** Added `tracing::debug!` logging when alternate abbreviations (e.g.,
+OLB, EDGE, HB) are mapped to canonical positions. This provides observability
+into lossy mappings without requiring schema changes.
 
-### 10. Duplicate player names are only warnings
+### 10. ~~Duplicate player names are only warnings~~ (Resolved)
 
-**File:** `crates/seed-data/src/validator.rs:53-57`
+**File:** `crates/seed-data/src/validator.rs`
 
-Two players with the same full name pass validation. Could cause confusion in
-the draft UI.
+**Fix:** Promoted duplicate player name detection from warning to error.
+Validation now fails when duplicate names are found.
 
-### 11. Height/weight validation ranges duplicated
+### 11. ~~Height/weight validation ranges duplicated~~ (Resolved)
 
-**File:** `crates/seed-data/src/validator.rs:83,93`
+**Files:** `crates/domain/src/models/player.rs`, `crates/seed-data/src/validator.rs`
 
-Validator hardcodes `60-90` (height) and `150-400` (weight), same as the
-domain model. Should share constants.
+**Fix:** Added public constants `MIN_HEIGHT_INCHES`, `MAX_HEIGHT_INCHES`,
+`MIN_WEIGHT_POUNDS`, `MAX_WEIGHT_POUNDS` to the domain `Player` model. Both
+the domain validation and seed-data validator now reference these constants.
 
-### 12. No early abort on systematic load failures
+### 12. ~~No early abort on systematic load failures~~ (Resolved)
 
-**File:** `crates/seed-data/src/loader.rs:112-133`
+**File:** `crates/seed-data/src/loader.rs`
 
-If the database is down, all 300 inserts fail individually. Could detect
-systematic errors and abort early.
+**Fix:** Added consecutive-failure counter to both `load_players` and
+`load_players_dry_run`. If 5 or more consecutive failures occur, loading
+aborts early with a message suggesting a systematic problem.

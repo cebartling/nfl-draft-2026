@@ -5,29 +5,54 @@ use domain::models::Position;
 ///
 /// Handles common variations from scouting sources (e.g., EDGE -> DE, HB -> RB).
 /// Returns an error for ambiguous positions that require manual assignment.
+/// Logs at debug level when an alternate abbreviation is mapped to a canonical position.
 pub fn map_position(source: &str) -> Result<Position> {
     let normalized = source.trim().to_uppercase();
 
-    match normalized.as_str() {
-        "QB" => Ok(Position::QB),
-        "RB" | "HB" => Ok(Position::RB),
-        "WR" => Ok(Position::WR),
-        "TE" => Ok(Position::TE),
-        "OT" | "T" => Ok(Position::OT),
-        "OG" | "G" => Ok(Position::OG),
-        "C" => Ok(Position::C),
-        "DE" | "EDGE" => Ok(Position::DE),
-        "DT" | "NT" => Ok(Position::DT),
-        "LB" | "OLB" | "ILB" | "MLB" => Ok(Position::LB),
-        "CB" => Ok(Position::CB),
-        "S" | "SS" | "FS" => Ok(Position::S),
-        "K" => Ok(Position::K),
-        "P" => Ok(Position::P),
-        _ => Err(anyhow!(
-            "Invalid position: '{}'. Must manually assign a valid position.",
-            source
-        )),
+    let (position, canonical) = match normalized.as_str() {
+        "QB" => (Position::QB, "QB"),
+        "RB" => (Position::RB, "RB"),
+        "HB" => (Position::RB, "RB"),
+        "WR" => (Position::WR, "WR"),
+        "TE" => (Position::TE, "TE"),
+        "OT" => (Position::OT, "OT"),
+        "T" => (Position::OT, "OT"),
+        "OG" => (Position::OG, "OG"),
+        "G" => (Position::OG, "OG"),
+        "C" => (Position::C, "C"),
+        "DE" => (Position::DE, "DE"),
+        "EDGE" => (Position::DE, "DE"),
+        "DT" => (Position::DT, "DT"),
+        "NT" => (Position::DT, "DT"),
+        "LB" => (Position::LB, "LB"),
+        "OLB" => (Position::LB, "LB"),
+        "ILB" => (Position::LB, "LB"),
+        "MLB" => (Position::LB, "LB"),
+        "CB" => (Position::CB, "CB"),
+        "S" => (Position::S, "S"),
+        "SS" => (Position::S, "S"),
+        "FS" => (Position::S, "S"),
+        "K" => (Position::K, "K"),
+        "P" => (Position::P, "P"),
+        _ => {
+            return Err(anyhow!(
+                "Invalid position: '{}'. Must manually assign a valid position.",
+                source
+            ))
+        }
+    };
+
+    if normalized != canonical {
+        tracing::debug!(
+            source = source,
+            canonical = canonical,
+            "Alternate abbreviation '{}' mapped to canonical '{}'",
+            normalized,
+            canonical
+        );
     }
+
+    Ok(position)
 }
 
 #[cfg(test)]

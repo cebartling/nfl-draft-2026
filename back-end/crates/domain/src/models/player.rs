@@ -42,6 +42,11 @@ pub struct Player {
 }
 
 impl Player {
+    pub const MIN_HEIGHT_INCHES: i32 = 60;
+    pub const MAX_HEIGHT_INCHES: i32 = 90;
+    pub const MIN_WEIGHT_POUNDS: i32 = 150;
+    pub const MAX_WEIGHT_POUNDS: i32 = 400;
+
     pub fn new(
         first_name: String,
         last_name: String,
@@ -125,19 +130,23 @@ impl Player {
     }
 
     fn validate_height(height_inches: i32) -> DomainResult<()> {
-        if !(60..=90).contains(&height_inches) {
-            return Err(DomainError::ValidationError(
-                "Height must be between 60 and 90 inches".to_string(),
-            ));
+        if !(Self::MIN_HEIGHT_INCHES..=Self::MAX_HEIGHT_INCHES).contains(&height_inches) {
+            return Err(DomainError::ValidationError(format!(
+                "Height must be between {} and {} inches",
+                Self::MIN_HEIGHT_INCHES,
+                Self::MAX_HEIGHT_INCHES
+            )));
         }
         Ok(())
     }
 
     fn validate_weight(weight_pounds: i32) -> DomainResult<()> {
-        if !(150..=400).contains(&weight_pounds) {
-            return Err(DomainError::ValidationError(
-                "Weight must be between 150 and 400 pounds".to_string(),
-            ));
+        if !(Self::MIN_WEIGHT_POUNDS..=Self::MAX_WEIGHT_POUNDS).contains(&weight_pounds) {
+            return Err(DomainError::ValidationError(format!(
+                "Weight must be between {} and {} pounds",
+                Self::MIN_WEIGHT_POUNDS,
+                Self::MAX_WEIGHT_POUNDS
+            )));
         }
         Ok(())
     }

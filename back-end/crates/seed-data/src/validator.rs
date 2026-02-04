@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use domain::models::Player;
+
 use crate::loader::PlayerData;
 use crate::position_mapper;
 
@@ -52,8 +54,9 @@ pub fn validate_player_data(data: &PlayerData) -> ValidationResult {
         let full_name = format!("{} {}", player.first_name, player.last_name);
         if !seen_names.insert(full_name.clone()) {
             result
-                .warnings
+                .errors
                 .push(format!("Duplicate player: {}", full_name));
+            result.valid = false;
         }
     }
 
@@ -80,20 +83,26 @@ pub fn validate_player_data(data: &PlayerData) -> ValidationResult {
 
         // Validate physical stats if provided
         if let Some(height) = player.height_inches {
-            if !(60..=90).contains(&height) {
+            if !(Player::MIN_HEIGHT_INCHES..=Player::MAX_HEIGHT_INCHES).contains(&height) {
                 result.errors.push(format!(
-                    "{}: Invalid height {} (must be 60-90)",
-                    label, height
+                    "{}: Invalid height {} (must be {}-{})",
+                    label,
+                    height,
+                    Player::MIN_HEIGHT_INCHES,
+                    Player::MAX_HEIGHT_INCHES
                 ));
                 result.valid = false;
             }
         }
 
         if let Some(weight) = player.weight_pounds {
-            if !(150..=400).contains(&weight) {
+            if !(Player::MIN_WEIGHT_POUNDS..=Player::MAX_WEIGHT_POUNDS).contains(&weight) {
                 result.errors.push(format!(
-                    "{}: Invalid weight {} (must be 150-400)",
-                    label, weight
+                    "{}: Invalid weight {} (must be {}-{})",
+                    label,
+                    weight,
+                    Player::MIN_WEIGHT_POUNDS,
+                    Player::MAX_WEIGHT_POUNDS
                 ));
                 result.valid = false;
             }
@@ -178,7 +187,7 @@ mod tests {
     }
 
     #[test]
-    fn test_duplicate_names_warns() {
+    fn test_duplicate_names_fails() {
         let data = PlayerData {
             meta: make_meta(2),
             players: vec![
@@ -188,8 +197,8 @@ mod tests {
         };
 
         let result = validate_player_data(&data);
-        assert!(result.valid); // Duplicates are warnings, not errors
-        assert!(result.warnings.iter().any(|w| w.contains("Duplicate")));
+        assert!(!result.valid); // Duplicates are errors
+        assert!(result.errors.iter().any(|e| e.contains("Duplicate")));
     }
 
     #[test]

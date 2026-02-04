@@ -84,8 +84,12 @@ pub fn parse_player_file(file_path: &str) -> Result<PlayerData> {
     Ok(data)
 }
 
+/// Maximum number of consecutive failures before aborting.
+const MAX_CONSECUTIVE_FAILURES: usize = 5;
+
 pub fn load_players_dry_run(data: &PlayerData) -> Result<LoadStats> {
     let mut stats = LoadStats::default();
+    let mut consecutive_failures: usize = 0;
 
     for entry in &data.players {
         let full_name = format!("{} {}", entry.first_name, entry.last_name);
@@ -94,11 +98,23 @@ pub fn load_players_dry_run(data: &PlayerData) -> Result<LoadStats> {
             Ok(_) => {
                 println!("[DRY RUN] Would insert: {} ({})", full_name, entry.position);
                 stats.success += 1;
+                consecutive_failures = 0;
             }
             Err(e) => {
                 let msg = format!("Validation failed for {}: {}", full_name, e);
                 tracing::error!("{}", msg);
                 stats.errors.push(msg);
+                consecutive_failures += 1;
+
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+                    let abort_msg = format!(
+                        "Aborting: {} consecutive failures detected. This may indicate a systematic problem (e.g., schema mismatch).",
+                        consecutive_failures
+                    );
+                    tracing::error!("{}", abort_msg);
+                    stats.errors.push(abort_msg);
+                    break;
+                }
             }
         }
     }
@@ -108,6 +124,7 @@ pub fn load_players_dry_run(data: &PlayerData) -> Result<LoadStats> {
 
 pub async fn load_players(data: &PlayerData, repo: &dyn PlayerRepository) -> Result<LoadStats> {
     let mut stats = LoadStats::default();
+    let mut consecutive_failures: usize = 0;
 
     for entry in &data.players {
         let full_name = format!("{} {}", entry.first_name, entry.last_name);
@@ -117,18 +134,31 @@ pub async fn load_players(data: &PlayerData, repo: &dyn PlayerRepository) -> Res
                 Ok(_) => {
                     tracing::info!("Inserted: {} ({})", full_name, entry.position);
                     stats.success += 1;
+                    consecutive_failures = 0;
                 }
                 Err(e) => {
                     let msg = format!("Failed to insert {}: {}", full_name, e);
                     tracing::error!("{}", msg);
                     stats.errors.push(msg);
+                    consecutive_failures += 1;
                 }
             },
             Err(e) => {
                 let msg = format!("Validation failed for {}: {}", full_name, e);
                 tracing::error!("{}", msg);
                 stats.errors.push(msg);
+                consecutive_failures += 1;
             }
+        }
+
+        if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+            let abort_msg = format!(
+                "Aborting: {} consecutive failures detected. This may indicate a systematic problem (e.g., database down, schema mismatch).",
+                consecutive_failures
+            );
+            tracing::error!("{}", abort_msg);
+            stats.errors.push(abort_msg);
+            break;
         }
     }
 
