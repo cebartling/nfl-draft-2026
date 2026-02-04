@@ -524,10 +524,10 @@ All services include automated health checks:
 docker compose ps
 
 # Example output:
-# NAME                STATUS                   PORTS
-# nfl-draft-frontend  Up (healthy)             0.0.0.0:3000->8080/tcp
-# nfl-draft-api       Up (healthy)             0.0.0.0:8000->8000/tcp
-# nfl-draft-postgres  Up (healthy)             0.0.0.0:5432->5432/tcp
+# NAME                     STATUS                   PORTS
+# nfl-draft-2026-frontend  Up (healthy)             0.0.0.0:3000->8080/tcp
+# nfl-draft-2026-api       Up (healthy)             0.0.0.0:8000->8000/tcp
+# nfl-draft-2026-postgres  Up (healthy)             0.0.0.0:5432->5432/tcp
 ```
 
 **Test health endpoints:**
@@ -538,7 +538,7 @@ curl http://localhost:3000/health
 
 # Backend API (JSON response)
 curl http://localhost:8000/health
-# Response: {"service":"nfl-draft-api","status":"healthy","version":"0.1.0"}
+# Response: {"service":"nfl-draft-2026-api","status":"healthy","version":"0.1.0"}
 
 # PostgreSQL (via docker exec)
 docker compose exec postgres pg_isready -U nfl_draft_user

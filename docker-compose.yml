@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:18-alpine
-    container_name: nfl-draft-postgres
+    container_name: nfl-draft-2026-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-nfl_draft}
@@ -29,7 +29,7 @@ services:
     build:
       context: ./back-end
       dockerfile: Dockerfile
-    container_name: nfl-draft-api
+    container_name: nfl-draft-2026-api
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-nfl_draft_user}:${POSTGRES_PASSWORD:-nfl_draft_pass}@postgres:5432/${POSTGRES_DB:-nfl_draft}
@@ -55,7 +55,7 @@ services:
     build:
       context: ./front-end
       dockerfile: Dockerfile
-    container_name: nfl-draft-frontend
+    container_name: nfl-draft-2026-frontend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3000}:8080"
@@ -78,7 +78,7 @@ services:
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: nfl-draft-pgadmin
+    container_name: nfl-draft-2026-pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@nfldraft.local}
