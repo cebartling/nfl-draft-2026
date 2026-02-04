@@ -31,8 +31,8 @@ RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src
 # Copy the actual source code
 COPY crates ./crates
 
-# Copy SQLx metadata for offline compilation (if using sqlx offline mode)
-COPY .sqlx ./.sqlx
+# Note: .sqlx directory is not needed for Docker builds
+# SQLx queries are validated at compile time using DATABASE_URL
 
 # Build the actual application
 # Touch the files to ensure cargo rebuilds them

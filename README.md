@@ -71,7 +71,45 @@ nfl-draft-2026/
 
 ## Getting Started
 
-### 1. Start Infrastructure Services
+You can run the application in two ways:
+1. **Docker Compose** (Recommended) - Full stack with one command
+2. **Local Development** - Run services individually for development
+
+### Option 1: Docker Compose (Full Stack)
+
+The easiest way to run the complete application:
+
+```bash
+# Start all services (PostgreSQL + Backend API + Frontend)
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop all services
+docker compose down
+```
+
+**Access Points:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- PostgreSQL: localhost:5432
+
+**Optional: Start with pgAdmin (database GUI):**
+
+```bash
+docker compose --profile tools up -d
+```
+
+- pgAdmin URL: http://localhost:5050
+- Email: `admin@nfldraft.local`
+- Password: `admin`
+
+### Option 2: Local Development
+
+For active development, run services individually:
+
+#### 1a. Start Infrastructure Services
 
 Start PostgreSQL (required for both backend and frontend):
 
@@ -95,7 +133,7 @@ docker compose down
 - Email: `admin@nfldraft.local`
 - Password: `admin`
 
-### 2. Backend Setup & Development
+#### 1b. Backend Setup & Development
 
 Navigate to the backend directory:
 
@@ -154,7 +192,7 @@ sqlx migrate add create_table_name
 sqlx migrate run
 ```
 
-### 3. Frontend Setup & Development
+#### 1c. Frontend Setup & Development
 
 Navigate to the frontend directory:
 
@@ -207,7 +245,33 @@ npm run preview
 
 ## Development Workflow
 
-### Full Stack Development
+### Full Stack Development (Docker Compose)
+
+The simplest way to run everything:
+
+```bash
+# Start all services
+docker compose up -d
+
+# View logs for specific service
+docker compose logs -f frontend
+docker compose logs -f api
+
+# Rebuild after code changes
+docker compose up -d --build
+
+# Stop everything
+docker compose down
+```
+
+**Access Points:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- WebSocket: ws://localhost:8000/ws
+
+### Local Development (Individual Services)
+
+For active development with hot-reloading:
 
 1. **Start infrastructure** (from repository root):
 
@@ -230,7 +294,7 @@ npm run preview
    ```
 
 4. **Access the application:**
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhost:5173 (Vite dev server with HMR)
    - Backend API: http://localhost:8000
    - WebSocket: ws://localhost:8000/ws
 
@@ -253,6 +317,98 @@ docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
    - Database: `nfl_draft`
    - Username: `nfl_draft_user`
    - Password: `nfl_draft_pass`
+
+## Docker Deployment
+
+### Building Docker Images
+
+**Backend:**
+```bash
+cd back-end
+./build-docker.sh
+```
+
+**Frontend:**
+```bash
+cd front-end
+./build-docker.sh
+```
+
+### Running with Docker Compose
+
+The recommended way to run the full stack:
+
+```bash
+# Build and start all services
+docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# Stop services (keeps data)
+docker compose down
+
+# Stop and remove all data (destructive)
+docker compose down -v
+```
+
+### Individual Container Management
+
+**Frontend only:**
+```bash
+docker compose up -d frontend
+```
+
+**Backend only:**
+```bash
+docker compose up -d api
+```
+
+**Database only:**
+```bash
+docker compose up -d postgres
+```
+
+### Health Checks
+
+All services include health checks:
+
+```bash
+# Check service status
+docker compose ps
+
+# Test health endpoints
+curl http://localhost:3000/health  # Frontend
+curl http://localhost:8000/health  # Backend API
+```
+
+### Environment Variables
+
+Configure services via environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_DB` | `nfl_draft` | PostgreSQL database name |
+| `POSTGRES_USER` | `nfl_draft_user` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `nfl_draft_pass` | PostgreSQL password |
+| `POSTGRES_PORT` | `5432` | PostgreSQL host port |
+| `API_PORT` | `8000` | Backend API host port |
+| `FRONTEND_PORT` | `3000` | Frontend host port |
+| `PGADMIN_PORT` | `5050` | pgAdmin host port |
+
+Create a `.env` file in the repository root to override defaults:
+
+```bash
+# .env
+FRONTEND_PORT=8080
+API_PORT=9000
+```
+
+### Docker Documentation
+
+For detailed Docker setup, configuration, and troubleshooting:
+- Backend: `back-end/DOCKER.md`
+- Frontend: `front-end/DOCKER.md`
 
 ## Testing
 
