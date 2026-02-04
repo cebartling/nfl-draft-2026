@@ -26,6 +26,16 @@ if [ ! -d ".sqlx" ]; then
     echo "Generate it by running:"
     echo "  cargo sqlx prepare --workspace"
     echo ""
+
+    # Check if running in CI or non-interactive mode
+    if [ -n "$CI" ] || [ -n "$SKIP_SQLX_CHECK" ] || [ ! -t 0 ]; then
+        echo -e "${RED}Error: .sqlx directory is required for Docker builds${NC}"
+        echo "Running in non-interactive mode (CI=$CI, stdin is not a TTY)"
+        echo "Please generate .sqlx metadata before building:"
+        echo "  cargo sqlx prepare --workspace"
+        exit 1
+    fi
+
     read -p "Continue anyway? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then

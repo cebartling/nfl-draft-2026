@@ -130,6 +130,7 @@ pub fn create_router(state: AppState) -> Router {
     // Create stateful routes
     let stateful_router = Router::new()
         .route("/health", get(handlers::health::health_check))
+        .route("/ws", get(handlers::websocket::ws_handler))
         .nest("/api/v1", api_routes)
         .with_state(state);
 

@@ -234,9 +234,9 @@ docker run --rm nfl-draft-frontend:latest cat /etc/nginx/nginx.conf
 **Test API proxy:**
 ```bash
 # From host machine
-curl http://localhost:3000/api/health
+curl http://localhost:3000/api/v1/teams
 
-# Should return backend health status
+# Should return list of teams (may be empty array initially)
 ```
 
 **Check backend connectivity:**

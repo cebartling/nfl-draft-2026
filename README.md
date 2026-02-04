@@ -119,8 +119,9 @@ When you run `docker compose up -d` for the first time:
    - Backend API (~147MB, takes 2-3 minutes)
    - Frontend (~50MB, takes 1-2 minutes)
 3. **Creates PostgreSQL database** with initial schema
-4. **Runs database migrations** automatically
-5. **Starts all services** with health checks
+4. **Starts all services** with health checks
+
+**Note:** Database migrations must be run manually. See [Running Migrations](#running-migrations) below.
 
 **Total time: ~5 minutes on first run** (subsequent starts: ~10 seconds)
 
@@ -600,21 +601,41 @@ POSTGRES_PASSWORD=super_secure_password_change_me
 
 ### Database Migrations
 
-Migrations are automatically run when the backend container starts.
+Migrations must be run manually before starting the services.
 
-**Manual migration management:**
+#### Running Migrations
+
+**From the host (requires sqlx-cli):**
 
 ```bash
-# View migration status
-docker compose exec api ls -la /app/migrations
+# Install sqlx-cli (if not already installed)
+cargo install sqlx-cli --no-default-features --features postgres
 
-# Run migrations manually (if needed)
+# Run migrations
+cd back-end
+sqlx migrate run
+```
+
+**Using Docker:**
+
+```bash
+# Start PostgreSQL
+docker compose up -d postgres
+
+# Run migrations via docker exec
+docker compose exec postgres psql -U nfl_draft_user -d nfl_draft -f /docker-entrypoint-initdb.d/schema.sql
+
+# Or connect and verify schema manually
 docker compose exec postgres psql -U nfl_draft_user -d nfl_draft -c "\dt"
+```
 
-# Reset database (destructive)
+**Reset database (destructive):**
+
+```bash
 docker compose down -v
 docker compose up -d postgres
-# Migrations run automatically when API starts
+# Run migrations again before starting API
+cd back-end && sqlx migrate run
 docker compose up -d api
 ```
 
@@ -927,7 +948,9 @@ docker compose exec postgres pg_isready -U nfl_draft_user
 # Stop and remove volumes (deletes all data!)
 docker compose down -v
 
-# Restart - migrations run automatically
+# Restart and run migrations manually
+docker compose up -d postgres
+cd back-end && sqlx migrate run
 docker compose up -d
 
 # For local development
