@@ -43,6 +43,10 @@ Each ADR follows this structure:
   - Hybrid event sourcing with JSONB storage
   - Maintains both event history and current state
 
+- [ADR-0008: API-Based Admin Seeding Endpoint](./0008-api-based-admin-seeding.md)
+  - HTTP admin endpoint for player data seeding in hosted environments
+  - Env-var gated security, library crate reuse, embedded data via `include_str!`
+
 ### Frontend Decisions
 
 - [ADR-0004: SvelteKit with Svelte 5 Runes](./0004-sveltekit-with-svelte-5-runes.md)
