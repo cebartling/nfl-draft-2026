@@ -58,3 +58,6 @@ logs/
 # Test coverage
 coverage/
 *.lcov
+
+# MCP configuration
+.mcp.json
