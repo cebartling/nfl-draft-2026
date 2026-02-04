@@ -17,19 +17,25 @@ COPY crates/api/Cargo.toml ./crates/api/
 COPY crates/domain/Cargo.toml ./crates/domain/
 COPY crates/db/Cargo.toml ./crates/db/
 COPY crates/websocket/Cargo.toml ./crates/websocket/
+COPY crates/seed-data/Cargo.toml ./crates/seed-data/
 
 # Build dependencies only (this layer will be cached)
 # Create dummy source files to compile dependencies
-RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src && \
+RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src && \
     echo "fn main() {}" > crates/api/src/main.rs && \
     echo "pub fn dummy() {}" > crates/domain/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/db/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/websocket/src/lib.rs && \
+    echo "pub fn dummy() {}" > crates/seed-data/src/lib.rs && \
+    echo "fn main() {}" > crates/seed-data/src/main.rs && \
     cargo build --release && \
     rm -rf crates/*/src
 
 # Copy the actual source code
 COPY crates ./crates
+
+# Copy embedded data files (used by include_str! in api crate)
+COPY data ./data
 
 # Copy SQLx offline query cache for compile-time verification
 COPY .sqlx ./.sqlx
@@ -40,6 +46,8 @@ RUN touch crates/api/src/main.rs && \
     touch crates/domain/src/lib.rs && \
     touch crates/db/src/lib.rs && \
     touch crates/websocket/src/lib.rs && \
+    touch crates/seed-data/src/lib.rs && \
+    touch crates/seed-data/src/main.rs && \
     cargo build --release -p api
 
 # Stage 2: Create the runtime image
