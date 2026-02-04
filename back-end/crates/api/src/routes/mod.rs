@@ -127,7 +127,8 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::trades::get_pending_trades),
         )
         // Admin
-        .route("/admin/seed-players", post(handlers::seed::seed_players));
+        .route("/admin/seed-players", post(handlers::seed::seed_players))
+        .route("/admin/seed-teams", post(handlers::seed::seed_teams));
 
     // Create stateful routes
     let stateful_router = Router::new()

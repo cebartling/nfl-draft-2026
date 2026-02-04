@@ -52,6 +52,7 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
 
         // Admin
         seed::seed_players,
+        seed::seed_teams,
     ),
     components(
         schemas(

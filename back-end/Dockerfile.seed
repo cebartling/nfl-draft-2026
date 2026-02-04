@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for NFL Draft Simulator Seed Service
-# Builds the seed-players binary and includes sqlx-cli for migrations
+# Builds the seed-data binary and includes sqlx-cli for migrations
 
 # Stage 1: Build the application
 FROM rust:1.85-bookworm AS builder
@@ -42,7 +42,7 @@ COPY crates ./crates
 # Copy SQLx offline query cache for compile-time verification
 COPY .sqlx ./.sqlx
 
-# Build the seed-players binary
+# Build the seed-data binary
 RUN touch crates/seed-data/src/lib.rs && \
     touch crates/seed-data/src/main.rs && \
     touch crates/domain/src/lib.rs && \
@@ -63,8 +63,8 @@ RUN useradd -m -u 1000 appuser
 
 WORKDIR /app
 
-# Copy the seed-players binary from the builder stage
-COPY --from=builder /app/target/release/seed-players /app/seed-players
+# Copy the seed-data binary from the builder stage
+COPY --from=builder /app/target/release/seed-data /app/seed-data
 
 # Copy sqlx-cli binary for running migrations
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx

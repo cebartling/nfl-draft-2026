@@ -8,6 +8,7 @@ use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
 const PLAYERS_2026_JSON: &str = include_str!("../../../../data/players_2026.json");
+const TEAMS_NFL_JSON: &str = include_str!("../../../../data/teams_nfl.json");
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SeedResponse {
@@ -85,6 +86,90 @@ pub async fn seed_players(
     let stats = seed_data::loader::load_players(&data, state.player_repo.as_ref())
         .await
         .map_err(|e| ApiError::InternalError(format!("Failed to load players: {}", e)))?;
+
+    let message = format!(
+        "Seeding complete: {} succeeded, {} skipped, {} errors",
+        stats.success,
+        stats.skipped,
+        stats.errors.len()
+    );
+
+    Ok(Json(SeedResponse {
+        message,
+        success_count: stats.success,
+        skipped_count: stats.skipped,
+        error_count: stats.errors.len(),
+        errors: stats.errors,
+        validation_warnings,
+    }))
+}
+
+/// Seed the database with embedded NFL team data
+///
+/// Requires the `X-Seed-Api-Key` header matching the server's `SEED_API_KEY` environment variable.
+/// Returns 404 if `SEED_API_KEY` is not configured (endpoint is hidden).
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/seed-teams",
+    tag = "admin",
+    responses(
+        (status = 200, description = "Teams seeded successfully", body = SeedResponse),
+        (status = 401, description = "Unauthorized - invalid or missing API key"),
+        (status = 404, description = "Not found - endpoint not enabled"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+pub async fn seed_teams(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> ApiResult<Json<SeedResponse>> {
+    // If SEED_API_KEY is not configured, hide the endpoint entirely
+    let expected_key = match &state.seed_api_key {
+        Some(key) => key,
+        None => {
+            return Err(ApiError::NotFound("Not found".to_string()));
+        }
+    };
+
+    // Validate the API key from the request header
+    let provided_key = headers
+        .get("X-Seed-Api-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if provided_key != expected_key {
+        return Err(ApiError::Unauthorized(
+            "Invalid or missing API key".to_string(),
+        ));
+    }
+
+    // Parse the embedded team data
+    let data = seed_data::team_loader::parse_team_json(TEAMS_NFL_JSON).map_err(|e| {
+        ApiError::InternalError(format!("Failed to parse embedded team data: {}", e))
+    })?;
+
+    // Validate the data
+    let validation = seed_data::team_validator::validate_team_data(&data);
+    let validation_warnings = validation.warnings;
+
+    if !validation.valid {
+        return Ok(Json(SeedResponse {
+            message: "Seeding aborted due to validation errors".to_string(),
+            success_count: 0,
+            skipped_count: 0,
+            error_count: validation.errors.len(),
+            errors: validation.errors,
+            validation_warnings,
+        }));
+    }
+
+    // Load teams into the database
+    let stats = seed_data::team_loader::load_teams(&data, state.team_repo.as_ref())
+        .await
+        .map_err(|e| ApiError::InternalError(format!("Failed to load teams: {}", e)))?;
 
     let message = format!(
         "Seeding complete: {} succeeded, {} skipped, {} errors",

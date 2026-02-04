@@ -8,7 +8,7 @@ name = "seed_data"
 path = "src/lib.rs"
 
 [[bin]]
-name = "seed-players"
+name = "seed-data"
 path = "src/main.rs"
 
 [dependencies]

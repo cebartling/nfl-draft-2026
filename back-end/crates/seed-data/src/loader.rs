@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use anyhow::Result;
 use domain::models::Player;
 use domain::repositories::PlayerRepository;
@@ -131,8 +133,29 @@ pub async fn load_players(data: &PlayerData, repo: &dyn PlayerRepository) -> Res
     let mut stats = LoadStats::default();
     let mut consecutive_failures: usize = 0;
 
+    // Load existing players for this draft year to check for duplicates
+    let existing_players = repo.find_by_draft_year(data.meta.draft_year).await?;
+    let existing_names: HashSet<String> = existing_players
+        .iter()
+        .map(|p| format!("{} {}", p.first_name, p.last_name))
+        .collect();
+
+    tracing::info!(
+        "Found {} existing players for draft year {}",
+        existing_names.len(),
+        data.meta.draft_year
+    );
+
     for entry in &data.players {
         let full_name = format!("{} {}", entry.first_name, entry.last_name);
+
+        // Skip if player already exists
+        if existing_names.contains(&full_name) {
+            tracing::warn!("Skipping {}: player already exists", full_name);
+            stats.skipped += 1;
+            consecutive_failures = 0;
+            continue;
+        }
 
         match entry.to_domain(data.meta.draft_year) {
             Ok(player) => match repo.create(&player).await {
