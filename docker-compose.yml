@@ -13,12 +13,42 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nfl_draft_user} -d ${POSTGRES_DB:-nfl_draft}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-nfl_draft_user} -d ${POSTGRES_DB:-nfl_draft}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - nfl-draft-network
+
+  # Backend API service
+  api:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile
+    container_name: nfl-draft-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nfl_draft_user}:${POSTGRES_PASSWORD:-nfl_draft_pass}@postgres:5432/${POSTGRES_DB:-nfl_draft}
+      RUST_LOG: ${RUST_LOG:-info}
+      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
+      SERVER_PORT: ${SERVER_PORT:-8000}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nfl-draft-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 40s
+      retries: 3
 
   # Optional: pgAdmin for database management
   pgadmin:
@@ -28,8 +58,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@nfldraft.local}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
       - "${PGADMIN_PORT:-5050}:80"
     volumes:
