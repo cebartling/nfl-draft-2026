@@ -3,6 +3,10 @@ name = "seed-data"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "seed_data"
+path = "src/lib.rs"
+
 [[bin]]
 name = "seed-players"
 path = "src/main.rs"

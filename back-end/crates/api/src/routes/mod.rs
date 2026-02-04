@@ -125,7 +125,9 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/teams/{team_id}/pending-trades",
             get(handlers::trades::get_pending_trades),
-        );
+        )
+        // Admin
+        .route("/admin/seed-players", post(handlers::seed::seed_players));
 
     // Create stateful routes
     let stateful_router = Router::new()
@@ -161,7 +163,7 @@ mod tests {
         let pool = db::create_pool(&database_url)
             .await
             .expect("Failed to create pool");
-        let state = AppState::new(pool);
+        let state = AppState::new(pool, None);
 
         create_router(state)
     }

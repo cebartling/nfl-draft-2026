@@ -1,6 +1,5 @@
-mod loader;
-mod position_mapper;
-mod validator;
+use seed_data::loader;
+use seed_data::validator;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};

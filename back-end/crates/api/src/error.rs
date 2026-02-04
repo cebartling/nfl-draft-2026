@@ -7,6 +7,7 @@ use serde_json::json;
 pub enum ApiError {
     NotFound(String),
     BadRequest(String),
+    Unauthorized(String),
     InternalError(String),
     DomainError(domain::errors::DomainError),
 }
@@ -24,6 +25,7 @@ impl IntoResponse for ApiError {
         let (status, message) = match self {
             ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            ApiError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
             ApiError::InternalError(msg) => {
                 tracing::error!("Internal error: {}", msg);
                 (

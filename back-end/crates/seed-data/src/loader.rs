@@ -84,6 +84,11 @@ pub fn parse_player_file(file_path: &str) -> Result<PlayerData> {
     Ok(data)
 }
 
+pub fn parse_player_json(json: &str) -> Result<PlayerData> {
+    let data: PlayerData = serde_json::from_str(json)?;
+    Ok(data)
+}
+
 /// Maximum number of consecutive failures before aborting.
 const MAX_CONSECUTIVE_FAILURES: usize = 5;
 

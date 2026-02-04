@@ -4,6 +4,7 @@ use serde::Deserialize;
 pub struct Config {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
+    pub seed_api_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -39,9 +40,12 @@ impl Config {
             .parse()
             .expect("API_PORT must be a valid number");
 
+        let seed_api_key = std::env::var("SEED_API_KEY").ok().filter(|s| !s.is_empty());
+
         Ok(Config {
             server: ServerConfig { host, port },
             database: DatabaseConfig { url: database_url },
+            seed_api_key,
         })
     }
 
@@ -70,6 +74,7 @@ mod tests {
             database: DatabaseConfig {
                 url: "postgresql://localhost/test".to_string(),
             },
+            seed_api_key: None,
         };
 
         assert_eq!(config.server_address(), "127.0.0.1:3000");

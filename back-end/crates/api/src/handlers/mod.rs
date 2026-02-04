@@ -3,6 +3,7 @@ pub mod drafts;
 pub mod health;
 pub mod players;
 pub mod scouting_reports;
+pub mod seed;
 pub mod sessions;
 pub mod team_needs;
 pub mod teams;

@@ -235,7 +235,7 @@ mod tests {
             .await
             .expect("Failed to create pool");
 
-        AppState::new(pool)
+        AppState::new(pool, None)
     }
 
     async fn create_test_player(state: &AppState) -> Player {
