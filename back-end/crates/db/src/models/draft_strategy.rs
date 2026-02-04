@@ -29,7 +29,7 @@ impl DraftStrategyDb {
         let position_values = strategy
             .position_values
             .as_ref()
-            .map(|map| position_values_to_json(map))
+            .map(position_values_to_json)
             .transpose()?;
 
         Ok(Self {
@@ -50,7 +50,7 @@ impl DraftStrategyDb {
         let position_values = self
             .position_values
             .as_ref()
-            .map(|json| json_to_position_values(json))
+            .map(json_to_position_values)
             .transpose()?;
 
         Ok(DraftStrategy {

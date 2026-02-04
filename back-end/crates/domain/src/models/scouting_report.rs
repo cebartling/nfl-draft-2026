@@ -25,7 +25,7 @@ impl FitGrade {
         }
     }
 
-    pub fn from_str(s: &str) -> DomainResult<Self> {
+    pub fn parse_grade(s: &str) -> DomainResult<Self> {
         match s {
             "A" => Ok(FitGrade::A),
             "B" => Ok(FitGrade::B),
@@ -199,8 +199,8 @@ mod tests {
     #[test]
     fn test_fit_grade_conversion() {
         assert_eq!(FitGrade::A.as_str(), "A");
-        assert_eq!(FitGrade::from_str("A").unwrap(), FitGrade::A);
-        assert_eq!(FitGrade::from_str("F").unwrap(), FitGrade::F);
-        assert!(FitGrade::from_str("X").is_err());
+        assert_eq!(FitGrade::parse_grade("A").unwrap(), FitGrade::A);
+        assert_eq!(FitGrade::parse_grade("F").unwrap(), FitGrade::F);
+        assert!(FitGrade::parse_grade("X").is_err());
     }
 }

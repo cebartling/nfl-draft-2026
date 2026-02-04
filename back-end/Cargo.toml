@@ -5,6 +5,7 @@ members = [
     "crates/domain",
     "crates/db",
     "crates/websocket",
+    "crates/seed-data",
 ]
 
 [workspace.package]

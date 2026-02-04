@@ -245,7 +245,10 @@ async fn test_accept_trade_transfers_ownership() {
 
     let status = accept_response.status();
     if status != 200 {
-        let error_body = accept_response.text().await.unwrap_or_else(|_| "Could not read body".to_string());
+        let error_body = accept_response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Could not read body".to_string());
         panic!("Accept trade failed with status {}: {}", status, error_body);
     }
 
@@ -267,10 +270,13 @@ async fn test_accept_trade_transfers_ownership() {
     assert_eq!(pick2_new_owner.team_id, team1_id); // team1 now owns pick 2
 
     // Verify trade status updated in database
-    let db_trade = sqlx::query!("SELECT status FROM pick_trades WHERE id = $1", uuid::Uuid::parse_str(trade_id).unwrap())
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to fetch trade");
+    let db_trade = sqlx::query!(
+        "SELECT status FROM pick_trades WHERE id = $1",
+        uuid::Uuid::parse_str(trade_id).unwrap()
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to fetch trade");
     assert_eq!(db_trade.status, "Accepted");
 }
 
@@ -330,10 +336,11 @@ async fn test_reject_trade() {
     let trade_id = trade["trade"]["id"].as_str().expect("Missing trade id");
 
     // Verify initial ownership hasn't changed
-    let pick1_owner_before = sqlx::query!("SELECT team_id FROM draft_picks WHERE id = $1", pick1_id)
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to fetch pick");
+    let pick1_owner_before =
+        sqlx::query!("SELECT team_id FROM draft_picks WHERE id = $1", pick1_id)
+            .fetch_one(&pool)
+            .await
+            .expect("Failed to fetch pick");
     assert_eq!(pick1_owner_before.team_id, team1_id);
 
     // Reject trade as team2
@@ -367,10 +374,13 @@ async fn test_reject_trade() {
     assert_eq!(pick2_owner_after.team_id, team2_id); // Still owned by team2
 
     // Verify trade status in database
-    let db_trade = sqlx::query!("SELECT status FROM pick_trades WHERE id = $1", uuid::Uuid::parse_str(trade_id).unwrap())
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to fetch trade");
+    let db_trade = sqlx::query!(
+        "SELECT status FROM pick_trades WHERE id = $1",
+        uuid::Uuid::parse_str(trade_id).unwrap()
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to fetch trade");
     assert_eq!(db_trade.status, "Rejected");
 }
 
@@ -427,7 +437,11 @@ async fn test_pick_in_active_trade_cannot_be_traded_again() {
 
     // Initialize picks
     let init_response = client
-        .post(&format!("{}/api/v1/drafts/{}/initialize", base_url, draft_id.to_string()))
+        .post(&format!(
+            "{}/api/v1/drafts/{}/initialize",
+            base_url,
+            draft_id.to_string()
+        ))
         .timeout(Duration::from_secs(10))
         .send()
         .await
@@ -445,18 +459,30 @@ async fn test_pick_in_active_trade_cannot_be_traded_again() {
     let pick3_id = picks[2].id;
 
     // Setup ownership
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team1_id, pick1_id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team2_id, pick2_id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team3_id, pick3_id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team1_id,
+        pick1_id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team2_id,
+        pick2_id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team3_id,
+        pick3_id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
 
     // Propose first trade (pick1 for pick2)
     let trade1_response = client
@@ -519,10 +545,14 @@ async fn test_get_pending_trades_for_team() {
     // Setup: team1 owns picks 1, 3, 5 and team2 owns picks 2, 4, 6
     for i in 0..6 {
         let team_id = if i % 2 == 0 { team1_id } else { team2_id };
-        sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team_id, picks[i].id)
-            .execute(&pool)
-            .await
-            .expect("Failed to update ownership");
+        sqlx::query!(
+            "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+            team_id,
+            picks[i].id
+        )
+        .execute(&pool)
+        .await
+        .expect("Failed to update ownership");
     }
 
     // Team1 proposes two fair trades to Team2
@@ -616,14 +646,22 @@ async fn test_get_trade_details() {
     let pick1_id = picks[0].id;
     let pick2_id = picks[1].id;
 
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team1_id, pick1_id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team2_id, pick2_id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team1_id,
+        pick1_id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team2_id,
+        pick2_id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
 
     // Propose trade
     let trade_response = client
@@ -683,14 +721,22 @@ async fn test_cannot_accept_trade_as_wrong_team() {
         .await
         .expect("Failed to fetch picks");
 
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team1_id, picks[0].id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
-    sqlx::query!("UPDATE draft_picks SET team_id = $1 WHERE id = $2", team2_id, picks[1].id)
-        .execute(&pool)
-        .await
-        .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team1_id,
+        picks[0].id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
+    sqlx::query!(
+        "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+        team2_id,
+        picks[1].id
+    )
+    .execute(&pool)
+    .await
+    .expect("Failed to update ownership");
 
     // Propose trade from team1 to team2
     let trade_response = client
@@ -832,15 +878,21 @@ async fn initialize_draft_picks(
 
     let status = init_response.status();
     if status != 201 {
-        let error_body = init_response.text().await.unwrap_or_else(|_| "Could not read body".to_string());
+        let error_body = init_response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Could not read body".to_string());
         panic!("Initialize failed with status {}: {}", status, error_body);
     }
 
     // Verify picks were created
-    let pick_count = sqlx::query!("SELECT COUNT(*) as count FROM draft_picks WHERE draft_id = $1", draft_id)
-        .fetch_one(pool)
-        .await
-        .expect("Failed to count picks");
+    let pick_count = sqlx::query!(
+        "SELECT COUNT(*) as count FROM draft_picks WHERE draft_id = $1",
+        draft_id
+    )
+    .fetch_one(pool)
+    .await
+    .expect("Failed to count picks");
 
     assert_eq!(pick_count.count.unwrap(), 6); // 3 rounds * 2 picks
 }

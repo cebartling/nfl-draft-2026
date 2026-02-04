@@ -1,4 +1,6 @@
-# Multi-stage Dockerfile for NFL Draft Simulator Backend
+# Multi-stage Dockerfile for NFL Draft Simulator Seed Service
+# Builds the seed-players binary and includes sqlx-cli for migrations
+
 # Stage 1: Build the application
 FROM rust:1.85-bookworm AS builder
 
@@ -7,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install sqlx-cli for running migrations
+RUN cargo install sqlx-cli --no-default-features --features postgres --locked
 
 # Create a new empty shell project
 WORKDIR /app
@@ -28,27 +33,21 @@ RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src
     echo "pub fn dummy() {}" > crates/websocket/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/seed-data/src/lib.rs && \
     echo "fn main() {}" > crates/seed-data/src/main.rs && \
-    cargo build --release && \
+    cargo build --release -p seed-data && \
     rm -rf crates/*/src
 
 # Copy the actual source code
 COPY crates ./crates
 
-# Copy embedded data files (used by include_str! in api crate)
-COPY data ./data
-
 # Copy SQLx offline query cache for compile-time verification
 COPY .sqlx ./.sqlx
 
-# Build the actual application
-# Touch the files to ensure cargo rebuilds them
-RUN touch crates/api/src/main.rs && \
+# Build the seed-players binary
+RUN touch crates/seed-data/src/lib.rs && \
+    touch crates/seed-data/src/main.rs && \
     touch crates/domain/src/lib.rs && \
     touch crates/db/src/lib.rs && \
-    touch crates/websocket/src/lib.rs && \
-    touch crates/seed-data/src/lib.rs && \
-    touch crates/seed-data/src/main.rs && \
-    cargo build --release -p api
+    cargo build --release -p seed-data
 
 # Stage 2: Create the runtime image
 FROM debian:bookworm-slim AS runtime
@@ -57,7 +56,6 @@ FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user to run the application
@@ -65,11 +63,21 @@ RUN useradd -m -u 1000 appuser
 
 WORKDIR /app
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /app/target/release/api /app/api
+# Copy the seed-players binary from the builder stage
+COPY --from=builder /app/target/release/seed-players /app/seed-players
 
-# Copy migrations directory (needed for runtime if using embedded migrations)
+# Copy sqlx-cli binary for running migrations
+COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
+
+# Copy migrations directory
 COPY migrations ./migrations
+
+# Copy seed data
+COPY data ./data
+
+# Copy entrypoint script
+COPY scripts/seed-entrypoint.sh /app/seed-entrypoint.sh
+RUN chmod +x /app/seed-entrypoint.sh
 
 # Change ownership to the non-root user
 RUN chown -R appuser:appuser /app
@@ -77,16 +85,9 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user
 USER appuser
 
-# Expose the application port
-EXPOSE 8000
-
 # Set environment variables
 ENV RUST_LOG=info
 ENV DATABASE_URL=postgresql://nfl_draft_user:nfl_draft_pass@postgres:5432/nfl_draft
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Run the binary
-CMD ["/app/api"]
+# Run the entrypoint script
+CMD ["/app/seed-entrypoint.sh"]

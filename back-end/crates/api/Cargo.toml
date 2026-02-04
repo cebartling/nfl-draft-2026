@@ -27,6 +27,7 @@ futures.workspace = true
 domain = { path = "../domain" }
 db = { path = "../db" }
 websocket = { path = "../websocket" }
+seed-data = { path = "../seed-data" }
 
 [dev-dependencies]
 sqlx.workspace = true

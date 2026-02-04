@@ -1,11 +1,11 @@
+use crate::errors::DbError;
+use crate::models::{PickTradeDb, PickTradeDetailDb};
 use async_trait::async_trait;
-use sqlx::PgPool;
-use uuid::Uuid;
 use domain::errors::DomainResult;
 use domain::models::{ChartType, PickTrade, PickTradeDetail, TradeDirection, TradeProposal};
 use domain::repositories::TradeRepository;
-use crate::errors::DbError;
-use crate::models::{PickTradeDb, PickTradeDetailDb};
+use sqlx::PgPool;
+use uuid::Uuid;
 
 pub struct SqlxTradeRepository {
     pool: PgPool,
@@ -19,7 +19,11 @@ impl SqlxTradeRepository {
 
 #[async_trait]
 impl TradeRepository for SqlxTradeRepository {
-    async fn create_trade(&self, proposal: &TradeProposal, chart_type: ChartType) -> DomainResult<TradeProposal> {
+    async fn create_trade(
+        &self,
+        proposal: &TradeProposal,
+        chart_type: ChartType,
+    ) -> DomainResult<TradeProposal> {
         let trade_db = PickTradeDb::from_domain(&proposal.trade);
 
         // Transaction for atomic creation
@@ -60,19 +64,32 @@ impl TradeRepository for SqlxTradeRepository {
         let value_chart = chart_type.create_chart();
 
         // Insert trade details for each pick
-        for (pick_id, direction) in proposal.from_team_picks.iter()
+        for (pick_id, direction) in proposal
+            .from_team_picks
+            .iter()
             .map(|id| (*id, TradeDirection::FromTeam))
-            .chain(proposal.to_team_picks.iter().map(|id| (*id, TradeDirection::ToTeam)))
+            .chain(
+                proposal
+                    .to_team_picks
+                    .iter()
+                    .map(|id| (*id, TradeDirection::ToTeam)),
+            )
         {
             // Get pick to determine value
-            let pick = sqlx::query!("SELECT overall_pick FROM draft_picks WHERE id = $1", pick_id)
-                .fetch_one(&mut *tx)
-                .await
-                .map_err(DbError::DatabaseError)?;
+            let pick = sqlx::query!(
+                "SELECT overall_pick FROM draft_picks WHERE id = $1",
+                pick_id
+            )
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(DbError::DatabaseError)?;
 
             // Calculate value using trade value chart
-            let value = value_chart.calculate_pick_value(pick.overall_pick)
-                .map_err(|e| DbError::MappingError(format!("Failed to calculate pick value: {:?}", e)))?;
+            let value = value_chart
+                .calculate_pick_value(pick.overall_pick)
+                .map_err(|e| {
+                    DbError::MappingError(format!("Failed to calculate pick value: {:?}", e))
+                })?;
 
             let detail = PickTradeDetail::new(proposal.trade.id, pick_id, direction, value);
             let detail_db = PickTradeDetailDb::from_domain(&detail);
@@ -179,7 +196,11 @@ impl TradeRepository for SqlxTradeRepository {
         .await
         .map_err(DbError::DatabaseError)?;
 
-        results.into_iter().map(|db| db.to_domain()).collect::<Result<Vec<_>, _>>().map_err(Into::into)
+        results
+            .into_iter()
+            .map(|db| db.to_domain())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     async fn find_pending_for_team(&self, team_id: Uuid) -> DomainResult<Vec<TradeProposal>> {
@@ -236,7 +257,11 @@ impl TradeRepository for SqlxTradeRepository {
         result.to_domain().map_err(Into::into)
     }
 
-    async fn is_pick_in_active_trade(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<bool> {
+    async fn is_pick_in_active_trade(
+        &self,
+        pick_id: Uuid,
+        exclude_trade_id: Option<Uuid>,
+    ) -> DomainResult<bool> {
         let exists = match exclude_trade_id {
             Some(exclude_id) => {
                 let result = sqlx::query!(

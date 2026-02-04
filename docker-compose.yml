@@ -36,6 +36,7 @@ services:
       RUST_LOG: ${RUST_LOG:-info}
       SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
       SERVER_PORT: ${SERVER_PORT:-8000}
+      SEED_API_KEY: ${SEED_API_KEY:-}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
@@ -74,6 +75,24 @@ services:
       timeout: 3s
       start_period: 10s
       retries: 3
+
+  # Database seeding service (one-shot)
+  seed:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile.seed
+    container_name: nfl-draft-2026-seed
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nfl_draft_user}:${POSTGRES_PASSWORD:-nfl_draft_pass}@postgres:5432/${POSTGRES_DB:-nfl_draft}
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nfl-draft-network
+    profiles:
+      - seed
 
   # Optional: pgAdmin for database management
   pgadmin:

@@ -18,7 +18,7 @@ pub async fn spawn_app() -> (String, sqlx::PgPool) {
     // Cleanup database
     cleanup_database(&pool).await;
 
-    let state = api::state::AppState::new(pool.clone());
+    let state = api::state::AppState::new(pool.clone(), None);
     let app = api::routes::create_router(state);
 
     // Bind to ephemeral port (port 0)

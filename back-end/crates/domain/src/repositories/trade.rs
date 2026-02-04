@@ -1,7 +1,7 @@
-use async_trait::async_trait;
-use uuid::Uuid;
 use crate::errors::DomainResult;
 use crate::models::{ChartType, PickTrade, TradeProposal};
+use async_trait::async_trait;
+use uuid::Uuid;
 
 #[async_trait]
 pub trait TradeRepository: Send + Sync {
@@ -10,7 +10,11 @@ pub trait TradeRepository: Send + Sync {
     /// # Arguments
     /// * `proposal` - The trade proposal to create
     /// * `chart_type` - The chart type used to calculate individual pick values
-    async fn create_trade(&self, proposal: &TradeProposal, chart_type: ChartType) -> DomainResult<TradeProposal>;
+    async fn create_trade(
+        &self,
+        proposal: &TradeProposal,
+        chart_type: ChartType,
+    ) -> DomainResult<TradeProposal>;
 
     /// Find trade by ID
     async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<PickTrade>>;
@@ -28,7 +32,11 @@ pub trait TradeRepository: Send + Sync {
     async fn update(&self, trade: &PickTrade) -> DomainResult<PickTrade>;
 
     /// Check if pick is in any active (Proposed) trade, optionally excluding a specific trade
-    async fn is_pick_in_active_trade(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<bool>;
+    async fn is_pick_in_active_trade(
+        &self,
+        pick_id: Uuid,
+        exclude_trade_id: Option<Uuid>,
+    ) -> DomainResult<bool>;
 
     /// Transfer pick ownership (atomic)
     async fn transfer_picks(

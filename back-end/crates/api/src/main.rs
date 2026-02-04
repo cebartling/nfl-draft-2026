@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Database connection pool created");
 
     // Create application state
-    let state = AppState::new(pool);
+    let state = AppState::new(pool, config.seed_api_key.clone());
 
     // Create router
     let app = api::routes::create_router(state);

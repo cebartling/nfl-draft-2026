@@ -74,10 +74,8 @@ async fn handle_socket(socket: WebSocket) {
                     }
                     Err(e) => {
                         warn!("Failed to parse client message: {}", e);
-                        let error_msg = ServerMessage::error(format!(
-                            "Invalid message format: {}",
-                            e
-                        ));
+                        let error_msg =
+                            ServerMessage::error(format!("Invalid message format: {}", e));
                         if let Ok(error_json) = error_msg.to_json() {
                             let _ = sender.send(Message::Text(error_json.into())).await;
                         }

@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::errors::{DomainError, DomainResult};
 use super::ChartType;
+use crate::errors::{DomainError, DomainResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum SessionStatus {

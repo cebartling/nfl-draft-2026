@@ -22,7 +22,7 @@ export class ApiClientError extends Error {
 export class ApiClient {
 	private baseUrl: string;
 
-	constructor(baseUrl: string = '/api') {
+	constructor(baseUrl: string = '/api/v1') {
 		this.baseUrl = baseUrl;
 	}
 

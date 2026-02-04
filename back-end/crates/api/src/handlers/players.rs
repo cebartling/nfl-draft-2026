@@ -140,7 +140,7 @@ mod tests {
         let pool = db::create_pool(&database_url)
             .await
             .expect("Failed to create pool");
-        let state = AppState::new(pool.clone());
+        let state = AppState::new(pool.clone(), None);
 
         // Cleanup (delete in order of foreign key dependencies)
         sqlx::query!("DELETE FROM draft_picks")

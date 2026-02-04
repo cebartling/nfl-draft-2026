@@ -1,6 +1,6 @@
 use utoipa::OpenApi;
 
-use crate::handlers::{drafts, health, players, teams, trades};
+use crate::handlers::{drafts, health, players, seed, teams, trades};
 use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
 
 #[derive(OpenApi)]
@@ -49,6 +49,9 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
         trades::reject_trade,
         trades::get_trade,
         trades::get_pending_trades,
+
+        // Admin
+        seed::seed_players,
     ),
     components(
         schemas(
@@ -78,6 +81,9 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
             trades::TradeProposalResponse,
             trades::ProposeTradeRequest,
             trades::TradeActionRequest,
+
+            // Admin types
+            seed::SeedResponse,
         )
     ),
     tags(
@@ -87,6 +93,7 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
         (name = "drafts", description = "Draft management and lifecycle"),
         (name = "picks", description = "Draft pick operations"),
         (name = "trades", description = "Draft pick trading operations"),
+        (name = "admin", description = "Administrative operations"),
     )
 )]
 pub struct ApiDoc;

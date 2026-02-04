@@ -1,7 +1,7 @@
+use crate::errors::{DomainError, DomainResult};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::errors::{DomainError, DomainResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TradeStatus {
@@ -12,8 +12,8 @@ pub enum TradeStatus {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TradeDirection {
-    FromTeam,  // Pick given by from_team
-    ToTeam,    // Pick given by to_team
+    FromTeam, // Pick given by from_team
+    ToTeam,   // Pick given by to_team
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -69,9 +69,10 @@ impl PickTrade {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(DomainError::InvalidState(
-                format!("Cannot accept trade in status: {:?}", self.status)
-            )),
+            _ => Err(DomainError::InvalidState(format!(
+                "Cannot accept trade in status: {:?}",
+                self.status
+            ))),
         }
     }
 
@@ -83,9 +84,10 @@ impl PickTrade {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(DomainError::InvalidState(
-                format!("Cannot reject trade in status: {:?}", self.status)
-            )),
+            _ => Err(DomainError::InvalidState(format!(
+                "Cannot reject trade in status: {:?}",
+                self.status
+            ))),
         }
     }
 
@@ -166,9 +168,10 @@ impl TradeProposal {
         let mut seen = std::collections::HashSet::new();
         for pick_id in from_picks.iter().chain(to_picks.iter()) {
             if !seen.insert(pick_id) {
-                return Err(DomainError::ValidationError(
-                    format!("Duplicate pick in trade: {}", pick_id)
-                ));
+                return Err(DomainError::ValidationError(format!(
+                    "Duplicate pick in trade: {}",
+                    pick_id
+                )));
             }
         }
 

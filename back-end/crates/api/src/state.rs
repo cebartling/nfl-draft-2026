@@ -30,10 +30,11 @@ pub struct AppState {
     pub draft_engine: Arc<DraftEngine>,
     pub trade_engine: Arc<TradeEngine>,
     pub ws_manager: ConnectionManager,
+    pub seed_api_key: Option<String>,
 }
 
 impl AppState {
-    pub fn new(pool: PgPool) -> Self {
+    pub fn new(pool: PgPool, seed_api_key: Option<String>) -> Self {
         let team_repo: Arc<dyn TeamRepository> = Arc::new(SqlxTeamRepository::new(pool.clone()));
         let player_repo: Arc<dyn PlayerRepository> =
             Arc::new(SqlxPlayerRepository::new(pool.clone()));
@@ -79,6 +80,7 @@ impl AppState {
             draft_engine,
             trade_engine,
             ws_manager,
+            seed_api_key,
         }
     }
 }
@@ -96,7 +98,7 @@ mod tests {
         let pool = db::create_pool(&database_url)
             .await
             .expect("Failed to create pool");
-        let state = AppState::new(pool);
+        let state = AppState::new(pool, None);
 
         // Just verify state was created successfully
         assert!(Arc::strong_count(&state.team_repo) >= 1);

@@ -50,7 +50,7 @@ impl ConnectionManager {
         // Add connection to session
         self.sessions
             .entry(session_id)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(connection_id);
 
         debug!(

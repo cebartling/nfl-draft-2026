@@ -1,0 +1,25 @@
+[package]
+name = "seed-data"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "seed_data"
+path = "src/lib.rs"
+
+[[bin]]
+name = "seed-players"
+path = "src/main.rs"
+
+[dependencies]
+domain = { path = "../domain" }
+db = { path = "../db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+dotenvy = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+clap = { version = "4.5", features = ["derive"] }

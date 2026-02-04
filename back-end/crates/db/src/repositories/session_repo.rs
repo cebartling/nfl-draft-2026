@@ -32,8 +32,7 @@ impl From<DraftSessionDb> for DraftSession {
             _ => SessionStatus::NotStarted, // Default fallback
         };
 
-        let chart_type = db.chart_type.parse()
-            .unwrap_or(ChartType::JimmyJohnson); // Default fallback
+        let chart_type = db.chart_type.parse().unwrap_or(ChartType::JimmyJohnson); // Default fallback
 
         DraftSession {
             id: db.id,
