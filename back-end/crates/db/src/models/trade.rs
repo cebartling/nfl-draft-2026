@@ -1,8 +1,8 @@
+use crate::errors::{DbError, DbResult};
 use chrono::{DateTime, Utc};
+use domain::models::{PickTrade, PickTradeDetail, TradeDirection, TradeStatus};
 use sqlx::FromRow;
 use uuid::Uuid;
-use domain::models::{PickTrade, PickTradeDetail, TradeDirection, TradeStatus};
-use crate::errors::{DbError, DbResult};
 
 #[derive(Debug, Clone, FromRow)]
 pub struct PickTradeDb {
@@ -48,7 +48,12 @@ impl PickTradeDb {
                 "Proposed" => TradeStatus::Proposed,
                 "Accepted" => TradeStatus::Accepted,
                 "Rejected" => TradeStatus::Rejected,
-                _ => return Err(DbError::MappingError(format!("Invalid status: {}", self.status))),
+                _ => {
+                    return Err(DbError::MappingError(format!(
+                        "Invalid status: {}",
+                        self.status
+                    )))
+                }
             },
             from_team_value: self.from_team_value,
             to_team_value: self.to_team_value,
@@ -91,7 +96,12 @@ impl PickTradeDetailDb {
             direction: match self.direction.as_str() {
                 "FromTeam" => TradeDirection::FromTeam,
                 "ToTeam" => TradeDirection::ToTeam,
-                _ => return Err(DbError::MappingError(format!("Invalid direction: {}", self.direction))),
+                _ => {
+                    return Err(DbError::MappingError(format!(
+                        "Invalid direction: {}",
+                        self.direction
+                    )))
+                }
             },
             pick_value: self.pick_value,
             created_at: self.created_at,

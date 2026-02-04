@@ -42,7 +42,7 @@ impl ScoutingReportDb {
     pub fn to_domain(&self) -> DbResult<ScoutingReport> {
         let fit_grade = match &self.fit_grade {
             Some(s) => Some(
-                FitGrade::from_str(s)
+                FitGrade::parse_grade(s)
                     .map_err(|_| DbError::MappingError(format!("Invalid fit grade: {}", s)))?,
             ),
             None => None,

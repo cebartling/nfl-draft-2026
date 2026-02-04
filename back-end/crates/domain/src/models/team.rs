@@ -116,17 +116,17 @@ impl Team {
         conference: &Conference,
         division: &Division,
     ) -> DomainResult<()> {
-        let valid = match (conference, division) {
+        let valid = matches!(
+            (conference, division),
             (Conference::AFC, Division::AFCEast)
-            | (Conference::AFC, Division::AFCNorth)
-            | (Conference::AFC, Division::AFCSouth)
-            | (Conference::AFC, Division::AFCWest)
-            | (Conference::NFC, Division::NFCEast)
-            | (Conference::NFC, Division::NFCNorth)
-            | (Conference::NFC, Division::NFCSouth)
-            | (Conference::NFC, Division::NFCWest) => true,
-            _ => false,
-        };
+                | (Conference::AFC, Division::AFCNorth)
+                | (Conference::AFC, Division::AFCSouth)
+                | (Conference::AFC, Division::AFCWest)
+                | (Conference::NFC, Division::NFCEast)
+                | (Conference::NFC, Division::NFCNorth)
+                | (Conference::NFC, Division::NFCSouth)
+                | (Conference::NFC, Division::NFCWest)
+        );
 
         if !valid {
             return Err(DomainError::ValidationError(

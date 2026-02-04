@@ -1,16 +1,16 @@
-use std::sync::Arc;
-use uuid::Uuid;
 use crate::errors::{DomainError, DomainResult};
 use crate::models::{ChartType, PickTrade, TradeProposal};
 use crate::repositories::{DraftPickRepository, TeamRepository, TradeRepository};
 use crate::services::trade_value::TradeValueChart;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct TradeEngine {
     trade_repo: Arc<dyn TradeRepository>,
     pick_repo: Arc<dyn DraftPickRepository>,
     team_repo: Arc<dyn TeamRepository>,
     default_chart_type: ChartType,
-    fairness_threshold_percent: i32,  // Default: 15%
+    fairness_threshold_percent: i32, // Default: 15%
 }
 
 impl TradeEngine {
@@ -59,15 +59,20 @@ impl TradeEngine {
             &from_team_picks,
             &to_team_picks,
             None,
-        ).await?;
+        )
+        .await?;
 
         // Create chart instance for this trade
         let chart_type = chart_type.unwrap_or(self.default_chart_type);
         let value_chart = chart_type.create_chart();
 
         // Calculate trade values
-        let from_team_value = self.calculate_total_value_with_chart(&from_team_picks, &*value_chart).await?;
-        let to_team_value = self.calculate_total_value_with_chart(&to_team_picks, &*value_chart).await?;
+        let from_team_value = self
+            .calculate_total_value_with_chart(&from_team_picks, &*value_chart)
+            .await?;
+        let to_team_value = self
+            .calculate_total_value_with_chart(&to_team_picks, &*value_chart)
+            .await?;
 
         // Validate trade fairness
         if !value_chart.is_trade_fair(
@@ -77,7 +82,10 @@ impl TradeEngine {
         ) {
             return Err(DomainError::ValidationError(format!(
                 "Trade is not fair using {} chart: {} points vs {} points (threshold: {}%)",
-                value_chart.name(), from_team_value, to_team_value, self.fairness_threshold_percent
+                value_chart.name(),
+                from_team_value,
+                to_team_value,
+                self.fairness_threshold_percent
             )));
         }
 
@@ -97,9 +105,16 @@ impl TradeEngine {
     }
 
     /// Accept trade and auto-execute (transfer picks)
-    pub async fn accept_trade(&self, trade_id: Uuid, accepting_team_id: Uuid) -> DomainResult<PickTrade> {
+    pub async fn accept_trade(
+        &self,
+        trade_id: Uuid,
+        accepting_team_id: Uuid,
+    ) -> DomainResult<PickTrade> {
         // Get trade with details
-        let mut trade_proposal = self.trade_repo.find_trade_with_details(trade_id).await?
+        let mut trade_proposal = self
+            .trade_repo
+            .find_trade_with_details(trade_id)
+            .await?
             .ok_or_else(|| DomainError::NotFound(format!("Trade {} not found", trade_id)))?;
 
         // Verify accepting team is to_team
@@ -119,23 +134,33 @@ impl TradeEngine {
             &trade_proposal.from_team_picks,
             &trade_proposal.to_team_picks,
             Some(trade_id),
-        ).await?;
+        )
+        .await?;
 
         // Execute trade (atomic pick transfer)
-        self.trade_repo.transfer_picks(
-            trade_proposal.trade.from_team_id,
-            trade_proposal.trade.to_team_id,
-            &trade_proposal.from_team_picks,
-            &trade_proposal.to_team_picks,
-        ).await?;
+        self.trade_repo
+            .transfer_picks(
+                trade_proposal.trade.from_team_id,
+                trade_proposal.trade.to_team_id,
+                &trade_proposal.from_team_picks,
+                &trade_proposal.to_team_picks,
+            )
+            .await?;
 
         // Update trade status to Accepted
         self.trade_repo.update(&trade_proposal.trade).await
     }
 
     /// Reject a trade
-    pub async fn reject_trade(&self, trade_id: Uuid, rejecting_team_id: Uuid) -> DomainResult<PickTrade> {
-        let mut trade = self.trade_repo.find_by_id(trade_id).await?
+    pub async fn reject_trade(
+        &self,
+        trade_id: Uuid,
+        rejecting_team_id: Uuid,
+    ) -> DomainResult<PickTrade> {
+        let mut trade = self
+            .trade_repo
+            .find_by_id(trade_id)
+            .await?
             .ok_or_else(|| DomainError::NotFound(format!("Trade {} not found", trade_id)))?;
 
         if trade.to_team_id != rejecting_team_id {
@@ -161,7 +186,9 @@ impl TradeEngine {
     // --- Private helper methods ---
 
     async fn validate_team_exists(&self, team_id: Uuid) -> DomainResult<()> {
-        self.team_repo.find_by_id(team_id).await?
+        self.team_repo
+            .find_by_id(team_id)
+            .await?
             .ok_or_else(|| DomainError::NotFound(format!("Team {} not found", team_id)))?;
         Ok(())
     }
@@ -176,41 +203,61 @@ impl TradeEngine {
     ) -> DomainResult<()> {
         for pick_id in from_team_picks {
             self.validate_pick_ownership(*pick_id, from_team_id).await?;
-            self.validate_pick_not_traded(*pick_id, exclude_trade_id).await?;
+            self.validate_pick_not_traded(*pick_id, exclude_trade_id)
+                .await?;
         }
 
         for pick_id in to_team_picks {
             self.validate_pick_ownership(*pick_id, to_team_id).await?;
-            self.validate_pick_not_traded(*pick_id, exclude_trade_id).await?;
+            self.validate_pick_not_traded(*pick_id, exclude_trade_id)
+                .await?;
         }
 
         Ok(())
     }
 
-    async fn validate_pick_ownership(&self, pick_id: Uuid, expected_team_id: Uuid) -> DomainResult<()> {
-        let pick = self.pick_repo.find_by_id(pick_id).await?
+    async fn validate_pick_ownership(
+        &self,
+        pick_id: Uuid,
+        expected_team_id: Uuid,
+    ) -> DomainResult<()> {
+        let pick = self
+            .pick_repo
+            .find_by_id(pick_id)
+            .await?
             .ok_or_else(|| DomainError::NotFound(format!("Pick {} not found", pick_id)))?;
 
         if pick.team_id != expected_team_id {
-            return Err(DomainError::ValidationError(
-                format!("Pick {} is not owned by team {}", pick_id, expected_team_id)
-            ));
+            return Err(DomainError::ValidationError(format!(
+                "Pick {} is not owned by team {}",
+                pick_id, expected_team_id
+            )));
         }
 
         if pick.is_picked() {
-            return Err(DomainError::ValidationError(
-                format!("Pick {} has already been used", pick_id)
-            ));
+            return Err(DomainError::ValidationError(format!(
+                "Pick {} has already been used",
+                pick_id
+            )));
         }
 
         Ok(())
     }
 
-    async fn validate_pick_not_traded(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<()> {
-        if self.trade_repo.is_pick_in_active_trade(pick_id, exclude_trade_id).await? {
-            return Err(DomainError::ValidationError(
-                format!("Pick {} is already in an active trade", pick_id)
-            ));
+    async fn validate_pick_not_traded(
+        &self,
+        pick_id: Uuid,
+        exclude_trade_id: Option<Uuid>,
+    ) -> DomainResult<()> {
+        if self
+            .trade_repo
+            .is_pick_in_active_trade(pick_id, exclude_trade_id)
+            .await?
+        {
+            return Err(DomainError::ValidationError(format!(
+                "Pick {} is already in an active trade",
+                pick_id
+            )));
         }
         Ok(())
     }
@@ -223,7 +270,10 @@ impl TradeEngine {
         let mut total_value = 0;
 
         for pick_id in pick_ids {
-            let pick = self.pick_repo.find_by_id(*pick_id).await?
+            let pick = self
+                .pick_repo
+                .find_by_id(*pick_id)
+                .await?
                 .ok_or_else(|| DomainError::NotFound(format!("Pick {} not found", pick_id)))?;
 
             let value = value_chart.calculate_pick_value(pick.overall_pick)?;

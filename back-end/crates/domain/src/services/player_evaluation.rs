@@ -52,7 +52,7 @@ impl PlayerEvaluationService {
 
         let bpa_score = scouting_component + combine_component + fit_component - concern_penalty;
 
-        Ok(bpa_score.max(0.0).min(100.0))
+        Ok(bpa_score.clamp(0.0, 100.0))
     }
 
     /// Rank multiple players by BPA score (highest to lowest)
@@ -236,32 +236,32 @@ impl PlayerEvaluationService {
 
     fn normalize_forty_dash(time: f64) -> f64 {
         // Faster is better. 4.3s = 100, 5.0s = 50, 5.5s = 0
-        ((5.5 - time) / 1.2 * 100.0).max(0.0).min(100.0)
+        ((5.5 - time) / 1.2 * 100.0).clamp(0.0, 100.0)
     }
 
     fn normalize_bench_press(reps: i32) -> f64 {
         // More reps is better. 30 reps = 100, 20 reps = 50, 10 reps = 0
-        ((reps as f64 - 10.0) / 20.0 * 100.0).max(0.0).min(100.0)
+        ((reps as f64 - 10.0) / 20.0 * 100.0).clamp(0.0, 100.0)
     }
 
     fn normalize_vertical_jump(inches: f64) -> f64 {
         // Higher is better. 42" = 100, 33" = 50, 24" = 0
-        ((inches - 24.0) / 18.0 * 100.0).max(0.0).min(100.0)
+        ((inches - 24.0) / 18.0 * 100.0).clamp(0.0, 100.0)
     }
 
     fn normalize_broad_jump(inches: i32) -> f64 {
         // Higher is better. 130" = 100, 110" = 50, 90" = 0
-        ((inches as f64 - 90.0) / 40.0 * 100.0).max(0.0).min(100.0)
+        ((inches as f64 - 90.0) / 40.0 * 100.0).clamp(0.0, 100.0)
     }
 
     fn normalize_cone_drill(time: f64) -> f64 {
         // Faster is better. 6.5s = 100, 7.2s = 50, 8.0s = 0
-        ((8.0 - time) / 1.5 * 100.0).max(0.0).min(100.0)
+        ((8.0 - time) / 1.5 * 100.0).clamp(0.0, 100.0)
     }
 
     fn normalize_shuttle(time: f64) -> f64 {
         // Faster is better. 4.0s = 100, 4.4s = 50, 4.8s = 0
-        ((4.8 - time) / 0.8 * 100.0).max(0.0).min(100.0)
+        ((4.8 - time) / 0.8 * 100.0).clamp(0.0, 100.0)
     }
 
     fn calculate_fit_score(scouting_report: &ScoutingReport) -> f64 {

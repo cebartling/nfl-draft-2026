@@ -123,6 +123,7 @@ impl ServerMessage {
         ServerMessage::Subscribed { session_id }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn pick_made(
         session_id: Uuid,
         pick_id: Uuid,
@@ -157,6 +158,7 @@ impl ServerMessage {
         ServerMessage::DraftStatus { session_id, status }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn trade_proposed(
         session_id: Uuid,
         trade_id: Uuid,
@@ -197,11 +199,7 @@ impl ServerMessage {
         }
     }
 
-    pub fn trade_rejected(
-        session_id: Uuid,
-        trade_id: Uuid,
-        rejecting_team_id: Uuid,
-    ) -> Self {
+    pub fn trade_rejected(session_id: Uuid, trade_id: Uuid, rejecting_team_id: Uuid) -> Self {
         ServerMessage::TradeRejected {
             session_id,
             trade_id,

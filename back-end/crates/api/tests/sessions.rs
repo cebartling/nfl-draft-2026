@@ -400,10 +400,13 @@ async fn test_create_session_with_default_chart() {
     let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
 
     // Verify in database
-    let db_session = sqlx::query!("SELECT chart_type FROM draft_sessions WHERE id = $1", session_id)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+    let db_session = sqlx::query!(
+        "SELECT chart_type FROM draft_sessions WHERE id = $1",
+        session_id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
 
     assert_eq!(db_session.chart_type, "JimmyJohnson");
 
@@ -448,10 +451,13 @@ async fn test_create_session_with_explicit_chart() {
     let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
 
     // Verify in database
-    let db_session = sqlx::query!("SELECT chart_type FROM draft_sessions WHERE id = $1", session_id)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+    let db_session = sqlx::query!(
+        "SELECT chart_type FROM draft_sessions WHERE id = $1",
+        session_id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
 
     assert_eq!(db_session.chart_type, "RichHill");
 

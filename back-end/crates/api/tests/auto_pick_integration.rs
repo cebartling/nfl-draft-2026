@@ -26,7 +26,6 @@ use db::repositories::{
 /// 3. Database state verification
 ///
 /// Run with: cargo test -p api --test auto_pick_integration -- --test-threads=1
-
 mod common;
 
 struct TestContext {
@@ -179,10 +178,7 @@ async fn test_auto_pick_bpa_heavy_strategy() {
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     // Initialize picks
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     // Get first pick (belongs to first team)
     let pick = ctx
@@ -210,8 +206,7 @@ async fn test_auto_pick_bpa_heavy_strategy() {
     ctx.create_team_need(team.id, Position::RB, 1).await;
 
     // Set BPA-heavy strategy (90/10)
-    ctx.create_draft_strategy(team.id, draft.id, 90, 10)
-        .await;
+    ctx.create_draft_strategy(team.id, draft.id, 90, 10).await;
 
     // Execute auto-pick
     let updated_pick = ctx.draft_engine.execute_auto_pick(pick.id).await.unwrap();
@@ -242,10 +237,7 @@ async fn test_auto_pick_need_heavy_strategy() {
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     // Initialize picks
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
@@ -270,8 +262,7 @@ async fn test_auto_pick_need_heavy_strategy() {
     ctx.create_team_need(team.id, Position::RB, 1).await;
 
     // Set need-heavy strategy (30/70)
-    ctx.create_draft_strategy(team.id, draft.id, 30, 70)
-        .await;
+    ctx.create_draft_strategy(team.id, draft.id, 30, 70).await;
 
     // Execute auto-pick
     let updated_pick = ctx.draft_engine.execute_auto_pick(pick.id).await.unwrap();
@@ -300,10 +291,7 @@ async fn test_auto_pick_position_value_matters() {
     let draft = Draft::new(2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
@@ -347,10 +335,7 @@ async fn test_auto_pick_concern_penalties() {
     let draft = Draft::new(2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
@@ -393,10 +378,7 @@ async fn test_auto_pick_with_combine_data() {
     let draft = Draft::new(2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
@@ -410,8 +392,15 @@ async fn test_auto_pick_with_combine_data() {
     let unknown_wr = ctx.create_player("Unknown WR", Position::WR).await;
 
     // Both have same scouting grade
-    ctx.create_scouting_report(athletic_wr.id, team.id, 7.5, Some(FitGrade::B), false, false)
-        .await;
+    ctx.create_scouting_report(
+        athletic_wr.id,
+        team.id,
+        7.5,
+        Some(FitGrade::B),
+        false,
+        false,
+    )
+    .await;
     ctx.create_scouting_report(unknown_wr.id, team.id, 7.5, Some(FitGrade::B), false, false)
         .await;
 
@@ -449,10 +438,7 @@ async fn test_auto_pick_no_available_players() {
     let draft = Draft::new(2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
@@ -482,10 +468,7 @@ async fn test_auto_pick_without_scouting_reports() {
     let draft = Draft::new(2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
@@ -515,10 +498,7 @@ async fn test_auto_pick_uses_default_strategy_if_none_exists() {
     let draft = Draft::new(2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
-    ctx.draft_engine
-        .initialize_picks(draft.id)
-        .await
-        .unwrap();
+    ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
 
     let pick = ctx
         .pick_repo
