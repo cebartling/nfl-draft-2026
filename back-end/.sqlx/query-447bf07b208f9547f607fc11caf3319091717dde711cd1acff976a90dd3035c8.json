@@ -1,0 +1,90 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE players\n            SET first_name = $2, last_name = $3, position = $4, college = $5,\n                height_inches = $6, weight_pounds = $7, draft_year = $8,\n                draft_eligible = $9, updated_at = NOW()\n            WHERE id = $1\n            RETURNING id, first_name, last_name, position, college, height_inches, weight_pounds, draft_year, draft_eligible, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "first_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "last_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "position",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "college",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "height_inches",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "weight_pounds",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "draft_year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "draft_eligible",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "447bf07b208f9547f607fc11caf3319091717dde711cd1acff976a90dd3035c8"
+}

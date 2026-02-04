@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE scouting_reports\n            SET grade = $2,\n                notes = $3,\n                fit_grade = $4,\n                injury_concern = $5,\n                character_concern = $6,\n                updated_at = $7\n            WHERE id = $1\n            RETURNING id, player_id, team_id, grade, notes, fit_grade, injury_concern, character_concern, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "grade",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "fit_grade",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "injury_concern",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "character_concern",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Float8",
+        "Text",
+        "Varchar",
+        "Bool",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "602259083f71f1a1904282af4d0fe686edb048dc8353ff3e8384fb68c146cf88"
+}

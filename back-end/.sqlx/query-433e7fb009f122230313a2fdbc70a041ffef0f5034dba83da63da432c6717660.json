@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO draft_strategies\n            (id, team_id, draft_id, bpa_weight, need_weight, position_values, risk_tolerance, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            RETURNING id, team_id, draft_id, bpa_weight, need_weight, position_values, risk_tolerance, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "draft_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "bpa_weight",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "need_weight",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "position_values",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "risk_tolerance",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Int4",
+        "Jsonb",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "433e7fb009f122230313a2fdbc70a041ffef0f5034dba83da63da432c6717660"
+}

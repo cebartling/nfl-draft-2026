@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, name, abbreviation, city, conference, division, created_at, updated_at\n            FROM teams\n            ORDER BY conference, division, name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "abbreviation",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "city",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "conference",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "division",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6c6f04fe2818f0ec9939bb649d433408817d4773cf885aa772ce14121e718993"
+}

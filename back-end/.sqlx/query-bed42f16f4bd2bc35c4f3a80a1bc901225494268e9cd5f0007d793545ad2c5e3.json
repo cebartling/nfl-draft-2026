@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, player_id, team_id, grade, notes, fit_grade, injury_concern, character_concern, created_at, updated_at\n            FROM scouting_reports\n            WHERE team_id = $1 AND player_id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "grade",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "fit_grade",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "injury_concern",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "character_concern",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bed42f16f4bd2bc35c4f3a80a1bc901225494268e9cd5f0007d793545ad2c5e3"
+}
