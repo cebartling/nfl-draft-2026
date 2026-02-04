@@ -69,9 +69,110 @@ nfl-draft-2026/
 └── docker-compose.yml    # Infrastructure services
 ```
 
+## Quick Start (Containerized - Recommended)
+
+The fastest way to run the complete application:
+
+```bash
+# Start all services (PostgreSQL + Backend API + Frontend)
+docker compose up -d
+
+# Wait for services to be healthy (about 30 seconds)
+docker compose ps
+
+# Access the application
+open http://localhost:3000
+```
+
+**Access Points:**
+- **Frontend**: http://localhost:3000 (SvelteKit UI)
+- **Backend API**: http://localhost:8000 (Rust/Axum)
+- **API Docs**: http://localhost:8000/health (Health check)
+- **PostgreSQL**: localhost:5432 (Database)
+
+**View logs:**
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f frontend
+docker compose logs -f api
+docker compose logs -f postgres
+```
+
+**Stop services:**
+```bash
+# Stop (keeps data)
+docker compose down
+
+# Stop and remove all data (destructive)
+docker compose down -v
+```
+
+### What Happens on First Run
+
+When you run `docker compose up -d` for the first time:
+
+1. **Pulls base images** (Node.js, Rust, nginx, PostgreSQL)
+2. **Builds custom images**:
+   - Backend API (~147MB, takes 2-3 minutes)
+   - Frontend (~50MB, takes 1-2 minutes)
+3. **Creates PostgreSQL database** with initial schema
+4. **Starts all services** with health checks
+
+**Note:** Database migrations must be run manually. See [Running Migrations](#running-migrations) below.
+
+**Total time: ~5 minutes on first run** (subsequent starts: ~10 seconds)
+
+### Optional: Database GUI (pgAdmin)
+
+```bash
+# Start with pgAdmin
+docker compose --profile tools up -d
+
+# Access pgAdmin
+open http://localhost:5050
+```
+
+**pgAdmin Credentials:**
+- Email: `admin@nfldraft.local`
+- Password: `admin`
+
+**Add Database Connection:**
+- Host: `postgres` (Docker service name)
+- Port: `5432`
+- Database: `nfl_draft`
+- Username: `nfl_draft_user`
+- Password: `nfl_draft_pass`
+
 ## Getting Started
 
-### 1. Start Infrastructure Services
+You can run the application in two ways:
+1. **Docker Compose** (Recommended) - Full stack with one command
+2. **Local Development** - Run services individually for active development
+
+### Option 1: Docker Compose (Full Stack)
+
+See **Quick Start** section above for the fastest path.
+
+**Rebuild after code changes:**
+```bash
+docker compose up -d --build
+```
+
+**Check service health:**
+```bash
+docker compose ps
+curl http://localhost:3000/health  # Frontend
+curl http://localhost:8000/health  # Backend
+```
+
+### Option 2: Local Development
+
+For active development, run services individually:
+
+#### 1a. Start Infrastructure Services
 
 Start PostgreSQL (required for both backend and frontend):
 
@@ -95,7 +196,7 @@ docker compose down
 - Email: `admin@nfldraft.local`
 - Password: `admin`
 
-### 2. Backend Setup & Development
+#### 1b. Backend Setup & Development
 
 Navigate to the backend directory:
 
@@ -154,7 +255,7 @@ sqlx migrate add create_table_name
 sqlx migrate run
 ```
 
-### 3. Frontend Setup & Development
+#### 1c. Frontend Setup & Development
 
 Navigate to the frontend directory:
 
@@ -207,7 +308,33 @@ npm run preview
 
 ## Development Workflow
 
-### Full Stack Development
+### Full Stack Development (Docker Compose)
+
+The simplest way to run everything:
+
+```bash
+# Start all services
+docker compose up -d
+
+# View logs for specific service
+docker compose logs -f frontend
+docker compose logs -f api
+
+# Rebuild after code changes
+docker compose up -d --build
+
+# Stop everything
+docker compose down
+```
+
+**Access Points:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- WebSocket: ws://localhost:8000/ws
+
+### Local Development (Individual Services)
+
+For active development with hot-reloading:
 
 1. **Start infrastructure** (from repository root):
 
@@ -230,7 +357,7 @@ npm run preview
    ```
 
 4. **Access the application:**
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhost:5173 (Vite dev server with HMR)
    - Backend API: http://localhost:8000
    - WebSocket: ws://localhost:8000/ws
 
@@ -253,6 +380,355 @@ docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
    - Database: `nfl_draft`
    - Username: `nfl_draft_user`
    - Password: `nfl_draft_pass`
+
+## Docker Deployment
+
+### Container Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Docker Compose Stack                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────────┐      ┌──────────────────┐            │
+│  │   Frontend        │      │   Backend API     │            │
+│  │   (nginx:alpine) │─────▶│   (Rust/Axum)    │            │
+│  │   Port: 3000     │      │   Port: 8000      │            │
+│  │   Size: 50MB     │      │   Size: 147MB     │            │
+│  └──────────────────┘      └──────────────────┘            │
+│         │                           │                        │
+│         │ /api/* → reverse proxy    │                        │
+│         │ /ws → WebSocket proxy     │                        │
+│         └───────────────────────────┘                        │
+│                                     │                        │
+│                                     ▼                        │
+│                          ┌──────────────────┐               │
+│                          │   PostgreSQL 18   │               │
+│                          │   Port: 5432      │               │
+│                          │   Volume: Persist │               │
+│                          └──────────────────┘               │
+│                                                               │
+│  Optional (--profile tools):                                 │
+│  ┌──────────────────┐                                       │
+│  │   pgAdmin         │                                       │
+│  │   Port: 5050      │                                       │
+│  └──────────────────┘                                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Building Docker Images
+
+Each service has its own multi-stage Dockerfile for optimized production images.
+
+**Build all images:**
+```bash
+docker compose build
+```
+
+**Build individual images:**
+
+**Backend:**
+```bash
+cd back-end
+./build-docker.sh
+# Image: nfl-draft-2026-api (147MB)
+```
+
+**Frontend:**
+```bash
+cd front-end
+./build-docker.sh
+# Image: nfl-draft-2026-frontend (50MB)
+```
+
+**Build with custom options:**
+```bash
+# ARM64 (M1/M2 Mac)
+DOCKER_PLATFORM=linux/arm64 ./build-docker.sh
+
+# Custom tag
+DOCKER_IMAGE_TAG=v1.0.0 ./build-docker.sh
+```
+
+### Running with Docker Compose
+
+**Start full stack:**
+```bash
+# Build and start (first time or after code changes)
+docker compose up -d --build
+
+# Start (using existing images)
+docker compose up -d
+
+# Start with pgAdmin
+docker compose --profile tools up -d
+```
+
+**View logs:**
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f frontend
+docker compose logs -f api
+docker compose logs -f postgres
+
+# Last 100 lines
+docker compose logs --tail=100
+```
+
+**Stop services:**
+```bash
+# Stop (keeps data and images)
+docker compose down
+
+# Stop and remove volumes (deletes database data)
+docker compose down -v
+
+# Stop and remove images
+docker compose down --rmi all
+```
+
+### Individual Container Management
+
+**Start specific services:**
+
+```bash
+# Database only
+docker compose up -d postgres
+
+# Backend only (requires postgres)
+docker compose up -d api
+
+# Frontend only (requires api)
+docker compose up -d frontend
+```
+
+**Restart a service:**
+```bash
+docker compose restart frontend
+docker compose restart api
+```
+
+**Rebuild and restart a service:**
+```bash
+docker compose up -d --build frontend
+```
+
+### Health Checks
+
+All services include automated health checks:
+
+```bash
+# Check service status
+docker compose ps
+
+# Example output:
+# NAME                     STATUS                   PORTS
+# nfl-draft-2026-frontend  Up (healthy)             0.0.0.0:3000->8080/tcp
+# nfl-draft-2026-api       Up (healthy)             0.0.0.0:8000->8000/tcp
+# nfl-draft-2026-postgres  Up (healthy)             0.0.0.0:5432->5432/tcp
+```
+
+**Test health endpoints:**
+```bash
+# Frontend (nginx health check)
+curl http://localhost:3000/health
+# Response: "healthy"
+
+# Backend API (JSON response)
+curl http://localhost:8000/health
+# Response: {"service":"nfl-draft-2026-api","status":"healthy","version":"0.1.0"}
+
+# PostgreSQL (via docker exec)
+docker compose exec postgres pg_isready -U nfl_draft_user
+# Response: /var/run/postgresql:5432 - accepting connections
+```
+
+### Environment Variables
+
+Configure services via environment variables. Create a `.env` file in the repository root:
+
+```bash
+# .env (optional - defaults shown)
+
+# PostgreSQL Configuration
+POSTGRES_DB=nfl_draft
+POSTGRES_USER=nfl_draft_user
+POSTGRES_PASSWORD=nfl_draft_pass
+POSTGRES_PORT=5432
+
+# Backend API Configuration
+API_PORT=8000
+RUST_LOG=info
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8000
+
+# Frontend Configuration
+FRONTEND_PORT=3000
+
+# pgAdmin Configuration (--profile tools)
+PGADMIN_PORT=5050
+PGADMIN_EMAIL=admin@nfldraft.local
+PGADMIN_PASSWORD=admin
+```
+
+**Environment Variable Reference:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_DB` | `nfl_draft` | PostgreSQL database name |
+| `POSTGRES_USER` | `nfl_draft_user` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `nfl_draft_pass` | PostgreSQL password (change in production!) |
+| `POSTGRES_PORT` | `5432` | PostgreSQL host port |
+| `API_PORT` | `8000` | Backend API host port |
+| `FRONTEND_PORT` | `3000` | Frontend host port |
+| `RUST_LOG` | `info` | Logging level (trace, debug, info, warn, error) |
+| `PGADMIN_PORT` | `5050` | pgAdmin host port |
+| `PGADMIN_EMAIL` | `admin@nfldraft.local` | pgAdmin login email |
+| `PGADMIN_PASSWORD` | `admin` | pgAdmin login password (change in production!) |
+
+**Example custom configuration:**
+
+```bash
+# .env
+FRONTEND_PORT=8080
+API_PORT=9000
+RUST_LOG=debug
+POSTGRES_PASSWORD=super_secure_password_change_me
+```
+
+### Database Migrations
+
+Migrations must be run manually before starting the services.
+
+#### Running Migrations
+
+**From the host (requires sqlx-cli):**
+
+```bash
+# Install sqlx-cli (if not already installed)
+cargo install sqlx-cli --no-default-features --features postgres
+
+# Run migrations
+cd back-end
+sqlx migrate run
+```
+
+**Using Docker:**
+
+```bash
+# Start PostgreSQL
+docker compose up -d postgres
+
+# Run migrations via docker exec
+docker compose exec postgres psql -U nfl_draft_user -d nfl_draft -f /docker-entrypoint-initdb.d/schema.sql
+
+# Or connect and verify schema manually
+docker compose exec postgres psql -U nfl_draft_user -d nfl_draft -c "\dt"
+```
+
+**Reset database (destructive):**
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+# Run migrations again before starting API
+cd back-end && sqlx migrate run
+docker compose up -d api
+```
+
+### Data Persistence
+
+PostgreSQL data is persisted in a Docker volume:
+
+```bash
+# List volumes
+docker volume ls | grep postgres
+
+# Inspect volume
+docker volume inspect nfl-draft-2026_postgres_data
+
+# Backup database
+docker compose exec postgres pg_dump -U nfl_draft_user nfl_draft > backup.sql
+
+# Restore database
+docker compose exec -T postgres psql -U nfl_draft_user -d nfl_draft < backup.sql
+```
+
+### Docker Documentation
+
+For detailed Docker configuration, troubleshooting, and advanced usage:
+- **Backend**: `back-end/DOCKER.md` - Multi-stage Rust build, offline SQLx cache
+- **Frontend**: `front-end/DOCKER.md` - nginx reverse proxy, static optimization
+- **Docker Compose**: This README section
+
+### Production Deployment
+
+**Security Checklist:**
+
+```bash
+# 1. Change default passwords
+#    - PostgreSQL: POSTGRES_PASSWORD
+#    - pgAdmin: PGADMIN_PASSWORD
+
+# 2. Use proper secrets management
+#    - Don't commit .env to git
+#    - Use Docker secrets or environment-specific configs
+
+# 3. Enable HTTPS
+#    - Add nginx SSL configuration
+#    - Use Let's Encrypt or valid certificates
+
+# 4. Configure logging
+#    - Set RUST_LOG=warn or RUST_LOG=error
+#    - Ship logs to centralized logging system
+
+# 5. Resource limits
+#    - Add memory/CPU limits to docker-compose.yml
+#    - Configure PostgreSQL connection pooling
+
+# 6. Backup strategy
+#    - Automated database backups
+#    - Volume snapshots
+#    - Disaster recovery plan
+```
+
+**Production docker-compose example:**
+
+```yaml
+# docker-compose.prod.yml
+services:
+  api:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    restart: always
+
+  frontend:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    restart: always
+```
+
+**Deploy to production:**
+
+```bash
+# Use production config
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
 
 ## Testing
 
@@ -290,9 +766,99 @@ npm test -- path/to/test.test.ts
 
 ## Troubleshooting
 
+### Docker Issues
+
+**Services won't start:**
+
+```bash
+# Check service status
+docker compose ps
+
+# View logs for errors
+docker compose logs
+
+# Restart all services
+docker compose restart
+
+# Full reset (removes containers, not volumes)
+docker compose down
+docker compose up -d
+```
+
+**Port already in use:**
+
+```bash
+# Error: "port is already allocated"
+
+# Option 1: Stop conflicting service
+lsof -ti:3000 | xargs kill -9  # Frontend port
+lsof -ti:8000 | xargs kill -9  # Backend port
+lsof -ti:5432 | xargs kill -9  # PostgreSQL port
+
+# Option 2: Change ports in .env
+echo "FRONTEND_PORT=8080" >> .env
+echo "API_PORT=9000" >> .env
+docker compose up -d
+```
+
+**Container fails health check:**
+
+```bash
+# Check health status
+docker compose ps
+
+# View container logs
+docker compose logs api
+docker compose logs frontend
+
+# Test health endpoints manually
+curl http://localhost:3000/health
+curl http://localhost:8000/health
+
+# If unhealthy, try restart
+docker compose restart api
+docker compose restart frontend
+```
+
+**Build failures:**
+
+```bash
+# Clear Docker cache and rebuild
+docker compose build --no-cache
+
+# Remove old images
+docker compose down --rmi all
+docker compose up -d --build
+
+# Check disk space
+docker system df
+
+# Clean up Docker system (removes unused data)
+docker system prune -a
+```
+
+**Database connection errors:**
+
+```bash
+# Error: "connection refused" or "database does not exist"
+
+# Check PostgreSQL is running
+docker compose ps postgres
+
+# View PostgreSQL logs
+docker compose logs postgres
+
+# Verify database exists
+docker compose exec postgres psql -U nfl_draft_user -l
+
+# Recreate database (destructive)
+docker compose down -v
+docker compose up -d
+```
+
 ### Backend Issues
 
-**"database does not exist" error:**
+**"database does not exist" error (local development):**
 
 ```bash
 cd back-end
@@ -305,18 +871,57 @@ sqlx migrate run
 ```bash
 # Find and kill the process
 lsof -ti:8000 | xargs kill -9
+
+# Or use docker
+docker compose down
+docker compose up -d api
+```
+
+**Rust compilation errors:**
+
+```bash
+# Update dependencies
+cd back-end
+cargo update
+
+# Clean and rebuild
+cargo clean
+cargo build --workspace
+
+# Check Rust version (need 1.75+)
+rustc --version
 ```
 
 ### Frontend Issues
 
 **"ECONNREFUSED" errors:**
 
-- Ensure the backend API server is running on port 8000
+```bash
+# Ensure backend is running
+docker compose ps api
+curl http://localhost:8000/health
+
+# Or for local development
+cd back-end
+cargo run -p api
+```
 
 **Module not found errors:**
 
 ```bash
+cd front-end
 npm install
+
+# Clear cache if issues persist
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Vite port conflicts:**
+
+```bash
+# If port 5173 is in use, specify different port
+npm run dev -- --port 5174
 ```
 
 ### Database Issues
@@ -325,26 +930,147 @@ npm install
 
 ```bash
 # Check if container is running
-docker compose ps
+docker compose ps postgres
+
+# Check PostgreSQL logs
+docker compose logs postgres
 
 # Restart PostgreSQL
 docker compose restart postgres
 
-# Check logs
-docker compose logs postgres
+# Verify connection
+docker compose exec postgres pg_isready -U nfl_draft_user
 ```
 
 **Reset database (destructive):**
 
 ```bash
-# Stop and remove volumes
+# Stop and remove volumes (deletes all data!)
 docker compose down -v
 
-# Restart and re-run migrations
+# Restart and run migrations manually
 docker compose up -d postgres
+cd back-end && sqlx migrate run
+docker compose up -d
+
+# For local development
 cd back-end
+sqlx database drop
+sqlx database create
 sqlx migrate run
 ```
+
+**Migration errors:**
+
+```bash
+# View migration history
+docker compose exec postgres psql -U nfl_draft_user -d nfl_draft \
+  -c "SELECT * FROM _sqlx_migrations;"
+
+# Manually run migrations
+cd back-end
+sqlx migrate run
+
+# Revert last migration
+sqlx migrate revert
+```
+
+### Performance Issues
+
+**Slow Docker builds:**
+
+```bash
+# Use BuildKit for faster builds
+DOCKER_BUILDKIT=1 docker compose build
+
+# Use build cache
+docker compose build
+
+# Parallel builds
+docker compose build --parallel
+```
+
+**High memory usage:**
+
+```bash
+# Check container resources
+docker stats
+
+# Limit container memory (add to docker-compose.yml)
+services:
+  api:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+```
+
+**Slow database queries:**
+
+```bash
+# Connect to database
+docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
+
+# Check slow queries
+SELECT pid, usename, query, state
+FROM pg_stat_activity
+WHERE state = 'active';
+
+# Analyze query performance
+EXPLAIN ANALYZE SELECT ...;
+```
+
+### Common Error Messages
+
+**"network nfl-draft-network not found":**
+
+```bash
+# Recreate network
+docker compose down
+docker compose up -d
+```
+
+**"container already exists":**
+
+```bash
+# Remove existing containers
+docker compose down
+docker compose up -d
+```
+
+**"permission denied" errors:**
+
+```bash
+# Fix file permissions
+chmod +x back-end/build-docker.sh
+chmod +x front-end/build-docker.sh
+
+# Or use sudo (not recommended)
+sudo docker compose up -d
+```
+
+**"platform mismatch" warnings:**
+
+```bash
+# Build for your platform
+cd front-end
+DOCKER_PLATFORM=linux/arm64 ./build-docker.sh  # M1/M2 Mac
+
+cd back-end
+DOCKER_PLATFORM=linux/arm64 ./build-docker.sh  # M1/M2 Mac
+```
+
+### Getting Help
+
+If you're still experiencing issues:
+
+1. **Check logs**: `docker compose logs -f`
+2. **Verify health**: `docker compose ps`
+3. **Review documentation**:
+   - Backend: `back-end/DOCKER.md`
+   - Frontend: `front-end/DOCKER.md`
+4. **Clean slate**: `docker compose down -v && docker compose up -d --build`
+5. **Open an issue**: Include logs and `docker compose ps` output
 
 ## Architecture
 

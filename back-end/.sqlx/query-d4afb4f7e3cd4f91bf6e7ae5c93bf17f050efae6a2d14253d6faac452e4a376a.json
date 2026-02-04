@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    SELECT EXISTS(\n                        SELECT 1\n                        FROM pick_trade_details ptd\n                        JOIN pick_trades pt ON pt.id = ptd.trade_id\n                        WHERE ptd.pick_id = $1 AND pt.status = 'Proposed' AND pt.id != $2\n                    ) as \"exists!\"\n                    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "d4afb4f7e3cd4f91bf6e7ae5c93bf17f050efae6a2d14253d6faac452e4a376a"
+}

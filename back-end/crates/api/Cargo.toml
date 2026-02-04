@@ -21,6 +21,7 @@ uuid.workspace = true
 sqlx.workspace = true
 utoipa.workspace = true
 utoipa-swagger-ui.workspace = true
+futures.workspace = true
 
 # Local crates
 domain = { path = "../domain" }

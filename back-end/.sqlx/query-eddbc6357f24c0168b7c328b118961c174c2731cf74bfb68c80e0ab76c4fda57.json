@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at\n            FROM draft_picks\n            WHERE draft_id = $1 AND round = $2\n            ORDER BY pick_number ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "draft_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "round",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "pick_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "overall_pick",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "picked_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "eddbc6357f24c0168b7c328b118961c174c2731cf74bfb68c80e0ab76c4fda57"
+}

@@ -1,0 +1,92 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO combine_results\n            (id, player_id, year, forty_yard_dash, bench_press, vertical_jump,\n             broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n            RETURNING id, player_id, year, forty_yard_dash, bench_press, vertical_jump,\n                      broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "forty_yard_dash",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "bench_press",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "vertical_jump",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "broad_jump",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "three_cone_drill",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "twenty_yard_shuttle",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Float8",
+        "Int4",
+        "Float8",
+        "Int4",
+        "Float8",
+        "Float8",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a2ab8121df19840e4b556731da6d2012461adc9a786f245300a0110f7be6e518"
+}

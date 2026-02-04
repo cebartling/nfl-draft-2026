@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+.svelte-kit/
+build/
+dist/
+.output/
+
+# Tests
+**/*.test.ts
+**/*.spec.ts
+tests/
+test-results/
+playwright-report/
+playwright/.cache/
+coverage/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+
+# Environment files (don't copy into image)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Docker files (don't need these in the image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Cache directories
+.cache/
+.temp/
+.tmp/
+
+# Misc
+.eslintcache
+.prettierignore
