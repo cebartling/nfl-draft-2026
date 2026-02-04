@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for NFL Draft Simulator Backend
 # Stage 1: Build the application
-FROM rust:1.83-bookworm AS builder
+FROM rust:1.85-bookworm AS builder
 
 # Install system dependencies required for building
 RUN apt-get update && apt-get install -y \

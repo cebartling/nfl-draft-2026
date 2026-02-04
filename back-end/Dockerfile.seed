@@ -2,7 +2,7 @@
 # Builds the seed-players binary and includes sqlx-cli for migrations
 
 # Stage 1: Build the application
-FROM rust:1.83-bookworm AS builder
+FROM rust:1.85-bookworm AS builder
 
 # Install system dependencies required for building
 RUN apt-get update && apt-get install -y \
@@ -31,6 +31,7 @@ RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src
     echo "pub fn dummy() {}" > crates/domain/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/db/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/websocket/src/lib.rs && \
+    echo "pub fn dummy() {}" > crates/seed-data/src/lib.rs && \
     echo "fn main() {}" > crates/seed-data/src/main.rs && \
     cargo build --release -p seed-data && \
     rm -rf crates/*/src
@@ -42,7 +43,8 @@ COPY crates ./crates
 COPY .sqlx ./.sqlx
 
 # Build the seed-players binary
-RUN touch crates/seed-data/src/main.rs && \
+RUN touch crates/seed-data/src/lib.rs && \
+    touch crates/seed-data/src/main.rs && \
     touch crates/domain/src/lib.rs && \
     touch crates/db/src/lib.rs && \
     cargo build --release -p seed-data
