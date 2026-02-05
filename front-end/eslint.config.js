@@ -68,11 +68,19 @@ export default [
 		},
 	},
 
+	// Scripts - allow console statements for CLI output
+	{
+		files: ['scripts/**/*.ts', 'scripts/**/*.js'],
+		rules: {
+			'no-console': 'off',
+		},
+	},
+
 	// TypeScript-specific overrides
 	{
 		files: ['**/*.ts', '**/*.tsx'],
 		// Exclude config files that aren't in tsconfig.json
-		ignores: ['*.config.ts', '*.config.js', 'playwright.config.ts', 'vitest.setup.ts'],
+		ignores: ['*.config.ts', '*.config.js', 'playwright.config.ts', 'vitest.setup.ts', 'scripts/**'],
 		languageOptions: {
 			parser: ts.parser,
 			parserOptions: {

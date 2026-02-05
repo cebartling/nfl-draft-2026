@@ -11,6 +11,7 @@
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
 	import type { Team, DraftPick } from '$lib/types';
+	import { getTeamLogoPath } from '$lib/utils/logo';
 
 	let teamId = $derived($page.params.id!);
 	let team = $state<Team | null>(null);
@@ -92,6 +93,12 @@
 		<!-- Team Header -->
 		<div class="bg-white rounded-lg shadow p-6">
 			<div class="flex items-center gap-6">
+				<img
+					src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+					alt="{team.name} logo"
+					class="w-24 h-24 object-contain"
+					onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
+				/>
 				<div class="flex-1">
 					<h1 class="text-3xl font-bold text-gray-800">
 						{team.city}
