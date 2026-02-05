@@ -51,8 +51,10 @@ pub struct DraftOrderEntry {
 
 impl From<TeamSeason> for DraftOrderEntry {
     fn from(season: TeamSeason) -> Self {
+        // Safety: get_draft_order uses find_by_year_ordered_by_draft_position,
+        // which filters for draft_position IS NOT NULL, so unwrap is safe here.
         Self {
-            draft_position: season.draft_position.unwrap_or(0),
+            draft_position: season.draft_position.unwrap(),
             team_id: season.team_id,
             wins: season.wins,
             losses: season.losses,
