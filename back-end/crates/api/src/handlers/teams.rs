@@ -127,15 +127,19 @@ mod tests {
         let state = AppState::new(pool.clone(), None);
 
         // Cleanup (delete in order of foreign key dependencies)
-        sqlx::query!("DELETE FROM draft_picks")
+        sqlx::query("DELETE FROM team_seasons")
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup team_seasons");
+        sqlx::query("DELETE FROM draft_picks")
             .execute(&pool)
             .await
             .expect("Failed to cleanup picks");
-        sqlx::query!("DELETE FROM drafts")
+        sqlx::query("DELETE FROM drafts")
             .execute(&pool)
             .await
             .expect("Failed to cleanup drafts");
-        sqlx::query!("DELETE FROM teams")
+        sqlx::query("DELETE FROM teams")
             .execute(&pool)
             .await
             .expect("Failed to cleanup teams");
