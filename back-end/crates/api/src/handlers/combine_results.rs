@@ -224,8 +224,9 @@ mod tests {
     use super::*;
     use crate::state::AppState;
     use domain::models::{Player, Position};
+    use sqlx::PgPool;
 
-    async fn setup_test_state() -> AppState {
+    async fn setup_test_state() -> (AppState, PgPool) {
         let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
             "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
         });
@@ -234,7 +235,33 @@ mod tests {
             .await
             .expect("Failed to create pool");
 
-        AppState::new(pool, None)
+        // Clean up test data before each test
+        cleanup(&pool).await;
+
+        (AppState::new(pool.clone(), None), pool)
+    }
+
+    async fn cleanup(pool: &PgPool) {
+        sqlx::query("DELETE FROM combine_results")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup combine_results");
+        sqlx::query("DELETE FROM scouting_reports")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup scouting_reports");
+        sqlx::query("DELETE FROM draft_picks")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup draft_picks");
+        sqlx::query("DELETE FROM drafts")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup drafts");
+        sqlx::query("DELETE FROM players")
+            .execute(pool)
+            .await
+            .expect("Failed to cleanup players");
     }
 
     async fn create_test_player(state: &AppState) -> Player {
@@ -245,7 +272,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_combine_results() {
-        let state = setup_test_state().await;
+        let (state, _pool) = setup_test_state().await;
 
         let player = create_test_player(&state).await;
 
@@ -272,7 +299,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_combine_results() {
-        let state = setup_test_state().await;
+        let (state, _pool) = setup_test_state().await;
 
         let player = create_test_player(&state).await;
 
@@ -300,7 +327,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_player_combine_results() {
-        let state = setup_test_state().await;
+        let (state, _pool) = setup_test_state().await;
 
         let player = create_test_player(&state).await;
 
