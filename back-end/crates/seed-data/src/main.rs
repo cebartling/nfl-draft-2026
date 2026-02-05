@@ -1,8 +1,13 @@
-use seed_data::{loader, team_loader, team_validator, validator};
+use seed_data::{
+    loader, team_loader, team_need_loader, team_need_validator, team_validator, validator,
+};
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use db::{create_pool, repositories::SqlxPlayerRepository, repositories::SqlxTeamRepository};
+use db::{
+    create_pool, repositories::SqlxPlayerRepository, repositories::SqlxTeamNeedRepository,
+    repositories::SqlxTeamRepository,
+};
 use domain::repositories::PlayerRepository;
 use tracing_subscriber::EnvFilter;
 
@@ -26,6 +31,12 @@ enum EntityCommands {
     Teams {
         #[command(subcommand)]
         action: TeamActions,
+    },
+
+    /// Manage team positional draft needs
+    Needs {
+        #[command(subcommand)]
+        action: NeedActions,
     },
 }
 
@@ -81,6 +92,30 @@ enum TeamActions {
     },
 }
 
+#[derive(Subcommand)]
+enum NeedActions {
+    /// Load team needs from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/team_needs_2026.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear all team needs from the database
+    Clear,
+
+    /// Validate JSON file without loading
+    Validate {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/team_needs_2026.json")]
+        file: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -96,6 +131,7 @@ async fn main() -> Result<()> {
     match cli.entity {
         EntityCommands::Players { action } => handle_players(action).await?,
         EntityCommands::Teams { action } => handle_teams(action).await?,
+        EntityCommands::Needs { action } => handle_needs(action).await?,
     }
 
     Ok(())
@@ -278,6 +314,94 @@ async fn handle_teams(action: TeamActions) -> Result<()> {
             let result = sqlx::query("DELETE FROM teams").execute(&pool).await?;
 
             println!("Deleted {} teams", result.rows_affected());
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_needs(action: NeedActions) -> Result<()> {
+    match action {
+        NeedActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = team_need_loader::parse_team_need_file(&file)?;
+            println!("Loaded {} team entries from file", data.team_needs.len());
+
+            let result = team_need_validator::validate_team_need_data(&data);
+            result.print_summary();
+
+            if !result.valid {
+                std::process::exit(1);
+            }
+        }
+
+        NeedActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading team needs from: {}", file);
+            }
+
+            let data = team_need_loader::parse_team_need_file(&file)?;
+            println!("Parsed {} team entries from file", data.team_needs.len());
+
+            // Validate first
+            let validation = team_need_validator::validate_team_need_data(&data);
+            validation.print_summary();
+
+            if !validation.valid {
+                println!("\nAborting load due to validation errors.");
+                std::process::exit(1);
+            }
+
+            if dry_run {
+                // Dry run: simulate loading without database
+                let stats = team_need_loader::load_team_needs_dry_run(&data)?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let team_repo = SqlxTeamRepository::new(pool.clone());
+                let team_need_repo = SqlxTeamNeedRepository::new(pool);
+
+                let stats =
+                    team_need_loader::load_team_needs(&data, &team_repo, &team_need_repo).await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        NeedActions::Clear => {
+            println!("Clearing all team needs from the database");
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+
+            // Count existing team needs first
+            let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM team_needs")
+                .fetch_one(&pool)
+                .await?;
+
+            if count == 0 {
+                println!("No team needs found in database");
+                return Ok(());
+            }
+
+            println!("Found {} team needs to delete", count);
+
+            // Delete all team needs
+            let result = sqlx::query("DELETE FROM team_needs").execute(&pool).await?;
+
+            println!("Deleted {} team needs", result.rows_affected());
         }
     }
 
