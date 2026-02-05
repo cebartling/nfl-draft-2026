@@ -2,8 +2,10 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
-use crate::models::{Draft, DraftPick, Player};
-use crate::repositories::{DraftPickRepository, DraftRepository, PlayerRepository, TeamRepository};
+use crate::models::{Draft, DraftPick, Player, Team};
+use crate::repositories::{
+    DraftPickRepository, DraftRepository, PlayerRepository, TeamRepository, TeamSeasonRepository,
+};
 use crate::services::AutoPickService;
 
 /// Draft engine service for managing draft operations
@@ -12,6 +14,7 @@ pub struct DraftEngine {
     pick_repo: Arc<dyn DraftPickRepository>,
     team_repo: Arc<dyn TeamRepository>,
     player_repo: Arc<dyn PlayerRepository>,
+    team_season_repo: Option<Arc<dyn TeamSeasonRepository>>,
     auto_pick_service: Option<Arc<AutoPickService>>,
 }
 
@@ -27,8 +30,17 @@ impl DraftEngine {
             pick_repo,
             team_repo,
             player_repo,
+            team_season_repo: None,
             auto_pick_service: None,
         }
+    }
+
+    pub fn with_team_season_repo(
+        mut self,
+        team_season_repo: Arc<dyn TeamSeasonRepository>,
+    ) -> Self {
+        self.team_season_repo = Some(team_season_repo);
+        self
     }
 
     pub fn with_auto_pick(mut self, auto_pick_service: Arc<AutoPickService>) -> Self {
@@ -57,7 +69,8 @@ impl DraftEngine {
 
     /// Initialize draft picks for a draft
     /// This creates picks for all teams in standard draft order (reverse standings)
-    /// For now, we'll use a simple team ordering - in Phase 5 this will be based on standings
+    /// If team_season_repo is configured and standings data exists, uses standings-based order
+    /// Otherwise, falls back to default team order
     pub async fn initialize_picks(&self, draft_id: Uuid) -> DomainResult<Vec<DraftPick>> {
         // Get the draft
         let draft = self.draft_repo.find_by_id(draft_id).await?.ok_or_else(|| {
@@ -73,21 +86,21 @@ impl DraftEngine {
             )));
         }
 
-        // Get all teams
-        let teams = self.team_repo.find_all().await?;
+        // Get teams in draft order (standings-based if available, otherwise default)
+        let teams_in_order = self.get_teams_in_draft_order(draft.year).await?;
 
-        if teams.is_empty() {
+        if teams_in_order.is_empty() {
             return Err(DomainError::ValidationError(
                 "Cannot initialize draft picks: no teams found".to_string(),
             ));
         }
 
         // Validate picks_per_round matches team count
-        if teams.len() != draft.picks_per_round as usize {
+        if teams_in_order.len() != draft.picks_per_round as usize {
             return Err(DomainError::ValidationError(format!(
                 "Draft configured for {} picks per round but {} teams exist",
                 draft.picks_per_round,
-                teams.len()
+                teams_in_order.len()
             )));
         }
 
@@ -96,7 +109,7 @@ impl DraftEngine {
         let mut overall_pick = 1;
 
         for round in 1..=draft.rounds {
-            for (pick_num, team) in teams.iter().enumerate() {
+            for (pick_num, team) in teams_in_order.iter().enumerate() {
                 let pick = DraftPick::new(
                     draft_id,
                     round,
@@ -111,6 +124,65 @@ impl DraftEngine {
 
         // Create all picks in database
         self.pick_repo.create_many(&picks).await
+    }
+
+    /// Get teams in draft order
+    /// Uses standings from previous season if available, otherwise returns default team order
+    async fn get_teams_in_draft_order(&self, draft_year: i32) -> DomainResult<Vec<Team>> {
+        // Get all teams first
+        let all_teams = self.team_repo.find_all().await?;
+        let team_count = all_teams.len();
+
+        if all_teams.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // Try to get standings-based order if team_season_repo is configured
+        if let Some(ref season_repo) = self.team_season_repo {
+            let standings_year = draft_year - 1; // 2026 draft uses 2025 standings
+            let seasons = season_repo
+                .find_by_year_ordered_by_draft_position(standings_year)
+                .await?;
+
+            let seasons_count = seasons.len();
+
+            // If we have standings for all teams, use that order
+            if seasons_count == team_count {
+                // Build team order from standings
+                let team_map: std::collections::HashMap<Uuid, Team> =
+                    all_teams.iter().map(|t| (t.id, t.clone())).collect();
+
+                let ordered_teams: Vec<Team> = seasons
+                    .iter()
+                    .filter_map(|season| team_map.get(&season.team_id).cloned())
+                    .collect();
+
+                if ordered_teams.len() == team_map.len() {
+                    tracing::info!(
+                        "Using standings-based draft order from {} season",
+                        standings_year
+                    );
+                    return Ok(ordered_teams);
+                }
+            }
+
+            // Partial standings data - log warning and fall back
+            if seasons_count > 0 {
+                tracing::warn!(
+                    "Partial standings data found for {} ({} of {} teams). Using default team order.",
+                    standings_year,
+                    seasons_count,
+                    team_count
+                );
+            }
+        }
+
+        // Fall back to default team order
+        tracing::info!(
+            "No standings data for {} draft year. Using default team order.",
+            draft_year
+        );
+        Ok(all_teams)
     }
 
     /// Get next available pick in the draft

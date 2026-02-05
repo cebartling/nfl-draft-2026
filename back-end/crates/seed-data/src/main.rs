@@ -1,12 +1,13 @@
 use seed_data::{
-    loader, team_loader, team_need_loader, team_need_validator, team_validator, validator,
+    loader, team_loader, team_need_loader, team_need_validator, team_season_loader,
+    team_season_validator, team_validator, validator,
 };
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use db::{
     create_pool, repositories::SqlxPlayerRepository, repositories::SqlxTeamNeedRepository,
-    repositories::SqlxTeamRepository,
+    repositories::SqlxTeamRepository, repositories::SqlxTeamSeasonRepository,
 };
 use domain::repositories::PlayerRepository;
 use tracing_subscriber::EnvFilter;
@@ -37,6 +38,12 @@ enum EntityCommands {
     Needs {
         #[command(subcommand)]
         action: NeedActions,
+    },
+
+    /// Manage team season records and draft positions
+    Seasons {
+        #[command(subcommand)]
+        action: SeasonActions,
     },
 }
 
@@ -116,6 +123,34 @@ enum NeedActions {
     },
 }
 
+#[derive(Subcommand)]
+enum SeasonActions {
+    /// Load team seasons from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/team_seasons_2025.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear all team seasons for a given year
+    Clear {
+        /// The season year to clear
+        #[arg(short, long)]
+        year: i32,
+    },
+
+    /// Validate JSON file without loading
+    Validate {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/team_seasons_2025.json")]
+        file: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -132,6 +167,7 @@ async fn main() -> Result<()> {
         EntityCommands::Players { action } => handle_players(action).await?,
         EntityCommands::Teams { action } => handle_teams(action).await?,
         EntityCommands::Needs { action } => handle_needs(action).await?,
+        EntityCommands::Seasons { action } => handle_seasons(action).await?,
     }
 
     Ok(())
@@ -402,6 +438,108 @@ async fn handle_needs(action: NeedActions) -> Result<()> {
             let result = sqlx::query("DELETE FROM team_needs").execute(&pool).await?;
 
             println!("Deleted {} team needs", result.rows_affected());
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_seasons(action: SeasonActions) -> Result<()> {
+    match action {
+        SeasonActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = team_season_loader::parse_team_season_file(&file)?;
+            println!(
+                "Loaded {} team seasons from file (season year {})",
+                data.team_seasons.len(),
+                data.meta.season_year
+            );
+
+            let result = team_season_validator::validate_team_season_data(&data);
+            result.print_summary();
+
+            if !result.valid {
+                std::process::exit(1);
+            }
+        }
+
+        SeasonActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading team seasons from: {}", file);
+            }
+
+            let data = team_season_loader::parse_team_season_file(&file)?;
+            println!(
+                "Parsed {} team seasons from file (season year {})",
+                data.team_seasons.len(),
+                data.meta.season_year
+            );
+
+            // Validate first
+            let validation = team_season_validator::validate_team_season_data(&data);
+            validation.print_summary();
+
+            if !validation.valid {
+                println!("\nAborting load due to validation errors.");
+                std::process::exit(1);
+            }
+
+            if dry_run {
+                // Dry run: simulate loading without database
+                let stats = team_season_loader::load_team_seasons_dry_run(&data)?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let team_repo = SqlxTeamRepository::new(pool.clone());
+                let team_season_repo = SqlxTeamSeasonRepository::new(pool);
+
+                let stats =
+                    team_season_loader::load_team_seasons(&data, &team_repo, &team_season_repo)
+                        .await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        SeasonActions::Clear { year } => {
+            println!("Clearing all team seasons for year {}", year);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+
+            // Count existing team seasons first
+            let count: i64 =
+                sqlx::query_scalar("SELECT COUNT(*) FROM team_seasons WHERE season_year = $1")
+                    .bind(year)
+                    .fetch_one(&pool)
+                    .await?;
+
+            if count == 0 {
+                println!("No team seasons found for year {}", year);
+                return Ok(());
+            }
+
+            println!("Found {} team seasons to delete", count);
+
+            // Delete team seasons for the year
+            let result = sqlx::query("DELETE FROM team_seasons WHERE season_year = $1")
+                .bind(year)
+                .execute(&pool)
+                .await?;
+
+            println!("Deleted {} team seasons", result.rows_affected());
         }
     }
 

@@ -39,3 +39,28 @@ export const TeamNeedSchema = z.object({
 	notes: z.string().optional(),
 });
 export type TeamNeed = z.infer<typeof TeamNeedSchema>;
+
+// PlayoffResult schema and type
+export const PlayoffResultSchema = z.enum([
+	'MissedPlayoffs',
+	'WildCard',
+	'Divisional',
+	'Conference',
+	'SuperBowlLoss',
+	'SuperBowlWin',
+]);
+export type PlayoffResult = z.infer<typeof PlayoffResultSchema>;
+
+// TeamSeason schema and type
+export const TeamSeasonSchema = z.object({
+	id: UUIDSchema,
+	team_id: UUIDSchema,
+	season_year: z.number(),
+	wins: z.number(),
+	losses: z.number(),
+	ties: z.number(),
+	playoff_result: PlayoffResultSchema.nullable().optional(),
+	draft_position: z.number().nullable().optional(),
+	win_percentage: z.number(),
+});
+export type TeamSeason = z.infer<typeof TeamSeasonSchema>;

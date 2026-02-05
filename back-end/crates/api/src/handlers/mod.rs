@@ -6,6 +6,7 @@ pub mod scouting_reports;
 pub mod seed;
 pub mod sessions;
 pub mod team_needs;
+pub mod team_seasons;
 pub mod teams;
 pub mod trades;
 pub mod websocket;

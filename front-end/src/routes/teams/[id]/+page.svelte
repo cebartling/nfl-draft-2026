@@ -3,22 +3,26 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { teamsApi } from '$lib/api';
+	import { teamsApi, teamSeasonsApi } from '$lib/api';
 	import { draftsApi } from '$lib/api';
 	import TeamCard from '$components/team/TeamCard.svelte';
 	import TeamNeeds from '$components/team/TeamNeeds.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
-	import type { Team, DraftPick } from '$lib/types';
+	import type { Team, DraftPick, TeamSeason } from '$lib/types';
 	import { getTeamLogoPath } from '$lib/utils/logo';
 
 	let teamId = $derived($page.params.id!);
 	let team = $state<Team | null>(null);
+	let teamSeason = $state<TeamSeason | null>(null);
 	let teamPicks = $state<DraftPick[]>([]);
 	let loading = $state(true);
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
+
+	// Current season year for the 2026 draft
+	const CURRENT_SEASON_YEAR = 2025;
 
 	onMount(async () => {
 		// Load team details
@@ -29,6 +33,13 @@
 			logger.error('Failed to load team:', e);
 		} finally {
 			loading = false;
+		}
+
+		// Load team's season record
+		try {
+			teamSeason = await teamSeasonsApi.getByTeamAndYear(teamId, CURRENT_SEASON_YEAR);
+		} catch (e) {
+			logger.error('Failed to load team season:', e);
 		}
 
 		// Load team's picks (if any active draft exists)
@@ -42,6 +53,35 @@
 			picksLoading = false;
 		}
 	});
+
+	// Format the record as W-L-T
+	function formatRecord(season: TeamSeason): string {
+		if (season.ties > 0) {
+			return `${season.wins}-${season.losses}-${season.ties}`;
+		}
+		return `${season.wins}-${season.losses}`;
+	}
+
+	// Get playoff result display text
+	function getPlayoffDisplay(result: string | null | undefined): string {
+		if (!result) return 'N/A';
+		switch (result) {
+			case 'MissedPlayoffs':
+				return 'Missed Playoffs';
+			case 'WildCard':
+				return 'Wild Card Round';
+			case 'Divisional':
+				return 'Divisional Round';
+			case 'Conference':
+				return 'Conference Championship';
+			case 'SuperBowlLoss':
+				return 'Super Bowl (Lost)';
+			case 'SuperBowlWin':
+				return 'Super Bowl Champions';
+			default:
+				return result;
+		}
+	}
 </script>
 
 <div class="space-y-6">
@@ -167,26 +207,58 @@
 			{/if}
 		</div>
 
-		<!-- Team Statistics (Placeholder) -->
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-			<Card>
-				<div class="text-center">
-					<div class="text-3xl font-bold text-blue-600">--</div>
-					<div class="text-sm text-gray-600 mt-1">Wins</div>
+		<!-- Team Statistics -->
+		<div class="bg-white rounded-lg shadow p-6">
+			<h2 class="text-2xl font-bold text-gray-800 mb-4">{CURRENT_SEASON_YEAR} Season</h2>
+			{#if teamSeason}
+				<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+					<Card>
+						<div class="text-center">
+							<div class="text-3xl font-bold text-green-600">{teamSeason.wins}</div>
+							<div class="text-sm text-gray-600 mt-1">Wins</div>
+						</div>
+					</Card>
+					<Card>
+						<div class="text-center">
+							<div class="text-3xl font-bold text-red-600">{teamSeason.losses}</div>
+							<div class="text-sm text-gray-600 mt-1">Losses</div>
+						</div>
+					</Card>
+					<Card>
+						<div class="text-center">
+							<div class="text-3xl font-bold text-gray-500">{teamSeason.ties}</div>
+							<div class="text-sm text-gray-600 mt-1">Ties</div>
+						</div>
+					</Card>
+					<Card>
+						<div class="text-center">
+							<div class="text-3xl font-bold text-blue-600">
+								{teamSeason.draft_position ?? '--'}
+							</div>
+							<div class="text-sm text-gray-600 mt-1">2026 Draft Pick</div>
+						</div>
+					</Card>
+					<Card>
+						<div class="text-center">
+							<div class="text-3xl font-bold text-purple-600">
+								{(teamSeason.win_percentage * 100).toFixed(1)}%
+							</div>
+							<div class="text-sm text-gray-600 mt-1">Win %</div>
+						</div>
+					</Card>
 				</div>
-			</Card>
-			<Card>
-				<div class="text-center">
-					<div class="text-3xl font-bold text-red-600">--</div>
-					<div class="text-sm text-gray-600 mt-1">Losses</div>
+				<div class="mt-4 text-center">
+					<span class="text-gray-600">Record: </span>
+					<span class="font-semibold">{formatRecord(teamSeason)}</span>
+					<span class="mx-2">|</span>
+					<span class="text-gray-600">Playoff Result: </span>
+					<span class="font-semibold">{getPlayoffDisplay(teamSeason.playoff_result)}</span>
 				</div>
-			</Card>
-			<Card>
-				<div class="text-center">
-					<div class="text-3xl font-bold text-gray-600">--</div>
-					<div class="text-sm text-gray-600 mt-1">Draft Position</div>
+			{:else}
+				<div class="text-center py-4 text-gray-600">
+					<p>No season data available.</p>
 				</div>
-			</Card>
+			{/if}
 		</div>
 	{:else}
 		<div class="bg-white rounded-lg shadow p-8 text-center">
