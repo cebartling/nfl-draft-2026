@@ -1,4 +1,4 @@
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use domain::models::{PlayoffResult, TeamSeason};
 
-use crate::error::ApiResult;
+use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -72,6 +72,38 @@ pub struct TeamSeasonQuery {
 pub struct DraftOrderQuery {
     /// The draft year (uses year-1 standings, e.g., 2026 uses 2025 standings)
     pub year: i32,
+}
+
+/// GET /api/v1/teams/{team_id}/seasons/{year} - Get a single team's season for a given year
+#[utoipa::path(
+    get,
+    path = "/api/v1/teams/{team_id}/seasons/{year}",
+    params(
+        ("team_id" = Uuid, Path, description = "Team ID"),
+        ("year" = i32, Path, description = "Season year")
+    ),
+    responses(
+        (status = 200, description = "Team season for the specified year", body = TeamSeasonResponse),
+        (status = 404, description = "Team season not found")
+    ),
+    tag = "team-seasons"
+)]
+pub async fn get_team_season(
+    State(state): State<AppState>,
+    Path((team_id, year)): Path<(Uuid, i32)>,
+) -> ApiResult<Json<TeamSeasonResponse>> {
+    let season = state
+        .team_season_repo
+        .find_by_team_and_year(team_id, year)
+        .await?
+        .ok_or_else(|| {
+            ApiError::NotFound(format!(
+                "Team season not found for team {} year {}",
+                team_id, year
+            ))
+        })?;
+
+    Ok(Json(TeamSeasonResponse::from(season)))
 }
 
 /// GET /api/v1/team-seasons - List all team seasons for a given year
@@ -253,6 +285,64 @@ mod tests {
         assert_eq!(order[0].team_id, team1.id);
         assert_eq!(order[1].draft_position, 2);
         assert_eq!(order[1].team_id, team2.id);
+
+        cleanup(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_get_team_season() {
+        let pool = setup_test_pool().await;
+        cleanup(&pool).await;
+
+        // Create a team
+        let team_repo = SqlxTeamRepository::new(pool.clone());
+        let team = Team::new(
+            "Green Bay Packers".to_string(),
+            "GB".to_string(),
+            "Green Bay".to_string(),
+            Conference::NFC,
+            Division::NFCNorth,
+        )
+        .unwrap();
+        let team = team_repo.create(&team).await.unwrap();
+
+        // Create a season
+        let season_repo = SqlxTeamSeasonRepository::new(pool.clone());
+        let season = TeamSeason::new(
+            team.id,
+            2025,
+            12,
+            5,
+            0,
+            Some(PlayoffResult::Divisional),
+            Some(20),
+        )
+        .unwrap();
+        season_repo.create(&season).await.unwrap();
+
+        // Query via handler
+        let state = AppState::new(pool.clone(), None);
+        let result = get_team_season(State(state), Path((team.id, 2025))).await;
+
+        assert!(result.is_ok());
+        let season_response = result.unwrap().0;
+        assert_eq!(season_response.team_id, team.id);
+        assert_eq!(season_response.season_year, 2025);
+        assert_eq!(season_response.wins, 12);
+        assert_eq!(season_response.losses, 5);
+
+        cleanup(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_get_team_season_not_found() {
+        let pool = setup_test_pool().await;
+        cleanup(&pool).await;
+
+        let state = AppState::new(pool.clone(), None);
+        let result = get_team_season(State(state), Path((Uuid::new_v4(), 2025))).await;
+
+        assert!(result.is_err());
 
         cleanup(&pool).await;
     }

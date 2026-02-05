@@ -31,6 +31,10 @@ pub fn create_router(state: AppState) -> Router {
             "/teams/{team_id}/needs",
             get(handlers::team_needs::list_team_needs),
         )
+        .route(
+            "/teams/{team_id}/seasons/{year}",
+            get(handlers::team_seasons::get_team_season),
+        )
         // Players
         .route(
             "/players",

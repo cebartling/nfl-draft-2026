@@ -17,7 +17,13 @@ export const teamSeasonsApi = {
 	 * Get a specific team's season for a given year
 	 */
 	async getByTeamAndYear(teamId: string, year: number): Promise<TeamSeason | null> {
-		const seasons = await this.listByYear(year);
-		return seasons.find((s) => s.team_id === teamId) ?? null;
+		try {
+			return await apiClient.get(`/teams/${teamId}/seasons/${year}`, TeamSeasonSchema);
+		} catch (error) {
+			if (error instanceof Error && 'status' in error && error.status === 404) {
+				return null;
+			}
+			throw error;
+		}
 	},
 };
