@@ -1,0 +1,363 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "last_updated": "2026-02-04",
+    "sources": ["NFL.com", "Team Roster Analysis"],
+    "total_teams": 32,
+    "description": "2026 NFL Draft positional needs by team priority (1=highest)"
+  },
+  "team_needs": [
+    {
+      "team_abbreviation": "BUF",
+      "needs": [
+        { "position": "CB", "priority": 1 },
+        { "position": "EDGE", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "S", "priority": 4 },
+        { "position": "DT", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "MIA",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "EDGE", "priority": 2 },
+        { "position": "LB", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "RB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "NE",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "WR", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "CB", "priority": 5 },
+        { "position": "TE", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "NYJ",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "EDGE", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "WR", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "BAL",
+      "needs": [
+        { "position": "WR", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "CIN",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "EDGE", "priority": 2 },
+        { "position": "CB", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "CLE",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "WR", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "EDGE", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "PIT",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "HOU",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "S", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "IND",
+      "needs": [
+        { "position": "WR", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "EDGE", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "QB", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "JAX",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "S", "priority": 5 },
+        { "position": "DT", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "TEN",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "EDGE", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "DEN",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "WR", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "EDGE", "priority": 5 },
+        { "position": "TE", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "KC",
+      "needs": [
+        { "position": "WR", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "CB", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "LV",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "CB", "priority": 5 },
+        { "position": "DT", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "LAC",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "EDGE", "priority": 3 },
+        { "position": "WR", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "DAL",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "EDGE", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "S", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "CB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "NYG",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "EDGE", "priority": 3 },
+        { "position": "WR", "priority": 4 },
+        { "position": "CB", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "PHI",
+      "needs": [
+        { "position": "CB", "priority": 1 },
+        { "position": "LB", "priority": 2 },
+        { "position": "EDGE", "priority": 3 },
+        { "position": "OT", "priority": 4 },
+        { "position": "S", "priority": 5 },
+        { "position": "WR", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "WAS",
+      "needs": [
+        { "position": "WR", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "DT", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "CHI",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "DT", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "DET",
+      "needs": [
+        { "position": "CB", "priority": 1 },
+        { "position": "EDGE", "priority": 2 },
+        { "position": "DT", "priority": 3 },
+        { "position": "OG", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "GB",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "OT", "priority": 4 },
+        { "position": "DT", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "MIN",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "EDGE", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "ATL",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "CAR",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "EDGE", "priority": 5 },
+        { "position": "DT", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "NO",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "CB", "priority": 4 },
+        { "position": "EDGE", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "TB",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "S", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "ARI",
+      "needs": [
+        { "position": "QB", "priority": 1 },
+        { "position": "OT", "priority": 2 },
+        { "position": "CB", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "WR", "priority": 5 },
+        { "position": "DT", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "LAR",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "S", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "SF",
+      "needs": [
+        { "position": "OT", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "WR", "priority": 3 },
+        { "position": "EDGE", "priority": 4 },
+        { "position": "S", "priority": 5 },
+        { "position": "LB", "priority": 6 }
+      ]
+    },
+    {
+      "team_abbreviation": "SEA",
+      "needs": [
+        { "position": "EDGE", "priority": 1 },
+        { "position": "CB", "priority": 2 },
+        { "position": "OT", "priority": 3 },
+        { "position": "DT", "priority": 4 },
+        { "position": "LB", "priority": 5 },
+        { "position": "RB", "priority": 6 }
+      ]
+    }
+  ]
+}

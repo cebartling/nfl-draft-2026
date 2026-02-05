@@ -12,3 +12,7 @@ echo "Team seeding complete."
 echo "Seeding player data..."
 /app/seed-data players load --file /app/data/players_2026.json
 echo "Player seeding complete."
+
+echo "Seeding team positional needs..."
+/app/seed-data needs load --file /app/data/team_needs_2026.json
+echo "Team needs seeding complete."
