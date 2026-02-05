@@ -934,3 +934,35 @@ export default {
 - All E2E tests pass
 - No accessibility violations
 - Performance metrics acceptable
+
+---
+
+## Future Enhancements (Backlog)
+
+Items to address after core functionality is working:
+
+### Frontend
+- [ ] **SVG Team Logos** - Replace PNG logos with true SVG vectors from Wikimedia Commons (requires attribution handling)
+- [ ] **Dark Mode** - Add dark theme support with Tailwind
+- [ ] **Keyboard Navigation** - Full keyboard support for draft room
+- [ ] **Offline Support** - PWA with service worker for basic offline viewing
+- [ ] **Internationalization** - i18n support for multi-language
+
+### Backend
+- [ ] **Redis Integration** - For horizontal WebSocket scaling
+- [ ] **Rate Limiting** - API rate limiting middleware
+- [ ] **Caching Layer** - Redis cache for frequently accessed data
+- [ ] **Audit Logging** - Comprehensive audit trail for all mutations
+
+### Features
+- [ ] **Mock Draft Mode** - AI-only simulations for predictions
+- [ ] **Historical Data** - Import past draft data for comparison
+- [ ] **Trade Calculator** - Visual trade value comparison tool
+- [ ] **Draft Grades** - Post-draft analysis and grading
+- [ ] **User Accounts** - Authentication and saved preferences
+- [ ] **Multi-Draft Support** - Run multiple concurrent draft simulations
+
+### DevOps
+- [ ] **CI/CD Pipeline** - GitHub Actions for automated testing/deployment
+- [ ] **Monitoring** - Prometheus/Grafana observability stack
+- [ ] **Load Testing** - k6 or similar for performance benchmarking

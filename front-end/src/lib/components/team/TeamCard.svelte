@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Badge } from '$components/ui';
+	import { getTeamLogoPath } from '$lib/utils/logo';
 	import type { Team } from '$types';
 
 	interface Props {
@@ -37,9 +38,12 @@
 			</h3>
 			<p class="text-sm text-gray-600">{team.abbreviation}</p>
 		</div>
-		{#if team.logo_url}
-			<img src={team.logo_url} alt="{team.name} logo" class="w-12 h-12 object-contain" />
-		{/if}
+		<img
+			src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+			alt="{team.name} logo"
+			class="w-12 h-12 object-contain"
+			onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
+		/>
 	</div>
 
 	<div class="flex items-center space-x-2">

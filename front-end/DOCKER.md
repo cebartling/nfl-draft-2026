@@ -10,6 +10,7 @@ The frontend is containerized using a **multi-stage Docker build** that produces
 - **Stage 2 (Runtime)**: Serves static files with nginx Alpine (~25MB)
 
 **Key Features:**
+
 - Static file serving optimized for performance
 - Reverse proxy for backend API (`/api/*`)
 - WebSocket proxy for real-time updates (`/ws`)
@@ -71,11 +72,11 @@ docker build -t nfl-draft-frontend:latest .
 
 The build script supports the following environment variables:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable            | Default              | Description       |
+| ------------------- | -------------------- | ----------------- |
 | `DOCKER_IMAGE_NAME` | `nfl-draft-frontend` | Docker image name |
-| `DOCKER_IMAGE_TAG` | `latest` | Docker image tag |
-| `DOCKER_PLATFORM` | `linux/amd64` | Target platform |
+| `DOCKER_IMAGE_TAG`  | `latest`             | Docker image tag  |
+| `DOCKER_PLATFORM`   | `linux/amd64`        | Target platform   |
 
 ## Running the Container
 
@@ -100,6 +101,7 @@ docker compose up -d
 ```
 
 This automatically:
+
 - Starts PostgreSQL
 - Starts backend API
 - Starts frontend with proper networking
@@ -143,9 +145,9 @@ The nginx configuration (`nginx.conf`) handles:
 
 The container itself doesn't require environment variables, but docker-compose passes:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FRONTEND_PORT` | `3000` | Host port to expose |
+| Variable        | Default | Description         |
+| --------------- | ------- | ------------------- |
+| `FRONTEND_PORT` | `3000`  | Host port to expose |
 
 Backend connection is hardcoded to `api:8000` in nginx config (docker network).
 
@@ -154,6 +156,7 @@ Backend connection is hardcoded to `api:8000` in nginx config (docker network).
 ### Docker Health Check
 
 Built into the image:
+
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
@@ -192,6 +195,7 @@ Nginx runs on port 8080 (not 80) to allow rootless operation.
 ### Security Headers
 
 Nginx adds security headers:
+
 - `X-Frame-Options: SAMEORIGIN` (prevent clickjacking)
 - `X-Content-Type-Options: nosniff` (prevent MIME sniffing)
 - `X-XSS-Protection: 1; mode=block` (XSS protection)
@@ -201,11 +205,13 @@ Nginx adds security headers:
 ### Container Won't Start
 
 **Check logs:**
+
 ```bash
 docker logs nfl-draft-frontend
 ```
 
 **Common issues:**
+
 1. Port 3000 already in use
    - Solution: Use different port: `docker run -p 8080:8080 ...`
 
@@ -215,16 +221,19 @@ docker logs nfl-draft-frontend
 ### Static Files Not Loading
 
 **Verify build output:**
+
 ```bash
 docker run --rm nfl-draft-frontend:latest ls -la /usr/share/nginx/html
 ```
 
 Should show:
+
 - `index.html`
 - `_app/` directory with JS/CSS
 - Other static assets
 
 **Check nginx config:**
+
 ```bash
 docker run --rm nfl-draft-frontend:latest cat /etc/nginx/nginx.conf
 ```
@@ -232,6 +241,7 @@ docker run --rm nfl-draft-frontend:latest cat /etc/nginx/nginx.conf
 ### API Requests Failing
 
 **Test API proxy:**
+
 ```bash
 # From host machine
 curl http://localhost:3000/api/v1/teams
@@ -240,6 +250,7 @@ curl http://localhost:3000/api/v1/teams
 ```
 
 **Check backend connectivity:**
+
 ```bash
 # From inside container
 docker exec -it nfl-draft-frontend wget -O- http://api:8000/health
@@ -248,12 +259,14 @@ docker exec -it nfl-draft-frontend wget -O- http://api:8000/health
 ### WebSocket Connection Issues
 
 **Test WebSocket endpoint:**
+
 ```bash
 # Use websocat or similar tool
 websocat ws://localhost:3000/ws
 ```
 
 **Check nginx logs:**
+
 ```bash
 docker logs nfl-draft-frontend 2>&1 | grep upgrade
 ```
@@ -265,11 +278,13 @@ Should show upgrade requests for WebSocket connections.
 ### Caching Strategy
 
 **Static Assets (1 year cache):**
+
 - `.js`, `.css`, `.png`, `.jpg`, `.woff`, `.svg`, etc.
 - Header: `Cache-Control: public, immutable`
 - Nginx serves from memory when possible
 
 **HTML Files (no cache):**
+
 - `index.html` and SPA routes
 - Header: `Cache-Control: no-cache, no-store, must-revalidate`
 - Always fetches latest version
@@ -277,6 +292,7 @@ Should show upgrade requests for WebSocket connections.
 ### Gzip Compression
 
 Enabled for:
+
 - Text files (HTML, CSS, JS, JSON)
 - Fonts (TTF, WOFF)
 - SVG images
@@ -288,11 +304,13 @@ Enabled for:
 **Target size:** ~25-50MB
 
 **Multi-stage build benefits:**
+
 - Node.js and build tools stay in builder stage
 - Runtime image only has nginx + static files
 - ~6x smaller than including Node.js runtime
 
 **Check image size:**
+
 ```bash
 docker images nfl-draft-frontend:latest
 ```
@@ -312,7 +330,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "3000:8080"
+      - '3000:8080'
     depends_on:
       api:
         condition: service_healthy
@@ -321,6 +339,7 @@ services:
 ```
 
 **Deploy:**
+
 ```bash
 docker compose up -d frontend
 ```
@@ -328,16 +347,19 @@ docker compose up -d frontend
 ### Environment-Specific Builds
 
 **Development:**
+
 ```bash
 DOCKER_IMAGE_TAG=dev ./build-docker.sh
 ```
 
 **Staging:**
+
 ```bash
 DOCKER_IMAGE_TAG=staging ./build-docker.sh
 ```
 
 **Production:**
+
 ```bash
 DOCKER_IMAGE_TAG=prod ./build-docker.sh
 ```
@@ -362,29 +384,29 @@ spec:
         app: nfl-draft-frontend
     spec:
       containers:
-      - name: frontend
-        image: nfl-draft-frontend:latest
-        ports:
-        - containerPort: 8080
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "100m"
-          limits:
-            memory: "128Mi"
-            cpu: "200m"
+        - name: frontend
+          image: nfl-draft-frontend:latest
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: '64Mi'
+              cpu: '100m'
+            limits:
+              memory: '128Mi'
+              cpu: '200m'
 ```
 
 ## CI/CD Integration
@@ -463,6 +485,7 @@ services:
 ## Support
 
 For issues or questions:
+
 1. Check this documentation first
 2. Review nginx logs: `docker logs nfl-draft-frontend`
 3. Verify backend connectivity
