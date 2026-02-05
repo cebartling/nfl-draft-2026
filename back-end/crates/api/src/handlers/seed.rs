@@ -2,10 +2,28 @@ use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::Json;
 use serde::Serialize;
+use subtle::ConstantTimeEq;
 use utoipa::ToSchema;
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
+
+/// Constant-time comparison for API keys to prevent timing attacks
+fn verify_api_key(provided: &str, expected: &str) -> bool {
+    // Convert to bytes for constant-time comparison
+    let provided_bytes = provided.as_bytes();
+    let expected_bytes = expected.as_bytes();
+
+    // Length check must be done carefully - we compare both anyway to avoid
+    // leaking length information through timing
+    if provided_bytes.len() != expected_bytes.len() {
+        // Still do a comparison to maintain constant time
+        let _ = provided_bytes.ct_eq(provided_bytes);
+        return false;
+    }
+
+    provided_bytes.ct_eq(expected_bytes).into()
+}
 
 const PLAYERS_2026_JSON: &str = include_str!("../../../../data/players_2026.json");
 const TEAMS_NFL_JSON: &str = include_str!("../../../../data/teams_nfl.json");
@@ -51,13 +69,13 @@ pub async fn seed_players(
         }
     };
 
-    // Validate the API key from the request header
+    // Validate the API key from the request header using constant-time comparison
     let provided_key = headers
         .get("X-Seed-Api-Key")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
 
-    if provided_key != expected_key {
+    if !verify_api_key(provided_key, expected_key) {
         return Err(ApiError::Unauthorized(
             "Invalid or missing API key".to_string(),
         ));
@@ -135,13 +153,13 @@ pub async fn seed_teams(
         }
     };
 
-    // Validate the API key from the request header
+    // Validate the API key from the request header using constant-time comparison
     let provided_key = headers
         .get("X-Seed-Api-Key")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
 
-    if provided_key != expected_key {
+    if !verify_api_key(provided_key, expected_key) {
         return Err(ApiError::Unauthorized(
             "Invalid or missing API key".to_string(),
         ));
@@ -219,13 +237,13 @@ pub async fn seed_team_seasons(
         }
     };
 
-    // Validate the API key from the request header
+    // Validate the API key from the request header using constant-time comparison
     let provided_key = headers
         .get("X-Seed-Api-Key")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
 
-    if provided_key != expected_key {
+    if !verify_api_key(provided_key, expected_key) {
         return Err(ApiError::Unauthorized(
             "Invalid or missing API key".to_string(),
         ));
