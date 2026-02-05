@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO draft_sessions (id, draft_id, status, chart_type, created_at, updated_at)\n        VALUES ($1, $2, 'NotStarted', 'JimmyJohnson', NOW(), NOW())\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "89da3e6f51696234c6fe4f2046a312de501842a07bed0c98c4b69b687708133a"
+}

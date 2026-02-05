@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM team_seasons",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "d98285f51b5fe4bb8f9035fe940f127443667f5529a010f073a4bd38e4e0c4df"
+}
