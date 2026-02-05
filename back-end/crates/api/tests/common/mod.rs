@@ -5,6 +5,7 @@ use std::time::Duration;
 use tokio::sync::oneshot;
 
 /// Spawns the API server on an ephemeral port and returns the base URL and database pool
+#[allow(dead_code)]
 pub async fn spawn_app() -> (String, sqlx::PgPool) {
     // Setup database
     let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
@@ -94,6 +95,10 @@ pub async fn cleanup_database(pool: &sqlx::PgPool) {
         .execute(pool)
         .await
         .expect("Failed to cleanup team_needs");
+    sqlx::query!("DELETE FROM team_seasons")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup team_seasons");
     sqlx::query!("DELETE FROM players")
         .execute(pool)
         .await
@@ -105,6 +110,7 @@ pub async fn cleanup_database(pool: &sqlx::PgPool) {
 }
 
 /// Creates a configured reqwest client with sensible defaults
+#[allow(dead_code)]
 pub fn create_client() -> Client {
     Client::builder()
         .timeout(Duration::from_secs(30))
@@ -115,6 +121,7 @@ pub fn create_client() -> Client {
 
 /// Sets up a test database pool (without spawning HTTP server)
 /// Useful for integration tests that don't need HTTP
+#[allow(dead_code)]
 pub async fn setup_test_pool() -> sqlx::PgPool {
     let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
         "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()

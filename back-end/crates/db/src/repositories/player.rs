@@ -346,7 +346,7 @@ mod tests {
 
         let repo = SqlxPlayerRepository::new(pool.clone());
 
-        let mut eligible =
+        let eligible =
             Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
         let mut not_eligible =
             Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2026).unwrap();

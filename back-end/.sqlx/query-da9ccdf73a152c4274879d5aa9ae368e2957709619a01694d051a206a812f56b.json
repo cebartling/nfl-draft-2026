@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM scouting_reports",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "da9ccdf73a152c4274879d5aa9ae368e2957709619a01694d051a206a812f56b"
+}

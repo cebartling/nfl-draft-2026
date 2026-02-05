@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM players",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "dcc8e2db499c7174cd4c7809bbdf3fcde57da62e1b0bcf48f8d79b62b3ae6d12"
+}

@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "last_updated": "2026-02-04",
+    "sources": ["NFL.com", "Tankathon.com"],
+    "season_year": 2025,
+    "total_teams": 32
+  },
+  "team_seasons": [
+    {
+      "team_abbreviation": "LV",
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 1
+    },
+    {
+      "team_abbreviation": "NYJ",
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 2
+    },
+    {
+      "team_abbreviation": "ARI",
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 3
+    },
+    {
+      "team_abbreviation": "TEN",
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 4
+    },
+    {
+      "team_abbreviation": "NYG",
+      "wins": 4,
+      "losses": 13,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 5
+    },
+    {
+      "team_abbreviation": "CLE",
+      "wins": 5,
+      "losses": 12,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 6
+    },
+    {
+      "team_abbreviation": "WAS",
+      "wins": 5,
+      "losses": 12,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 7
+    },
+    {
+      "team_abbreviation": "NO",
+      "wins": 6,
+      "losses": 11,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 8
+    },
+    {
+      "team_abbreviation": "KC",
+      "wins": 6,
+      "losses": 11,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 9
+    },
+    {
+      "team_abbreviation": "CIN",
+      "wins": 6,
+      "losses": 11,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 10
+    },
+    {
+      "team_abbreviation": "MIA",
+      "wins": 7,
+      "losses": 10,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 11
+    },
+    {
+      "team_abbreviation": "DAL",
+      "wins": 7,
+      "losses": 9,
+      "ties": 1,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 12
+    },
+    {
+      "team_abbreviation": "ATL",
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 13
+    },
+    {
+      "team_abbreviation": "BAL",
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 14
+    },
+    {
+      "team_abbreviation": "TB",
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 15
+    },
+    {
+      "team_abbreviation": "IND",
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 16
+    },
+    {
+      "team_abbreviation": "DET",
+      "wins": 9,
+      "losses": 8,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 17
+    },
+    {
+      "team_abbreviation": "MIN",
+      "wins": 9,
+      "losses": 8,
+      "ties": 0,
+      "playoff_result": "MissedPlayoffs",
+      "draft_position": 18
+    },
+    {
+      "team_abbreviation": "CAR",
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "playoff_result": "WildCard",
+      "draft_position": 19
+    },
+    {
+      "team_abbreviation": "GB",
+      "wins": 9,
+      "losses": 7,
+      "ties": 1,
+      "playoff_result": "WildCard",
+      "draft_position": 20
+    },
+    {
+      "team_abbreviation": "PIT",
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "playoff_result": "WildCard",
+      "draft_position": 21
+    },
+    {
+      "team_abbreviation": "LAC",
+      "wins": 11,
+      "losses": 6,
+      "ties": 0,
+      "playoff_result": "WildCard",
+      "draft_position": 22
+    },
+    {
+      "team_abbreviation": "PHI",
+      "wins": 11,
+      "losses": 6,
+      "ties": 0,
+      "playoff_result": "WildCard",
+      "draft_position": 23
+    },
+    {
+      "team_abbreviation": "JAX",
+      "wins": 13,
+      "losses": 4,
+      "ties": 0,
+      "playoff_result": "WildCard",
+      "draft_position": 24
+    },
+    {
+      "team_abbreviation": "CHI",
+      "wins": 11,
+      "losses": 6,
+      "ties": 0,
+      "playoff_result": "Divisional",
+      "draft_position": 25
+    },
+    {
+      "team_abbreviation": "BUF",
+      "wins": 12,
+      "losses": 5,
+      "ties": 0,
+      "playoff_result": "Divisional",
+      "draft_position": 26
+    },
+    {
+      "team_abbreviation": "SF",
+      "wins": 12,
+      "losses": 5,
+      "ties": 0,
+      "playoff_result": "Divisional",
+      "draft_position": 27
+    },
+    {
+      "team_abbreviation": "HOU",
+      "wins": 12,
+      "losses": 5,
+      "ties": 0,
+      "playoff_result": "Divisional",
+      "draft_position": 28
+    },
+    {
+      "team_abbreviation": "LAR",
+      "wins": 12,
+      "losses": 5,
+      "ties": 0,
+      "playoff_result": "Conference",
+      "draft_position": 29
+    },
+    {
+      "team_abbreviation": "DEN",
+      "wins": 14,
+      "losses": 3,
+      "ties": 0,
+      "playoff_result": "Conference",
+      "draft_position": 30
+    },
+    {
+      "team_abbreviation": "NE",
+      "wins": 14,
+      "losses": 3,
+      "ties": 0,
+      "playoff_result": "SuperBowlLoss",
+      "draft_position": 31
+    },
+    {
+      "team_abbreviation": "SEA",
+      "wins": 14,
+      "losses": 3,
+      "ties": 0,
+      "playoff_result": "SuperBowlWin",
+      "draft_position": 32
+    }
+  ]
+}

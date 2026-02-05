@@ -23,6 +23,9 @@ utoipa.workspace = true
 utoipa-swagger-ui.workspace = true
 futures.workspace = true
 
+# Security
+subtle = "2.5"
+
 # Local crates
 domain = { path = "../domain" }
 db = { path = "../db" }

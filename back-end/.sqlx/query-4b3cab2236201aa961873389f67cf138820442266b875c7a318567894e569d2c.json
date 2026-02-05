@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO team_seasons (id, team_id, season_year, wins, losses, ties, playoff_result, draft_position, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n            ON CONFLICT (team_id, season_year) DO UPDATE SET\n                wins = EXCLUDED.wins,\n                losses = EXCLUDED.losses,\n                ties = EXCLUDED.ties,\n                playoff_result = EXCLUDED.playoff_result,\n                draft_position = EXCLUDED.draft_position,\n                updated_at = NOW()\n            RETURNING id, team_id, season_year, wins, losses, ties, playoff_result, draft_position, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "season_year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "wins",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "losses",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "ties",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "playoff_result",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "draft_position",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "4b3cab2236201aa961873389f67cf138820442266b875c7a318567894e569d2c"
+}

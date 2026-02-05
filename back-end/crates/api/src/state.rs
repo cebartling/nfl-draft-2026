@@ -4,12 +4,12 @@ use std::sync::Arc;
 use db::repositories::{
     EventRepo, SessionRepo, SqlxCombineResultsRepository, SqlxDraftPickRepository,
     SqlxDraftRepository, SqlxPlayerRepository, SqlxScoutingReportRepository,
-    SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTradeRepository,
+    SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository, SqlxTradeRepository,
 };
 use domain::repositories::{
     CombineResultsRepository, DraftPickRepository, DraftRepository, EventRepository,
     PlayerRepository, ScoutingReportRepository, SessionRepository, TeamNeedRepository,
-    TeamRepository, TradeRepository,
+    TeamRepository, TeamSeasonRepository, TradeRepository,
 };
 use domain::services::{DraftEngine, TradeEngine};
 use websocket::ConnectionManager;
@@ -24,6 +24,7 @@ pub struct AppState {
     pub combine_results_repo: Arc<dyn CombineResultsRepository>,
     pub scouting_report_repo: Arc<dyn ScoutingReportRepository>,
     pub team_need_repo: Arc<dyn TeamNeedRepository>,
+    pub team_season_repo: Arc<dyn TeamSeasonRepository>,
     pub session_repo: Arc<dyn SessionRepository>,
     pub event_repo: Arc<dyn EventRepository>,
     pub trade_repo: Arc<dyn TradeRepository>,
@@ -47,16 +48,21 @@ impl AppState {
             Arc::new(SqlxScoutingReportRepository::new(pool.clone()));
         let team_need_repo: Arc<dyn TeamNeedRepository> =
             Arc::new(SqlxTeamNeedRepository::new(pool.clone()));
+        let team_season_repo: Arc<dyn TeamSeasonRepository> =
+            Arc::new(SqlxTeamSeasonRepository::new(pool.clone()));
         let session_repo: Arc<dyn SessionRepository> = Arc::new(SessionRepo::new(pool.clone()));
         let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool.clone()));
         let trade_repo: Arc<dyn TradeRepository> = Arc::new(SqlxTradeRepository::new(pool));
 
-        let draft_engine = Arc::new(DraftEngine::new(
-            draft_repo.clone(),
-            draft_pick_repo.clone(),
-            team_repo.clone(),
-            player_repo.clone(),
-        ));
+        let draft_engine = Arc::new(
+            DraftEngine::new(
+                draft_repo.clone(),
+                draft_pick_repo.clone(),
+                team_repo.clone(),
+                player_repo.clone(),
+            )
+            .with_team_season_repo(team_season_repo.clone()),
+        );
 
         let trade_engine = Arc::new(TradeEngine::with_default_chart(
             trade_repo.clone(),
@@ -74,6 +80,7 @@ impl AppState {
             combine_results_repo,
             scouting_report_repo,
             team_need_repo,
+            team_season_repo,
             session_repo,
             event_repo,
             trade_repo,

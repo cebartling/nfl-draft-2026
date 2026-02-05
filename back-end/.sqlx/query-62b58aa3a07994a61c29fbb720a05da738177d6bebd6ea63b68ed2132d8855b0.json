@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT grade, notes, fit_grade, injury_concern FROM scouting_reports WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "grade",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 1,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "fit_grade",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "injury_concern",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "62b58aa3a07994a61c29fbb720a05da738177d6bebd6ea63b68ed2132d8855b0"
+}

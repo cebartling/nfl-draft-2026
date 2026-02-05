@@ -143,15 +143,15 @@ mod tests {
         let state = AppState::new(pool.clone(), None);
 
         // Cleanup (delete in order of foreign key dependencies)
-        sqlx::query!("DELETE FROM draft_picks")
+        sqlx::query("DELETE FROM draft_picks")
             .execute(&pool)
             .await
             .expect("Failed to cleanup picks");
-        sqlx::query!("DELETE FROM drafts")
+        sqlx::query("DELETE FROM drafts")
             .execute(&pool)
             .await
             .expect("Failed to cleanup drafts");
-        sqlx::query!("DELETE FROM players")
+        sqlx::query("DELETE FROM players")
             .execute(&pool)
             .await
             .expect("Failed to cleanup players");
@@ -266,10 +266,10 @@ mod tests {
             draft_year: 2026,
         };
 
-        create_player(State(state.clone()), Json(player1))
+        let _ = create_player(State(state.clone()), Json(player1))
             .await
             .unwrap();
-        create_player(State(state.clone()), Json(player2))
+        let _ = create_player(State(state.clone()), Json(player2))
             .await
             .unwrap();
 
