@@ -218,10 +218,10 @@ mod tests {
             division: Division::AFCWest,
         };
 
-        create_team(State(state.clone()), Json(team1))
+        let _ = create_team(State(state.clone()), Json(team1))
             .await
             .unwrap();
-        create_team(State(state.clone()), Json(team2))
+        let _ = create_team(State(state.clone()), Json(team2))
             .await
             .unwrap();
 

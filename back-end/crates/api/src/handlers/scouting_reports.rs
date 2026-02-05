@@ -247,7 +247,6 @@ mod tests {
     use super::*;
     use crate::state::AppState;
     use domain::models::{Conference, Division, Player, Position, Team};
-    use domain::repositories::{PlayerRepository, TeamRepository};
 
     async fn setup_test_state() -> AppState {
         let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
@@ -376,10 +375,10 @@ mod tests {
             character_concern: None,
         };
 
-        create_scouting_report(State(state.clone()), Json(request1))
+        let _ = create_scouting_report(State(state.clone()), Json(request1))
             .await
             .unwrap();
-        create_scouting_report(State(state.clone()), Json(request2))
+        let _ = create_scouting_report(State(state.clone()), Json(request2))
             .await
             .unwrap();
 

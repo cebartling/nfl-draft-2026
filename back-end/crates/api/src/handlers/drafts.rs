@@ -400,7 +400,7 @@ mod tests {
             rounds: 7,
             picks_per_round: 32,
         };
-        create_draft(State(state.clone()), Json(request1))
+        let _ = create_draft(State(state.clone()), Json(request1))
             .await
             .unwrap();
 
@@ -409,7 +409,7 @@ mod tests {
             rounds: 7,
             picks_per_round: 32,
         };
-        create_draft(State(state.clone()), Json(request2))
+        let _ = create_draft(State(state.clone()), Json(request2))
             .await
             .unwrap();
 
@@ -482,7 +482,7 @@ mod tests {
             Division::AFCEast,
         )
         .unwrap();
-        let created_team = state.team_repo.create(&team).await.unwrap();
+        let _created_team = state.team_repo.create(&team).await.unwrap();
 
         // Create player
         use domain::models::Player;

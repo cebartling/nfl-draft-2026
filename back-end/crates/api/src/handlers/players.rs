@@ -266,10 +266,10 @@ mod tests {
             draft_year: 2026,
         };
 
-        create_player(State(state.clone()), Json(player1))
+        let _ = create_player(State(state.clone()), Json(player1))
             .await
             .unwrap();
-        create_player(State(state.clone()), Json(player2))
+        let _ = create_player(State(state.clone()), Json(player2))
             .await
             .unwrap();
 
