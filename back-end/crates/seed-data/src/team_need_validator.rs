@@ -95,21 +95,25 @@ pub fn validate_team_need_data(data: &TeamNeedData) -> TeamNeedValidationResult 
 
         for need in &entry.needs {
             // Validate position using position_mapper
-            if let Err(e) = map_position(&need.position) {
-                result.errors.push(format!(
-                    "{}: Invalid position '{}' - {}",
-                    label, need.position, e
-                ));
-                result.valid = false;
-            } else {
-                // Check for duplicate positions within team
-                let normalized = need.position.to_uppercase();
-                if !seen_positions.insert(normalized.clone()) {
+            match map_position(&need.position) {
+                Err(e) => {
                     result.errors.push(format!(
-                        "{}: Duplicate position '{}' in needs",
-                        label, need.position
+                        "{}: Invalid position '{}' - {}",
+                        label, need.position, e
                     ));
                     result.valid = false;
+                }
+                Ok(canonical_position) => {
+                    // Check for duplicate positions within team using canonical position
+                    // This catches aliases like EDGE and DE being duplicates
+                    let canonical_str = format!("{:?}", canonical_position);
+                    if !seen_positions.insert(canonical_str.clone()) {
+                        result.errors.push(format!(
+                            "{}: Duplicate position '{}' in needs (maps to same position as another entry)",
+                            label, need.position
+                        ));
+                        result.valid = false;
+                    }
                 }
             }
 
@@ -409,5 +413,30 @@ mod tests {
 
         let result = validate_team_need_data(&data);
         assert!(result.valid);
+    }
+
+    #[test]
+    fn test_edge_and_de_are_duplicates() {
+        // EDGE and DE map to the same canonical position, so they should be detected as duplicates
+        let data = TeamNeedData {
+            meta: make_meta(1),
+            team_needs: vec![make_team_entry(
+                "DAL",
+                vec![
+                    make_need("EDGE", 1),
+                    make_need("DE", 2),
+                    make_need("OT", 3),
+                    make_need("CB", 4),
+                    make_need("LB", 5),
+                ],
+            )],
+        };
+
+        let result = validate_team_need_data(&data);
+        assert!(!result.valid);
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.contains("Duplicate position")));
     }
 }

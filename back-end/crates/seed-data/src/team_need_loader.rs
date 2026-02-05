@@ -63,11 +63,6 @@ pub fn parse_team_need_file(file_path: &str) -> Result<TeamNeedData> {
     Ok(data)
 }
 
-pub fn parse_team_need_json(json: &str) -> Result<TeamNeedData> {
-    let data: TeamNeedData = serde_json::from_str(json)?;
-    Ok(data)
-}
-
 /// Maximum number of consecutive failures before aborting.
 const MAX_CONSECUTIVE_FAILURES: usize = 5;
 
