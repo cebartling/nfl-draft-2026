@@ -211,6 +211,17 @@ pub async fn load_team_seasons(
                     tracing::error!("{}", msg);
                     stats.errors.push(msg);
                     stats.teams_skipped += 1;
+                    consecutive_failures += 1;
+
+                    if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+                        let abort_msg = format!(
+                            "Aborting: {} consecutive failures. Invalid playoff data?",
+                            consecutive_failures
+                        );
+                        tracing::error!("{}", abort_msg);
+                        stats.errors.push(abort_msg);
+                        break;
+                    }
                     continue;
                 }
             },
