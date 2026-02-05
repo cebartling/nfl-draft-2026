@@ -12,6 +12,7 @@
 	import Badge from '$components/ui/Badge.svelte';
 	import type { Team, DraftPick, TeamSeason } from '$lib/types';
 	import { getTeamLogoPath } from '$lib/utils/logo';
+	import { STANDINGS_SEASON_YEAR } from '$lib/config/draft';
 
 	let teamId = $derived($page.params.id!);
 	let team = $state<Team | null>(null);
@@ -20,9 +21,6 @@
 	let loading = $state(true);
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
-
-	// Current season year for the 2026 draft
-	const CURRENT_SEASON_YEAR = 2025;
 
 	onMount(async () => {
 		// Load team details
@@ -37,7 +35,7 @@
 
 		// Load team's season record
 		try {
-			teamSeason = await teamSeasonsApi.getByTeamAndYear(teamId, CURRENT_SEASON_YEAR);
+			teamSeason = await teamSeasonsApi.getByTeamAndYear(teamId, STANDINGS_SEASON_YEAR);
 		} catch (e) {
 			logger.error('Failed to load team season:', e);
 		}
@@ -209,7 +207,7 @@
 
 		<!-- Team Statistics -->
 		<div class="bg-white rounded-lg shadow p-6">
-			<h2 class="text-2xl font-bold text-gray-800 mb-4">{CURRENT_SEASON_YEAR} Season</h2>
+			<h2 class="text-2xl font-bold text-gray-800 mb-4">{STANDINGS_SEASON_YEAR} Season</h2>
 			{#if teamSeason}
 				<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
 					<Card>
