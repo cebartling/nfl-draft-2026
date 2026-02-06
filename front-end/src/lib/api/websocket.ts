@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import {
 	ClientMessageSchema,
 	ServerMessageSchema,
@@ -42,19 +43,35 @@ export class WebSocketClient {
 	private pingInterval = 30000; // 30 seconds
 
 	constructor(url: string = '/ws') {
-		// Convert relative URL to WebSocket URL
-		if (url.startsWith('/')) {
-			const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-			this.url = `${protocol}//${window.location.host}${url}`;
-		} else {
-			this.url = url;
+		// Store the URL - resolution to full WebSocket URL happens in connect()
+		// This allows the class to be instantiated during SSR
+		this.url = url;
+	}
+
+	/**
+	 * Resolve relative URL to full WebSocket URL (must be called in browser)
+	 */
+	private resolveUrl(): string {
+		if (!browser) {
+			return this.url;
 		}
+		if (this.url.startsWith('/')) {
+			const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+			return `${protocol}//${window.location.host}${this.url}`;
+		}
+		return this.url;
 	}
 
 	/**
 	 * Connect to the WebSocket server
 	 */
 	connect(): void {
+		// WebSocket is only available in browser environment
+		if (!browser) {
+			logger.warn('WebSocket connection skipped: not in browser environment');
+			return;
+		}
+
 		if (
 			this.ws &&
 			(this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)
@@ -68,7 +85,8 @@ export class WebSocketClient {
 		);
 
 		try {
-			this.ws = new WebSocket(this.url);
+			const resolvedUrl = this.resolveUrl();
+			this.ws = new WebSocket(resolvedUrl);
 
 			this.ws.onopen = () => {
 				logger.info('WebSocket connected');
