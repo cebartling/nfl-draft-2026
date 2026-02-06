@@ -28,6 +28,7 @@ describe('draftsApi', () => {
 					status: 'NotStarted',
 					rounds: 7,
 					picks_per_round: 32,
+					total_picks: null,
 				},
 				{
 					id: '2',
@@ -35,6 +36,7 @@ describe('draftsApi', () => {
 					status: 'Completed',
 					rounds: 7,
 					picks_per_round: 32,
+					total_picks: null,
 				},
 			];
 
@@ -63,6 +65,7 @@ describe('draftsApi', () => {
 				status: 'NotStarted',
 				rounds: 7,
 				picks_per_round: 32,
+				total_picks: null,
 			};
 
 			mockGet.mockResolvedValueOnce(mockDraft);
@@ -94,6 +97,7 @@ describe('draftsApi', () => {
 				status: 'NotStarted',
 				rounds: 7,
 				picks_per_round: 32,
+				total_picks: null,
 			};
 
 			mockPost.mockResolvedValueOnce(mockCreatedDraft);

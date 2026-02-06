@@ -41,16 +41,13 @@
 		}
 	}
 
+	let sortedDrafts = $derived([...drafts].sort((a, b) => b.year - a.year));
+
 	let filteredDrafts = $derived(() => {
 		if (filterStatus === 'all') {
-			return drafts;
+			return sortedDrafts;
 		}
-		return drafts.filter((d) => d.status === filterStatus);
-	});
-
-	$effect(() => {
-		// Sort drafts by year (most recent first)
-		drafts.sort((a, b) => b.year - a.year);
+		return sortedDrafts.filter((d) => d.status === filterStatus);
 	});
 </script>
 

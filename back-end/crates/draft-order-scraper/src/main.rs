@@ -7,7 +7,7 @@ use clap::Parser;
 
 #[derive(Parser)]
 #[command(name = "draft-order-scraper")]
-#[command(about = "Scrape NFL draft order from Tankathon.com and generate JSON")]
+#[command(about = "Generate NFL draft order JSON (template-based; Tankathon scraping is WIP)")]
 struct Cli {
     /// Draft year to scrape
     #[arg(short, long, default_value = "2026")]

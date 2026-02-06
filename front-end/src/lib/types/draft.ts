@@ -12,7 +12,7 @@ export const DraftSchema = z.object({
 	status: DraftStatusSchema,
 	rounds: z.number(),
 	picks_per_round: z.number().nullable(),
-	total_picks: z.number().nullable().optional(),
+	total_picks: z.number().nullable(),
 	is_realistic: z.boolean().optional(),
 	created_at: z.string().optional(),
 	updated_at: z.string().optional(),

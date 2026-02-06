@@ -27,14 +27,18 @@
 				Pick {pick.pick_number}
 			</Badge>
 			{#if pick.is_compensatory}
-				<Badge variant="warning" size="sm">
-					COMP
-				</Badge>
+				<span aria-label="Compensatory pick">
+					<Badge variant="warning" size="sm">
+						COMP
+					</Badge>
+				</span>
 			{/if}
 			{#if pick.is_traded}
-				<Badge variant="info" size="sm">
-					TRADED
-				</Badge>
+				<span aria-label="Traded pick">
+					<Badge variant="info" size="sm">
+						TRADED
+					</Badge>
+				</span>
 			{/if}
 		</div>
 		<span class="text-sm font-medium text-gray-600">

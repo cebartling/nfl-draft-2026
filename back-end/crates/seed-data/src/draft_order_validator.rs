@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use crate::draft_order_loader::DraftOrderData;
+use crate::{COMPENSATORY_ROUND_MAX, COMPENSATORY_ROUND_MIN};
 
 /// Valid NFL team abbreviations
 const VALID_TEAM_ABBREVIATIONS: &[&str] = &[
@@ -160,7 +161,9 @@ pub fn validate_draft_order_data(data: &DraftOrderData) -> DraftOrderValidationR
         }
 
         // Compensatory picks only in rounds 3-7
-        if entry.is_compensatory && entry.round < 3 {
+        if entry.is_compensatory
+            && (entry.round < COMPENSATORY_ROUND_MIN || entry.round > COMPENSATORY_ROUND_MAX)
+        {
             result.errors.push(format!(
                 "{}: Compensatory pick not allowed in round {}",
                 label, entry.round
@@ -205,6 +208,7 @@ mod tests {
             version: "1.0.0".to_string(),
             last_updated: "2026-02-06".to_string(),
             sources: vec!["Test".to_string()],
+            source: None,
             draft_year: year,
             total_rounds: rounds,
             total_picks: total,
@@ -377,6 +381,30 @@ mod tests {
 
         let result = validate_draft_order_data(&data);
         assert!(result.valid);
+    }
+
+    #[test]
+    fn test_compensatory_pick_round_8_fails() {
+        let data = DraftOrderData {
+            meta: make_meta(2026, 8, 8),
+            draft_order: vec![
+                make_entry(1, 1, 1, "TEN", "TEN", false),
+                make_entry(2, 1, 2, "TEN", "TEN", false),
+                make_entry(3, 1, 3, "TEN", "TEN", false),
+                make_entry(4, 1, 4, "TEN", "TEN", false),
+                make_entry(5, 1, 5, "TEN", "TEN", false),
+                make_entry(6, 1, 6, "TEN", "TEN", false),
+                make_entry(7, 1, 7, "TEN", "TEN", false),
+                make_entry(8, 1, 8, "TEN", "TEN", true),
+            ],
+        };
+
+        let result = validate_draft_order_data(&data);
+        assert!(!result.valid);
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.contains("Compensatory pick not allowed")));
     }
 
     #[test]

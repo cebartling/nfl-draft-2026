@@ -1,69 +1,74 @@
 use std::collections::HashMap;
 
-/// Maps Tankathon display names to NFL team abbreviations matching teams_nfl.json
-pub fn build_team_name_map() -> HashMap<&'static str, &'static str> {
+/// Maps Tankathon display names (lowercased) to NFL team abbreviations matching teams_nfl.json
+pub fn build_team_name_map() -> HashMap<String, &'static str> {
     let mut map = HashMap::new();
 
-    // Full city/region names as displayed on Tankathon
-    map.insert("Arizona", "ARI");
-    map.insert("Atlanta", "ATL");
-    map.insert("Baltimore", "BAL");
-    map.insert("Buffalo", "BUF");
-    map.insert("Carolina", "CAR");
-    map.insert("Chicago", "CHI");
-    map.insert("Cincinnati", "CIN");
-    map.insert("Cleveland", "CLE");
-    map.insert("Dallas", "DAL");
-    map.insert("Denver", "DEN");
-    map.insert("Detroit", "DET");
-    map.insert("Green Bay", "GB");
-    map.insert("Houston", "HOU");
-    map.insert("Indianapolis", "IND");
-    map.insert("Jacksonville", "JAX");
-    map.insert("Kansas City", "KC");
-    map.insert("Las Vegas", "LV");
-    map.insert("LA Chargers", "LAC");
-    map.insert("LA Rams", "LAR");
-    map.insert("Los Angeles Chargers", "LAC");
-    map.insert("Los Angeles Rams", "LAR");
-    map.insert("Miami", "MIA");
-    map.insert("Minnesota", "MIN");
-    map.insert("New England", "NE");
-    map.insert("New Orleans", "NO");
-    map.insert("NY Giants", "NYG");
-    map.insert("NY Jets", "NYJ");
-    map.insert("New York Giants", "NYG");
-    map.insert("New York Jets", "NYJ");
-    map.insert("Philadelphia", "PHI");
-    map.insert("Pittsburgh", "PIT");
-    map.insert("San Francisco", "SF");
-    map.insert("Seattle", "SEA");
-    map.insert("Tampa Bay", "TB");
-    map.insert("Tennessee", "TEN");
-    map.insert("Washington", "WAS");
+    let entries: &[(&str, &str)] = &[
+        ("arizona", "ARI"),
+        ("atlanta", "ATL"),
+        ("baltimore", "BAL"),
+        ("buffalo", "BUF"),
+        ("carolina", "CAR"),
+        ("chicago", "CHI"),
+        ("cincinnati", "CIN"),
+        ("cleveland", "CLE"),
+        ("dallas", "DAL"),
+        ("denver", "DEN"),
+        ("detroit", "DET"),
+        ("green bay", "GB"),
+        ("houston", "HOU"),
+        ("indianapolis", "IND"),
+        ("jacksonville", "JAX"),
+        ("kansas city", "KC"),
+        ("las vegas", "LV"),
+        ("la chargers", "LAC"),
+        ("la rams", "LAR"),
+        ("los angeles chargers", "LAC"),
+        ("los angeles rams", "LAR"),
+        ("miami", "MIA"),
+        ("minnesota", "MIN"),
+        ("new england", "NE"),
+        ("new orleans", "NO"),
+        ("ny giants", "NYG"),
+        ("ny jets", "NYJ"),
+        ("new york giants", "NYG"),
+        ("new york jets", "NYJ"),
+        ("philadelphia", "PHI"),
+        ("pittsburgh", "PIT"),
+        ("san francisco", "SF"),
+        ("seattle", "SEA"),
+        ("tampa bay", "TB"),
+        ("tennessee", "TEN"),
+        ("washington", "WAS"),
+    ];
+
+    for &(name, abbr) in entries {
+        map.insert(name.to_string(), abbr);
+    }
 
     map
 }
 
 /// Resolve a display name to an NFL abbreviation.
-/// Tries exact match first, then tries trimming whitespace.
+/// Uses case-insensitive matching. Tries exact match first, then strips parentheticals.
 pub fn resolve_team_abbreviation(display_name: &str) -> Option<&'static str> {
     let map = build_team_name_map();
-    let trimmed = display_name.trim();
+    let normalized = display_name.trim().to_lowercase();
 
-    if let Some(&abbr) = map.get(trimmed) {
+    if let Some(&abbr) = map.get(&normalized) {
         return Some(abbr);
     }
 
     // Try matching just the first word(s) - some Tankathon entries have extra text
     // e.g., "Green Bay (from DAL)" -> strip the parenthetical
-    let without_parens = if let Some(idx) = trimmed.find('(') {
-        trimmed[..idx].trim()
+    let without_parens = if let Some(idx) = normalized.find('(') {
+        normalized[..idx].trim().to_string()
     } else {
-        trimmed
+        normalized.clone()
     };
 
-    if let Some(&abbr) = map.get(without_parens) {
+    if let Some(&abbr) = map.get(&without_parens) {
         return Some(abbr);
     }
 
@@ -98,6 +103,15 @@ mod tests {
     #[test]
     fn test_trimming() {
         assert_eq!(resolve_team_abbreviation("  Dallas  "), Some("DAL"));
+    }
+
+    #[test]
+    fn test_case_insensitive() {
+        assert_eq!(resolve_team_abbreviation("dallas"), Some("DAL"));
+        assert_eq!(resolve_team_abbreviation("DALLAS"), Some("DAL"));
+        assert_eq!(resolve_team_abbreviation("Dallas"), Some("DAL"));
+        assert_eq!(resolve_team_abbreviation("GREEN BAY"), Some("GB"));
+        assert_eq!(resolve_team_abbreviation("la chargers"), Some("LAC"));
     }
 
     #[test]

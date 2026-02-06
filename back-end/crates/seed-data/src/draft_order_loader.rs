@@ -3,6 +3,8 @@ use domain::models::{Draft, DraftPick, DraftStatus};
 use domain::repositories::{DraftPickRepository, DraftRepository, TeamRepository};
 use serde::Deserialize;
 
+use crate::{COMPENSATORY_ROUND_MAX, COMPENSATORY_ROUND_MIN, MAX_DRAFT_ROUND};
+
 #[derive(Debug, Deserialize)]
 pub struct DraftOrderData {
     pub meta: DraftOrderMeta,
@@ -15,6 +17,9 @@ pub struct DraftOrderMeta {
     pub version: String,
     pub last_updated: String,
     pub sources: Vec<String>,
+    /// Origin of draft order data: "template" or "tankathon"
+    #[serde(default)]
+    pub source: Option<String>,
     pub draft_year: i32,
     pub total_rounds: i32,
     pub total_picks: usize,
@@ -78,7 +83,7 @@ pub fn load_draft_order_dry_run(data: &DraftOrderData) -> Result<DraftOrderLoadS
 
     for entry in &data.draft_order {
         // Validate round
-        if entry.round < 1 || entry.round > 20 {
+        if entry.round < 1 || entry.round > MAX_DRAFT_ROUND {
             let msg = format!(
                 "Invalid round {} for overall pick {}",
                 entry.round, entry.overall_pick
@@ -107,7 +112,9 @@ pub fn load_draft_order_dry_run(data: &DraftOrderData) -> Result<DraftOrderLoadS
         }
 
         // Validate compensatory picks only in rounds 3-7
-        if entry.is_compensatory && entry.round < 3 {
+        if entry.is_compensatory
+            && (entry.round < COMPENSATORY_ROUND_MIN || entry.round > COMPENSATORY_ROUND_MAX)
+        {
             let msg = format!(
                 "Compensatory pick in round {} (overall {}): compensatory picks only allowed in rounds 3-7",
                 entry.round, entry.overall_pick

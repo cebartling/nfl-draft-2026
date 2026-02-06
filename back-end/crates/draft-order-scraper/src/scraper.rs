@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anyhow::{Context, Result};
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -6,11 +8,16 @@ use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use crate::team_name_mapper;
 
+/// HTTP request timeout for scraping operations
+const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DraftOrderMeta {
     pub version: String,
     pub last_updated: String,
     pub sources: Vec<String>,
+    /// Indicates the origin of this data: "template" or "tankathon"
+    pub source: String,
     pub draft_year: i32,
     pub total_rounds: i32,
     pub total_picks: usize,
@@ -43,6 +50,7 @@ pub async fn fetch_tankathon_html(year: i32) -> Result<String> {
 
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+        .timeout(HTTP_TIMEOUT)
         .build()?;
 
     let response = client
@@ -65,10 +73,12 @@ pub async fn fetch_tankathon_html(year: i32) -> Result<String> {
         .with_context(|| "Failed to read response body")
 }
 
-/// Parse Tankathon HTML to extract draft order entries.
+/// Attempt to parse Tankathon HTML to extract draft order entries.
 ///
-/// Tankathon uses a table-based layout with rows containing pick info.
-/// The structure varies but generally has pick number, team name, and trade info.
+/// NOTE: This parser is currently incomplete. Tankathon's HTML structure has not been
+/// reverse-engineered yet, so this function performs CSS selector diagnostics but always
+/// returns an empty draft order. The caller should fall back to `generate_template_draft_order()`
+/// when the result is empty.
 pub fn parse_tankathon_html(html: &str, year: i32) -> Result<DraftOrderData> {
     let document = Html::parse_document(html);
     let entries = Vec::new();
@@ -146,6 +156,7 @@ pub fn parse_tankathon_html(html: &str, year: i32) -> Result<DraftOrderData> {
             version: "1.0.0".to_string(),
             last_updated: today,
             sources: vec!["Tankathon.com".to_string()],
+            source: "tankathon".to_string(),
             draft_year: year,
             total_rounds: max_round,
             total_picks: entries.len(),
@@ -234,6 +245,7 @@ pub fn generate_template_draft_order(year: i32) -> DraftOrderData {
             version: "1.0.0".to_string(),
             last_updated: today,
             sources: vec!["Template (edit manually)".to_string()],
+            source: "template".to_string(),
             draft_year: year,
             total_rounds: 7,
             total_picks: entries.len(),
