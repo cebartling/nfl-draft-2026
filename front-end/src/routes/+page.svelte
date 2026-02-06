@@ -151,7 +151,7 @@
 											{new Date(draft.created_at).toLocaleDateString()}
 										</span>
 									</div>
-								{/if}
+									{/if}
 								</div>
 
 								{#if draft.status === 'InProgress'}

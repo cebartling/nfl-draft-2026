@@ -204,7 +204,7 @@
 					{/if}
 				</div>
 			</div>
-		{/if}
+			{/if}
 		</div>
 
 		<!-- Draft Progress -->

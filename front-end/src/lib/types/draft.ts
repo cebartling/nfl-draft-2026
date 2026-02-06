@@ -26,7 +26,7 @@ export const DraftPickSchema = z.object({
 	pick_number: z.number(),
 	overall_pick: z.number(),
 	team_id: UUIDSchema,
-	player_id: z.string().nullable().optional(),
+	player_id: UUIDSchema.nullable().optional(),
 	picked_at: z.string().nullable().optional(),
 });
 export type DraftPick = z.infer<typeof DraftPickSchema>;
