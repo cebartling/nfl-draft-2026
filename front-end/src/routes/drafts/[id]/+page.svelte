@@ -21,9 +21,7 @@
 
 	// Count only picks that have been made (have a player assigned)
 	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
-	let totalPicks = $derived(
-		draft?.total_picks ?? (draft?.picks_per_round ? draft.rounds * draft.picks_per_round : picks.length)
-	);
+	let totalPicks = $derived(draft?.total_picks ?? picks.length);
 	// Count rounds where all picks in that round have been completed
 	let roundsCompleted = $derived(() => {
 		if (completedPicks === 0) return 0;
@@ -180,7 +178,7 @@
 			</div>
 
 			<!-- Draft Details Grid -->
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+			<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 				<div>
 					<div class="text-sm text-gray-600">Year</div>
 					<div class="text-lg font-semibold text-gray-800">{draft.year}</div>
@@ -188,16 +186,6 @@
 				<div>
 					<div class="text-sm text-gray-600">Rounds</div>
 					<div class="text-lg font-semibold text-gray-800">{draft.rounds}</div>
-				</div>
-				<div>
-					<div class="text-sm text-gray-600">Picks per Round</div>
-					<div class="text-lg font-semibold text-gray-800">
-						{#if draft.picks_per_round != null}
-							{draft.picks_per_round}
-						{:else}
-							<span class="text-sm text-gray-500">Variable</span>
-						{/if}
-					</div>
 				</div>
 				<div>
 					<div class="text-sm text-gray-600">Total Picks</div>

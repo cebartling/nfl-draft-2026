@@ -186,15 +186,9 @@
 									<span class="font-medium">{draft.rounds}</span>
 								</div>
 								<div class="flex items-center justify-between">
-									<span>Picks per round:</span>
-									<span class="font-medium">
-										{draft.picks_per_round != null ? draft.picks_per_round : 'Variable'}
-									</span>
-								</div>
-								<div class="flex items-center justify-between">
 									<span>Total picks:</span>
 									<span class="font-medium">
-										{draft.total_picks ?? (draft.picks_per_round != null ? draft.rounds * draft.picks_per_round : 'N/A')}
+										{draft.total_picks ?? 'Pending'}
 									</span>
 								</div>
 								{#if draft.created_at}

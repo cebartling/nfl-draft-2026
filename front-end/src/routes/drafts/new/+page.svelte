@@ -8,12 +8,8 @@
 
 	let year = $state(2026);
 	let rounds = $state(7);
-	let picksPerRound = $state(32);
-	let isRealistic = $state(false);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
-
-	let totalPicks = $derived(isRealistic ? null : rounds * picksPerRound);
 
 	// Validation
 	let yearError = $derived(
@@ -22,12 +18,7 @@
 	let roundsError = $derived(
 		rounds < 1 || rounds > 7 ? 'Rounds must be between 1 and 7' : null
 	);
-	let picksError = $derived(
-		!isRealistic && (picksPerRound < 1 || picksPerRound > 32)
-			? 'Picks per round must be between 1 and 32'
-			: null
-	);
-	let hasValidationErrors = $derived(!!yearError || !!roundsError || !!picksError);
+	let hasValidationErrors = $derived(!!yearError || !!roundsError);
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
@@ -37,11 +28,7 @@
 		submitting = true;
 
 		try {
-			const draft = await draftsApi.create({
-				year,
-				rounds,
-				picks_per_round: isRealistic ? undefined : picksPerRound,
-			});
+			const draft = await draftsApi.create({ year, rounds });
 			await goto(`/drafts/${draft.id}`);
 		} catch (e) {
 			error = parseErrorMessage(e);
@@ -84,31 +71,6 @@
 					<p class="text-sm">{error}</p>
 				</div>
 			{/if}
-
-			<!-- Draft Type Toggle -->
-			<div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-				<label class="relative inline-flex items-center cursor-pointer">
-					<input
-						type="checkbox"
-						bind:checked={isRealistic}
-						disabled={submitting}
-						class="sr-only peer"
-					/>
-					<div
-						class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-					></div>
-				</label>
-				<div>
-					<span class="text-sm font-medium text-gray-700">Realistic Draft</span>
-					<p class="text-xs text-gray-500">
-						{#if isRealistic}
-							Uses real NFL draft order with variable round sizes, traded picks, and compensatory picks. Load draft order via seed-data after creating.
-						{:else}
-							Custom draft with uniform picks per round.
-						{/if}
-					</p>
-				</div>
-			</div>
 
 			<!-- Year Field -->
 			<div>
@@ -154,30 +116,6 @@
 				{/if}
 			</div>
 
-			<!-- Picks per Round Field (Custom drafts only) -->
-			{#if !isRealistic}
-				<div>
-					<label for="picksPerRound" class="block text-sm font-medium text-gray-700 mb-2">
-						Picks per Round
-					</label>
-					<input
-						type="number"
-						id="picksPerRound"
-						bind:value={picksPerRound}
-						min="1"
-						max="32"
-						required
-						disabled={submitting}
-						class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {picksError ? 'border-red-500' : 'border-gray-300'}"
-					/>
-					{#if picksError}
-						<p class="text-sm text-red-600 mt-1">{picksError}</p>
-					{:else}
-						<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 32 picks per round (one per team).</p>
-					{/if}
-				</div>
-			{/if}
-
 			<!-- Summary -->
 			<div class="bg-gray-50 rounded-lg p-4">
 				<h3 class="text-sm font-medium text-gray-700 mb-2">Draft Summary</h3>
@@ -191,13 +129,8 @@
 						<div class="text-xs text-gray-500">Rounds</div>
 					</div>
 					<div>
-						{#if isRealistic}
-							<div class="text-2xl font-bold text-blue-600">Variable</div>
-							<div class="text-xs text-gray-500">Realistic Draft</div>
-						{:else}
-							<div class="text-2xl font-bold text-blue-600">{totalPicks}</div>
-							<div class="text-xs text-gray-500">Total Picks</div>
-						{/if}
+						<div class="text-lg font-bold text-blue-600">Realistic</div>
+						<div class="text-xs text-gray-500">Draft Order: Loaded from schedule</div>
 					</div>
 				</div>
 			</div>
