@@ -1,9 +1,8 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
-/// Maps Tankathon display names (lowercased) to NFL team abbreviations matching teams_nfl.json
-pub fn build_team_name_map() -> HashMap<String, &'static str> {
-    let mut map = HashMap::new();
-
+/// Lazily-initialized map from lowercased Tankathon display names to NFL team abbreviations.
+static TEAM_NAME_MAP: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
     let entries: &[(&str, &str)] = &[
         ("arizona", "ARI"),
         ("atlanta", "ATL"),
@@ -43,33 +42,25 @@ pub fn build_team_name_map() -> HashMap<String, &'static str> {
         ("washington", "WAS"),
     ];
 
-    for &(name, abbr) in entries {
-        map.insert(name.to_string(), abbr);
-    }
-
-    map
-}
+    entries.iter().copied().collect()
+});
 
 /// Resolve a display name to an NFL abbreviation.
 /// Uses case-insensitive matching. Tries exact match first, then strips parentheticals.
 pub fn resolve_team_abbreviation(display_name: &str) -> Option<&'static str> {
-    let map = build_team_name_map();
     let normalized = display_name.trim().to_lowercase();
 
-    if let Some(&abbr) = map.get(&normalized) {
+    if let Some(&abbr) = TEAM_NAME_MAP.get(normalized.as_str()) {
         return Some(abbr);
     }
 
     // Try matching just the first word(s) - some Tankathon entries have extra text
     // e.g., "Green Bay (from DAL)" -> strip the parenthetical
-    let without_parens = if let Some(idx) = normalized.find('(') {
-        normalized[..idx].trim().to_string()
-    } else {
-        normalized.clone()
-    };
-
-    if let Some(&abbr) = map.get(&without_parens) {
-        return Some(abbr);
+    if let Some(idx) = normalized.find('(') {
+        let without_parens = normalized[..idx].trim();
+        if let Some(&abbr) = TEAM_NAME_MAP.get(without_parens) {
+            return Some(abbr);
+        }
     }
 
     None
@@ -126,8 +117,7 @@ mod tests {
             "HOU", "IND", "JAX", "KC", "LAC", "LAR", "LV", "MIA", "MIN", "NE", "NO", "NYG", "NYJ",
             "PHI", "PIT", "SEA", "SF", "TB", "TEN", "WAS",
         ];
-        let map = build_team_name_map();
-        let values: std::collections::HashSet<&&str> = map.values().collect();
+        let values: std::collections::HashSet<&&str> = TEAM_NAME_MAP.values().collect();
         for abbr in &expected {
             assert!(values.contains(&abbr), "Missing abbreviation: {}", abbr);
         }

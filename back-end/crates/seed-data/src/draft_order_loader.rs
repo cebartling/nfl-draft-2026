@@ -43,6 +43,7 @@ pub struct DraftOrderLoadStats {
     pub teams_skipped: usize,
     pub draft_created: bool,
     pub draft_reused: bool,
+    pub warnings: Vec<String>,
     pub errors: Vec<String>,
 }
 
@@ -56,6 +57,12 @@ impl DraftOrderLoadStats {
             println!("  Draft: created new");
         } else if self.draft_reused {
             println!("  Draft: reused existing (picks replaced)");
+        }
+        if !self.warnings.is_empty() {
+            println!("\nWarnings ({}):", self.warnings.len());
+            for warning in &self.warnings {
+                println!("  [WARN] {}", warning);
+            }
         }
         println!("  Errors:          {}", self.errors.len());
         if !self.errors.is_empty() {
@@ -169,9 +176,21 @@ pub async fn load_draft_order(
         Ok(Some(existing)) => {
             match existing.status {
                 DraftStatus::NotStarted => {
+                    // Only reuse if the existing draft is also realistic (variable round sizes)
+                    if !existing.is_realistic() {
+                        let msg = format!(
+                            "Cannot load realistic draft order: existing draft for year {} is a custom draft \
+                            (picks_per_round = {}). Delete it first or use a different year.",
+                            year,
+                            existing.picks_per_round.unwrap_or(0)
+                        );
+                        tracing::error!("{}", msg);
+                        stats.errors.push(msg);
+                        return Ok(stats);
+                    }
                     // Delete existing picks and reuse draft
                     tracing::info!(
-                        "Found existing NotStarted draft for year {}. Replacing picks.",
+                        "Found existing NotStarted realistic draft for year {}. Replacing picks.",
                         year
                     );
                     if let Err(e) = pick_repo.delete_by_draft_id(existing.id).await {
@@ -283,20 +302,20 @@ pub async fn load_draft_order(
                 Ok(Some(t)) => Some(t.id),
                 Ok(None) => {
                     let msg = format!(
-                        "Original team not found: {} (pick {})",
+                        "Original team not found: {} (pick {}). Trade metadata will be missing.",
                         entry.original_team_abbreviation, entry.overall_pick
                     );
                     tracing::warn!("{}", msg);
-                    stats.errors.push(msg);
+                    stats.warnings.push(msg);
                     None
                 }
                 Err(e) => {
                     let msg = format!(
-                        "Failed to lookup original team {}: {}",
+                        "Failed to lookup original team {}: {}. Trade metadata will be missing.",
                         entry.original_team_abbreviation, e
                     );
                     tracing::warn!("{}", msg);
-                    stats.errors.push(msg);
+                    stats.warnings.push(msg);
                     None
                 }
             }

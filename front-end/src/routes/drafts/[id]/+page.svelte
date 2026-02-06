@@ -24,6 +24,22 @@
 	let totalPicks = $derived(
 		draft?.total_picks ?? (draft?.picks_per_round ? draft.rounds * draft.picks_per_round : picks.length)
 	);
+	// Count rounds where all picks in that round have been completed
+	let roundsCompleted = $derived(() => {
+		if (completedPicks === 0) return 0;
+		const roundPickCounts = new Map<number, { total: number; completed: number }>();
+		for (const p of picks) {
+			const entry = roundPickCounts.get(p.round) ?? { total: 0, completed: 0 };
+			entry.total++;
+			if (p.player_id != null) entry.completed++;
+			roundPickCounts.set(p.round, entry);
+		}
+		let count = 0;
+		for (const { total, completed } of roundPickCounts.values()) {
+			if (completed === total) count++;
+		}
+		return count;
+	});
 
 	onMount(async () => {
 		// Load draft details
@@ -284,7 +300,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-blue-600">
-							{new Set(picks.map(p => p.round)).size}
+							{roundsCompleted()}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Rounds Completed</div>
 					</div>
@@ -292,7 +308,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-green-600">
-							{picks.length}
+							{completedPicks}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Picks Made</div>
 					</div>
@@ -300,7 +316,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-gray-600">
-							{totalPicks - picks.length}
+							{totalPicks - completedPicks}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Picks Remaining</div>
 					</div>
