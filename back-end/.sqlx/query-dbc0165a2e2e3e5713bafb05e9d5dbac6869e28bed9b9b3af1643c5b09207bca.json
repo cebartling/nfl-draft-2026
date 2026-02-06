@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at\n            FROM draft_picks\n            WHERE draft_id = $1 AND player_id IS NULL\n            ORDER BY overall_pick ASC\n            LIMIT 1\n            ",
+  "query": "\n            UPDATE draft_picks\n            SET player_id = $2, picked_at = $3, updated_at = $4\n            WHERE id = $1\n            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -45,18 +45,36 @@
       },
       {
         "ordinal": 8,
+        "name": "original_team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_compensatory",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 12,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
       ]
     },
     "nullable": [
@@ -68,9 +86,12 @@
       false,
       true,
       true,
+      true,
+      false,
+      true,
       false,
       false
     ]
   },
-  "hash": "dae5fcc17ae89609c6de658be5bda0de77f1e768da90d0622578e8d5ff32f0ae"
+  "hash": "dbc0165a2e2e3e5713bafb05e9d5dbac6869e28bed9b9b3af1643c5b09207bca"
 }

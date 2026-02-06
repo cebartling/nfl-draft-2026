@@ -14,7 +14,7 @@ use crate::state::AppState;
 pub struct CreateDraftRequest {
     pub year: i32,
     pub rounds: i32,
-    pub picks_per_round: i32,
+    pub picks_per_round: Option<i32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -23,12 +23,14 @@ pub struct DraftResponse {
     pub year: i32,
     pub status: String,
     pub rounds: i32,
-    pub picks_per_round: i32,
-    pub total_picks: i32,
+    pub picks_per_round: Option<i32>,
+    pub total_picks: Option<i32>,
+    pub is_realistic: bool,
 }
 
 impl From<Draft> for DraftResponse {
     fn from(draft: Draft) -> Self {
+        let is_realistic = draft.is_realistic();
         Self {
             id: draft.id,
             year: draft.year,
@@ -36,6 +38,7 @@ impl From<Draft> for DraftResponse {
             rounds: draft.rounds,
             picks_per_round: draft.picks_per_round,
             total_picks: draft.total_picks(),
+            is_realistic,
         }
     }
 }
@@ -50,10 +53,15 @@ pub struct DraftPickResponse {
     pub team_id: Uuid,
     pub player_id: Option<Uuid>,
     pub picked_at: Option<String>,
+    pub original_team_id: Option<Uuid>,
+    pub is_compensatory: bool,
+    pub is_traded: bool,
+    pub notes: Option<String>,
 }
 
 impl From<DraftPick> for DraftPickResponse {
     fn from(pick: DraftPick) -> Self {
+        let is_traded = pick.is_traded();
         Self {
             id: pick.id,
             draft_id: pick.draft_id,
@@ -63,6 +71,10 @@ impl From<DraftPick> for DraftPickResponse {
             team_id: pick.team_id,
             player_id: pick.player_id,
             picked_at: pick.picked_at.map(|dt| dt.to_rfc3339()),
+            original_team_id: pick.original_team_id,
+            is_compensatory: pick.is_compensatory,
+            is_traded,
+            notes: pick.notes,
         }
     }
 }
@@ -88,10 +100,20 @@ pub async fn create_draft(
     State(state): State<AppState>,
     Json(payload): Json<CreateDraftRequest>,
 ) -> ApiResult<(StatusCode, Json<DraftResponse>)> {
-    let draft = state
-        .draft_engine
-        .create_draft(payload.year, payload.rounds, payload.picks_per_round)
-        .await?;
+    let draft = match payload.picks_per_round {
+        Some(picks_per_round) => {
+            state
+                .draft_engine
+                .create_draft(payload.year, payload.rounds, picks_per_round)
+                .await?
+        }
+        None => {
+            state
+                .draft_engine
+                .create_realistic_draft(payload.year, payload.rounds)
+                .await?
+        }
+    };
 
     Ok((StatusCode::CREATED, Json(DraftResponse::from(draft))))
 }
@@ -357,7 +379,7 @@ mod tests {
         let request = CreateDraftRequest {
             year: 2026,
             rounds: 7,
-            picks_per_round: 32,
+            picks_per_round: Some(32),
         };
 
         let result = create_draft(State(state), Json(request)).await;
@@ -367,8 +389,8 @@ mod tests {
         assert_eq!(status, StatusCode::CREATED);
         assert_eq!(response.0.year, 2026);
         assert_eq!(response.0.rounds, 7);
-        assert_eq!(response.0.picks_per_round, 32);
-        assert_eq!(response.0.total_picks, 224);
+        assert_eq!(response.0.picks_per_round, Some(32));
+        assert_eq!(response.0.total_picks, Some(224));
     }
 
     #[tokio::test]
@@ -379,7 +401,7 @@ mod tests {
         let request = CreateDraftRequest {
             year: 2026,
             rounds: 7,
-            picks_per_round: 32,
+            picks_per_round: Some(32),
         };
         let (_status, created) = create_draft(State(state.clone()), Json(request))
             .await
@@ -402,7 +424,7 @@ mod tests {
         let request1 = CreateDraftRequest {
             year: 2026,
             rounds: 7,
-            picks_per_round: 32,
+            picks_per_round: Some(32),
         };
         let _ = create_draft(State(state.clone()), Json(request1))
             .await
@@ -411,7 +433,7 @@ mod tests {
         let request2 = CreateDraftRequest {
             year: 2027,
             rounds: 7,
-            picks_per_round: 32,
+            picks_per_round: Some(32),
         };
         let _ = create_draft(State(state.clone()), Json(request2))
             .await
@@ -455,7 +477,7 @@ mod tests {
         let request = CreateDraftRequest {
             year: 2026,
             rounds: 7,
-            picks_per_round: 2, // 2 teams
+            picks_per_round: Some(2), // 2 teams
         };
         let (_status, created) = create_draft(State(state.clone()), Json(request))
             .await
@@ -498,7 +520,7 @@ mod tests {
         let request = CreateDraftRequest {
             year: 2026,
             rounds: 1,
-            picks_per_round: 1,
+            picks_per_round: Some(1),
         };
         let (_status, created_draft) = create_draft(State(state.clone()), Json(request))
             .await

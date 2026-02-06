@@ -6,6 +6,7 @@ members = [
     "crates/db",
     "crates/websocket",
     "crates/seed-data",
+    "crates/draft-order-scraper",
 ]
 
 [workspace.package]
@@ -59,6 +60,9 @@ reqwest = { version = "0.12", features = ["json"] }
 
 # Async traits
 async-trait = "0.1"
+
+# HTML scraping
+scraper = "0.22"
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["axum_extras", "chrono", "uuid"] }

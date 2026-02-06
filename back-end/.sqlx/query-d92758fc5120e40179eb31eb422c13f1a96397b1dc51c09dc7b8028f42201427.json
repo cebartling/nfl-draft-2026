@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at\n            ",
+  "query": "\n            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at\n            FROM draft_picks\n            WHERE draft_id = $1 AND player_id IS NULL\n            ORDER BY overall_pick ASC\n            ",
   "describe": {
     "columns": [
       {
@@ -45,27 +45,33 @@
       },
       {
         "ordinal": 8,
+        "name": "original_team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_compensatory",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 12,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid",
-        "Int4",
-        "Int4",
-        "Int4",
-        "Uuid",
-        "Uuid",
-        "Timestamptz",
-        "Timestamptz",
-        "Timestamptz"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -77,9 +83,12 @@
       false,
       true,
       true,
+      true,
+      false,
+      true,
       false,
       false
     ]
   },
-  "hash": "d578aa4143b337dd29d553e9e39fabaec34a1435247a2f8073780aeb72cdc350"
+  "hash": "d92758fc5120e40179eb31eb422c13f1a96397b1dc51c09dc7b8028f42201427"
 }

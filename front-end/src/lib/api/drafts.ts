@@ -30,7 +30,7 @@ export const draftsApi = {
 	/**
 	 * Create a new draft
 	 */
-	async create(draft: { year: number; rounds: number; picks_per_round: number }): Promise<Draft> {
+	async create(draft: { year: number; rounds: number; picks_per_round?: number }): Promise<Draft> {
 		return apiClient.post('/drafts', draft, DraftSchema);
 	},
 

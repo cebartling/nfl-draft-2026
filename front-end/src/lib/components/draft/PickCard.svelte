@@ -19,13 +19,23 @@
 		: 'hover:shadow-lg'}"
 >
 	<div class="flex items-start justify-between mb-3">
-		<div class="flex items-center space-x-2">
+		<div class="flex items-center space-x-2 flex-wrap gap-1">
 			<Badge variant="primary" size="sm">
 				Round {pick.round}
 			</Badge>
 			<Badge variant="default" size="sm">
 				Pick {pick.pick_number}
 			</Badge>
+			{#if pick.is_compensatory}
+				<Badge variant="warning" size="sm">
+					COMP
+				</Badge>
+			{/if}
+			{#if pick.is_traded}
+				<Badge variant="info" size="sm">
+					TRADED
+				</Badge>
+			{/if}
 		</div>
 		<span class="text-sm font-medium text-gray-600">
 			#{pick.overall_pick}
@@ -38,6 +48,9 @@
 			<p class="text-base font-semibold text-gray-900">
 				{team.abbreviation}
 			</p>
+			{#if pick.notes}
+				<p class="text-xs text-gray-500 italic">{pick.notes}</p>
+			{/if}
 		</div>
 
 		<div>

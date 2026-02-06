@@ -108,7 +108,7 @@ async fn test_draft_flow() {
     assert_eq!(db_draft.year, 2026);
     assert_eq!(db_draft.status, "NotStarted");
     assert_eq!(db_draft.rounds, 1);
-    assert_eq!(db_draft.picks_per_round, 2);
+    assert_eq!(db_draft.picks_per_round, Some(2));
 
     // Initialize draft picks
     let init_response = client

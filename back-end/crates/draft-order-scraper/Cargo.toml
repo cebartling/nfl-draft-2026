@@ -1,0 +1,18 @@
+[package]
+name = "draft-order-scraper"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "draft-order-scraper"
+path = "src/main.rs"
+
+[dependencies]
+reqwest = { workspace = true, features = ["json"] }
+scraper = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+clap = { version = "4.5", features = ["derive"] }
+chrono = { workspace = true }

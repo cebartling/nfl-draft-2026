@@ -21,7 +21,9 @@
 
 	// Count only picks that have been made (have a player assigned)
 	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
-	let totalPicks = $derived(draft ? draft.rounds * draft.picks_per_round : 0);
+	let totalPicks = $derived(
+		draft?.total_picks ?? (draft?.picks_per_round ? draft.rounds * draft.picks_per_round : picks.length)
+	);
 
 	onMount(async () => {
 		// Load draft details
@@ -173,12 +175,18 @@
 				</div>
 				<div>
 					<div class="text-sm text-gray-600">Picks per Round</div>
-					<div class="text-lg font-semibold text-gray-800">{draft.picks_per_round}</div>
+					<div class="text-lg font-semibold text-gray-800">
+						{#if draft.picks_per_round != null}
+							{draft.picks_per_round}
+						{:else}
+							<span class="text-sm text-gray-500">Variable</span>
+						{/if}
+					</div>
 				</div>
 				<div>
 					<div class="text-sm text-gray-600">Total Picks</div>
 					<div class="text-lg font-semibold text-gray-800">
-						{draft.rounds * draft.picks_per_round}
+						{totalPicks}
 					</div>
 				</div>
 			</div>
@@ -276,7 +284,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-blue-600">
-							{Math.ceil(picks.length / draft.picks_per_round)}
+							{new Set(picks.map(p => p.round)).size}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Rounds Completed</div>
 					</div>
@@ -292,7 +300,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-gray-600">
-							{draft.rounds * draft.picks_per_round - picks.length}
+							{totalPicks - picks.length}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Picks Remaining</div>
 					</div>

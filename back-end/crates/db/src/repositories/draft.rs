@@ -201,9 +201,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let result = sqlx::query_as!(
             DraftPickDb,
             r#"
-            INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             "#,
             pick_db.id,
             pick_db.draft_id,
@@ -213,6 +213,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             pick_db.team_id,
             pick_db.player_id,
             pick_db.picked_at,
+            pick_db.original_team_id,
+            pick_db.is_compensatory,
+            pick_db.notes,
             pick_db.created_at,
             pick_db.updated_at
         )
@@ -243,9 +246,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             let result = sqlx::query_as!(
                 DraftPickDb,
                 r#"
-                INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+                INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
                 "#,
                 pick_db.id,
                 pick_db.draft_id,
@@ -255,6 +258,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
                 pick_db.team_id,
                 pick_db.player_id,
                 pick_db.picked_at,
+                pick_db.original_team_id,
+                pick_db.is_compensatory,
+                pick_db.notes,
                 pick_db.created_at,
                 pick_db.updated_at
             )
@@ -274,7 +280,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let result = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE id = $1
             "#,
@@ -294,7 +300,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1
             ORDER BY overall_pick ASC
@@ -320,7 +326,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND round = $2
             ORDER BY pick_number ASC
@@ -347,7 +353,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND team_id = $2
             ORDER BY overall_pick ASC
@@ -370,7 +376,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let result = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND player_id IS NULL
             ORDER BY overall_pick ASC
@@ -392,7 +398,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND player_id IS NULL
             ORDER BY overall_pick ASC
@@ -419,7 +425,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             UPDATE draft_picks
             SET player_id = $2, picked_at = $3, updated_at = $4
             WHERE id = $1
-            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             "#,
             pick_db.id,
             pick_db.player_id,

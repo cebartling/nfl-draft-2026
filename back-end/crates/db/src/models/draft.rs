@@ -13,7 +13,7 @@ pub struct DraftDb {
     pub year: i32,
     pub status: String,
     pub rounds: i32,
-    pub picks_per_round: i32,
+    pub picks_per_round: Option<i32>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -57,6 +57,9 @@ pub struct DraftPickDb {
     pub team_id: Uuid,
     pub player_id: Option<Uuid>,
     pub picked_at: Option<DateTime<Utc>>,
+    pub original_team_id: Option<Uuid>,
+    pub is_compensatory: bool,
+    pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -73,6 +76,9 @@ impl DraftPickDb {
             team_id: pick.team_id,
             player_id: pick.player_id,
             picked_at: pick.picked_at,
+            original_team_id: pick.original_team_id,
+            is_compensatory: pick.is_compensatory,
+            notes: pick.notes.clone(),
             created_at: pick.created_at,
             updated_at: pick.updated_at,
         }
@@ -89,6 +95,9 @@ impl DraftPickDb {
             team_id: self.team_id,
             player_id: self.player_id,
             picked_at: self.picked_at,
+            original_team_id: self.original_team_id,
+            is_compensatory: self.is_compensatory,
+            notes: self.notes.clone(),
             created_at: self.created_at,
             updated_at: self.updated_at,
         })
@@ -150,7 +159,7 @@ mod tests {
         assert_eq!(draft_db.year, 2026);
         assert_eq!(draft_db.status, "NotStarted");
         assert_eq!(draft_db.rounds, 7);
-        assert_eq!(draft_db.picks_per_round, 32);
+        assert_eq!(draft_db.picks_per_round, Some(32));
     }
 
     #[test]
@@ -160,7 +169,7 @@ mod tests {
             year: 2026,
             status: "NotStarted".to_string(),
             rounds: 7,
-            picks_per_round: 32,
+            picks_per_round: Some(32),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -172,7 +181,19 @@ mod tests {
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.status, DraftStatus::NotStarted);
         assert_eq!(draft.rounds, 7);
-        assert_eq!(draft.picks_per_round, 32);
+        assert_eq!(draft.picks_per_round, Some(32));
+    }
+
+    #[test]
+    fn test_realistic_draft_db_conversion() {
+        let draft = Draft::new_realistic(2026, 7).unwrap();
+        let draft_db = DraftDb::from_domain(&draft);
+
+        assert_eq!(draft_db.picks_per_round, None);
+
+        let domain = draft_db.to_domain().unwrap();
+        assert_eq!(domain.picks_per_round, None);
+        assert!(domain.is_realistic());
     }
 
     #[test]

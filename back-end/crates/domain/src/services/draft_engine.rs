@@ -48,7 +48,7 @@ impl DraftEngine {
         self
     }
 
-    /// Create a new draft
+    /// Create a new custom draft with fixed picks per round
     pub async fn create_draft(
         &self,
         year: i32,
@@ -64,6 +64,20 @@ impl DraftEngine {
         }
 
         let draft = Draft::new(year, rounds, picks_per_round)?;
+        self.draft_repo.create(&draft).await
+    }
+
+    /// Create a realistic draft with variable-length rounds (picks loaded from data)
+    pub async fn create_realistic_draft(&self, year: i32, rounds: i32) -> DomainResult<Draft> {
+        // Check if draft already exists for this year
+        if let Some(_existing) = self.draft_repo.find_by_year(year).await? {
+            return Err(DomainError::DuplicateEntry(format!(
+                "Draft for year {} already exists",
+                year
+            )));
+        }
+
+        let draft = Draft::new_realistic(year, rounds)?;
         self.draft_repo.create(&draft).await
     }
 
@@ -95,11 +109,20 @@ impl DraftEngine {
             ));
         }
 
+        // Realistic drafts have picks loaded via seed-data, not initialized here
+        if draft.is_realistic() {
+            return Err(DomainError::ValidationError(
+                "Cannot initialize picks for a realistic draft. Use seed-data to load draft order from JSON.".to_string(),
+            ));
+        }
+
+        let picks_per_round = draft.picks_per_round.unwrap();
+
         // Validate picks_per_round matches team count
-        if teams_in_order.len() != draft.picks_per_round as usize {
+        if teams_in_order.len() != picks_per_round as usize {
             return Err(DomainError::ValidationError(format!(
                 "Draft configured for {} picks per round but {} teams exist",
-                draft.picks_per_round,
+                picks_per_round,
                 teams_in_order.len()
             )));
         }
@@ -445,7 +468,7 @@ mod tests {
         let draft = result.unwrap();
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.rounds, 7);
-        assert_eq!(draft.picks_per_round, 32);
+        assert_eq!(draft.picks_per_round, Some(32));
     }
 
     #[tokio::test]

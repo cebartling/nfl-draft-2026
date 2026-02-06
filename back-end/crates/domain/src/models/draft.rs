@@ -30,7 +30,7 @@ pub struct Draft {
     pub year: i32,
     pub status: DraftStatus,
     pub rounds: i32,
-    pub picks_per_round: i32,
+    pub picks_per_round: Option<i32>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -47,10 +47,32 @@ impl Draft {
             year,
             status: DraftStatus::NotStarted,
             rounds,
-            picks_per_round,
+            picks_per_round: Some(picks_per_round),
             created_at: now,
             updated_at: now,
         })
+    }
+
+    /// Create a realistic draft with variable-length rounds (picks loaded from data)
+    pub fn new_realistic(year: i32, rounds: i32) -> DomainResult<Self> {
+        Self::validate_year(year)?;
+        Self::validate_rounds(rounds)?;
+
+        let now = Utc::now();
+        Ok(Self {
+            id: Uuid::new_v4(),
+            year,
+            status: DraftStatus::NotStarted,
+            rounds,
+            picks_per_round: None,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    /// Returns true if this is a realistic draft (variable round sizes, loaded from data)
+    pub fn is_realistic(&self) -> bool {
+        self.picks_per_round.is_none()
     }
 
     /// Set the draft status directly, bypassing state validation.
@@ -121,8 +143,9 @@ impl Draft {
         }
     }
 
-    pub fn total_picks(&self) -> i32 {
-        self.rounds * self.picks_per_round
+    /// Returns total picks for custom drafts, None for realistic drafts
+    pub fn total_picks(&self) -> Option<i32> {
+        self.picks_per_round.map(|ppr| self.rounds * ppr)
     }
 
     fn validate_year(year: i32) -> DomainResult<()> {
@@ -163,6 +186,9 @@ pub struct DraftPick {
     pub team_id: Uuid,
     pub player_id: Option<Uuid>,
     pub picked_at: Option<DateTime<Utc>>,
+    pub original_team_id: Option<Uuid>,
+    pub is_compensatory: bool,
+    pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -189,9 +215,52 @@ impl DraftPick {
             team_id,
             player_id: None,
             picked_at: None,
+            original_team_id: None,
+            is_compensatory: false,
+            notes: None,
             created_at: now,
             updated_at: now,
         })
+    }
+
+    /// Create a realistic draft pick with trade/compensatory metadata
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_realistic(
+        draft_id: Uuid,
+        round: i32,
+        pick_number: i32,
+        overall_pick: i32,
+        team_id: Uuid,
+        original_team_id: Option<Uuid>,
+        is_compensatory: bool,
+        notes: Option<String>,
+    ) -> DomainResult<Self> {
+        Self::validate_round(round)?;
+        Self::validate_pick_number(pick_number)?;
+        Self::validate_overall_pick(overall_pick)?;
+
+        let now = Utc::now();
+        Ok(Self {
+            id: Uuid::new_v4(),
+            draft_id,
+            round,
+            pick_number,
+            overall_pick,
+            team_id,
+            player_id: None,
+            picked_at: None,
+            original_team_id,
+            is_compensatory,
+            notes,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    /// Returns true if this pick was traded (team differs from original team)
+    pub fn is_traded(&self) -> bool {
+        self.original_team_id
+            .is_some_and(|orig| orig != self.team_id)
     }
 
     pub fn make_pick(&mut self, player_id: Uuid) -> DomainResult<()> {
@@ -248,9 +317,21 @@ mod tests {
         let draft = Draft::new(2026, 7, 32).unwrap();
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.rounds, 7);
-        assert_eq!(draft.picks_per_round, 32);
+        assert_eq!(draft.picks_per_round, Some(32));
         assert_eq!(draft.status, DraftStatus::NotStarted);
-        assert_eq!(draft.total_picks(), 224);
+        assert_eq!(draft.total_picks(), Some(224));
+        assert!(!draft.is_realistic());
+    }
+
+    #[test]
+    fn test_create_realistic_draft() {
+        let draft = Draft::new_realistic(2026, 7).unwrap();
+        assert_eq!(draft.year, 2026);
+        assert_eq!(draft.rounds, 7);
+        assert_eq!(draft.picks_per_round, None);
+        assert_eq!(draft.status, DraftStatus::NotStarted);
+        assert_eq!(draft.total_picks(), None);
+        assert!(draft.is_realistic());
     }
 
     #[test]
@@ -367,5 +448,82 @@ mod tests {
         // Invalid overall pick
         let result = DraftPick::new(draft_id, 1, 1, 0, team_id);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_draft_pick_new_has_no_trade_metadata() {
+        let draft_id = Uuid::new_v4();
+        let team_id = Uuid::new_v4();
+        let pick = DraftPick::new(draft_id, 1, 1, 1, team_id).unwrap();
+
+        assert_eq!(pick.original_team_id, None);
+        assert!(!pick.is_compensatory);
+        assert_eq!(pick.notes, None);
+        assert!(!pick.is_traded());
+    }
+
+    #[test]
+    fn test_realistic_draft_pick() {
+        let draft_id = Uuid::new_v4();
+        let team_id = Uuid::new_v4();
+        let original_team_id = Uuid::new_v4();
+
+        let pick = DraftPick::new_realistic(
+            draft_id,
+            1,
+            24,
+            24,
+            team_id,
+            Some(original_team_id),
+            false,
+            Some("From Green Bay".to_string()),
+        )
+        .unwrap();
+
+        assert_eq!(pick.original_team_id, Some(original_team_id));
+        assert!(!pick.is_compensatory);
+        assert_eq!(pick.notes, Some("From Green Bay".to_string()));
+        assert!(pick.is_traded());
+    }
+
+    #[test]
+    fn test_compensatory_pick() {
+        let draft_id = Uuid::new_v4();
+        let team_id = Uuid::new_v4();
+
+        let pick = DraftPick::new_realistic(
+            draft_id,
+            3,
+            33,
+            97,
+            team_id,
+            None,
+            true,
+            Some("Compensatory pick".to_string()),
+        )
+        .unwrap();
+
+        assert!(pick.is_compensatory);
+        assert!(!pick.is_traded());
+    }
+
+    #[test]
+    fn test_not_traded_when_same_team() {
+        let draft_id = Uuid::new_v4();
+        let team_id = Uuid::new_v4();
+
+        let pick = DraftPick::new_realistic(
+            draft_id,
+            1,
+            1,
+            1,
+            team_id,
+            Some(team_id), // same team owns it
+            false,
+            None,
+        )
+        .unwrap();
+
+        assert!(!pick.is_traded());
     }
 }
