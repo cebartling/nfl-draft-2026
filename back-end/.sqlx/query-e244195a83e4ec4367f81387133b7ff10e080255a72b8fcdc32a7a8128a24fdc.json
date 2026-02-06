@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2027, 'InProgress', 1, 1::INTEGER)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e244195a83e4ec4367f81387133b7ff10e080255a72b8fcdc32a7a8128a24fdc"
+}

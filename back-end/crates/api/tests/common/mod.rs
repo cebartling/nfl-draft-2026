@@ -119,6 +119,44 @@ pub fn create_client() -> Client {
         .expect("Failed to create HTTP client")
 }
 
+/// Spawns the API server with a configured seed API key
+#[allow(dead_code)]
+pub async fn spawn_app_with_seed_key(key: &str) -> (String, sqlx::PgPool) {
+    let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+        "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
+    });
+
+    let pool = db::create_pool(&database_url)
+        .await
+        .expect("Failed to create pool");
+
+    cleanup_database(&pool).await;
+
+    let state = api::state::AppState::new(pool.clone(), Some(key.to_string()));
+    let app = api::routes::create_router(state);
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("Failed to bind to ephemeral port");
+
+    let addr = listener.local_addr().expect("Failed to get local address");
+    let base_url = format!("http://{}", addr);
+
+    let (tx, rx) = oneshot::channel();
+
+    tokio::spawn(async move {
+        tx.send(()).unwrap();
+        axum::serve(listener, app)
+            .await
+            .expect("Server failed to start");
+    });
+
+    rx.await.expect("Server failed to start");
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    (base_url, pool)
+}
+
 /// Sets up a test database pool (without spawning HTTP server)
 /// Useful for integration tests that don't need HTTP
 #[allow(dead_code)]
