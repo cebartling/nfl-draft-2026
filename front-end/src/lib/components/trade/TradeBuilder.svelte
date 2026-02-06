@@ -21,9 +21,9 @@
 	let isLoadingTeams = $state(false);
 	let isSubmitting = $state(false);
 
-	const fromTeamPicks = $derived(availablePicks.filter((p) => p.current_team_id === fromTeamId));
+	const fromTeamPicks = $derived(availablePicks.filter((p) => p.team_id === fromTeamId));
 
-	const toTeamPicks = $derived(availablePicks.filter((p) => p.current_team_id === toTeamId));
+	const toTeamPicks = $derived(availablePicks.filter((p) => p.team_id === toTeamId));
 
 	// Load teams
 	$effect(() => {

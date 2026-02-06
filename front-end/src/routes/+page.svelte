@@ -41,8 +41,13 @@
 	}
 
 	$effect(() => {
-		// Sort drafts by created date (most recent first)
-		drafts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+		// Sort drafts by year (most recent first), then by created date if available
+		drafts.sort((a, b) => {
+			if (a.year !== b.year) return b.year - a.year;
+			const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+			const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+			return dateB - dateA;
+		});
 	});
 </script>
 
@@ -139,12 +144,14 @@
 										<span>Picks per round:</span>
 										<span class="font-medium">{draft.picks_per_round}</span>
 									</div>
+									{#if draft.created_at}
 									<div class="flex items-center justify-between">
 										<span>Created:</span>
 										<span class="font-medium">
 											{new Date(draft.created_at).toLocaleDateString()}
 										</span>
 									</div>
+									{/if}
 								</div>
 
 								{#if draft.status === 'InProgress'}

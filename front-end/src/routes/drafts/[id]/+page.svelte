@@ -16,6 +16,12 @@
 	let loading = $state(true);
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
+	let initializingPicks = $state(false);
+	let initializeError = $state<string | null>(null);
+
+	// Count only picks that have been made (have a player assigned)
+	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
+	let totalPicks = $derived(draft ? draft.rounds * draft.picks_per_round : 0);
 
 	onMount(async () => {
 		// Load draft details
@@ -59,6 +65,19 @@
 		if (!draft) return;
 		// Navigate to session - the session layout will handle creation
 		await goto(`/sessions/${draft.id}`);
+	}
+
+	async function handleInitializePicks() {
+		initializeError = null;
+		initializingPicks = true;
+		try {
+			picks = await draftsApi.initializePicks(draftId);
+		} catch (e) {
+			initializeError = e instanceof Error ? e.message : 'Failed to initialize picks';
+			logger.error('Failed to initialize picks:', e);
+		} finally {
+			initializingPicks = false;
+		}
 	}
 </script>
 
@@ -164,14 +183,17 @@
 				</div>
 			</div>
 
+			{#if draft.created_at || draft.updated_at}
 			<div class="mt-4 pt-4 border-t border-gray-200">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-					<div>
-						<span class="text-gray-600">Created:</span>
-						<span class="font-medium text-gray-800 ml-2">
-							{new Date(draft.created_at).toLocaleString()}
-						</span>
-					</div>
+					{#if draft.created_at}
+						<div>
+							<span class="text-gray-600">Created:</span>
+							<span class="font-medium text-gray-800 ml-2">
+								{new Date(draft.created_at).toLocaleString()}
+							</span>
+						</div>
+					{/if}
 					{#if draft.updated_at}
 						<div>
 							<span class="text-gray-600">Last Updated:</span>
@@ -182,6 +204,7 @@
 					{/if}
 				</div>
 			</div>
+			{/if}
 		</div>
 
 		<!-- Draft Progress -->
@@ -191,15 +214,20 @@
 					<div class="flex items-center justify-between">
 						<h2 class="text-xl font-bold text-gray-800">Draft Progress</h2>
 						<span class="text-sm text-gray-600">
-							{picks.length} / {draft.rounds * draft.picks_per_round} picks made
+							{completedPicks} / {totalPicks} picks made
 						</span>
 					</div>
 					<div class="w-full bg-gray-200 rounded-full h-2">
 						<div
 							class="bg-blue-600 h-2 rounded-full transition-all"
-							style={`width: ${(picks.length / (draft.rounds * draft.picks_per_round)) * 100}%`}
+							style={`width: ${totalPicks > 0 ? (completedPicks / totalPicks) * 100 : 0}%`}
 						></div>
 					</div>
+					{#if picks.length > 0 && completedPicks === 0}
+						<p class="text-xs text-gray-500 text-center">
+							{picks.length} picks initialized, ready to start drafting
+						</p>
+					{/if}
 				</div>
 			</Card>
 		{/if}
@@ -215,7 +243,26 @@
 				<div class="text-center py-8 text-gray-600">
 					<p>No picks have been made yet.</p>
 					{#if draft.status === 'NotStarted'}
-						<p class="text-sm mt-2">Start the draft to begin making picks.</p>
+						<p class="text-sm mt-2 mb-4">Initialize picks based on team draft order, then start the draft.</p>
+						{#if initializeError}
+							<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-left max-w-md mx-auto">
+								<p class="font-medium">Error initializing picks</p>
+								<p class="text-sm">{initializeError}</p>
+							</div>
+						{/if}
+						<button
+							type="button"
+							onclick={handleInitializePicks}
+							disabled={initializingPicks}
+							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+						>
+							{#if initializingPicks}
+								<LoadingSpinner size="sm" />
+								Initializing...
+							{:else}
+								Initialize Draft Picks
+							{/if}
+						</button>
 					{/if}
 				</div>
 			{:else}

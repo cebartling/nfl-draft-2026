@@ -58,4 +58,11 @@ export const draftsApi = {
 	async getAvailablePlayers(draftId: string): Promise<Player[]> {
 		return apiClient.get(`/drafts/${draftId}/available-players`, z.array(PlayerSchema));
 	},
+
+	/**
+	 * Initialize draft picks based on team draft order
+	 */
+	async initializePicks(draftId: string): Promise<DraftPick[]> {
+		return apiClient.post(`/drafts/${draftId}/initialize`, {}, z.array(DraftPickSchema));
+	},
 };

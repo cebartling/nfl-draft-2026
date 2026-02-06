@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WebSocketClient, WebSocketState } from './websocket';
 import type { ClientMessage, ServerMessage } from '$lib/types';
 
+// Mock $app/environment to simulate browser environment
+vi.mock('$app/environment', () => ({
+	browser: true,
+}));
+
 // Mock WebSocket
 class MockWebSocket {
 	static CONNECTING = 0;

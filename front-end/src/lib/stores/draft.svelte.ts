@@ -32,14 +32,14 @@ export class DraftState {
 	 * Get all completed picks (picks with a player selected)
 	 */
 	get completedPicks(): DraftPick[] {
-		return this.picks.filter((pick) => pick.player_id !== undefined);
+		return this.picks.filter((pick) => pick.player_id != null);
 	}
 
 	/**
 	 * Get all available picks (picks without a player selected)
 	 */
 	get availablePicks(): DraftPick[] {
-		return this.picks.filter((pick) => pick.player_id === undefined);
+		return this.picks.filter((pick) => pick.player_id == null);
 	}
 
 	/**
@@ -53,7 +53,7 @@ export class DraftState {
 	 * Get picks by team
 	 */
 	getPicksByTeam(teamId: string): DraftPick[] {
-		return this.picks.filter((pick) => pick.current_team_id === teamId);
+		return this.picks.filter((pick) => pick.team_id === teamId);
 	}
 
 	/**
