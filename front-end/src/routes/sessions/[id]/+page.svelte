@@ -98,7 +98,7 @@
 						<h3 class="text-sm font-semibold text-gray-600 mb-2">ON THE CLOCK</h3>
 						<div class="space-y-2">
 							<div class="text-lg font-bold text-gray-800">
-								Team {draftState.currentPick.current_team_id}
+								Team {draftState.currentPick.team_id}
 							</div>
 							<div class="text-sm text-gray-600">
 								Round {draftState.currentPick.round}, Pick {draftState.currentPick.pick_number}

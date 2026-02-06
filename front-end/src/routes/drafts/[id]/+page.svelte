@@ -179,14 +179,17 @@
 				</div>
 			</div>
 
+			{#if draft.created_at || draft.updated_at}
 			<div class="mt-4 pt-4 border-t border-gray-200">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-					<div>
-						<span class="text-gray-600">Created:</span>
-						<span class="font-medium text-gray-800 ml-2">
-							{new Date(draft.created_at).toLocaleString()}
-						</span>
-					</div>
+					{#if draft.created_at}
+						<div>
+							<span class="text-gray-600">Created:</span>
+							<span class="font-medium text-gray-800 ml-2">
+								{new Date(draft.created_at).toLocaleString()}
+							</span>
+						</div>
+					{/if}
 					{#if draft.updated_at}
 						<div>
 							<span class="text-gray-600">Last Updated:</span>
@@ -197,6 +200,7 @@
 					{/if}
 				</div>
 			</div>
+		{/if}
 		</div>
 
 		<!-- Draft Progress -->

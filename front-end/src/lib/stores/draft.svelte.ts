@@ -53,7 +53,7 @@ export class DraftState {
 	 * Get picks by team
 	 */
 	getPicksByTeam(teamId: string): DraftPick[] {
-		return this.picks.filter((pick) => pick.current_team_id === teamId);
+		return this.picks.filter((pick) => pick.team_id === teamId);
 	}
 
 	/**

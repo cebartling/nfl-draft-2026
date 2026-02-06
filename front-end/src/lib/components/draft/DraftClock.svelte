@@ -39,10 +39,10 @@
 	// Load team data when current pick changes
 	$effect(() => {
 		const currentPick = draftState.currentPick;
-		if (currentPick?.current_team_id) {
+		if (currentPick?.team_id) {
 			isLoading = true;
 			teamsApi
-				.get(currentPick.current_team_id)
+				.get(currentPick.team_id)
 				.then((t) => {
 					team = t;
 				})
