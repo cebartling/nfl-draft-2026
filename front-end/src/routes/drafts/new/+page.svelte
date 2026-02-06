@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { logger } from '$lib/utils/logger';
+	import { parseErrorMessage } from '$lib/utils/errors';
 	import { goto } from '$app/navigation';
 	import { draftsApi } from '$lib/api';
 	import Card from '$components/ui/Card.svelte';
@@ -13,8 +14,22 @@
 
 	let totalPicks = $derived(rounds * picksPerRound);
 
+	// Validation
+	let yearError = $derived(
+		year < 2025 || year > 2030 ? 'Year must be between 2025 and 2030' : null
+	);
+	let roundsError = $derived(
+		rounds < 1 || rounds > 7 ? 'Rounds must be between 1 and 7' : null
+	);
+	let picksError = $derived(
+		picksPerRound < 1 || picksPerRound > 32 ? 'Picks per round must be between 1 and 32' : null
+	);
+	let hasValidationErrors = $derived(!!yearError || !!roundsError || !!picksError);
+
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
+		if (hasValidationErrors) return;
+
 		error = null;
 		submitting = true;
 
@@ -26,7 +41,7 @@
 			});
 			await goto(`/drafts/${draft.id}`);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to create draft';
+			error = parseErrorMessage(e);
 			logger.error('Failed to create draft:', e);
 		} finally {
 			submitting = false;
@@ -80,9 +95,13 @@
 					max="2030"
 					required
 					disabled={submitting}
-					class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {yearError ? 'border-red-500' : 'border-gray-300'}"
 				/>
-				<p class="text-sm text-gray-500 mt-1">Select the year for this draft (2025-2030).</p>
+				{#if yearError}
+					<p class="text-sm text-red-600 mt-1">{yearError}</p>
+				{:else}
+					<p class="text-sm text-gray-500 mt-1">Select the year for this draft (2025-2030).</p>
+				{/if}
 			</div>
 
 			<!-- Rounds Field -->
@@ -98,9 +117,13 @@
 					max="7"
 					required
 					disabled={submitting}
-					class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {roundsError ? 'border-red-500' : 'border-gray-300'}"
 				/>
-				<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 7 rounds.</p>
+				{#if roundsError}
+					<p class="text-sm text-red-600 mt-1">{roundsError}</p>
+				{:else}
+					<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 7 rounds.</p>
+				{/if}
 			</div>
 
 			<!-- Picks per Round Field -->
@@ -116,9 +139,13 @@
 					max="32"
 					required
 					disabled={submitting}
-					class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {picksError ? 'border-red-500' : 'border-gray-300'}"
 				/>
-				<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 32 picks per round (one per team).</p>
+				{#if picksError}
+					<p class="text-sm text-red-600 mt-1">{picksError}</p>
+				{:else}
+					<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 32 picks per round (one per team).</p>
+				{/if}
 			</div>
 
 			<!-- Summary -->
@@ -154,7 +181,7 @@
 				</button>
 				<button
 					type="submit"
-					disabled={submitting}
+					disabled={submitting || hasValidationErrors}
 					class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
 				>
 					{#if submitting}

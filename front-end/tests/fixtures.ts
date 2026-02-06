@@ -257,3 +257,65 @@ export function createMockSession(
 		updated_at: '2026-01-01T00:00:00Z',
 	};
 }
+
+/**
+ * Helper function to create a complete draft with initialized picks
+ */
+export function createMockDraftWithPicks(
+	year: number = 2026,
+	rounds: number = 7,
+	picksPerRound: number = 32
+): { draft: Draft; picks: DraftPick[] } {
+	const draft: Draft = {
+		id: `draft-${year}`,
+		year,
+		status: 'NotStarted',
+		rounds,
+		picks_per_round: picksPerRound,
+		created_at: '2026-01-01T00:00:00Z',
+		updated_at: '2026-01-01T00:00:00Z',
+	};
+
+	const picks: DraftPick[] = [];
+	let overallPick = 1;
+
+	for (let round = 1; round <= rounds; round++) {
+		for (let pickNum = 1; pickNum <= picksPerRound; pickNum++) {
+			const teamIndex = (pickNum - 1) % mockTeams.length;
+			picks.push({
+				id: `pick-${year}-${overallPick.toString().padStart(4, '0')}`,
+				draft_id: draft.id,
+				round,
+				pick_number: pickNum,
+				overall_pick: overallPick,
+				team_id: mockTeams[teamIndex].id,
+				player_id: undefined,
+				picked_at: undefined,
+			});
+			overallPick++;
+		}
+	}
+
+	return { draft, picks };
+}
+
+/**
+ * Helper function to simulate picks being made
+ */
+export function simulatePicks(
+	picks: DraftPick[],
+	numPicksToMake: number
+): DraftPick[] {
+	return picks.map((pick, index) => {
+		if (index < numPicksToMake) {
+			const playerIndex = index % mockPlayers.length;
+			return {
+				...pick,
+				player_id: mockPlayers[playerIndex].id,
+				picked_at: new Date(Date.now() - (numPicksToMake - index) * 60000).toISOString(),
+			};
+		}
+		return pick;
+	});
+}
+

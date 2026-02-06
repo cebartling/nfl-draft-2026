@@ -19,6 +19,10 @@
 	let initializingPicks = $state(false);
 	let initializeError = $state<string | null>(null);
 
+	// Count only picks that have been made (have a player assigned)
+	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
+	let totalPicks = $derived(draft ? draft.rounds * draft.picks_per_round : 0);
+
 	onMount(async () => {
 		// Load draft details
 		try {
@@ -210,15 +214,20 @@
 					<div class="flex items-center justify-between">
 						<h2 class="text-xl font-bold text-gray-800">Draft Progress</h2>
 						<span class="text-sm text-gray-600">
-							{picks.length} / {draft.rounds * draft.picks_per_round} picks made
+							{completedPicks} / {totalPicks} picks made
 						</span>
 					</div>
 					<div class="w-full bg-gray-200 rounded-full h-2">
 						<div
 							class="bg-blue-600 h-2 rounded-full transition-all"
-							style={`width: ${(picks.length / (draft.rounds * draft.picks_per_round)) * 100}%`}
+							style={`width: ${totalPicks > 0 ? (completedPicks / totalPicks) * 100 : 0}%`}
 						></div>
 					</div>
+					{#if picks.length > 0 && completedPicks === 0}
+						<p class="text-xs text-gray-500 text-center">
+							{picks.length} picks initialized, ready to start drafting
+						</p>
+					{/if}
 				</div>
 			</Card>
 		{/if}
