@@ -133,7 +133,7 @@
 			<div class="flex items-start justify-between mb-4">
 				<div>
 					<h1 class="text-3xl font-bold text-gray-800 mb-2">
-						{draft.year} NFL Draft
+						{draft.name}
 					</h1>
 					<div class="flex items-center gap-2">
 						<Badge variant={getStatusVariant(draft.status)}>

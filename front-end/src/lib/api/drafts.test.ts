@@ -24,6 +24,7 @@ describe('draftsApi', () => {
 			const mockDrafts: Draft[] = [
 				{
 					id: '1',
+					name: '2026 Draft',
 					year: 2026,
 					status: 'NotStarted',
 					rounds: 7,
@@ -32,6 +33,7 @@ describe('draftsApi', () => {
 				},
 				{
 					id: '2',
+					name: '2025 Draft',
 					year: 2025,
 					status: 'Completed',
 					rounds: 7,
@@ -61,6 +63,7 @@ describe('draftsApi', () => {
 		it('should fetch a single draft by ID', async () => {
 			const mockDraft: Draft = {
 				id: '123',
+				name: 'Test Draft',
 				year: 2026,
 				status: 'NotStarted',
 				rounds: 7,
@@ -86,12 +89,14 @@ describe('draftsApi', () => {
 	describe('create', () => {
 		it('should create a new draft', async () => {
 			const newDraft = {
+				name: 'New Draft',
 				year: 2027,
 				rounds: 7,
 			};
 
 			const mockCreatedDraft: Draft = {
 				id: 'new-draft-id',
+				name: 'New Draft',
 				year: 2027,
 				status: 'NotStarted',
 				rounds: 7,
@@ -111,7 +116,7 @@ describe('draftsApi', () => {
 			mockPost.mockRejectedValueOnce(new Error('Draft for year 2026 already exists'));
 
 			await expect(
-				draftsApi.create({ year: 2026, rounds: 7 })
+				draftsApi.create({ name: 'Test Draft', year: 2026, rounds: 7 })
 			).rejects.toThrow('Draft for year 2026 already exists');
 		});
 	});

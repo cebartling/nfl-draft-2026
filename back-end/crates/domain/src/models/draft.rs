@@ -27,6 +27,7 @@ impl std::fmt::Display for DraftStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Draft {
     pub id: Uuid,
+    pub name: String,
     pub year: i32,
     pub status: DraftStatus,
     pub rounds: i32,
@@ -36,7 +37,8 @@ pub struct Draft {
 }
 
 impl Draft {
-    pub fn new(year: i32, rounds: i32, picks_per_round: i32) -> DomainResult<Self> {
+    pub fn new(name: String, year: i32, rounds: i32, picks_per_round: i32) -> DomainResult<Self> {
+        Self::validate_name(&name)?;
         Self::validate_year(year)?;
         Self::validate_rounds(rounds)?;
         Self::validate_picks_per_round(picks_per_round)?;
@@ -44,6 +46,7 @@ impl Draft {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            name,
             year,
             status: DraftStatus::NotStarted,
             rounds,
@@ -54,13 +57,15 @@ impl Draft {
     }
 
     /// Create a realistic draft with variable-length rounds (picks loaded from data)
-    pub fn new_realistic(year: i32, rounds: i32) -> DomainResult<Self> {
+    pub fn new_realistic(name: String, year: i32, rounds: i32) -> DomainResult<Self> {
+        Self::validate_name(&name)?;
         Self::validate_year(year)?;
         Self::validate_rounds(rounds)?;
 
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            name,
             year,
             status: DraftStatus::NotStarted,
             rounds,
@@ -146,6 +151,20 @@ impl Draft {
     /// Returns total picks for custom drafts, None for realistic drafts
     pub fn total_picks(&self) -> Option<i32> {
         self.picks_per_round.map(|ppr| self.rounds * ppr)
+    }
+
+    fn validate_name(name: &str) -> DomainResult<()> {
+        if name.trim().is_empty() {
+            return Err(DomainError::ValidationError(
+                "Draft name must not be empty".to_string(),
+            ));
+        }
+        if name.len() > 255 {
+            return Err(DomainError::ValidationError(
+                "Draft name must be 255 characters or fewer".to_string(),
+            ));
+        }
+        Ok(())
     }
 
     fn validate_year(year: i32) -> DomainResult<()> {
@@ -314,7 +333,8 @@ mod tests {
 
     #[test]
     fn test_create_draft() {
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
+        assert_eq!(draft.name, "Test Draft");
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.rounds, 7);
         assert_eq!(draft.picks_per_round, Some(32));
@@ -325,7 +345,8 @@ mod tests {
 
     #[test]
     fn test_create_realistic_draft() {
-        let draft = Draft::new_realistic(2026, 7).unwrap();
+        let draft = Draft::new_realistic("Realistic Draft".to_string(), 2026, 7).unwrap();
+        assert_eq!(draft.name, "Realistic Draft");
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.rounds, 7);
         assert_eq!(draft.picks_per_round, None);
@@ -335,35 +356,50 @@ mod tests {
     }
 
     #[test]
-    fn test_draft_year_validation() {
-        let result = Draft::new(1999, 7, 32);
+    fn test_draft_name_validation() {
+        let result = Draft::new("".to_string(), 2026, 7, 32);
         assert!(result.is_err());
 
-        let result = Draft::new(2101, 7, 32);
+        let result = Draft::new("   ".to_string(), 2026, 7, 32);
+        assert!(result.is_err());
+
+        let result = Draft::new("a".repeat(256), 2026, 7, 32);
+        assert!(result.is_err());
+
+        let result = Draft::new("a".repeat(255), 2026, 7, 32);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_draft_year_validation() {
+        let result = Draft::new("Test".to_string(), 1999, 7, 32);
+        assert!(result.is_err());
+
+        let result = Draft::new("Test".to_string(), 2101, 7, 32);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_draft_rounds_validation() {
-        let result = Draft::new(2026, 0, 32);
+        let result = Draft::new("Test".to_string(), 2026, 0, 32);
         assert!(result.is_err());
 
-        let result = Draft::new(2026, 21, 32);
+        let result = Draft::new("Test".to_string(), 2026, 21, 32);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_draft_picks_per_round_validation() {
-        let result = Draft::new(2026, 7, 0);
+        let result = Draft::new("Test".to_string(), 2026, 7, 0);
         assert!(result.is_err());
 
-        let result = Draft::new(2026, 7, 101);
+        let result = Draft::new("Test".to_string(), 2026, 7, 101);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_draft_status_transitions() {
-        let mut draft = Draft::new(2026, 7, 32).unwrap();
+        let mut draft = Draft::new("Test".to_string(), 2026, 7, 32).unwrap();
 
         // Start draft
         assert!(draft.start().is_ok());

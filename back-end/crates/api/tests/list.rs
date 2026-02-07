@@ -41,6 +41,7 @@ async fn test_list_endpoints() {
     client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": 7,
             "picks_per_round": 1

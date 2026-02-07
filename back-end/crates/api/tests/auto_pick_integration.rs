@@ -174,7 +174,7 @@ async fn test_auto_pick_bpa_heavy_strategy() {
 
     // Create team and draft
     let team = ctx.create_team("BPA").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     // Initialize picks
@@ -233,7 +233,7 @@ async fn test_auto_pick_need_heavy_strategy() {
 
     // Create team and draft
     let team = ctx.create_team("NED").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     // Initialize picks
@@ -288,7 +288,7 @@ async fn test_auto_pick_position_value_matters() {
     let ctx = TestContext::new().await;
 
     let team = ctx.create_team("POS").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
@@ -332,7 +332,7 @@ async fn test_auto_pick_concern_penalties() {
     let ctx = TestContext::new().await;
 
     let team = ctx.create_team("CLN").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
@@ -375,7 +375,7 @@ async fn test_auto_pick_with_combine_data() {
     let ctx = TestContext::new().await;
 
     let team = ctx.create_team("CMB").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
@@ -435,7 +435,7 @@ async fn test_auto_pick_no_available_players() {
     let ctx = TestContext::new().await;
 
     let _team = ctx.create_team("NOP").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
@@ -465,7 +465,7 @@ async fn test_auto_pick_without_scouting_reports() {
     let ctx = TestContext::new().await;
 
     let _team = ctx.create_team("NSC").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     ctx.draft_engine.initialize_picks(draft.id).await.unwrap();
@@ -495,7 +495,7 @@ async fn test_auto_pick_uses_default_strategy_if_none_exists() {
     let ctx = TestContext::new().await;
 
     let team = ctx.create_team("DEF").await;
-    let draft = Draft::new(2026, 7, 1).unwrap();
+    let draft = Draft::new("Test Draft".to_string(), 2026, 7, 1).unwrap();
     let draft = ctx.draft_repo.create(&draft).await.unwrap();
 
     ctx.draft_engine.initialize_picks(draft.id).await.unwrap();

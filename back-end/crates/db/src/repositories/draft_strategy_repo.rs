@@ -230,7 +230,7 @@ mod tests {
 
     async fn create_test_draft(pool: &PgPool, year: i32) -> Draft {
         let draft_repo = SqlxDraftRepository::new(pool.clone());
-        let draft = Draft::new(year, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), year, 7, 32).unwrap();
         draft_repo.create(&draft).await.unwrap()
     }
 

@@ -13,6 +13,7 @@ async fn test_create_draft_invalid_year() {
     let response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 1999,
             "rounds": 7,
             "picks_per_round": 32
@@ -33,6 +34,7 @@ async fn test_create_draft_invalid_rounds() {
     let response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": 0,
             "picks_per_round": 32
@@ -53,6 +55,7 @@ async fn test_create_draft_invalid_picks_per_round() {
     let response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": 7,
             "picks_per_round": 0
@@ -74,6 +77,7 @@ async fn test_create_multiple_drafts_same_year() {
     let first_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "First Draft",
             "year": 2026,
             "rounds": 7,
             "picks_per_round": 32
@@ -88,6 +92,7 @@ async fn test_create_multiple_drafts_same_year() {
     let second_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Second Draft",
             "year": 2026,
             "rounds": 7,
             "picks_per_round": 32

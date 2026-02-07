@@ -173,7 +173,7 @@
 						<div class="space-y-3">
 							<div class="flex items-start justify-between">
 								<h3 class="text-xl font-semibold text-gray-800">
-									{draft.year} Draft
+									{draft.name}
 								</h3>
 								<Badge variant={getStatusVariant(draft.status)}>
 									{draft.status}

@@ -15,6 +15,7 @@ async fn test_create_realistic_draft() {
     let response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Realistic Draft",
             "year": 2026,
             "rounds": 7
         }))
@@ -73,6 +74,7 @@ async fn test_initialize_picks_for_realistic_draft() {
     let draft_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Realistic Draft",
             "year": 2026,
             "rounds": 7
         }))

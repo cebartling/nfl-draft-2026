@@ -195,7 +195,7 @@ pub async fn load_draft_order(
                 existing
             } else {
                 // Create new realistic draft
-                let draft = Draft::new_realistic(year, rounds)
+                let draft = Draft::new_realistic(format!("{} NFL Draft", year), year, rounds)
                     .map_err(|e| anyhow::anyhow!("Failed to create draft: {}", e))?;
                 let created = draft_repo
                     .create(&draft)

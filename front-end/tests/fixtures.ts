@@ -142,6 +142,7 @@ export const mockPlayers: Player[] = [
  */
 export const mockDraft: Draft = {
 	id: '99999999-9999-9999-9999-999999999999',
+	name: '2026 NFL Draft',
 	year: 2026,
 	status: 'NotStarted',
 	rounds: 7,
@@ -269,6 +270,7 @@ export function createMockDraftWithPicks(
 ): { draft: Draft; picks: DraftPick[] } {
 	const draft: Draft = {
 		id: `draft-${year}`,
+		name: `${year} NFL Draft`,
 		year,
 		status: 'NotStarted',
 		rounds,

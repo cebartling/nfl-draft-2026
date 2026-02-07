@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO drafts (id, year, status, rounds, picks_per_round, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            RETURNING id, year, status, rounds, picks_per_round, created_at, updated_at\n            ",
+  "query": "\n            SELECT id, name, year, status, rounds, picks_per_round, created_at, updated_at\n            FROM drafts\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -10,47 +10,47 @@
       },
       {
         "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
         "name": "year",
         "type_info": "Int4"
       },
       {
-        "ordinal": 2,
+        "ordinal": 3,
         "name": "status",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "rounds",
         "type_info": "Int4"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "picks_per_round",
         "type_info": "Int4"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Int4",
-        "Varchar",
-        "Int4",
-        "Int4",
-        "Timestamptz",
-        "Timestamptz"
+        "Uuid"
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "82353aadea1e074f4227f354796a404c9463da7e5c79fb1a3aef34c8e2e8b114"
+  "hash": "6f7e5d77bf1022d64d7b43b3b0bb3919bf8358c61376c8b622bc567a243b2aac"
 }

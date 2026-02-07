@@ -42,6 +42,7 @@ async fn test_error_handling() {
     let first_draft = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "First Draft",
             "year": 2026,
             "rounds": 7,
             "picks_per_round": 32
@@ -55,6 +56,7 @@ async fn test_error_handling() {
     let second_draft = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Second Draft",
             "year": 2026,
             "rounds": 7,
             "picks_per_round": 32
