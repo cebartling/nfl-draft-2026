@@ -11,8 +11,9 @@ export const DraftSchema = z.object({
 	year: z.number(),
 	status: DraftStatusSchema,
 	rounds: z.number(),
-	picks_per_round: z.number(),
-	total_picks: z.number().optional(),
+	picks_per_round: z.number().nullable(),
+	total_picks: z.number().nullable(),
+	is_realistic: z.boolean().optional(),
 	created_at: z.string().optional(),
 	updated_at: z.string().optional(),
 });
@@ -28,6 +29,10 @@ export const DraftPickSchema = z.object({
 	team_id: UUIDSchema,
 	player_id: UUIDSchema.nullable().optional(),
 	picked_at: z.string().nullable().optional(),
+	original_team_id: UUIDSchema.nullable().optional(),
+	is_compensatory: z.boolean().optional(),
+	is_traded: z.boolean().optional(),
+	notes: z.string().nullable().optional(),
 });
 export type DraftPick = z.infer<typeof DraftPickSchema>;
 

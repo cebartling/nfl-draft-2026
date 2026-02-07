@@ -146,6 +146,7 @@ export const mockDraft: Draft = {
 	status: 'NotStarted',
 	rounds: 7,
 	picks_per_round: 32,
+	total_picks: null,
 	created_at: '2026-01-01T00:00:00Z',
 	updated_at: '2026-01-01T00:00:00Z',
 };
@@ -272,6 +273,7 @@ export function createMockDraftWithPicks(
 		status: 'NotStarted',
 		rounds,
 		picks_per_round: picksPerRound,
+		total_picks: null,
 		created_at: '2026-01-01T00:00:00Z',
 		updated_at: '2026-01-01T00:00:00Z',
 	};

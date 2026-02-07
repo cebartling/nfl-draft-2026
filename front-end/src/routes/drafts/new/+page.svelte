@@ -6,39 +6,21 @@
 	import Card from '$components/ui/Card.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 
-	let year = $state(2026);
-	let rounds = $state(7);
-	let picksPerRound = $state(32);
+	const year = 2026;
+	let rounds = $state(1);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
 
-	let totalPicks = $derived(rounds * picksPerRound);
-
-	// Validation
-	let yearError = $derived(
-		year < 2025 || year > 2030 ? 'Year must be between 2025 and 2030' : null
-	);
-	let roundsError = $derived(
-		rounds < 1 || rounds > 7 ? 'Rounds must be between 1 and 7' : null
-	);
-	let picksError = $derived(
-		picksPerRound < 1 || picksPerRound > 32 ? 'Picks per round must be between 1 and 32' : null
-	);
-	let hasValidationErrors = $derived(!!yearError || !!roundsError || !!picksError);
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
-		if (hasValidationErrors) return;
 
 		error = null;
 		submitting = true;
 
 		try {
-			const draft = await draftsApi.create({
-				year,
-				rounds,
-				picks_per_round: picksPerRound,
-			});
+			const draft = await draftsApi.create({ year, rounds });
+			await draftsApi.initializePicks(draft.id);
 			await goto(`/drafts/${draft.id}`);
 		} catch (e) {
 			error = parseErrorMessage(e);
@@ -82,70 +64,26 @@
 				</div>
 			{/if}
 
-			<!-- Year Field -->
-			<div>
-				<label for="year" class="block text-sm font-medium text-gray-700 mb-2">
-					Draft Year
-				</label>
-				<input
-					type="number"
-					id="year"
-					bind:value={year}
-					min="2025"
-					max="2030"
-					required
-					disabled={submitting}
-					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {yearError ? 'border-red-500' : 'border-gray-300'}"
-				/>
-				{#if yearError}
-					<p class="text-sm text-red-600 mt-1">{yearError}</p>
-				{:else}
-					<p class="text-sm text-gray-500 mt-1">Select the year for this draft (2025-2030).</p>
-				{/if}
-			</div>
-
 			<!-- Rounds Field -->
 			<div>
 				<label for="rounds" class="block text-sm font-medium text-gray-700 mb-2">
-					Number of Rounds
+					Number of Rounds: <span class="text-blue-600 font-bold">{rounds}</span>
 				</label>
 				<input
-					type="number"
+					type="range"
 					id="rounds"
 					bind:value={rounds}
 					min="1"
 					max="7"
-					required
+					step="1"
 					disabled={submitting}
-					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {roundsError ? 'border-red-500' : 'border-gray-300'}"
+					class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
 				/>
-				{#if roundsError}
-					<p class="text-sm text-red-600 mt-1">{roundsError}</p>
-				{:else}
-					<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 7 rounds.</p>
-				{/if}
-			</div>
-
-			<!-- Picks per Round Field -->
-			<div>
-				<label for="picksPerRound" class="block text-sm font-medium text-gray-700 mb-2">
-					Picks per Round
-				</label>
-				<input
-					type="number"
-					id="picksPerRound"
-					bind:value={picksPerRound}
-					min="1"
-					max="32"
-					required
-					disabled={submitting}
-					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {picksError ? 'border-red-500' : 'border-gray-300'}"
-				/>
-				{#if picksError}
-					<p class="text-sm text-red-600 mt-1">{picksError}</p>
-				{:else}
-					<p class="text-sm text-gray-500 mt-1">Standard NFL drafts have 32 picks per round (one per team).</p>
-				{/if}
+				<div class="flex justify-between text-xs text-gray-400 mt-1 px-0.5">
+					{#each [1, 2, 3, 4, 5, 6, 7] as n}
+						<span>{n}</span>
+					{/each}
+				</div>
 			</div>
 
 			<!-- Summary -->
@@ -161,8 +99,8 @@
 						<div class="text-xs text-gray-500">Rounds</div>
 					</div>
 					<div>
-						<div class="text-2xl font-bold text-blue-600">{totalPicks}</div>
-						<div class="text-xs text-gray-500">Total Picks</div>
+						<div class="text-lg font-bold text-blue-600">Realistic</div>
+						<div class="text-xs text-gray-500">Draft Order: Loaded from schedule</div>
 					</div>
 				</div>
 			</div>
@@ -181,7 +119,7 @@
 				</button>
 				<button
 					type="submit"
-					disabled={submitting || hasValidationErrors}
+					disabled={submitting}
 					class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
 				>
 					{#if submitting}

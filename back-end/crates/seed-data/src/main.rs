@@ -1,13 +1,16 @@
 use seed_data::{
-    loader, team_loader, team_need_loader, team_need_validator, team_season_loader,
-    team_season_validator, team_validator, validator,
+    draft_order_loader, draft_order_validator, loader, team_loader, team_need_loader,
+    team_need_validator, team_season_loader, team_season_validator, team_validator, validator,
 };
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use db::{
-    create_pool, repositories::SqlxPlayerRepository, repositories::SqlxTeamNeedRepository,
-    repositories::SqlxTeamRepository, repositories::SqlxTeamSeasonRepository,
+    create_pool,
+    repositories::{
+        SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository, SqlxTeamNeedRepository,
+        SqlxTeamRepository, SqlxTeamSeasonRepository,
+    },
 };
 use domain::repositories::PlayerRepository;
 use tracing_subscriber::EnvFilter;
@@ -44,6 +47,12 @@ enum EntityCommands {
     Seasons {
         #[command(subcommand)]
         action: SeasonActions,
+    },
+
+    /// Manage draft order data
+    DraftOrder {
+        #[command(subcommand)]
+        action: DraftOrderActions,
     },
 }
 
@@ -124,6 +133,34 @@ enum NeedActions {
 }
 
 #[derive(Subcommand)]
+enum DraftOrderActions {
+    /// Load draft order from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/draft_order_2026.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear draft order for a given year
+    Clear {
+        /// The draft year to clear
+        #[arg(short, long)]
+        year: i32,
+    },
+
+    /// Validate JSON file without loading
+    Validate {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/draft_order_2026.json")]
+        file: String,
+    },
+}
+
+#[derive(Subcommand)]
 enum SeasonActions {
     /// Load team seasons from JSON file into the database
     Load {
@@ -168,6 +205,7 @@ async fn main() -> Result<()> {
         EntityCommands::Teams { action } => handle_teams(action).await?,
         EntityCommands::Needs { action } => handle_needs(action).await?,
         EntityCommands::Seasons { action } => handle_seasons(action).await?,
+        EntityCommands::DraftOrder { action } => handle_draft_order(action).await?,
     }
 
     Ok(())
@@ -540,6 +578,126 @@ async fn handle_seasons(action: SeasonActions) -> Result<()> {
                 .await?;
 
             println!("Deleted {} team seasons", result.rows_affected());
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_draft_order(action: DraftOrderActions) -> Result<()> {
+    match action {
+        DraftOrderActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = draft_order_loader::parse_draft_order_file(&file)?;
+            println!(
+                "Loaded {} picks from file (draft year {})",
+                data.draft_order.len(),
+                data.meta.draft_year
+            );
+
+            let result = draft_order_validator::validate_draft_order_data(&data);
+            result.print_summary();
+
+            if !result.valid {
+                std::process::exit(1);
+            }
+        }
+
+        DraftOrderActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading draft order from: {}", file);
+            }
+
+            let data = draft_order_loader::parse_draft_order_file(&file)?;
+            println!(
+                "Parsed {} picks from file (draft year {})",
+                data.draft_order.len(),
+                data.meta.draft_year
+            );
+
+            // Validate first
+            let validation = draft_order_validator::validate_draft_order_data(&data);
+            validation.print_summary();
+
+            if !validation.valid {
+                println!("\nAborting load due to validation errors.");
+                std::process::exit(1);
+            }
+
+            if dry_run {
+                let stats = draft_order_loader::load_draft_order_dry_run(&data)?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let team_repo = SqlxTeamRepository::new(pool.clone());
+                let draft_repo = SqlxDraftRepository::new(pool.clone());
+                let pick_repo = SqlxDraftPickRepository::new(pool);
+
+                let stats = draft_order_loader::load_draft_order(
+                    &data,
+                    &team_repo,
+                    &draft_repo,
+                    &pick_repo,
+                )
+                .await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        DraftOrderActions::Clear { year } => {
+            println!("Clearing draft order for year {}", year);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+
+            // Find draft by year
+            let draft =
+                sqlx::query_scalar::<_, sqlx::types::Uuid>("SELECT id FROM drafts WHERE year = $1")
+                    .bind(year)
+                    .fetch_optional(&pool)
+                    .await?;
+
+            match draft {
+                Some(draft_id) => {
+                    // Count picks
+                    let pick_count: i64 =
+                        sqlx::query_scalar("SELECT COUNT(*) FROM draft_picks WHERE draft_id = $1")
+                            .bind(draft_id)
+                            .fetch_one(&pool)
+                            .await?;
+
+                    if pick_count == 0 {
+                        println!("No draft picks found for year {}", year);
+                        return Ok(());
+                    }
+
+                    println!("Found {} draft picks to delete", pick_count);
+
+                    // Delete picks
+                    let result = sqlx::query("DELETE FROM draft_picks WHERE draft_id = $1")
+                        .bind(draft_id)
+                        .execute(&pool)
+                        .await?;
+
+                    println!("Deleted {} draft picks", result.rows_affected());
+                }
+                None => {
+                    println!("No draft found for year {}", year);
+                }
+            }
         }
     }
 

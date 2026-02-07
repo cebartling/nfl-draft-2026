@@ -28,6 +28,7 @@ describe('draftsApi', () => {
 					status: 'NotStarted',
 					rounds: 7,
 					picks_per_round: 32,
+					total_picks: null,
 				},
 				{
 					id: '2',
@@ -35,6 +36,7 @@ describe('draftsApi', () => {
 					status: 'Completed',
 					rounds: 7,
 					picks_per_round: 32,
+					total_picks: null,
 				},
 			];
 
@@ -63,6 +65,7 @@ describe('draftsApi', () => {
 				status: 'NotStarted',
 				rounds: 7,
 				picks_per_round: 32,
+				total_picks: null,
 			};
 
 			mockGet.mockResolvedValueOnce(mockDraft);
@@ -85,7 +88,6 @@ describe('draftsApi', () => {
 			const newDraft = {
 				year: 2027,
 				rounds: 7,
-				picks_per_round: 32,
 			};
 
 			const mockCreatedDraft: Draft = {
@@ -93,7 +95,8 @@ describe('draftsApi', () => {
 				year: 2027,
 				status: 'NotStarted',
 				rounds: 7,
-				picks_per_round: 32,
+				picks_per_round: null,
+				total_picks: null,
 			};
 
 			mockPost.mockResolvedValueOnce(mockCreatedDraft);
@@ -108,7 +111,7 @@ describe('draftsApi', () => {
 			mockPost.mockRejectedValueOnce(new Error('Draft for year 2026 already exists'));
 
 			await expect(
-				draftsApi.create({ year: 2026, rounds: 7, picks_per_round: 32 })
+				draftsApi.create({ year: 2026, rounds: 7 })
 			).rejects.toThrow('Draft for year 2026 already exists');
 		});
 	});

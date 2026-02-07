@@ -41,16 +41,13 @@
 		}
 	}
 
+	let sortedDrafts = $derived([...drafts].sort((a, b) => b.year - a.year));
+
 	let filteredDrafts = $derived(() => {
 		if (filterStatus === 'all') {
-			return drafts;
+			return sortedDrafts;
 		}
-		return drafts.filter((d) => d.status === filterStatus);
-	});
-
-	$effect(() => {
-		// Sort drafts by year (most recent first)
-		drafts.sort((a, b) => b.year - a.year);
+		return sortedDrafts.filter((d) => d.status === filterStatus);
 	});
 </script>
 
@@ -189,13 +186,9 @@
 									<span class="font-medium">{draft.rounds}</span>
 								</div>
 								<div class="flex items-center justify-between">
-									<span>Picks per round:</span>
-									<span class="font-medium">{draft.picks_per_round}</span>
-								</div>
-								<div class="flex items-center justify-between">
 									<span>Total picks:</span>
 									<span class="font-medium">
-										{draft.rounds * draft.picks_per_round}
+										{draft.total_picks ?? 'Pending'}
 									</span>
 								</div>
 								{#if draft.created_at}

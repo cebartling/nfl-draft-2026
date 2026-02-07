@@ -16,12 +16,25 @@
 	let loading = $state(true);
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
-	let initializingPicks = $state(false);
-	let initializeError = $state<string | null>(null);
-
 	// Count only picks that have been made (have a player assigned)
 	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
-	let totalPicks = $derived(draft ? draft.rounds * draft.picks_per_round : 0);
+	let totalPicks = $derived(draft?.total_picks ?? picks.length);
+	// Count rounds where all picks in that round have been completed
+	let roundsCompleted = $derived(() => {
+		if (completedPicks === 0) return 0;
+		const roundPickCounts = new Map<number, { total: number; completed: number }>();
+		for (const p of picks) {
+			const entry = roundPickCounts.get(p.round) ?? { total: 0, completed: 0 };
+			entry.total++;
+			if (p.player_id != null) entry.completed++;
+			roundPickCounts.set(p.round, entry);
+		}
+		let count = 0;
+		for (const { total, completed } of roundPickCounts.values()) {
+			if (completed === total) count++;
+		}
+		return count;
+	});
 
 	onMount(async () => {
 		// Load draft details
@@ -67,18 +80,6 @@
 		await goto(`/sessions/${draft.id}`);
 	}
 
-	async function handleInitializePicks() {
-		initializeError = null;
-		initializingPicks = true;
-		try {
-			picks = await draftsApi.initializePicks(draftId);
-		} catch (e) {
-			initializeError = e instanceof Error ? e.message : 'Failed to initialize picks';
-			logger.error('Failed to initialize picks:', e);
-		} finally {
-			initializingPicks = false;
-		}
-	}
 </script>
 
 <div class="space-y-6">
@@ -162,7 +163,7 @@
 			</div>
 
 			<!-- Draft Details Grid -->
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+			<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 				<div>
 					<div class="text-sm text-gray-600">Year</div>
 					<div class="text-lg font-semibold text-gray-800">{draft.year}</div>
@@ -172,13 +173,9 @@
 					<div class="text-lg font-semibold text-gray-800">{draft.rounds}</div>
 				</div>
 				<div>
-					<div class="text-sm text-gray-600">Picks per Round</div>
-					<div class="text-lg font-semibold text-gray-800">{draft.picks_per_round}</div>
-				</div>
-				<div>
 					<div class="text-sm text-gray-600">Total Picks</div>
 					<div class="text-lg font-semibold text-gray-800">
-						{draft.rounds * draft.picks_per_round}
+						{totalPicks}
 					</div>
 				</div>
 			</div>
@@ -241,29 +238,7 @@
 				</div>
 			{:else if picks.length === 0}
 				<div class="text-center py-8 text-gray-600">
-					<p>No picks have been made yet.</p>
-					{#if draft.status === 'NotStarted'}
-						<p class="text-sm mt-2 mb-4">Initialize picks based on team draft order, then start the draft.</p>
-						{#if initializeError}
-							<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-left max-w-md mx-auto">
-								<p class="font-medium">Error initializing picks</p>
-								<p class="text-sm">{initializeError}</p>
-							</div>
-						{/if}
-						<button
-							type="button"
-							onclick={handleInitializePicks}
-							disabled={initializingPicks}
-							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-						>
-							{#if initializingPicks}
-								<LoadingSpinner size="sm" />
-								Initializing...
-							{:else}
-								Initialize Draft Picks
-							{/if}
-						</button>
-					{/if}
+					<p>No picks available for this draft.</p>
 				</div>
 			{:else}
 				<DraftBoard {picks} />
@@ -276,7 +251,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-blue-600">
-							{Math.ceil(picks.length / draft.picks_per_round)}
+							{roundsCompleted()}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Rounds Completed</div>
 					</div>
@@ -284,7 +259,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-green-600">
-							{picks.length}
+							{completedPicks}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Picks Made</div>
 					</div>
@@ -292,7 +267,7 @@
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-gray-600">
-							{draft.rounds * draft.picks_per_round - picks.length}
+							{totalPicks - completedPicks}
 						</div>
 						<div class="text-sm text-gray-600 mt-1">Picks Remaining</div>
 					</div>

@@ -48,22 +48,20 @@ impl DraftEngine {
         self
     }
 
-    /// Create a new draft
+    /// Create a new custom draft with fixed picks per round
     pub async fn create_draft(
         &self,
         year: i32,
         rounds: i32,
         picks_per_round: i32,
     ) -> DomainResult<Draft> {
-        // Check if draft already exists for this year
-        if let Some(_existing) = self.draft_repo.find_by_year(year).await? {
-            return Err(DomainError::DuplicateEntry(format!(
-                "Draft for year {} already exists",
-                year
-            )));
-        }
-
         let draft = Draft::new(year, rounds, picks_per_round)?;
+        self.draft_repo.create(&draft).await
+    }
+
+    /// Create a realistic draft with variable-length rounds (picks loaded from data)
+    pub async fn create_realistic_draft(&self, year: i32, rounds: i32) -> DomainResult<Draft> {
+        let draft = Draft::new_realistic(year, rounds)?;
         self.draft_repo.create(&draft).await
     }
 
@@ -95,11 +93,15 @@ impl DraftEngine {
             ));
         }
 
+        let picks_per_round = draft
+            .picks_per_round
+            .unwrap_or(teams_in_order.len() as i32);
+
         // Validate picks_per_round matches team count
-        if teams_in_order.len() != draft.picks_per_round as usize {
+        if teams_in_order.len() != picks_per_round as usize {
             return Err(DomainError::ValidationError(format!(
                 "Draft configured for {} picks per round but {} teams exist",
-                draft.picks_per_round,
+                picks_per_round,
                 teams_in_order.len()
             )));
         }
@@ -304,8 +306,8 @@ impl DraftEngine {
         self.draft_repo.find_by_id(draft_id).await
     }
 
-    /// Get draft by year
-    pub async fn get_draft_by_year(&self, year: i32) -> DomainResult<Option<Draft>> {
+    /// Get drafts by year
+    pub async fn get_drafts_by_year(&self, year: i32) -> DomainResult<Vec<Draft>> {
         self.draft_repo.find_by_year(year).await
     }
 
@@ -368,7 +370,7 @@ mod tests {
         impl DraftRepository for DraftRepo {
             async fn create(&self, draft: &Draft) -> DomainResult<Draft>;
             async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<Draft>>;
-            async fn find_by_year(&self, year: i32) -> DomainResult<Option<Draft>>;
+            async fn find_by_year(&self, year: i32) -> DomainResult<Vec<Draft>>;
             async fn find_all(&self) -> DomainResult<Vec<Draft>>;
             async fn find_by_status(&self, status: crate::models::DraftStatus) -> DomainResult<Vec<Draft>>;
             async fn update(&self, draft: &Draft) -> DomainResult<Draft>;
@@ -425,10 +427,6 @@ mod tests {
     #[tokio::test]
     async fn test_create_draft() {
         let mut draft_repo = MockDraftRepo::new();
-        draft_repo
-            .expect_find_by_year()
-            .with(eq(2026))
-            .returning(|_| Ok(None));
 
         draft_repo.expect_create().returning(|d| Ok(d.clone()));
 
@@ -445,18 +443,14 @@ mod tests {
         let draft = result.unwrap();
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.rounds, 7);
-        assert_eq!(draft.picks_per_round, 32);
+        assert_eq!(draft.picks_per_round, Some(32));
     }
 
     #[tokio::test]
-    async fn test_create_duplicate_draft() {
-        let existing_draft = Draft::new(2026, 7, 32).unwrap();
-
+    async fn test_create_multiple_drafts_same_year() {
         let mut draft_repo = MockDraftRepo::new();
-        draft_repo
-            .expect_find_by_year()
-            .with(eq(2026))
-            .returning(move |_| Ok(Some(existing_draft.clone())));
+
+        draft_repo.expect_create().returning(|d| Ok(d.clone()));
 
         let engine = DraftEngine::new(
             Arc::new(draft_repo),
@@ -465,8 +459,11 @@ mod tests {
             Arc::new(MockPlayerRepo::new()),
         );
 
-        let result = engine.create_draft(2026, 7, 32).await;
-        assert!(result.is_err());
+        let result1 = engine.create_draft(2026, 7, 32).await;
+        assert!(result1.is_ok());
+
+        let result2 = engine.create_draft(2026, 7, 32).await;
+        assert!(result2.is_ok());
     }
 
     #[tokio::test]

@@ -18,16 +18,18 @@ COPY crates/domain/Cargo.toml ./crates/domain/
 COPY crates/db/Cargo.toml ./crates/db/
 COPY crates/websocket/Cargo.toml ./crates/websocket/
 COPY crates/seed-data/Cargo.toml ./crates/seed-data/
+COPY crates/draft-order-scraper/Cargo.toml ./crates/draft-order-scraper/
 
 # Build dependencies only (this layer will be cached)
 # Create dummy source files to compile dependencies
-RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src && \
+RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src crates/draft-order-scraper/src && \
     echo "fn main() {}" > crates/api/src/main.rs && \
     echo "pub fn dummy() {}" > crates/domain/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/db/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/websocket/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/seed-data/src/lib.rs && \
     echo "fn main() {}" > crates/seed-data/src/main.rs && \
+    echo "fn main() {}" > crates/draft-order-scraper/src/main.rs && \
     cargo build --release && \
     rm -rf crates/*/src
 
@@ -48,6 +50,7 @@ RUN touch crates/api/src/main.rs && \
     touch crates/websocket/src/lib.rs && \
     touch crates/seed-data/src/lib.rs && \
     touch crates/seed-data/src/main.rs && \
+    touch crates/draft-order-scraper/src/main.rs && \
     cargo build --release -p api
 
 # Stage 2: Create the runtime image

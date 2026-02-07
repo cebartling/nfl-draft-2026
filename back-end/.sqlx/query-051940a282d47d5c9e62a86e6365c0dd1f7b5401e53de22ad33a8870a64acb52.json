@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, year, status, rounds, picks_per_round, created_at, updated_at\n            FROM drafts\n            WHERE year = $1\n            ",
+  "query": "\n            SELECT id, year, status, rounds, picks_per_round, created_at, updated_at\n            FROM drafts\n            WHERE year = $1\n            ORDER BY created_at DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -49,10 +49,10 @@
       false,
       false,
       false,
-      false,
+      true,
       false,
       false
     ]
   },
-  "hash": "af5774b9c2f63dc320456721dd17c03aa34cb0c85c1ead8ffccbdf26cdc33b57"
+  "hash": "051940a282d47d5c9e62a86e6365c0dd1f7b5401e53de22ad33a8870a64acb52"
 }

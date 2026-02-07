@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO teams (id, name, abbreviation, city, conference, division) VALUES ($1, 'Trade Team A', 'TTA', 'Trade City A', 'AFC', 'AFC East')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cf2ce8741c05fda0a8832f95224a1cc9d936237b4deb6d25ed5998fd06e1e6b9"
+}

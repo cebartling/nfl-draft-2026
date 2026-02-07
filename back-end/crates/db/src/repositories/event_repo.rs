@@ -185,7 +185,7 @@ mod tests {
                 % 100) as i32;
 
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32::INTEGER)",
             draft_id,
             draft_year
         )
@@ -241,7 +241,7 @@ mod tests {
                 % 100) as i32;
 
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32::INTEGER)",
             draft_id,
             draft_year
         )
@@ -305,7 +305,7 @@ mod tests {
                 % 100) as i32;
 
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32::INTEGER)",
             draft_id,
             draft_year
         )

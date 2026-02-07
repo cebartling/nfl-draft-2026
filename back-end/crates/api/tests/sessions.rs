@@ -12,7 +12,7 @@ async fn test_create_session() {
     // Create a draft first
     let draft_id = Uuid::new_v4();
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -76,7 +76,7 @@ async fn test_get_session() {
     let session_id = Uuid::new_v4();
 
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -119,7 +119,7 @@ async fn test_start_session() {
     let session_id = Uuid::new_v4();
 
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -180,7 +180,7 @@ async fn test_pause_session() {
     let session_id = Uuid::new_v4();
 
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -240,7 +240,7 @@ async fn test_get_session_events() {
     let session_id = Uuid::new_v4();
 
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -303,7 +303,7 @@ async fn test_session_lifecycle() {
     // Create a draft
     let draft_id = Uuid::new_v4();
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -371,7 +371,7 @@ async fn test_create_session_with_default_chart() {
     // Create a draft first
     let draft_id = Uuid::new_v4();
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -421,7 +421,7 @@ async fn test_create_session_with_explicit_chart() {
     // Create a draft first
     let draft_id = Uuid::new_v4();
     sqlx::query!(
-        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32)",
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
         draft_id
     )
     .execute(&pool)
@@ -487,7 +487,7 @@ async fn test_create_session_with_all_chart_types() {
         let draft_id = Uuid::new_v4();
         let year = 2026 + idx as i32;
         sqlx::query!(
-            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32)",
+            "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, $2, 'NotStarted', 7, 32::INTEGER)",
             draft_id,
             year
         )

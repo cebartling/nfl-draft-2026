@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, original_team_id, is_compensatory, notes)\n           VALUES ($1, $2, 1, 1, 1, $3, $3, false, NULL)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6ee7fd021d7a4a01dcffbd38c2ff7d546b23b922e48fbc7da559d2b9f05550c3"
+}

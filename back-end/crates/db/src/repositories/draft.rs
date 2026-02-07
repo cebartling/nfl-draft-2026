@@ -42,17 +42,7 @@ impl DraftRepository for SqlxDraftRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| {
-            if let sqlx::Error::Database(db_err) = &e {
-                if db_err.is_unique_violation() {
-                    return DbError::DuplicateEntry(format!(
-                        "Draft for year {} already exists",
-                        draft_db.year
-                    ));
-                }
-            }
-            DbError::DatabaseError(e)
-        })?;
+        .map_err(DbError::DatabaseError)?;
 
         result.to_domain().map_err(Into::into)
     }
@@ -77,24 +67,26 @@ impl DraftRepository for SqlxDraftRepository {
         }
     }
 
-    async fn find_by_year(&self, year: i32) -> DomainResult<Option<Draft>> {
-        let result = sqlx::query_as!(
+    async fn find_by_year(&self, year: i32) -> DomainResult<Vec<Draft>> {
+        let results = sqlx::query_as!(
             DraftDb,
             r#"
             SELECT id, year, status, rounds, picks_per_round, created_at, updated_at
             FROM drafts
             WHERE year = $1
+            ORDER BY created_at DESC
             "#,
             year
         )
-        .fetch_optional(&self.pool)
+        .fetch_all(&self.pool)
         .await
         .map_err(DbError::DatabaseError)?;
 
-        match result {
-            Some(draft_db) => Ok(Some(draft_db.to_domain()?)),
-            None => Ok(None),
-        }
+        results
+            .into_iter()
+            .map(|db| db.to_domain())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     async fn find_all(&self) -> DomainResult<Vec<Draft>> {
@@ -201,9 +193,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let result = sqlx::query_as!(
             DraftPickDb,
             r#"
-            INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             "#,
             pick_db.id,
             pick_db.draft_id,
@@ -213,6 +205,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             pick_db.team_id,
             pick_db.player_id,
             pick_db.picked_at,
+            pick_db.original_team_id,
+            pick_db.is_compensatory,
+            pick_db.notes,
             pick_db.created_at,
             pick_db.updated_at
         )
@@ -243,9 +238,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             let result = sqlx::query_as!(
                 DraftPickDb,
                 r#"
-                INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+                INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
                 "#,
                 pick_db.id,
                 pick_db.draft_id,
@@ -255,6 +250,9 @@ impl DraftPickRepository for SqlxDraftPickRepository {
                 pick_db.team_id,
                 pick_db.player_id,
                 pick_db.picked_at,
+                pick_db.original_team_id,
+                pick_db.is_compensatory,
+                pick_db.notes,
                 pick_db.created_at,
                 pick_db.updated_at
             )
@@ -274,7 +272,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let result = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE id = $1
             "#,
@@ -294,7 +292,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1
             ORDER BY overall_pick ASC
@@ -320,7 +318,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND round = $2
             ORDER BY pick_number ASC
@@ -347,7 +345,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND team_id = $2
             ORDER BY overall_pick ASC
@@ -370,7 +368,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let result = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND player_id IS NULL
             ORDER BY overall_pick ASC
@@ -392,7 +390,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
         let results = sqlx::query_as!(
             DraftPickDb,
             r#"
-            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             FROM draft_picks
             WHERE draft_id = $1 AND player_id IS NULL
             ORDER BY overall_pick ASC
@@ -419,7 +417,7 @@ impl DraftPickRepository for SqlxDraftPickRepository {
             UPDATE draft_picks
             SET player_id = $2, picked_at = $3, updated_at = $4
             WHERE id = $1
-            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at
+            RETURNING id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at
             "#,
             pick_db.id,
             pick_db.player_id,
@@ -546,12 +544,12 @@ mod tests {
         assert!(result.is_ok());
 
         let found = result.unwrap();
-        assert!(found.is_some());
-        assert_eq!(found.unwrap().year, 2026);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].year, 2026);
     }
 
     #[tokio::test]
-    async fn test_duplicate_draft_year() {
+    async fn test_multiple_drafts_same_year() {
         let pool = setup_test_pool().await;
         cleanup(&pool).await;
 
@@ -561,7 +559,10 @@ mod tests {
 
         let draft2 = Draft::new(2026, 7, 32).unwrap();
         let result = repo.create(&draft2).await;
-        assert!(result.is_err());
+        assert!(result.is_ok());
+
+        let drafts = repo.find_by_year(2026).await.unwrap();
+        assert_eq!(drafts.len(), 2);
     }
 
     #[tokio::test]

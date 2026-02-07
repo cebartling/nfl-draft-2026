@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, created_at, updated_at\n            FROM draft_picks\n            WHERE id = $1\n            ",
+  "query": "\n            SELECT id, draft_id, round, pick_number, overall_pick, team_id, player_id, picked_at, original_team_id, is_compensatory, notes, created_at, updated_at\n            FROM draft_picks\n            WHERE draft_id = $1\n            ORDER BY overall_pick ASC\n            ",
   "describe": {
     "columns": [
       {
@@ -45,11 +45,26 @@
       },
       {
         "ordinal": 8,
+        "name": "original_team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_compensatory",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 12,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -68,9 +83,12 @@
       false,
       true,
       true,
+      true,
+      false,
+      true,
       false,
       false
     ]
   },
-  "hash": "40732e144bc2df51ff4e063343b46f91c8eccbe13c33844ab6759a7ab46d319e"
+  "hash": "f9220a44d33c13cb6d5b83ab4c368f568f127e895c928ea2480c758c92319dc9"
 }

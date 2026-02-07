@@ -20,3 +20,11 @@ echo "Team needs seeding complete."
 echo "Seeding team season records..."
 /app/seed-data seasons load --file /app/data/team_seasons_2025.json
 echo "Team seasons seeding complete."
+
+echo "Validating draft order data..."
+/app/seed-data draft-order validate --file /app/data/draft_order_2026.json
+echo "Draft order validation complete."
+
+echo "Seeding draft order..."
+/app/seed-data draft-order load --file /app/data/draft_order_2026.json
+echo "Draft order seeding complete."
