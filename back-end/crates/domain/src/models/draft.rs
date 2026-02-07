@@ -159,7 +159,7 @@ impl Draft {
                 "Draft name must not be empty".to_string(),
             ));
         }
-        if name.len() > 255 {
+        if name.chars().count() > 255 {
             return Err(DomainError::ValidationError(
                 "Draft name must be 255 characters or fewer".to_string(),
             ));
