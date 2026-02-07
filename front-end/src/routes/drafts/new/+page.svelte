@@ -6,19 +6,16 @@
 	import Card from '$components/ui/Card.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 
-	let year = $state(2026);
+	const year = 2026;
 	let rounds = $state(7);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
 
 	// Validation
-	let yearError = $derived(
-		year < 2025 || year > 2030 ? 'Year must be between 2025 and 2030' : null
-	);
 	let roundsError = $derived(
 		rounds < 1 || rounds > 7 ? 'Rounds must be between 1 and 7' : null
 	);
-	let hasValidationErrors = $derived(!!yearError || !!roundsError);
+	let hasValidationErrors = $derived(!!roundsError);
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
@@ -71,28 +68,6 @@
 					<p class="text-sm">{error}</p>
 				</div>
 			{/if}
-
-			<!-- Year Field -->
-			<div>
-				<label for="year" class="block text-sm font-medium text-gray-700 mb-2">
-					Draft Year
-				</label>
-				<input
-					type="number"
-					id="year"
-					bind:value={year}
-					min="2025"
-					max="2030"
-					required
-					disabled={submitting}
-					class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed {yearError ? 'border-red-500' : 'border-gray-300'}"
-				/>
-				{#if yearError}
-					<p class="text-sm text-red-600 mt-1">{yearError}</p>
-				{:else}
-					<p class="text-sm text-gray-500 mt-1">Select the year for this draft (2025-2030).</p>
-				{/if}
-			</div>
 
 			<!-- Rounds Field -->
 			<div>
