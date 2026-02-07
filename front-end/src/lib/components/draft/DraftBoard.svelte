@@ -16,6 +16,7 @@
 	let players = $state<Map<string, Player>>(new Map());
 	let isLoading = $state(false);
 	let collapsedRounds = $state<Set<number>>(new Set());
+	let initializedCollapse = false;
 
 	function toggleRound(round: number) {
 		const next = new Set(collapsedRounds);
@@ -46,6 +47,14 @@
 			.map(Number)
 			.sort((a, b) => a - b)
 	);
+
+	// Collapse all rounds except round 1 on initial load
+	$effect(() => {
+		if (rounds.length > 0 && !initializedCollapse) {
+			collapsedRounds = new Set(rounds.filter((r) => r !== 1));
+			initializedCollapse = true;
+		}
+	});
 
 	// Load teams and players when picks change
 	$effect(() => {
