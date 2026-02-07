@@ -230,20 +230,17 @@
 		{/if}
 
 		<!-- Draft Board -->
-		<div class="bg-white rounded-lg shadow p-6">
-			<h2 class="text-2xl font-bold text-gray-800 mb-4">Draft Board</h2>
-			{#if picksLoading}
-				<div class="flex justify-center py-8">
-					<LoadingSpinner />
-				</div>
-			{:else if picks.length === 0}
-				<div class="text-center py-8 text-gray-600">
-					<p>No picks available for this draft.</p>
-				</div>
-			{:else}
-				<DraftBoard {picks} />
-			{/if}
-		</div>
+		{#if picksLoading}
+			<div class="flex justify-center py-8">
+				<LoadingSpinner />
+			</div>
+		{:else if picks.length === 0}
+			<div class="text-center py-8 text-gray-600">
+				<p>No picks available for this draft.</p>
+			</div>
+		{:else}
+			<DraftBoard {picks} />
+		{/if}
 
 		<!-- Draft Statistics -->
 		{#if picks.length > 0}

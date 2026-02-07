@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Badge } from '$components/ui';
 	import type { DraftPick, Player, Team } from '$types';
+	import { getTeamLogoPath } from '$lib/utils/logo';
 	import dayjs from 'dayjs';
 
 	interface Props {
@@ -11,6 +12,7 @@
 	}
 
 	let { pick, player, team, highlight = false }: Props = $props();
+	let logoError = $state(false);
 </script>
 
 <div
@@ -47,13 +49,22 @@
 	</div>
 
 	<div class="space-y-2">
-		<div>
-			<p class="text-sm font-medium text-gray-600">Team</p>
-			<p class="text-base font-semibold text-gray-900">
-				{team.abbreviation}
-			</p>
+		<div class="flex items-center gap-2">
+			{#if !logoError}
+				<img
+					src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+					alt="{team.abbreviation} logo"
+					class="w-8 h-8 object-contain"
+					onerror={() => { logoError = true; }}
+				/>
+			{/if}
+			<div>
+				<p class="text-base font-semibold text-gray-900">
+					{team.abbreviation}
+				</p>
+			</div>
 			{#if pick.notes}
-				<p class="text-xs text-gray-500 italic">{pick.notes}</p>
+				<p class="text-xs text-gray-500 italic ml-auto">{pick.notes}</p>
 			{/if}
 		</div>
 
