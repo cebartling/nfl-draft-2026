@@ -20,6 +20,7 @@
 
 		try {
 			const draft = await draftsApi.create({ year, rounds });
+			await draftsApi.initializePicks(draft.id);
 			await goto(`/drafts/${draft.id}`);
 		} catch (e) {
 			error = parseErrorMessage(e);

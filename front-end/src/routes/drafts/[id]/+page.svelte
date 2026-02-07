@@ -16,9 +16,6 @@
 	let loading = $state(true);
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
-	let initializingPicks = $state(false);
-	let initializeError = $state<string | null>(null);
-
 	// Count only picks that have been made (have a player assigned)
 	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
 	let totalPicks = $derived(draft?.total_picks ?? picks.length);
@@ -83,18 +80,6 @@
 		await goto(`/sessions/${draft.id}`);
 	}
 
-	async function handleInitializePicks() {
-		initializeError = null;
-		initializingPicks = true;
-		try {
-			picks = await draftsApi.initializePicks(draftId);
-		} catch (e) {
-			initializeError = e instanceof Error ? e.message : 'Failed to initialize picks';
-			logger.error('Failed to initialize picks:', e);
-		} finally {
-			initializingPicks = false;
-		}
-	}
 </script>
 
 <div class="space-y-6">
@@ -253,29 +238,7 @@
 				</div>
 			{:else if picks.length === 0}
 				<div class="text-center py-8 text-gray-600">
-					<p>No picks have been made yet.</p>
-					{#if draft.status === 'NotStarted'}
-						<p class="text-sm mt-2 mb-4">Initialize picks based on team draft order, then start the draft.</p>
-						{#if initializeError}
-							<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-left max-w-md mx-auto">
-								<p class="font-medium">Error initializing picks</p>
-								<p class="text-sm">{initializeError}</p>
-							</div>
-						{/if}
-						<button
-							type="button"
-							onclick={handleInitializePicks}
-							disabled={initializingPicks}
-							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-						>
-							{#if initializingPicks}
-								<LoadingSpinner size="sm" />
-								Initializing...
-							{:else}
-								Initialize Draft Picks
-							{/if}
-						</button>
-					{/if}
+					<p>No picks available for this draft.</p>
 				</div>
 			{:else}
 				<DraftBoard {picks} />
