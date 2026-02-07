@@ -106,6 +106,8 @@
 				<button
 					type="button"
 					class="flex items-center space-x-3 mb-4 cursor-pointer group"
+					aria-expanded={!collapsedRounds.has(round)}
+					aria-controls="round-{round}-picks"
 					onclick={() => toggleRound(round)}
 				>
 					<svg
@@ -124,7 +126,7 @@
 					</span>
 				</button>
 				{#if !collapsedRounds.has(round)}
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+					<div id="round-{round}-picks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 						{#each picksByRound[round] as pick (pick.id)}
 							{@const team = teams.get(pick.team_id)}
 							{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
