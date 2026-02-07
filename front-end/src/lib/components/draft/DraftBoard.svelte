@@ -16,7 +16,7 @@
 	let players = $state<Map<string, Player>>(new Map());
 	let isLoading = $state(false);
 	let collapsedRounds = $state<Set<number>>(new Set());
-	let initializedCollapse = false;
+	let initializedCollapse = $state(false);
 
 	function toggleRound(round: number) {
 		const next = new Set(collapsedRounds);
