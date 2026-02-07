@@ -47,7 +47,7 @@ async fn test_create_realistic_draft() {
 }
 
 #[tokio::test]
-async fn test_initialize_picks_fails_for_realistic_draft() {
+async fn test_initialize_picks_for_realistic_draft() {
     let (base_url, pool) = common::spawn_app().await;
     let client = common::create_client();
 
@@ -85,7 +85,7 @@ async fn test_initialize_picks_fails_for_realistic_draft() {
     let draft: serde_json::Value = draft_response.json().await.unwrap();
     let draft_id = draft["id"].as_str().unwrap();
 
-    // Try to initialize picks → should fail with 400
+    // Initialize picks → should succeed with one pick per team per round
     let init_response = client
         .post(&format!(
             "{}/api/v1/drafts/{}/initialize",
@@ -96,17 +96,9 @@ async fn test_initialize_picks_fails_for_realistic_draft() {
         .await
         .expect("Failed to send initialize request");
 
-    assert_eq!(init_response.status(), 400);
+    assert_eq!(init_response.status(), 201);
 
-    let error_body: serde_json::Value = init_response.json().await.unwrap();
-    let error_msg = error_body["error"].as_str().unwrap_or("");
-    assert!(
-        error_msg.to_lowercase().contains("realistic"),
-        "Error message should mention 'realistic', got: {}",
-        error_msg
-    );
-
-    // Verify no picks in database
+    // Verify picks created: 2 teams * 7 rounds = 14 picks
     let db_pick_count = sqlx::query!(
         "SELECT COUNT(*) as count FROM draft_picks WHERE draft_id = $1",
         Uuid::parse_str(draft_id).unwrap()
@@ -114,7 +106,7 @@ async fn test_initialize_picks_fails_for_realistic_draft() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(db_pick_count.count.unwrap(), 0);
+    assert_eq!(db_pick_count.count.unwrap(), 14);
 }
 
 #[tokio::test]

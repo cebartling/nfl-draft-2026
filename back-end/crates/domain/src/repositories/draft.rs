@@ -16,8 +16,8 @@ pub trait DraftRepository: Send + Sync {
     /// Find a draft by ID
     async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<Draft>>;
 
-    /// Find a draft by year
-    async fn find_by_year(&self, year: i32) -> DomainResult<Option<Draft>>;
+    /// Find drafts by year
+    async fn find_by_year(&self, year: i32) -> DomainResult<Vec<Draft>>;
 
     /// Get all drafts
     async fn find_all(&self) -> DomainResult<Vec<Draft>>;

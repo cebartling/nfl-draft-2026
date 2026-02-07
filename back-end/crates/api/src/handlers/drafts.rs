@@ -91,8 +91,7 @@ pub struct MakePickRequest {
     request_body = CreateDraftRequest,
     responses(
         (status = 201, description = "Draft created successfully", body = DraftResponse),
-        (status = 400, description = "Invalid request"),
-        (status = 409, description = "Draft for this year already exists")
+        (status = 400, description = "Invalid request")
     ),
     tag = "drafts"
 )]

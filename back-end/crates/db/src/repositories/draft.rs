@@ -42,17 +42,7 @@ impl DraftRepository for SqlxDraftRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| {
-            if let sqlx::Error::Database(db_err) = &e {
-                if db_err.is_unique_violation() {
-                    return DbError::DuplicateEntry(format!(
-                        "Draft for year {} already exists",
-                        draft_db.year
-                    ));
-                }
-            }
-            DbError::DatabaseError(e)
-        })?;
+        .map_err(DbError::DatabaseError)?;
 
         result.to_domain().map_err(Into::into)
     }
@@ -77,24 +67,26 @@ impl DraftRepository for SqlxDraftRepository {
         }
     }
 
-    async fn find_by_year(&self, year: i32) -> DomainResult<Option<Draft>> {
-        let result = sqlx::query_as!(
+    async fn find_by_year(&self, year: i32) -> DomainResult<Vec<Draft>> {
+        let results = sqlx::query_as!(
             DraftDb,
             r#"
             SELECT id, year, status, rounds, picks_per_round, created_at, updated_at
             FROM drafts
             WHERE year = $1
+            ORDER BY created_at DESC
             "#,
             year
         )
-        .fetch_optional(&self.pool)
+        .fetch_all(&self.pool)
         .await
         .map_err(DbError::DatabaseError)?;
 
-        match result {
-            Some(draft_db) => Ok(Some(draft_db.to_domain()?)),
-            None => Ok(None),
-        }
+        results
+            .into_iter()
+            .map(|db| db.to_domain())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 
     async fn find_all(&self) -> DomainResult<Vec<Draft>> {
@@ -552,12 +544,12 @@ mod tests {
         assert!(result.is_ok());
 
         let found = result.unwrap();
-        assert!(found.is_some());
-        assert_eq!(found.unwrap().year, 2026);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].year, 2026);
     }
 
     #[tokio::test]
-    async fn test_duplicate_draft_year() {
+    async fn test_multiple_drafts_same_year() {
         let pool = setup_test_pool().await;
         cleanup(&pool).await;
 
@@ -567,7 +559,10 @@ mod tests {
 
         let draft2 = Draft::new(2026, 7, 32).unwrap();
         let result = repo.create(&draft2).await;
-        assert!(result.is_err());
+        assert!(result.is_ok());
+
+        let drafts = repo.find_by_year(2026).await.unwrap();
+        assert_eq!(drafts.len(), 2);
     }
 
     #[tokio::test]

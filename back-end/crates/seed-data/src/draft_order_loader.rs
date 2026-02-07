@@ -171,68 +171,40 @@ pub async fn load_draft_order(
     let year = data.meta.draft_year;
     let rounds = data.meta.total_rounds;
 
-    // Check if draft already exists for this year
+    // Check if a NotStarted realistic draft already exists for this year to reuse
     let draft = match draft_repo.find_by_year(year).await {
-        Ok(Some(existing)) => {
-            match existing.status {
-                DraftStatus::NotStarted => {
-                    // Only reuse if the existing draft is also realistic (variable round sizes)
-                    if !existing.is_realistic() {
-                        let msg = format!(
-                            "Cannot load realistic draft order: existing draft for year {} is a custom draft \
-                            (picks_per_round = {}). Delete it first or use a different year.",
-                            year,
-                            existing.picks_per_round.unwrap_or(0)
-                        );
-                        tracing::error!("{}", msg);
-                        stats.errors.push(msg);
-                        return Ok(stats);
-                    }
-                    // Delete existing picks and reuse draft
-                    tracing::info!(
-                        "Found existing NotStarted realistic draft for year {}. Replacing picks.",
-                        year
-                    );
-                    if let Err(e) = pick_repo.delete_by_draft_id(existing.id).await {
-                        let msg = format!("Failed to delete existing picks: {}", e);
-                        tracing::error!("{}", msg);
-                        stats.errors.push(msg);
-                        return Ok(stats);
-                    }
-                    stats.draft_reused = true;
-                    existing
-                }
-                DraftStatus::InProgress | DraftStatus::Paused => {
-                    let msg = format!(
-                        "Cannot load draft order: draft for year {} is {} (must be NotStarted or not exist)",
-                        year, existing.status
-                    );
+        Ok(existing_drafts) => {
+            // Look for a NotStarted realistic draft to reuse
+            let reusable = existing_drafts
+                .into_iter()
+                .find(|d| d.status == DraftStatus::NotStarted && d.is_realistic());
+
+            if let Some(existing) = reusable {
+                // Delete existing picks and reuse draft
+                tracing::info!(
+                    "Found existing NotStarted realistic draft for year {}. Replacing picks.",
+                    year
+                );
+                if let Err(e) = pick_repo.delete_by_draft_id(existing.id).await {
+                    let msg = format!("Failed to delete existing picks: {}", e);
                     tracing::error!("{}", msg);
                     stats.errors.push(msg);
                     return Ok(stats);
                 }
-                DraftStatus::Completed => {
-                    let msg = format!(
-                        "Cannot load draft order: draft for year {} is already completed",
-                        year
-                    );
-                    tracing::error!("{}", msg);
-                    stats.errors.push(msg);
-                    return Ok(stats);
-                }
+                stats.draft_reused = true;
+                existing
+            } else {
+                // Create new realistic draft
+                let draft = Draft::new_realistic(year, rounds)
+                    .map_err(|e| anyhow::anyhow!("Failed to create draft: {}", e))?;
+                let created = draft_repo
+                    .create(&draft)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Failed to persist draft: {}", e))?;
+                tracing::info!("Created new realistic draft for year {}", year);
+                stats.draft_created = true;
+                created
             }
-        }
-        Ok(None) => {
-            // Create new realistic draft
-            let draft = Draft::new_realistic(year, rounds)
-                .map_err(|e| anyhow::anyhow!("Failed to create draft: {}", e))?;
-            let created = draft_repo
-                .create(&draft)
-                .await
-                .map_err(|e| anyhow::anyhow!("Failed to persist draft: {}", e))?;
-            tracing::info!("Created new realistic draft for year {}", year);
-            stats.draft_created = true;
-            created
         }
         Err(e) => {
             let msg = format!("Failed to check for existing draft: {}", e);

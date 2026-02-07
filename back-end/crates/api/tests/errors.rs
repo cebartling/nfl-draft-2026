@@ -38,7 +38,7 @@ async fn test_error_handling() {
         .expect("Failed to execute request");
     assert_eq!(response.status(), 400);
 
-    // Try to create duplicate draft year
+    // Verify multiple drafts can be created for the same year
     let first_draft = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
@@ -52,15 +52,7 @@ async fn test_error_handling() {
         .expect("Failed to create first draft");
     assert_eq!(first_draft.status(), 201);
 
-    // Verify first draft exists in database
-    let db_draft_count = sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
-        .fetch_one(&pool)
-        .await
-        .expect("Failed to count drafts");
-    assert_eq!(db_draft_count.count.unwrap(), 1);
-
-    // Try to create duplicate
-    let response = client
+    let second_draft = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
             "year": 2026,
@@ -70,14 +62,13 @@ async fn test_error_handling() {
         .timeout(Duration::from_secs(5))
         .send()
         .await
-        .expect("Failed to execute request");
-    assert_eq!(response.status(), 409);
+        .expect("Failed to create second draft");
+    assert_eq!(second_draft.status(), 201);
 
-    // Verify still only one draft in database
-    let db_draft_count_after =
-        sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
-            .fetch_one(&pool)
-            .await
-            .expect("Failed to count drafts");
-    assert_eq!(db_draft_count_after.count.unwrap(), 1);
+    // Verify both drafts exist in database
+    let db_draft_count = sqlx::query!("SELECT COUNT(*) as count FROM drafts WHERE year = 2026")
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to count drafts");
+    assert_eq!(db_draft_count.count.unwrap(), 2);
 }
