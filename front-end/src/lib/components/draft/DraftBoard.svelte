@@ -15,6 +15,17 @@
 	let teams = $state<Map<string, Team>>(new Map());
 	let players = $state<Map<string, Player>>(new Map());
 	let isLoading = $state(false);
+	let collapsedRounds = $state<Set<number>>(new Set());
+
+	function toggleRound(round: number) {
+		const next = new Set(collapsedRounds);
+		if (next.has(round)) {
+			next.delete(round);
+		} else {
+			next.add(round);
+		}
+		collapsedRounds = next;
+	}
 
 	// Group picks by round
 	const picksByRound = $derived(
@@ -83,28 +94,42 @@
 	<div class="space-y-8 max-h-[800px] overflow-y-auto p-1">
 		{#each rounds as round (round)}
 			<div>
-				<div class="flex items-center space-x-3 mb-4">
+				<button
+					type="button"
+					class="flex items-center space-x-3 mb-4 cursor-pointer group"
+					onclick={() => toggleRound(round)}
+				>
+					<svg
+						class="w-5 h-5 text-gray-500 transition-transform {collapsedRounds.has(round) ? '-rotate-90' : ''}"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+					</svg>
 					<Badge variant="info" size="lg">
 						Round {round}
 					</Badge>
 					<span class="text-sm text-gray-600">
 						{picksByRound[round].length} picks
 					</span>
-				</div>
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-					{#each picksByRound[round] as pick (pick.id)}
-						{@const team = teams.get(pick.team_id)}
-						{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
-						{#if team}
-							<PickCard
-								{pick}
-								{player}
-								{team}
-								highlight={pick.overall_pick === draftState.currentPickNumber}
-							/>
-						{/if}
-					{/each}
-				</div>
+				</button>
+				{#if !collapsedRounds.has(round)}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+						{#each picksByRound[round] as pick (pick.id)}
+							{@const team = teams.get(pick.team_id)}
+							{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
+							{#if team}
+								<PickCard
+									{pick}
+									{player}
+									{team}
+									highlight={pick.overall_pick === draftState.currentPickNumber}
+								/>
+							{/if}
+						{/each}
+					</div>
+				{/if}
 			</div>
 		{/each}
 	</div>
