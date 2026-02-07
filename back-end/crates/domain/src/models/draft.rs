@@ -38,6 +38,7 @@ pub struct Draft {
 
 impl Draft {
     pub fn new(name: String, year: i32, rounds: i32, picks_per_round: i32) -> DomainResult<Self> {
+        let name = name.trim().to_string();
         Self::validate_name(&name)?;
         Self::validate_year(year)?;
         Self::validate_rounds(rounds)?;
@@ -58,6 +59,7 @@ impl Draft {
 
     /// Create a realistic draft with variable-length rounds (picks loaded from data)
     pub fn new_realistic(name: String, year: i32, rounds: i32) -> DomainResult<Self> {
+        let name = name.trim().to_string();
         Self::validate_name(&name)?;
         Self::validate_year(year)?;
         Self::validate_rounds(rounds)?;
