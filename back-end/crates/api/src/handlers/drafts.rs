@@ -12,6 +12,7 @@ use crate::state::AppState;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateDraftRequest {
+    pub name: String,
     pub year: i32,
     pub rounds: i32,
     pub picks_per_round: Option<i32>,
@@ -20,6 +21,7 @@ pub struct CreateDraftRequest {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct DraftResponse {
     pub id: Uuid,
+    pub name: String,
     pub year: i32,
     pub status: String,
     pub rounds: i32,
@@ -31,13 +33,15 @@ pub struct DraftResponse {
 impl From<Draft> for DraftResponse {
     fn from(draft: Draft) -> Self {
         let is_realistic = draft.is_realistic();
+        let total_picks = draft.total_picks();
         Self {
             id: draft.id,
+            name: draft.name,
             year: draft.year,
             status: draft.status.to_string(),
             rounds: draft.rounds,
             picks_per_round: draft.picks_per_round,
-            total_picks: draft.total_picks(),
+            total_picks,
             is_realistic,
         }
     }
@@ -103,13 +107,13 @@ pub async fn create_draft(
         Some(picks_per_round) => {
             state
                 .draft_engine
-                .create_draft(payload.year, payload.rounds, picks_per_round)
+                .create_draft(payload.name, payload.year, payload.rounds, picks_per_round)
                 .await?
         }
         None => {
             state
                 .draft_engine
-                .create_realistic_draft(payload.year, payload.rounds)
+                .create_realistic_draft(payload.name, payload.year, payload.rounds)
                 .await?
         }
     };
@@ -376,6 +380,7 @@ mod tests {
         let (state, _pool) = setup_test_state().await;
 
         let request = CreateDraftRequest {
+            name: "Test Draft".to_string(),
             year: 2026,
             rounds: 7,
             picks_per_round: Some(32),
@@ -386,6 +391,7 @@ mod tests {
 
         let (status, response) = result.unwrap();
         assert_eq!(status, StatusCode::CREATED);
+        assert_eq!(response.0.name, "Test Draft");
         assert_eq!(response.0.year, 2026);
         assert_eq!(response.0.rounds, 7);
         assert_eq!(response.0.picks_per_round, Some(32));
@@ -398,6 +404,7 @@ mod tests {
 
         // Create draft first
         let request = CreateDraftRequest {
+            name: "Test Draft".to_string(),
             year: 2026,
             rounds: 7,
             picks_per_round: Some(32),
@@ -421,6 +428,7 @@ mod tests {
 
         // Create two drafts
         let request1 = CreateDraftRequest {
+            name: "Draft 1".to_string(),
             year: 2026,
             rounds: 7,
             picks_per_round: Some(32),
@@ -430,6 +438,7 @@ mod tests {
             .unwrap();
 
         let request2 = CreateDraftRequest {
+            name: "Draft 2".to_string(),
             year: 2027,
             rounds: 7,
             picks_per_round: Some(32),
@@ -474,6 +483,7 @@ mod tests {
 
         // Create draft
         let request = CreateDraftRequest {
+            name: "Test Draft".to_string(),
             year: 2026,
             rounds: 7,
             picks_per_round: Some(2), // 2 teams
@@ -517,6 +527,7 @@ mod tests {
 
         // Create draft
         let request = CreateDraftRequest {
+            name: "Test Draft".to_string(),
             year: 2026,
             rounds: 1,
             picks_per_round: Some(1),

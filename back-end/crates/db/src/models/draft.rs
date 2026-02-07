@@ -10,6 +10,7 @@ use crate::errors::{DbError, DbResult};
 #[derive(Debug, Clone, FromRow)]
 pub struct DraftDb {
     pub id: Uuid,
+    pub name: String,
     pub year: i32,
     pub status: String,
     pub rounds: i32,
@@ -23,6 +24,7 @@ impl DraftDb {
     pub fn from_domain(draft: &Draft) -> Self {
         Self {
             id: draft.id,
+            name: draft.name.clone(),
             year: draft.year,
             status: status_to_string(&draft.status),
             rounds: draft.rounds,
@@ -36,6 +38,7 @@ impl DraftDb {
     pub fn to_domain(&self) -> DbResult<Draft> {
         Ok(Draft {
             id: self.id,
+            name: self.name.clone(),
             year: self.year,
             status: string_to_status(&self.status)?,
             rounds: self.rounds,
@@ -153,9 +156,10 @@ mod tests {
 
     #[test]
     fn test_draft_domain_to_db_conversion() {
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         let draft_db = DraftDb::from_domain(&draft);
 
+        assert_eq!(draft_db.name, "Test Draft");
         assert_eq!(draft_db.year, 2026);
         assert_eq!(draft_db.status, "NotStarted");
         assert_eq!(draft_db.rounds, 7);
@@ -166,6 +170,7 @@ mod tests {
     fn test_draft_db_to_domain_conversion() {
         let draft_db = DraftDb {
             id: Uuid::new_v4(),
+            name: "Test Draft".to_string(),
             year: 2026,
             status: "NotStarted".to_string(),
             rounds: 7,
@@ -178,6 +183,7 @@ mod tests {
         assert!(result.is_ok());
 
         let draft = result.unwrap();
+        assert_eq!(draft.name, "Test Draft");
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.status, DraftStatus::NotStarted);
         assert_eq!(draft.rounds, 7);
@@ -186,7 +192,7 @@ mod tests {
 
     #[test]
     fn test_realistic_draft_db_conversion() {
-        let draft = Draft::new_realistic(2026, 7).unwrap();
+        let draft = Draft::new_realistic("Realistic Draft".to_string(), 2026, 7).unwrap();
         let draft_db = DraftDb::from_domain(&draft);
 
         assert_eq!(draft_db.picks_per_round, None);

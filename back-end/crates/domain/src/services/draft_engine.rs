@@ -51,17 +51,23 @@ impl DraftEngine {
     /// Create a new custom draft with fixed picks per round
     pub async fn create_draft(
         &self,
+        name: String,
         year: i32,
         rounds: i32,
         picks_per_round: i32,
     ) -> DomainResult<Draft> {
-        let draft = Draft::new(year, rounds, picks_per_round)?;
+        let draft = Draft::new(name, year, rounds, picks_per_round)?;
         self.draft_repo.create(&draft).await
     }
 
     /// Create a realistic draft with variable-length rounds (picks loaded from data)
-    pub async fn create_realistic_draft(&self, year: i32, rounds: i32) -> DomainResult<Draft> {
-        let draft = Draft::new_realistic(year, rounds)?;
+    pub async fn create_realistic_draft(
+        &self,
+        name: String,
+        year: i32,
+        rounds: i32,
+    ) -> DomainResult<Draft> {
+        let draft = Draft::new_realistic(name, year, rounds)?;
         self.draft_repo.create(&draft).await
     }
 
@@ -437,10 +443,11 @@ mod tests {
             Arc::new(MockPlayerRepo::new()),
         );
 
-        let result = engine.create_draft(2026, 7, 32).await;
+        let result = engine.create_draft("Test Draft".to_string(), 2026, 7, 32).await;
         assert!(result.is_ok());
 
         let draft = result.unwrap();
+        assert_eq!(draft.name, "Test Draft");
         assert_eq!(draft.year, 2026);
         assert_eq!(draft.rounds, 7);
         assert_eq!(draft.picks_per_round, Some(32));
@@ -459,16 +466,16 @@ mod tests {
             Arc::new(MockPlayerRepo::new()),
         );
 
-        let result1 = engine.create_draft(2026, 7, 32).await;
+        let result1 = engine.create_draft("Draft 1".to_string(), 2026, 7, 32).await;
         assert!(result1.is_ok());
 
-        let result2 = engine.create_draft(2026, 7, 32).await;
+        let result2 = engine.create_draft("Draft 2".to_string(), 2026, 7, 32).await;
         assert!(result2.is_ok());
     }
 
     #[tokio::test]
     async fn test_initialize_picks() {
-        let draft = Draft::new(2026, 7, 2).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 2).unwrap();
         let draft_id = draft.id;
 
         let team1 = Team::new(

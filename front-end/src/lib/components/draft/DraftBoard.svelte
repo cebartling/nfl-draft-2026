@@ -15,6 +15,18 @@
 	let teams = $state<Map<string, Team>>(new Map());
 	let players = $state<Map<string, Player>>(new Map());
 	let isLoading = $state(false);
+	let collapsedRounds = $state<Set<number>>(new Set());
+	let initializedCollapse = $state(false);
+
+	function toggleRound(round: number) {
+		const next = new Set(collapsedRounds);
+		if (next.has(round)) {
+			next.delete(round);
+		} else {
+			next.add(round);
+		}
+		collapsedRounds = next;
+	}
 
 	// Group picks by round
 	const picksByRound = $derived(
@@ -35,6 +47,14 @@
 			.map(Number)
 			.sort((a, b) => a - b)
 	);
+
+	// Collapse all rounds except round 1 on initial load
+	$effect(() => {
+		if (rounds.length > 0 && !initializedCollapse) {
+			collapsedRounds = new Set(rounds.filter((r) => r !== 1));
+			initializedCollapse = true;
+		}
+	});
 
 	// Load teams and players when picks change
 	$effect(() => {
@@ -73,28 +93,40 @@
 	});
 </script>
 
-<div class="bg-gray-50 rounded-lg p-6">
-	<h2 class="text-2xl font-bold text-gray-900 mb-6">Draft Board</h2>
-
-	{#if isLoading}
-		<div class="flex justify-center py-12">
-			<LoadingSpinner size="lg" />
-		</div>
-	{:else if picks.length === 0}
-		<p class="text-center text-gray-500 py-12">No picks available</p>
-	{:else}
-		<div class="space-y-8 max-h-[800px] overflow-y-auto">
-			{#each rounds as round (round)}
-				<div>
-					<div class="flex items-center space-x-3 mb-4">
-						<Badge variant="info" size="lg">
-							Round {round}
-						</Badge>
-						<span class="text-sm text-gray-600">
-							{picksByRound[round].length} picks
-						</span>
-					</div>
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+{#if isLoading}
+	<div class="flex justify-center py-12">
+		<LoadingSpinner size="lg" />
+	</div>
+{:else if picks.length === 0}
+	<p class="text-center text-gray-500 py-12">No picks available</p>
+{:else}
+	<div class="space-y-8 max-h-[800px] overflow-y-auto p-1">
+		{#each rounds as round (round)}
+			<div>
+				<button
+					type="button"
+					class="flex items-center space-x-3 mb-4 cursor-pointer group"
+					aria-expanded={!collapsedRounds.has(round)}
+					aria-controls="round-{round}-picks"
+					onclick={() => toggleRound(round)}
+				>
+					<svg
+						class="w-5 h-5 text-gray-500 transition-transform {collapsedRounds.has(round) ? '-rotate-90' : ''}"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+					</svg>
+					<Badge variant="info" size="lg">
+						Round {round}
+					</Badge>
+					<span class="text-sm text-gray-600">
+						{picksByRound[round].length} picks
+					</span>
+				</button>
+				{#if !collapsedRounds.has(round)}
+					<div id="round-{round}-picks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 						{#each picksByRound[round] as pick (pick.id)}
 							{@const team = teams.get(pick.team_id)}
 							{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
@@ -108,8 +140,8 @@
 							{/if}
 						{/each}
 					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
-</div>
+				{/if}
+			</div>
+		{/each}
+	</div>
+{/if}

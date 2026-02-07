@@ -180,6 +180,7 @@ async fn test_reinitialize_picks_returns_400() {
     let draft_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": 1,
             "picks_per_round": 2

@@ -28,11 +28,12 @@ impl DraftRepository for SqlxDraftRepository {
         let result = sqlx::query_as!(
             DraftDb,
             r#"
-            INSERT INTO drafts (id, year, status, rounds, picks_per_round, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, year, status, rounds, picks_per_round, created_at, updated_at
+            INSERT INTO drafts (id, name, year, status, rounds, picks_per_round, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, name, year, status, rounds, picks_per_round, created_at, updated_at
             "#,
             draft_db.id,
+            draft_db.name,
             draft_db.year,
             draft_db.status,
             draft_db.rounds,
@@ -51,7 +52,7 @@ impl DraftRepository for SqlxDraftRepository {
         let result = sqlx::query_as!(
             DraftDb,
             r#"
-            SELECT id, year, status, rounds, picks_per_round, created_at, updated_at
+            SELECT id, name, year, status, rounds, picks_per_round, created_at, updated_at
             FROM drafts
             WHERE id = $1
             "#,
@@ -71,7 +72,7 @@ impl DraftRepository for SqlxDraftRepository {
         let results = sqlx::query_as!(
             DraftDb,
             r#"
-            SELECT id, year, status, rounds, picks_per_round, created_at, updated_at
+            SELECT id, name, year, status, rounds, picks_per_round, created_at, updated_at
             FROM drafts
             WHERE year = $1
             ORDER BY created_at DESC
@@ -93,7 +94,7 @@ impl DraftRepository for SqlxDraftRepository {
         let results = sqlx::query_as!(
             DraftDb,
             r#"
-            SELECT id, year, status, rounds, picks_per_round, created_at, updated_at
+            SELECT id, name, year, status, rounds, picks_per_round, created_at, updated_at
             FROM drafts
             ORDER BY year DESC
             "#
@@ -114,7 +115,7 @@ impl DraftRepository for SqlxDraftRepository {
         let results = sqlx::query_as!(
             DraftDb,
             r#"
-            SELECT id, year, status, rounds, picks_per_round, created_at, updated_at
+            SELECT id, name, year, status, rounds, picks_per_round, created_at, updated_at
             FROM drafts
             WHERE status = $1
             ORDER BY year DESC
@@ -139,11 +140,12 @@ impl DraftRepository for SqlxDraftRepository {
             DraftDb,
             r#"
             UPDATE drafts
-            SET status = $2, updated_at = $3
+            SET name = $2, status = $3, updated_at = $4
             WHERE id = $1
-            RETURNING id, year, status, rounds, picks_per_round, created_at, updated_at
+            RETURNING id, name, year, status, rounds, picks_per_round, created_at, updated_at
             "#,
             draft_db.id,
+            draft_db.name,
             draft_db.status,
             draft_db.updated_at
         )
@@ -504,7 +506,7 @@ mod tests {
         cleanup(&pool).await;
 
         let repo = SqlxDraftRepository::new(pool);
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
 
         let result = repo.create(&draft).await;
         assert!(result.is_ok());
@@ -520,7 +522,7 @@ mod tests {
         cleanup(&pool).await;
 
         let repo = SqlxDraftRepository::new(pool);
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         let created = repo.create(&draft).await.unwrap();
 
         let result = repo.find_by_id(created.id).await;
@@ -537,7 +539,7 @@ mod tests {
         cleanup(&pool).await;
 
         let repo = SqlxDraftRepository::new(pool);
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         repo.create(&draft).await.unwrap();
 
         let result = repo.find_by_year(2026).await;
@@ -554,10 +556,10 @@ mod tests {
         cleanup(&pool).await;
 
         let repo = SqlxDraftRepository::new(pool);
-        let draft1 = Draft::new(2026, 7, 32).unwrap();
+        let draft1 = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         repo.create(&draft1).await.unwrap();
 
-        let draft2 = Draft::new(2026, 7, 32).unwrap();
+        let draft2 = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         let result = repo.create(&draft2).await;
         assert!(result.is_ok());
 
@@ -571,7 +573,7 @@ mod tests {
         cleanup(&pool).await;
 
         let repo = SqlxDraftRepository::new(pool);
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         let mut created = repo.create(&draft).await.unwrap();
 
         created.start().unwrap();
@@ -589,7 +591,7 @@ mod tests {
 
         // Create draft and team first
         let draft_repo = SqlxDraftRepository::new(pool.clone());
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         let created_draft = draft_repo.create(&draft).await.unwrap();
 
         let team_repo = SqlxTeamRepository::new(pool.clone());
@@ -622,7 +624,7 @@ mod tests {
 
         // Setup draft and team
         let draft_repo = SqlxDraftRepository::new(pool.clone());
-        let draft = Draft::new(2026, 7, 32).unwrap();
+        let draft = Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap();
         let created_draft = draft_repo.create(&draft).await.unwrap();
 
         let team_repo = SqlxTeamRepository::new(pool.clone());

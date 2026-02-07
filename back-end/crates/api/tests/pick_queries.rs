@@ -34,6 +34,7 @@ async fn setup_draft_with_picks(
     let draft_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": rounds,
             "picks_per_round": num_teams as i32

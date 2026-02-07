@@ -6,7 +6,13 @@
 	import Card from '$components/ui/Card.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 
+	function generateDefaultDraftName(): string {
+		const now = new Date();
+		return `Draft - ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+	}
+
 	const year = 2026;
+	let name = $state(generateDefaultDraftName());
 	let rounds = $state(1);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
@@ -19,7 +25,7 @@
 		submitting = true;
 
 		try {
-			const draft = await draftsApi.create({ year, rounds });
+			const draft = await draftsApi.create({ name, year, rounds });
 			await draftsApi.initializePicks(draft.id);
 			await goto(`/drafts/${draft.id}`);
 		} catch (e) {
@@ -63,6 +69,22 @@
 					<p class="text-sm">{error}</p>
 				</div>
 			{/if}
+
+			<!-- Draft Name Field -->
+			<div>
+				<label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+					Draft Name
+				</label>
+				<input
+					type="text"
+					id="name"
+					bind:value={name}
+					maxlength={255}
+					required
+					disabled={submitting}
+					class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+				/>
+			</div>
 
 			<!-- Rounds Field -->
 			<div>

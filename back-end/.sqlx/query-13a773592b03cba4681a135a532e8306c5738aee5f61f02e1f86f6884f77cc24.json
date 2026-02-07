@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE drafts\n            SET status = $2, updated_at = $3\n            WHERE id = $1\n            RETURNING id, year, status, rounds, picks_per_round, created_at, updated_at\n            ",
+  "query": "\n            SELECT id, name, year, status, rounds, picks_per_round, created_at, updated_at\n            FROM drafts\n            ORDER BY year DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -10,43 +10,45 @@
       },
       {
         "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
         "name": "year",
         "type_info": "Int4"
       },
       {
-        "ordinal": 2,
+        "ordinal": 3,
         "name": "status",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "rounds",
         "type_info": "Int4"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "picks_per_round",
         "type_info": "Int4"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": [
-        "Uuid",
-        "Varchar",
-        "Timestamptz"
-      ]
+      "Left": []
     },
     "nullable": [
+      false,
       false,
       false,
       false,
@@ -56,5 +58,5 @@
       false
     ]
   },
-  "hash": "65de1170cda753604dd792de608c9af566e5d963654ba873f711f2cc408e84ca"
+  "hash": "13a773592b03cba4681a135a532e8306c5738aee5f61f02e1f86f6884f77cc24"
 }

@@ -8,6 +8,7 @@ export type DraftStatus = z.infer<typeof DraftStatusSchema>;
 // Draft schema and type
 export const DraftSchema = z.object({
 	id: UUIDSchema,
+	name: z.string(),
 	year: z.number(),
 	status: DraftStatusSchema,
 	rounds: z.number(),

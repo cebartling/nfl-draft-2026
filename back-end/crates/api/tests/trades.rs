@@ -413,6 +413,7 @@ async fn test_pick_in_active_trade_cannot_be_traded_again() {
     let draft_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": 2,
             "picks_per_round": 3
@@ -829,6 +830,7 @@ async fn create_draft_and_session(
     let draft_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
+            "name": "Test Draft",
             "year": 2026,
             "rounds": 3,
             "picks_per_round": 2
