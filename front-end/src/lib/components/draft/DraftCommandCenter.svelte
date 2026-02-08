@@ -125,9 +125,10 @@
 	}
 </script>
 
-<div class="bg-white rounded-lg shadow-md p-4 lg:p-6">
+<div class="bg-white rounded-lg shadow-md p-4 lg:p-6 space-y-4">
+	<!-- Row 1: Clock, Round/Pick, Team on the Clock -->
 	<div class="flex flex-col lg:flex-row lg:items-center lg:divide-x lg:divide-gray-200 gap-4 lg:gap-0">
-		<!-- Left: Timer & Round/Pick -->
+		<!-- Timer & Round/Pick -->
 		<div class="flex items-center gap-4 lg:pr-6">
 			<div
 				class="text-4xl lg:text-5xl font-bold tabular-nums {timeRemaining < 10 && timeRemaining > 0
@@ -148,7 +149,7 @@
 			</div>
 		</div>
 
-		<!-- Center: Team on the Clock -->
+		<!-- Team on the Clock -->
 		<div class="lg:px-6 min-w-0">
 			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">On the Clock</p>
 			{#if isLoadingTeam}
@@ -163,96 +164,99 @@
 			{/if}
 		</div>
 
-		<!-- Right: Controls -->
-		<div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 lg:pl-6 lg:ml-auto">
-			<!-- Start/Pause Button -->
-			<div class="flex items-center gap-3">
-				{#if !draftState.session || draftState.session.status === 'NotStarted'}
-					<Button
-						variant="primary"
-						onclick={handleStart}
-						disabled={draftState.isLoading}
-						loading={draftState.isLoading}
-					>
-						Start Draft
-					</Button>
-				{:else if draftState.session.status === 'InProgress'}
-					<Button
-						variant="secondary"
-						onclick={handlePause}
-						disabled={draftState.isLoading}
-						loading={draftState.isLoading}
-					>
-						Pause
-					</Button>
-				{:else if draftState.session.status === 'Paused'}
-					<Button
-						variant="primary"
-						onclick={handleStart}
-						disabled={draftState.isLoading}
-						loading={draftState.isLoading}
-					>
-						Resume
-					</Button>
-				{/if}
+		<!-- Status Badge (right-aligned) -->
+		<div class="lg:pl-6 lg:ml-auto">
+			<Badge variant={statusBadge.variant} size="lg">
+				{statusBadge.text}
+			</Badge>
+		</div>
+	</div>
 
-				<Badge variant={statusBadge.variant} size="sm">
-					{statusBadge.text}
-				</Badge>
-			</div>
-
-			<!-- Chart Selector -->
-			<div class="flex items-center gap-2">
-				<label for="chart-type" class="text-xs font-medium text-gray-600 whitespace-nowrap">
-					Chart:
-				</label>
-				<select
-					id="chart-type"
-					bind:value={selectedChartType}
-					class="text-sm rounded border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
-					disabled={draftState.session?.status === 'InProgress'}
+	<!-- Row 2: Session Controls -->
+	<div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 border-t border-gray-200 pt-4">
+		<!-- Start/Pause Button -->
+		<div>
+			{#if !draftState.session || draftState.session.status === 'NotStarted'}
+				<Button
+					variant="primary"
+					onclick={handleStart}
+					disabled={draftState.isLoading}
+					loading={draftState.isLoading}
 				>
-					{#each chartTypes as chartType (chartType)}
-						<option value={chartType}>
-							{chartType.replace(/([A-Z])/g, ' $1').trim()}
-						</option>
-					{/each}
-				</select>
-			</div>
+					Start Draft
+				</Button>
+			{:else if draftState.session.status === 'InProgress'}
+				<Button
+					variant="secondary"
+					onclick={handlePause}
+					disabled={draftState.isLoading}
+					loading={draftState.isLoading}
+				>
+					Pause Draft
+				</Button>
+			{:else if draftState.session.status === 'Paused'}
+				<Button
+					variant="primary"
+					onclick={handleStart}
+					disabled={draftState.isLoading}
+					loading={draftState.isLoading}
+				>
+					Resume Draft
+				</Button>
+			{/if}
+		</div>
 
-			<!-- Auto-pick Toggle -->
-			<div class="flex items-center gap-2">
-				<label for="auto-pick" class="text-xs font-medium text-gray-600 whitespace-nowrap">
-					Auto:
-				</label>
-				<input
-					id="auto-pick"
-					type="checkbox"
-					bind:checked={autoPickEnabled}
-					class="h-4 w-4 rounded border border-gray-300 text-blue-600 focus:ring-blue-500"
-					disabled={draftState.session?.status === 'InProgress'}
-				/>
-			</div>
+		<!-- Chart Selector -->
+		<div class="flex items-center gap-2">
+			<label for="chart-type" class="text-sm font-medium text-gray-600 whitespace-nowrap">
+				Trade Value Chart:
+			</label>
+			<select
+				id="chart-type"
+				bind:value={selectedChartType}
+				class="text-sm rounded border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-2"
+				disabled={draftState.session?.status === 'InProgress'}
+			>
+				{#each chartTypes as chartType (chartType)}
+					<option value={chartType}>
+						{chartType.replace(/([A-Z])/g, ' $1').trim()}
+					</option>
+				{/each}
+			</select>
+		</div>
 
-			<!-- Time Per Pick -->
-			<div class="flex items-center gap-2">
-				<label for="time-per-pick" class="text-xs font-medium text-gray-600 whitespace-nowrap">
-					Time/Pick:
-				</label>
-				<input
-					id="time-per-pick"
-					type="range"
-					bind:value={timePerPick}
-					min="30"
-					max="600"
-					step="30"
-					class="w-20 lg:w-24"
-					disabled={draftState.session?.status === 'InProgress'}
-				/>
-				<span class="text-xs font-medium text-gray-900 tabular-nums w-10">
-					{Math.floor(timePerPick / 60)}:{(timePerPick % 60).toString().padStart(2, '0')}
-				</span>
-			</div>
+		<!-- Auto-pick Toggle -->
+		<div class="flex items-center gap-2">
+			<label for="auto-pick" class="text-sm font-medium text-gray-600 whitespace-nowrap">
+				Auto-pick:
+			</label>
+			<input
+				id="auto-pick"
+				type="checkbox"
+				bind:checked={autoPickEnabled}
+				class="h-4 w-4 rounded border border-gray-300 text-blue-600 focus:ring-blue-500"
+				disabled={draftState.session?.status === 'InProgress'}
+			/>
+		</div>
+
+		<!-- Time Per Pick -->
+		<div class="flex items-center gap-2">
+			<label for="time-per-pick" class="text-sm font-medium text-gray-600 whitespace-nowrap">
+				Time per Pick:
+			</label>
+			<input
+				id="time-per-pick"
+				type="range"
+				bind:value={timePerPick}
+				min="30"
+				max="600"
+				step="30"
+				class="w-24 lg:w-32"
+				disabled={draftState.session?.status === 'InProgress'}
+			/>
+			<span class="text-sm font-medium text-gray-900 tabular-nums w-12">
+				{Math.floor(timePerPick / 60)}:{(timePerPick % 60).toString().padStart(2, '0')}
+			</span>
 		</div>
 	</div>
 </div>
