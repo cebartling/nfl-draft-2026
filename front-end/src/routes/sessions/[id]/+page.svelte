@@ -5,8 +5,7 @@
 	import { playersState } from '$stores/players.svelte';
 	import { websocketState } from '$stores/websocket.svelte';
 	import { draftsApi } from '$lib/api';
-	import DraftClock from '$components/draft/DraftClock.svelte';
-	import SessionControls from '$components/draft/SessionControls.svelte';
+	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
@@ -85,12 +84,17 @@
 			<LoadingSpinner size="lg" />
 		</div>
 	{:else}
-		<!-- Draft Room Layout -->
+		<!-- Draft Command Center: Full-width clock + controls -->
+		<DraftCommandCenter {sessionId} />
+
+		<!-- Draft Room Layout: 2-column -->
 		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-			<!-- Left Column: Draft Clock and Session Controls -->
-			<div class="lg:col-span-3 space-y-4">
-				<DraftClock {sessionId} />
-				<SessionControls {sessionId} />
+			<!-- Left Column: Draft Board + On The Clock + Selected Player -->
+			<div class="lg:col-span-8 space-y-4">
+				<div class="bg-white rounded-lg shadow p-4">
+					<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
+					<DraftBoard picks={draftState.picks} />
+				</div>
 
 				<!-- Current Pick Info -->
 				{#if draftState.currentPick}
@@ -142,16 +146,8 @@
 				{/if}
 			</div>
 
-			<!-- Center Column: Draft Board -->
-			<div class="lg:col-span-6">
-				<div class="bg-white rounded-lg shadow p-4">
-					<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
-					<DraftBoard picks={draftState.picks} />
-				</div>
-			</div>
-
 			<!-- Right Column: Available Players -->
-			<div class="lg:col-span-3">
+			<div class="lg:col-span-4">
 				<div class="bg-white rounded-lg shadow p-4">
 					<h2 class="text-xl font-bold text-gray-800 mb-4">Available Players</h2>
 					{#if players_loading}
@@ -166,39 +162,6 @@
 						/>
 					{/if}
 				</div>
-			</div>
-		</div>
-
-		<!-- Mobile: Stack columns vertically -->
-		<div class="lg:hidden space-y-4">
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Clock</h2>
-				<DraftClock {sessionId} />
-			</div>
-
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Session Controls</h2>
-				<SessionControls {sessionId} />
-			</div>
-
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
-				<DraftBoard picks={draftState.picks} />
-			</div>
-
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Available Players</h2>
-				{#if players_loading}
-					<div class="flex justify-center py-8">
-						<LoadingSpinner />
-					</div>
-				{:else}
-					<PlayerList
-						players={availablePlayers()}
-						title="Available Players"
-						onSelectPlayer={handleSelectPlayer}
-					/>
-				{/if}
 			</div>
 		</div>
 	{/if}
