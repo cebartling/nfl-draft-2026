@@ -61,6 +61,7 @@ export const DraftSessionSchema = z.object({
 	time_per_pick_seconds: z.number(),
 	auto_pick_enabled: z.boolean(),
 	chart_type: ChartTypeSchema,
+	controlled_team_ids: z.array(UUIDSchema).default([]),
 	started_at: z.string().nullable().optional(),
 	completed_at: z.string().nullable().optional(),
 	created_at: z.string().nullable().optional(),

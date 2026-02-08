@@ -91,6 +91,14 @@ pub fn create_router(state: AppState) -> Router {
             "/sessions/{id}/events",
             get(handlers::sessions::get_session_events),
         )
+        .route(
+            "/sessions/{id}/auto-pick-run",
+            post(handlers::sessions::auto_pick_run),
+        )
+        .route(
+            "/sessions/{id}/advance-pick",
+            post(handlers::sessions::advance_pick),
+        )
         // Combine Results
         .route(
             "/combine-results",

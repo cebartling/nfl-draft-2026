@@ -40,6 +40,8 @@ async fn test_create_session() {
     assert_eq!(session["status"], "NotStarted");
     assert_eq!(session["time_per_pick_seconds"], 300);
     assert_eq!(session["auto_pick_enabled"], false);
+    // Without controlled_team_ids, should default to empty array
+    assert_eq!(session["controlled_team_ids"], json!([]));
 
     let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
 
@@ -51,6 +53,7 @@ async fn test_create_session() {
 
     assert_eq!(db_session.draft_id, draft_id);
     assert_eq!(db_session.status, "NotStarted");
+    assert!(db_session.controlled_team_ids.is_empty());
 
     // Verify session created event was recorded
     let event_count = sqlx::query!(
@@ -515,6 +518,166 @@ async fn test_create_session_with_all_chart_types() {
         let session: Value = response.json().await.unwrap();
         assert_eq!(session["chart_type"], *chart);
     }
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
+async fn test_create_session_with_controlled_teams() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create a draft and some teams
+    let draft_id = Uuid::new_v4();
+    let team_id_1 = Uuid::new_v4();
+    let team_id_2 = Uuid::new_v4();
+
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query!(
+        "INSERT INTO teams (id, name, city, abbreviation, conference, division) VALUES ($1, 'Titans', 'Tennessee', 'TEN', 'AFC', 'AFC South'), ($2, 'Browns', 'Cleveland', 'CLE', 'AFC', 'AFC North')",
+        team_id_1,
+        team_id_2
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create session with controlled_team_ids
+    let request_body = json!({
+        "draft_id": draft_id,
+        "time_per_pick_seconds": 300,
+        "auto_pick_enabled": true,
+        "controlled_team_ids": [team_id_1, team_id_2]
+    });
+
+    let response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&request_body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let session: Value = response.json().await.unwrap();
+    let controlled_ids: Vec<String> =
+        serde_json::from_value(session["controlled_team_ids"].clone()).unwrap();
+    assert_eq!(controlled_ids.len(), 2);
+    assert!(controlled_ids.contains(&team_id_1.to_string()));
+    assert!(controlled_ids.contains(&team_id_2.to_string()));
+
+    let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
+
+    // Verify in database
+    let db_session = sqlx::query!(
+        "SELECT controlled_team_ids FROM draft_sessions WHERE id = $1",
+        session_id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(db_session.controlled_team_ids.len(), 2);
+    assert!(db_session.controlled_team_ids.contains(&team_id_1));
+    assert!(db_session.controlled_team_ids.contains(&team_id_2));
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
+async fn test_controlled_teams_persist_through_lifecycle() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create a draft and a team
+    let draft_id = Uuid::new_v4();
+    let team_id = Uuid::new_v4();
+
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query!(
+        "INSERT INTO teams (id, name, city, abbreviation, conference, division) VALUES ($1, 'Giants', 'New York', 'NYG', 'NFC', 'NFC East')",
+        team_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create session with a controlled team
+    let create_response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&json!({
+            "draft_id": draft_id,
+            "time_per_pick_seconds": 300,
+            "auto_pick_enabled": true,
+            "controlled_team_ids": [team_id]
+        }))
+        .send()
+        .await
+        .unwrap();
+
+    let session: Value = create_response.json().await.unwrap();
+    let session_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
+
+    // Start session
+    let start_response = client
+        .post(&format!(
+            "{}/api/v1/sessions/{}/start",
+            app_url, session_id
+        ))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(start_response.status(), StatusCode::OK);
+    let started: Value = start_response.json().await.unwrap();
+    let controlled_ids: Vec<String> =
+        serde_json::from_value(started["controlled_team_ids"].clone()).unwrap();
+    assert_eq!(controlled_ids.len(), 1);
+    assert_eq!(controlled_ids[0], team_id.to_string());
+
+    // Pause session
+    let pause_response = client
+        .post(&format!(
+            "{}/api/v1/sessions/{}/pause",
+            app_url, session_id
+        ))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(pause_response.status(), StatusCode::OK);
+    let paused: Value = pause_response.json().await.unwrap();
+    let controlled_ids: Vec<String> =
+        serde_json::from_value(paused["controlled_team_ids"].clone()).unwrap();
+    assert_eq!(controlled_ids.len(), 1);
+    assert_eq!(controlled_ids[0], team_id.to_string());
+
+    // Get session - verify controlled teams still there
+    let get_response = client
+        .get(&format!("{}/api/v1/sessions/{}", app_url, session_id))
+        .send()
+        .await
+        .unwrap();
+
+    let fetched: Value = get_response.json().await.unwrap();
+    let controlled_ids: Vec<String> =
+        serde_json::from_value(fetched["controlled_team_ids"].clone()).unwrap();
+    assert_eq!(controlled_ids.len(), 1);
+    assert_eq!(controlled_ids[0], team_id.to_string());
 
     common::cleanup_database(&pool).await;
 }

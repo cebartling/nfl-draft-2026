@@ -2,9 +2,10 @@
 	import { logger } from '$lib/utils/logger';
 	import { page } from '$app/stores';
 	import { draftState } from '$stores/draft.svelte';
+	import { toastState } from '$stores';
 	import { playersState } from '$stores/players.svelte';
 	import { websocketState } from '$stores/websocket.svelte';
-	import { draftsApi } from '$lib/api';
+	import { draftsApi, sessionsApi } from '$lib/api';
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
@@ -51,6 +52,26 @@
 
 			// Clear selection after successful pick
 			selectedPlayer = null;
+
+			// Advance pick number on the server and locally
+			const updatedSession = await sessionsApi.advancePick(sessionId);
+			draftState.session = updatedSession;
+
+			// Reload picks to reflect the manual pick
+			await draftState.loadDraft(draftState.session.draft_id);
+
+			// Trigger AI auto-picks for subsequent AI teams
+			if (draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled) {
+				try {
+					const result = await sessionsApi.autoPickRun(sessionId);
+					draftState.session = result.session;
+					// Reload picks to reflect AI picks
+					await draftState.loadDraft(draftState.session.draft_id);
+				} catch (err) {
+					logger.error('Auto-pick run failed:', err);
+					toastState.error('Auto-pick failed');
+				}
+			}
 		} catch (error) {
 			logger.error('Failed to make pick:', error);
 		} finally {
@@ -98,8 +119,21 @@
 
 				<!-- Current Pick Info -->
 				{#if draftState.currentPick}
-					<div class="bg-white rounded-lg shadow p-4 border-2 border-blue-500">
-						<h3 class="text-sm font-semibold text-gray-600 mb-2">ON THE CLOCK</h3>
+					<div class="bg-white rounded-lg shadow p-4 border-2 {draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled ? 'border-gray-300' : 'border-blue-500'}">
+						<div class="flex items-center gap-2 mb-2">
+							<h3 class="text-sm font-semibold text-gray-600">ON THE CLOCK</h3>
+							{#if draftState.hasControlledTeams}
+								{#if draftState.isCurrentPickUserControlled}
+									<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-600 text-white">
+										YOUR PICK
+									</span>
+								{:else}
+									<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-500 text-white">
+										AI PICK
+									</span>
+								{/if}
+							{/if}
+						</div>
 						<div class="space-y-2">
 							<div class="text-lg font-bold text-gray-800">
 								Team {draftState.currentPick.team_id}
@@ -114,8 +148,8 @@
 					</div>
 				{/if}
 
-				<!-- Selected Player -->
-				{#if selectedPlayer}
+				<!-- Selected Player (only show when user controls current pick or no controlled teams) -->
+				{#if selectedPlayer && (!draftState.hasControlledTeams || draftState.isCurrentPickUserControlled)}
 					<div class="bg-white rounded-lg shadow p-4 border-2 border-green-500">
 						<h3 class="text-sm font-semibold text-gray-600 mb-2">SELECTED PLAYER</h3>
 						<div class="space-y-2">
@@ -141,6 +175,18 @@
 							>
 								Cancel
 							</button>
+						</div>
+					</div>
+				{:else if draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled && draftState.session?.status === 'InProgress'}
+					<div class="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+						<div class="text-center py-4">
+							<div class="text-gray-400 mb-2">
+								<svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+								</svg>
+							</div>
+							<p class="text-sm font-medium text-gray-600">AI is selecting...</p>
+							<p class="text-xs text-gray-400 mt-1">Waiting for AI to make this pick</p>
 						</div>
 					</div>
 				{/if}

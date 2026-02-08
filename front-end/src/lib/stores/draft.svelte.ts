@@ -29,6 +29,36 @@ export class DraftState {
 	}
 
 	/**
+	 * Get the list of user-controlled team IDs from the session
+	 */
+	get controlledTeamIds(): string[] {
+		return this.session?.controlled_team_ids ?? [];
+	}
+
+	/**
+	 * Whether any teams are user-controlled in this session
+	 */
+	get hasControlledTeams(): boolean {
+		return this.controlledTeamIds.length > 0;
+	}
+
+	/**
+	 * Check if a specific team is user-controlled
+	 */
+	isTeamControlled(teamId: string): boolean {
+		return this.controlledTeamIds.includes(teamId);
+	}
+
+	/**
+	 * Whether the current pick is for a user-controlled team
+	 */
+	get isCurrentPickUserControlled(): boolean {
+		const currentPick = this.currentPick;
+		if (!currentPick) return false;
+		return this.isTeamControlled(currentPick.team_id);
+	}
+
+	/**
 	 * Get all completed picks (picks with a player selected)
 	 */
 	get completedPicks(): DraftPick[] {

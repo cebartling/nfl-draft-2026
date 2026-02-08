@@ -16,6 +16,7 @@ struct DraftSessionDb {
     time_per_pick_seconds: i32,
     auto_pick_enabled: bool,
     chart_type: String,
+    controlled_team_ids: Vec<Uuid>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     started_at: Option<DateTime<Utc>>,
@@ -42,6 +43,7 @@ impl From<DraftSessionDb> for DraftSession {
             time_per_pick_seconds: db.time_per_pick_seconds,
             auto_pick_enabled: db.auto_pick_enabled,
             chart_type,
+            controlled_team_ids: db.controlled_team_ids,
             created_at: db.created_at,
             updated_at: db.updated_at,
             started_at: db.started_at,
@@ -70,9 +72,9 @@ impl SessionRepository for SessionRepo {
             r#"
             INSERT INTO draft_sessions (
                 id, draft_id, status, current_pick_number, time_per_pick_seconds,
-                auto_pick_enabled, chart_type, created_at, updated_at, started_at, completed_at
+                auto_pick_enabled, chart_type, controlled_team_ids, created_at, updated_at, started_at, completed_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
             "#,
             session.id,
@@ -82,6 +84,7 @@ impl SessionRepository for SessionRepo {
             session.time_per_pick_seconds,
             session.auto_pick_enabled,
             chart_type_str,
+            &session.controlled_team_ids,
             session.created_at,
             session.updated_at,
             session.started_at,
@@ -140,9 +143,10 @@ impl SessionRepository for SessionRepo {
                 time_per_pick_seconds = $4,
                 auto_pick_enabled = $5,
                 chart_type = $6,
-                updated_at = $7,
-                started_at = $8,
-                completed_at = $9
+                controlled_team_ids = $7,
+                updated_at = $8,
+                started_at = $9,
+                completed_at = $10
             WHERE id = $1
             RETURNING *
             "#,
@@ -152,6 +156,7 @@ impl SessionRepository for SessionRepo {
             session.time_per_pick_seconds,
             session.auto_pick_enabled,
             chart_type_str,
+            &session.controlled_team_ids,
             session.updated_at,
             session.started_at,
             session.completed_at,

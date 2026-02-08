@@ -34,6 +34,7 @@ pub struct DraftSession {
     pub time_per_pick_seconds: i32,
     pub auto_pick_enabled: bool,
     pub chart_type: ChartType,
+    pub controlled_team_ids: Vec<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub started_at: Option<DateTime<Utc>>,
@@ -46,6 +47,7 @@ impl DraftSession {
         time_per_pick_seconds: i32,
         auto_pick_enabled: bool,
         chart_type: ChartType,
+        controlled_team_ids: Vec<Uuid>,
     ) -> DomainResult<Self> {
         Self::validate_time_per_pick(time_per_pick_seconds)?;
 
@@ -58,6 +60,7 @@ impl DraftSession {
             time_per_pick_seconds,
             auto_pick_enabled,
             chart_type,
+            controlled_team_ids,
             created_at: now,
             updated_at: now,
             started_at: None,
@@ -76,6 +79,7 @@ impl DraftSession {
             time_per_pick_seconds,
             auto_pick_enabled,
             ChartType::JimmyJohnson,
+            Vec::new(),
         )
     }
 
@@ -159,6 +163,17 @@ impl DraftSession {
         self.status == SessionStatus::InProgress
     }
 
+    /// Returns true if the given team is user-controlled in this session
+    pub fn is_team_controlled(&self, team_id: Uuid) -> bool {
+        self.controlled_team_ids.contains(&team_id)
+    }
+
+    /// Returns true if auto-pick should handle this team's pick.
+    /// A team should auto-pick if auto_pick_enabled AND the team is NOT user-controlled.
+    pub fn should_auto_pick(&self, team_id: Uuid) -> bool {
+        self.auto_pick_enabled && !self.is_team_controlled(team_id)
+    }
+
     fn validate_time_per_pick(time_per_pick_seconds: i32) -> DomainResult<()> {
         if !(10..=3600).contains(&time_per_pick_seconds) {
             return Err(DomainError::ValidationError(
@@ -183,8 +198,66 @@ mod tests {
         assert_eq!(session.current_pick_number, 1);
         assert_eq!(session.time_per_pick_seconds, 300);
         assert!(!session.auto_pick_enabled);
+        assert!(session.controlled_team_ids.is_empty());
         assert!(session.started_at.is_none());
         assert!(session.completed_at.is_none());
+    }
+
+    #[test]
+    fn test_create_session_with_controlled_teams() {
+        let draft_id = Uuid::new_v4();
+        let team1 = Uuid::new_v4();
+        let team2 = Uuid::new_v4();
+        let session = DraftSession::new(
+            draft_id,
+            300,
+            true,
+            ChartType::JimmyJohnson,
+            vec![team1, team2],
+        )
+        .unwrap();
+
+        assert_eq!(session.controlled_team_ids.len(), 2);
+        assert!(session.is_team_controlled(team1));
+        assert!(session.is_team_controlled(team2));
+        assert!(!session.is_team_controlled(Uuid::new_v4()));
+    }
+
+    #[test]
+    fn test_should_auto_pick() {
+        let draft_id = Uuid::new_v4();
+        let controlled_team = Uuid::new_v4();
+        let other_team = Uuid::new_v4();
+        let session = DraftSession::new(
+            draft_id,
+            300,
+            true,
+            ChartType::JimmyJohnson,
+            vec![controlled_team],
+        )
+        .unwrap();
+
+        // Controlled team should NOT auto-pick
+        assert!(!session.should_auto_pick(controlled_team));
+        // Other team should auto-pick (auto_pick_enabled = true)
+        assert!(session.should_auto_pick(other_team));
+    }
+
+    #[test]
+    fn test_should_auto_pick_disabled() {
+        let draft_id = Uuid::new_v4();
+        let team = Uuid::new_v4();
+        let session = DraftSession::new(
+            draft_id,
+            300,
+            false,
+            ChartType::JimmyJohnson,
+            vec![],
+        )
+        .unwrap();
+
+        // Auto-pick disabled, no team should auto-pick
+        assert!(!session.should_auto_pick(team));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE draft_sessions\n            SET status = $2,\n                current_pick_number = $3,\n                time_per_pick_seconds = $4,\n                auto_pick_enabled = $5,\n                chart_type = $6,\n                updated_at = $7,\n                started_at = $8,\n                completed_at = $9\n            WHERE id = $1\n            RETURNING *\n            ",
+  "query": "\n            INSERT INTO draft_sessions (\n                id, draft_id, status, current_pick_number, time_per_pick_seconds,\n                auto_pick_enabled, chart_type, controlled_team_ids, created_at, updated_at, started_at, completed_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n            RETURNING *\n            ",
   "describe": {
     "columns": [
       {
@@ -57,16 +57,24 @@
         "ordinal": 10,
         "name": "chart_type",
         "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "controlled_team_ids",
+        "type_info": "UuidArray"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid",
         "Varchar",
         "Int4",
         "Int4",
         "Bool",
         "Varchar",
+        "UuidArray",
+        "Timestamptz",
         "Timestamptz",
         "Timestamptz",
         "Timestamptz"
@@ -83,8 +91,9 @@
       false,
       true,
       true,
+      false,
       false
     ]
   },
-  "hash": "c205b591cab1dfff86065e22517237ff189919d9d7fd76bc68b679fd7dfcf60d"
+  "hash": "dc794ee52f93f599f7fd6da6572b96efa0278ab7037e7d4c0ae763bf3ff71a99"
 }

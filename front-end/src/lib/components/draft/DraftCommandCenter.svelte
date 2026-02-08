@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { draftState, toastState } from '$stores';
-	import { teamsApi } from '$api';
+	import { teamsApi, sessionsApi } from '$api';
 	import { Badge, Button, LoadingSpinner } from '$components/ui';
+	import { getTeamLogoPath } from '$lib/utils/logo';
 	import type { ChartType, Team, UUID } from '$types';
 	import { logger } from '$lib/utils/logger';
 
@@ -13,6 +14,7 @@
 
 	// --- Clock state ---
 	let team = $state<Team | null>(null);
+	let controlledTeams = $state<Map<string, Team>>(new Map());
 	let timeRemaining = $state(0);
 	let isLoadingTeam = $state(false);
 
@@ -30,10 +32,19 @@
 	let autoPickEnabled = $state(false);
 	let timePerPick = $state(120);
 
+	// --- Auto-pick state ---
+	let isAutoPickRunning = $state(false);
+
 	// --- Clock effects ---
 	$effect(() => {
 		const session = draftState.session;
 		if (!session || session.status !== 'InProgress') {
+			timeRemaining = 0;
+			return;
+		}
+
+		// Only run clock for user-controlled picks (or when no teams are controlled)
+		if (draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled) {
 			timeRemaining = 0;
 			return;
 		}
@@ -69,6 +80,24 @@
 		}
 	});
 
+	// --- Load controlled teams ---
+	$effect(() => {
+		const ids = draftState.controlledTeamIds;
+		if (ids.length > 0 && controlledTeams.size === 0) {
+			for (const id of ids) {
+				teamsApi
+					.get(id)
+					.then((t) => {
+						controlledTeams.set(id, t);
+						controlledTeams = new Map(controlledTeams);
+					})
+					.catch((err) => {
+						logger.error('Failed to load controlled team:', err);
+					});
+			}
+		}
+	});
+
 	// --- Controls effects ---
 	$effect(() => {
 		if (draftState.session) {
@@ -83,8 +112,31 @@
 		try {
 			await draftState.startSession(sessionId);
 			toastState.success('Draft session started');
+			// Trigger AI auto-picks if current pick is not user-controlled
+			await triggerAutoPickRun();
 		} catch (err) {
 			toastState.error('Failed to start session');
+		}
+	}
+
+	async function triggerAutoPickRun() {
+		if (!draftState.hasControlledTeams) return;
+		if (draftState.isCurrentPickUserControlled) return;
+		if (isAutoPickRunning) return;
+
+		isAutoPickRunning = true;
+		try {
+			const result = await sessionsApi.autoPickRun(sessionId);
+			draftState.session = result.session;
+			// Reload picks to reflect AI picks
+			if (draftState.session) {
+				await draftState.loadDraft(draftState.session.draft_id);
+			}
+		} catch (err) {
+			logger.error('Auto-pick run failed:', err);
+			toastState.error('Auto-pick failed');
+		} finally {
+			isAutoPickRunning = false;
 		}
 	}
 
@@ -151,7 +203,20 @@
 
 		<!-- Team on the Clock -->
 		<div class="lg:px-6 min-w-0">
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">On the Clock</p>
+			<div class="flex items-center gap-2 mb-1">
+				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide">On the Clock</p>
+				{#if draftState.hasControlledTeams}
+					{#if draftState.isCurrentPickUserControlled}
+						<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white leading-none">
+							YOUR PICK
+						</span>
+					{:else}
+						<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-500 text-white leading-none">
+							AI PICK
+						</span>
+					{/if}
+				{/if}
+			</div>
 			{#if isLoadingTeam}
 				<LoadingSpinner size="sm" />
 			{:else if team}
@@ -171,6 +236,29 @@
 			</Badge>
 		</div>
 	</div>
+
+	<!-- Your Teams row (only if controlled teams exist) -->
+	{#if draftState.hasControlledTeams && controlledTeams.size > 0}
+		<div class="flex items-center gap-2 border-t border-gray-100 pt-3">
+			<span class="text-xs font-medium text-gray-500">Your Teams:</span>
+			{#each Array.from(controlledTeams.values()) as ct (ct.id)}
+				<img
+					src={ct.logo_url || getTeamLogoPath(ct.abbreviation)}
+					alt="{ct.city} {ct.name}"
+					title="{ct.city} {ct.name}"
+					class="w-7 h-7 object-contain"
+					onerror={(e) => {
+						const img = e.currentTarget as HTMLImageElement;
+						img.style.display = 'none';
+						const fallback = document.createElement('span');
+						fallback.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+						fallback.textContent = ct.abbreviation;
+						img.parentElement?.insertBefore(fallback, img);
+					}}
+				/>
+			{/each}
+		</div>
+	{/if}
 
 	<!-- Row 2: Session Controls -->
 	<div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 border-t border-gray-200 pt-4">
