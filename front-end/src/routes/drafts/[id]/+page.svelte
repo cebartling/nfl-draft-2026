@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { draftsApi } from '$lib/api';
+	import { draftsApi, sessionsApi } from '$lib/api';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
@@ -76,8 +76,18 @@
 
 	async function handleCreateSession() {
 		if (!draft) return;
-		// Navigate to session - the session layout will handle creation
-		await goto(`/sessions/${draft.id}`);
+		try {
+			const session = await sessionsApi.create({
+				draft_id: draft.id,
+				time_per_pick_seconds: 120,
+				auto_pick_enabled: true,
+				chart_type: 'JimmyJohnson'
+			});
+			await goto(`/sessions/${session.id}`);
+		} catch (e) {
+			logger.error('Failed to create session:', e);
+			error = e instanceof Error ? e.message : 'Failed to create session';
+		}
 	}
 
 </script>

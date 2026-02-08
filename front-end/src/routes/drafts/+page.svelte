@@ -2,7 +2,7 @@
 	import { logger } from '$lib/utils/logger';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { draftsApi } from '$lib/api';
+	import { draftsApi, sessionsApi } from '$lib/api';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
@@ -226,7 +226,17 @@
 										type="button"
 										onclick={async (e) => {
 											e.stopPropagation();
-											await goto(`/sessions/${draft.id}`);
+											try {
+												const session = await sessionsApi.create({
+													draft_id: draft.id,
+													time_per_pick_seconds: 120,
+													auto_pick_enabled: true,
+													chart_type: 'JimmyJohnson'
+												});
+												await goto(`/sessions/${session.id}`);
+											} catch (err) {
+												logger.error('Failed to create session:', err);
+											}
 										}}
 										class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
 									>

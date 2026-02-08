@@ -61,10 +61,10 @@ export const DraftSessionSchema = z.object({
 	time_per_pick_seconds: z.number(),
 	auto_pick_enabled: z.boolean(),
 	chart_type: ChartTypeSchema,
-	started_at: z.string().optional(),
-	completed_at: z.string().optional(),
-	created_at: z.string(),
-	updated_at: z.string(),
+	started_at: z.string().nullable().optional(),
+	completed_at: z.string().nullable().optional(),
+	created_at: z.string().nullable().optional(),
+	updated_at: z.string().nullable().optional(),
 });
 export type DraftSession = z.infer<typeof DraftSessionSchema>;
 
