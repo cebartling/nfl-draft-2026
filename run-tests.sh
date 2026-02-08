@@ -24,6 +24,25 @@ BACKEND_ACCEPTANCE_RESULT=""
 FRONTEND_CHECK_RESULT=""
 FRONTEND_UNIT_RESULT=""
 
+# ── Ensure PostgreSQL is running ───────────────────────────────────
+
+STARTED_POSTGRES=false
+
+echo -e "${YELLOW}${BOLD}Checking PostgreSQL container...${NC}"
+if ! docker compose ps --status running --format '{{.Service}}' 2>/dev/null | grep -q '^postgres$'; then
+    echo -e "${YELLOW}PostgreSQL container is not running. Starting it...${NC}"
+    docker compose up -d postgres
+    STARTED_POSTGRES=true
+    echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${NC}"
+    until docker compose exec postgres pg_isready -U nfl_draft_user -q 2>/dev/null; do
+        sleep 1
+    done
+    echo -e "${GREEN}PostgreSQL is ready.${NC}"
+else
+    echo -e "${GREEN}PostgreSQL container is already running.${NC}"
+fi
+echo ""
+
 # ── Recreate test database ──────────────────────────────────────────
 
 echo -e "${YELLOW}${BOLD}Recreating test database...${NC}"
@@ -102,5 +121,14 @@ else
 fi
 
 echo -e "${BOLD}════════════════════════════════════════${NC}"
+
+# ── Shut down PostgreSQL if we started it ─────────────────────────
+
+if [ "$STARTED_POSTGRES" = true ]; then
+    echo ""
+    echo -e "${YELLOW}${BOLD}Stopping PostgreSQL container (started by this script)...${NC}"
+    docker compose down
+    echo -e "${GREEN}PostgreSQL container stopped.${NC}"
+fi
 
 [ "$TOTAL" -eq 4 ]
