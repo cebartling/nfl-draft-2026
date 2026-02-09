@@ -33,9 +33,6 @@
 	let autoPickEnabled = $state(false);
 	let timePerPick = $state(120);
 
-	// --- Auto-pick state ---
-	let isAutoPickRunning = $state(false);
-
 	// --- Clock effects ---
 	$effect(() => {
 		const session = draftState.session;
@@ -121,9 +118,8 @@
 	async function triggerAutoPickRun() {
 		if (!draftState.session?.auto_pick_enabled && !draftState.hasControlledTeams) return;
 		if (draftState.isCurrentPickUserControlled) return;
-		if (isAutoPickRunning) return;
+		if (draftState.isAutoPickRunning) return;
 
-		isAutoPickRunning = true;
 		draftState.isAutoPickRunning = true;
 		try {
 			const result = await sessionsApi.autoPickRun(sessionId);
@@ -136,7 +132,6 @@
 			logger.error('Auto-pick run failed:', err);
 			toastState.error('Auto-pick failed');
 		} finally {
-			isAutoPickRunning = false;
 			draftState.isAutoPickRunning = false;
 		}
 	}
