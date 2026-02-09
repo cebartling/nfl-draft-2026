@@ -245,6 +245,7 @@ describe('DraftState', () => {
 			state.picks = [makePick()];
 			state.isLoading = true;
 			state.error = 'some error';
+			state.isAutoPickRunning = true;
 
 			state.reset();
 
@@ -253,6 +254,7 @@ describe('DraftState', () => {
 			expect(state.picks).toEqual([]);
 			expect(state.isLoading).toBe(false);
 			expect(state.error).toBeNull();
+			expect(state.isAutoPickRunning).toBe(false);
 		});
 	});
 });

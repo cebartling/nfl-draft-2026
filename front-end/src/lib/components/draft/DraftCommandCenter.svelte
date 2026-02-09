@@ -54,8 +54,7 @@
 			return;
 		}
 
-		// Reset to full time when pick changes or clock conditions change
-		void pickNumber; // ensure reactive tracking
+		// Timer resets when pickNumber (read above) or timePerPickSeconds changes
 		timeRemaining = timePerPickSeconds;
 
 		const interval = setInterval(() => {
@@ -125,7 +124,7 @@
 	}
 
 	async function triggerAutoPickRun() {
-		if (!draftState.session?.auto_pick_enabled && !draftState.hasControlledTeams) return;
+		if (!draftState.session?.auto_pick_enabled) return;
 		if (draftState.isCurrentPickUserControlled) return;
 		if (draftState.isAutoPickRunning) return;
 

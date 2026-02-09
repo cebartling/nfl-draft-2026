@@ -41,6 +41,7 @@
 		if (!selectedPlayer || !draftState.session || !draftState.currentPick) {
 			return;
 		}
+		if (draftState.session.status !== 'InProgress') return;
 
 		making_pick = true;
 		try {
@@ -61,7 +62,7 @@
 			await draftState.loadDraft(draftState.session.draft_id);
 
 			// Trigger AI auto-picks for subsequent AI teams
-			if ((draftState.session?.auto_pick_enabled || draftState.hasControlledTeams) && !draftState.isCurrentPickUserControlled) {
+			if (draftState.session?.auto_pick_enabled && !draftState.isCurrentPickUserControlled) {
 				draftState.isAutoPickRunning = true;
 				try {
 					const result = await sessionsApi.autoPickRun(sessionId);

@@ -177,6 +177,17 @@ pub async fn start_session(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<SessionResponse>> {
+    let lock = state
+        .session_locks
+        .entry(id)
+        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .clone();
+    let _guard = lock.try_lock().map_err(|_| {
+        domain::errors::DomainError::InvalidState(
+            "Session is being modified by another request".to_string(),
+        )
+    })?;
+
     let mut session = state
         .session_repo
         .find_by_id(id)
@@ -202,6 +213,17 @@ pub async fn pause_session(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<SessionResponse>> {
+    let lock = state
+        .session_locks
+        .entry(id)
+        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .clone();
+    let _guard = lock.try_lock().map_err(|_| {
+        domain::errors::DomainError::InvalidState(
+            "Session is being modified by another request".to_string(),
+        )
+    })?;
+
     let mut session = state
         .session_repo
         .find_by_id(id)
@@ -323,9 +345,9 @@ pub async fn auto_pick_run(
         // Broadcast pick_made via WebSocket (only fetch team/player if player was assigned)
         if let Some(player_id) = made_pick.player_id {
             // Use cached team data to avoid repeated DB lookups
-            if !team_cache.contains_key(&pick.team_id) {
+            if let std::collections::hash_map::Entry::Vacant(e) = team_cache.entry(pick.team_id) {
                 if let Some(t) = state.team_repo.find_by_id(pick.team_id).await? {
-                    team_cache.insert(pick.team_id, t);
+                    e.insert(t);
                 }
             }
             let team = team_cache.get(&pick.team_id);
@@ -378,6 +400,12 @@ pub async fn auto_pick_run(
     // Batch session update — single DB write after all picks
     state.session_repo.update(&session).await?;
 
+    // Release lock and clean up DashMap entry for completed sessions
+    drop(_guard);
+    if session.status == domain::models::SessionStatus::Completed {
+        state.session_locks.remove(&id);
+    }
+
     Ok(Json(AutoPickRunResponse {
         session: SessionResponse::from(session),
         picks_made,
@@ -391,6 +419,17 @@ pub async fn advance_pick(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<SessionResponse>> {
+    let lock = state
+        .session_locks
+        .entry(id)
+        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .clone();
+    let _guard = lock.try_lock().map_err(|_| {
+        domain::errors::DomainError::InvalidState(
+            "Session is being modified by another request".to_string(),
+        )
+    })?;
+
     let mut session = state
         .session_repo
         .find_by_id(id)
