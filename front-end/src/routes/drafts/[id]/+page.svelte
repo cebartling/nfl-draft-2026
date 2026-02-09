@@ -3,12 +3,13 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { draftsApi } from '$lib/api';
+	import { draftsApi, sessionsApi, teamsApi } from '$lib/api';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
+	import TeamSelector from '$components/draft/TeamSelector.svelte';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
-	import type { Draft, DraftPick } from '$lib/types';
+	import type { Draft, DraftPick, Team } from '$lib/types';
 
 	let draftId = $derived($page.params.id!);
 	let draft = $state<Draft | null>(null);
@@ -16,6 +17,12 @@
 	let loading = $state(true);
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
+	// Team selector state
+	let showTeamSelector = $state(false);
+	let selectedTeamIds = $state<string[]>([]);
+	let allTeams = $state<Team[]>([]);
+	let teamsLoading = $state(false);
+
 	// Count only picks that have been made (have a player assigned)
 	let completedPicks = $derived(picks.filter((p) => p.player_id != null).length);
 	let totalPicks = $derived(draft?.total_picks ?? picks.length);
@@ -74,10 +81,36 @@
 		}
 	}
 
-	async function handleCreateSession() {
+	async function handleShowTeamSelector() {
+		showTeamSelector = true;
+		if (allTeams.length === 0) {
+			teamsLoading = true;
+			try {
+				allTeams = await teamsApi.list();
+			} catch (e) {
+				logger.error('Failed to load teams:', e);
+				error = e instanceof Error ? e.message : 'Failed to load teams';
+			} finally {
+				teamsLoading = false;
+			}
+		}
+	}
+
+	async function handleCreateSession(controlledTeamIds: string[] = []) {
 		if (!draft) return;
-		// Navigate to session - the session layout will handle creation
-		await goto(`/sessions/${draft.id}`);
+		try {
+			const session = await sessionsApi.create({
+				draft_id: draft.id,
+				time_per_pick_seconds: 120,
+				auto_pick_enabled: true,
+				chart_type: 'JimmyJohnson',
+				controlled_team_ids: controlledTeamIds
+			});
+			await goto(`/sessions/${session.id}`);
+		} catch (e) {
+			logger.error('Failed to create session:', e);
+			error = e instanceof Error ? e.message : 'Failed to create session';
+		}
 	}
 
 </script>
@@ -143,17 +176,28 @@
 				</div>
 				<div class="flex gap-2">
 					{#if draft.status === 'NotStarted'}
-						<button
-							type="button"
-							onclick={handleCreateSession}
-							class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
-						>
-							Start Draft
-						</button>
+						{#if !showTeamSelector}
+							<button
+								type="button"
+								onclick={handleShowTeamSelector}
+								class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+							>
+								Start Draft
+							</button>
+						{/if}
 					{:else if draft.status === 'InProgress'}
 						<button
 							type="button"
-							onclick={handleCreateSession}
+							onclick={async () => {
+								if (!draft) return;
+								try {
+									const session = await sessionsApi.getByDraftId(draft.id);
+									await goto(`/sessions/${session.id}`);
+								} catch (err) {
+									logger.error('Failed to find session:', err);
+									error = err instanceof Error ? err.message : 'Failed to find session';
+								}
+							}}
 							class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
 						>
 							Join Session
@@ -203,6 +247,60 @@
 			</div>
 			{/if}
 		</div>
+
+		<!-- Team Selector -->
+		{#if showTeamSelector}
+			<Card>
+				<div class="space-y-4">
+					<div>
+						<h2 class="text-xl font-bold text-gray-800 mb-1">Select Your Teams</h2>
+						<p class="text-sm text-gray-600">
+							Choose teams you want to manually control. Unselected teams will be managed by AI.
+						</p>
+					</div>
+
+					{#if teamsLoading}
+						<div class="flex justify-center py-8">
+							<LoadingSpinner />
+						</div>
+					{:else}
+						<TeamSelector
+							teams={allTeams}
+							{selectedTeamIds}
+							onSelectionChange={(ids) => (selectedTeamIds = ids)}
+						/>
+					{/if}
+
+					<div class="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-200">
+						<button
+							type="button"
+							onclick={() => handleCreateSession(selectedTeamIds)}
+							disabled={selectedTeamIds.length === 0}
+							class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
+						>
+							Start with {selectedTeamIds.length} Team{selectedTeamIds.length !== 1 ? 's' : ''}
+						</button>
+						<button
+							type="button"
+							onclick={() => handleCreateSession([])}
+							class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
+						>
+							Auto-pick All Teams
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								showTeamSelector = false;
+								selectedTeamIds = [];
+							}}
+							class="px-4 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</Card>
+		{/if}
 
 		<!-- Draft Progress -->
 		{#if picks.length > 0}

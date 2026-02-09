@@ -12,6 +12,7 @@ export class DraftState {
 	picks = $state<DraftPick[]>([]);
 	isLoading = $state(false);
 	error = $state<string | null>(null);
+	isAutoPickRunning = $state(false);
 
 	/**
 	 * Get the current pick number from the session
@@ -26,6 +27,36 @@ export class DraftState {
 	get currentPick(): DraftPick | null {
 		if (!this.picks.length) return null;
 		return this.picks.find((pick) => pick.overall_pick === this.currentPickNumber) ?? null;
+	}
+
+	/**
+	 * Get the list of user-controlled team IDs from the session
+	 */
+	get controlledTeamIds(): string[] {
+		return this.session?.controlled_team_ids ?? [];
+	}
+
+	/**
+	 * Whether any teams are user-controlled in this session
+	 */
+	get hasControlledTeams(): boolean {
+		return this.controlledTeamIds.length > 0;
+	}
+
+	/**
+	 * Check if a specific team is user-controlled
+	 */
+	isTeamControlled(teamId: string): boolean {
+		return this.controlledTeamIds.includes(teamId);
+	}
+
+	/**
+	 * Whether the current pick is for a user-controlled team
+	 */
+	get isCurrentPickUserControlled(): boolean {
+		const currentPick = this.currentPick;
+		if (!currentPick) return false;
+		return this.isTeamControlled(currentPick.team_id);
 	}
 
 	/**
@@ -174,6 +205,7 @@ export class DraftState {
 		this.picks = [];
 		this.isLoading = false;
 		this.error = null;
+		this.isAutoPickRunning = false;
 	}
 }
 

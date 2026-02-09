@@ -57,6 +57,11 @@
         "ordinal": 10,
         "name": "chart_type",
         "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "controlled_team_ids",
+        "type_info": "UuidArray"
       }
     ],
     "parameters": {
@@ -75,6 +80,7 @@
       false,
       true,
       true,
+      false,
       false
     ]
   },

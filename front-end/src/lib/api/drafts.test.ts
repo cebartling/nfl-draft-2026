@@ -181,7 +181,7 @@ describe('draftsApi', () => {
 			const result = await draftsApi.makePick('draft-1', 'pick-1', 'player-1');
 
 			expect(mockPost).toHaveBeenCalledWith(
-				'/drafts/draft-1/picks/pick-1',
+				'/picks/pick-1/make',
 				{ player_id: 'player-1' },
 				expect.any(Object)
 			);

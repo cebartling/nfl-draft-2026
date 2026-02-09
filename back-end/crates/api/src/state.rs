@@ -1,17 +1,23 @@
+use dashmap::DashMap;
 use sqlx::PgPool;
 use std::sync::Arc;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
 use db::repositories::{
     EventRepo, SessionRepo, SqlxCombineResultsRepository, SqlxDraftPickRepository,
-    SqlxDraftRepository, SqlxPlayerRepository, SqlxScoutingReportRepository,
-    SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository, SqlxTradeRepository,
+    SqlxDraftRepository, SqlxDraftStrategyRepository, SqlxPlayerRepository,
+    SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
+    SqlxTeamSeasonRepository, SqlxTradeRepository,
 };
 use domain::repositories::{
-    CombineResultsRepository, DraftPickRepository, DraftRepository, EventRepository,
-    PlayerRepository, ScoutingReportRepository, SessionRepository, TeamNeedRepository,
-    TeamRepository, TeamSeasonRepository, TradeRepository,
+    CombineResultsRepository, DraftPickRepository, DraftRepository, DraftStrategyRepository,
+    EventRepository, PlayerRepository, ScoutingReportRepository, SessionRepository,
+    TeamNeedRepository, TeamRepository, TeamSeasonRepository, TradeRepository,
 };
-use domain::services::{DraftEngine, TradeEngine};
+use domain::services::{
+    AutoPickService, DraftEngine, DraftStrategyService, PlayerEvaluationService, TradeEngine,
+};
 use websocket::ConnectionManager;
 
 /// Application state shared across all handlers
@@ -32,6 +38,8 @@ pub struct AppState {
     pub trade_engine: Arc<TradeEngine>,
     pub ws_manager: ConnectionManager,
     pub seed_api_key: Option<String>,
+    /// Per-session mutex to prevent concurrent auto-pick-run requests
+    pub session_locks: Arc<DashMap<Uuid, Arc<Mutex<()>>>>,
 }
 
 impl AppState {
@@ -52,7 +60,24 @@ impl AppState {
             Arc::new(SqlxTeamSeasonRepository::new(pool.clone()));
         let session_repo: Arc<dyn SessionRepository> = Arc::new(SessionRepo::new(pool.clone()));
         let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool.clone()));
-        let trade_repo: Arc<dyn TradeRepository> = Arc::new(SqlxTradeRepository::new(pool));
+        let trade_repo: Arc<dyn TradeRepository> = Arc::new(SqlxTradeRepository::new(pool.clone()));
+        let draft_strategy_repo: Arc<dyn DraftStrategyRepository> =
+            Arc::new(SqlxDraftStrategyRepository::new(pool));
+
+        let player_eval_service = Arc::new(PlayerEvaluationService::new(
+            scouting_report_repo.clone(),
+            combine_results_repo.clone(),
+        ));
+
+        let strategy_service = Arc::new(DraftStrategyService::new(
+            draft_strategy_repo,
+            team_need_repo.clone(),
+        ));
+
+        let auto_pick_service = Arc::new(AutoPickService::new(
+            player_eval_service,
+            strategy_service,
+        ));
 
         let draft_engine = Arc::new(
             DraftEngine::new(
@@ -61,7 +86,8 @@ impl AppState {
                 team_repo.clone(),
                 player_repo.clone(),
             )
-            .with_team_season_repo(team_season_repo.clone()),
+            .with_team_season_repo(team_season_repo.clone())
+            .with_auto_pick(auto_pick_service),
         );
 
         let trade_engine = Arc::new(TradeEngine::with_default_chart(
@@ -71,6 +97,7 @@ impl AppState {
         ));
 
         let ws_manager = ConnectionManager::new();
+        let session_locks = Arc::new(DashMap::new());
 
         Self {
             team_repo,
@@ -88,6 +115,7 @@ impl AppState {
             trade_engine,
             ws_manager,
             seed_api_key,
+            session_locks,
         }
     }
 }

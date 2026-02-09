@@ -2,11 +2,11 @@
 	import { logger } from '$lib/utils/logger';
 	import { page } from '$app/stores';
 	import { draftState } from '$stores/draft.svelte';
+	import { toastState } from '$stores';
 	import { playersState } from '$stores/players.svelte';
 	import { websocketState } from '$stores/websocket.svelte';
-	import { draftsApi } from '$lib/api';
-	import DraftClock from '$components/draft/DraftClock.svelte';
-	import SessionControls from '$components/draft/SessionControls.svelte';
+	import { draftsApi, sessionsApi } from '$lib/api';
+	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
@@ -41,6 +41,7 @@
 		if (!selectedPlayer || !draftState.session || !draftState.currentPick) {
 			return;
 		}
+		if (draftState.session.status !== 'InProgress') return;
 
 		making_pick = true;
 		try {
@@ -52,8 +53,34 @@
 
 			// Clear selection after successful pick
 			selectedPlayer = null;
+
+			// Advance pick number on the server and locally
+			const updatedSession = await sessionsApi.advancePick(sessionId);
+			draftState.session = updatedSession;
+
+			// Reload picks to reflect the manual pick
+			await draftState.loadDraft(draftState.session.draft_id);
+
+			// Trigger AI auto-picks for subsequent AI teams
+			if (draftState.session?.auto_pick_enabled && !draftState.isCurrentPickUserControlled) {
+				draftState.isAutoPickRunning = true;
+				try {
+					const result = await sessionsApi.autoPickRun(sessionId);
+					draftState.session = result.session;
+					// Reload picks to reflect AI picks
+					await draftState.loadDraft(draftState.session.draft_id);
+				} catch (err) {
+					logger.error('Auto-pick run failed:', err);
+					toastState.error('Auto-pick failed');
+				} finally {
+					draftState.isAutoPickRunning = false;
+				}
+			}
+
+			toastState.success('Pick submitted');
 		} catch (error) {
 			logger.error('Failed to make pick:', error);
+			toastState.error('Failed to make pick');
 		} finally {
 			making_pick = false;
 		}
@@ -85,17 +112,35 @@
 			<LoadingSpinner size="lg" />
 		</div>
 	{:else}
-		<!-- Draft Room Layout -->
+		<!-- Draft Command Center: Full-width clock + controls -->
+		<DraftCommandCenter {sessionId} />
+
+		<!-- Draft Room Layout: 2-column -->
 		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-			<!-- Left Column: Draft Clock and Session Controls -->
-			<div class="lg:col-span-3 space-y-4">
-				<DraftClock {sessionId} />
-				<SessionControls {sessionId} />
+			<!-- Left Column: Draft Board + On The Clock + Selected Player -->
+			<div class="lg:col-span-8 space-y-4">
+				<div class="bg-white rounded-lg shadow p-4">
+					<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
+					<DraftBoard picks={draftState.picks} />
+				</div>
 
 				<!-- Current Pick Info -->
 				{#if draftState.currentPick}
-					<div class="bg-white rounded-lg shadow p-4 border-2 border-blue-500">
-						<h3 class="text-sm font-semibold text-gray-600 mb-2">ON THE CLOCK</h3>
+					<div class="bg-white rounded-lg shadow p-4 border-2 {draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled ? 'border-gray-300' : 'border-blue-500'}">
+						<div class="flex items-center gap-2 mb-2">
+							<h3 class="text-sm font-semibold text-gray-600">ON THE CLOCK</h3>
+							{#if draftState.hasControlledTeams}
+								{#if draftState.isCurrentPickUserControlled}
+									<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-600 text-white">
+										YOUR PICK
+									</span>
+								{:else}
+									<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-500 text-white">
+										AI PICK
+									</span>
+								{/if}
+							{/if}
+						</div>
 						<div class="space-y-2">
 							<div class="text-lg font-bold text-gray-800">
 								Team {draftState.currentPick.team_id}
@@ -110,8 +155,8 @@
 					</div>
 				{/if}
 
-				<!-- Selected Player -->
-				{#if selectedPlayer}
+				<!-- Selected Player (only show when user controls current pick or no controlled teams) -->
+				{#if selectedPlayer && (!draftState.hasControlledTeams || draftState.isCurrentPickUserControlled)}
 					<div class="bg-white rounded-lg shadow p-4 border-2 border-green-500">
 						<h3 class="text-sm font-semibold text-gray-600 mb-2">SELECTED PLAYER</h3>
 						<div class="space-y-2">
@@ -139,19 +184,23 @@
 							</button>
 						</div>
 					</div>
+				{:else if draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled && draftState.session?.status === 'InProgress'}
+					<div class="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+						<div class="text-center py-4">
+							<div class="text-gray-400 mb-2">
+								<svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+								</svg>
+							</div>
+							<p class="text-sm font-medium text-gray-600">AI is selecting...</p>
+							<p class="text-xs text-gray-400 mt-1">Waiting for AI to make this pick</p>
+						</div>
+					</div>
 				{/if}
 			</div>
 
-			<!-- Center Column: Draft Board -->
-			<div class="lg:col-span-6">
-				<div class="bg-white rounded-lg shadow p-4">
-					<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
-					<DraftBoard picks={draftState.picks} />
-				</div>
-			</div>
-
 			<!-- Right Column: Available Players -->
-			<div class="lg:col-span-3">
+			<div class="lg:col-span-4">
 				<div class="bg-white rounded-lg shadow p-4">
 					<h2 class="text-xl font-bold text-gray-800 mb-4">Available Players</h2>
 					{#if players_loading}
@@ -166,39 +215,6 @@
 						/>
 					{/if}
 				</div>
-			</div>
-		</div>
-
-		<!-- Mobile: Stack columns vertically -->
-		<div class="lg:hidden space-y-4">
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Clock</h2>
-				<DraftClock {sessionId} />
-			</div>
-
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Session Controls</h2>
-				<SessionControls {sessionId} />
-			</div>
-
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
-				<DraftBoard picks={draftState.picks} />
-			</div>
-
-			<div class="bg-white rounded-lg shadow p-4">
-				<h2 class="text-xl font-bold text-gray-800 mb-4">Available Players</h2>
-				{#if players_loading}
-					<div class="flex justify-center py-8">
-						<LoadingSpinner />
-					</div>
-				{:else}
-					<PlayerList
-						players={availablePlayers()}
-						title="Available Players"
-						onSelectPlayer={handleSelectPlayer}
-					/>
-				{/if}
 			</div>
 		</div>
 	{/if}

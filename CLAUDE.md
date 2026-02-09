@@ -141,9 +141,11 @@ sqlx migrate revert
 
 ### Frontend (SvelteKit)
 
+> **Tip for AI agents:** When iterating on frontend UI, use the Vite dev server (`npm run dev` from `front-end/`) on port 5173 instead of rebuilding the Docker frontend container. Vite provides hot module replacement (HMR) so changes appear instantly. The dev server proxies API requests to the backend on port 8000. Use the Playwright MCP browser against `http://localhost:5173` for visual testing during development.
+
 **Setup:**
 ```bash
-cd frontend
+cd front-end
 npm install
 ```
 
