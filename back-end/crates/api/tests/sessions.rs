@@ -1096,3 +1096,63 @@ async fn test_create_session_with_nonexistent_team() {
 
     common::cleanup_database(&pool).await;
 }
+
+#[tokio::test]
+async fn test_get_session_by_draft_id() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    let draft_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create a session via API
+    let create_response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&json!({
+            "draft_id": draft_id,
+            "time_per_pick_seconds": 300,
+            "auto_pick_enabled": false,
+        }))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(create_response.status(), StatusCode::CREATED);
+    let created: Value = create_response.json().await.unwrap();
+    let session_id: Uuid = serde_json::from_value(created["id"].clone()).unwrap();
+
+    // Look up session by draft ID
+    let response = client
+        .get(&format!("{}/api/v1/drafts/{}/session", app_url, draft_id))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let session: Value = response.json().await.unwrap();
+    let returned_id: Uuid = serde_json::from_value(session["id"].clone()).unwrap();
+    assert_eq!(returned_id, session_id);
+    assert_eq!(session["draft_id"], draft_id.to_string());
+    assert_eq!(session["status"], "NotStarted");
+
+    // 404 for non-existent draft
+    let missing = client
+        .get(&format!(
+            "{}/api/v1/drafts/{}/session",
+            app_url,
+            Uuid::new_v4()
+        ))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+
+    common::cleanup_database(&pool).await;
+}
