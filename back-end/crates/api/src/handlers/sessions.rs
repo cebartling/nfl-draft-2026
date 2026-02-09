@@ -4,6 +4,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::error::ApiResult;
@@ -266,6 +267,8 @@ pub async fn auto_pick_run(
     }
 
     let mut picks_made = Vec::new();
+    // Cache teams to avoid N+1 queries inside the loop
+    let mut team_cache: HashMap<Uuid, domain::models::Team> = HashMap::new();
 
     // Cache draft outside the loop (fetch once)
     let draft = state
@@ -316,7 +319,13 @@ pub async fn auto_pick_run(
 
         // Broadcast pick_made via WebSocket (only fetch team/player if player was assigned)
         if let Some(player_id) = made_pick.player_id {
-            let team = state.team_repo.find_by_id(pick.team_id).await?;
+            // Use cached team data to avoid repeated DB lookups
+            if !team_cache.contains_key(&pick.team_id) {
+                if let Some(t) = state.team_repo.find_by_id(pick.team_id).await? {
+                    team_cache.insert(pick.team_id, t);
+                }
+            }
+            let team = team_cache.get(&pick.team_id);
             let player = state.player_repo.find_by_id(player_id).await?;
 
             if let (Some(team), Some(player)) = (team, player) {
