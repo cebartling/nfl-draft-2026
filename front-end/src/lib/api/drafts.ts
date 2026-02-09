@@ -45,11 +45,7 @@ export const draftsApi = {
 	 * Make a pick in the draft
 	 */
 	async makePick(draftId: string, pickId: string, playerId: string): Promise<DraftPick> {
-		return apiClient.post(
-			`/drafts/${draftId}/picks/${pickId}`,
-			{ player_id: playerId },
-			DraftPickSchema
-		);
+		return apiClient.post(`/picks/${pickId}/make`, { player_id: playerId }, DraftPickSchema);
 	},
 
 	/**
