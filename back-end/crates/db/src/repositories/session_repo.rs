@@ -118,7 +118,7 @@ impl SessionRepository for SessionRepo {
             DraftSessionDb,
             r#"
             SELECT * FROM draft_sessions
-            WHERE draft_id = $1
+            WHERE draft_id = $1 AND status != 'Completed'
             ORDER BY created_at DESC
             LIMIT 1
             "#,
