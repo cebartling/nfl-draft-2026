@@ -348,8 +348,8 @@ pub async fn auto_pick_run(
 
         picks_made.push(DraftPickResponse::from(made_pick));
 
-        // Small delay so WS messages arrive spaced out
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        // Yield to let WS messages flush without holding the HTTP connection too long
+        tokio::task::yield_now().await;
     }
 
     // Check if draft is complete (no more picks available)
