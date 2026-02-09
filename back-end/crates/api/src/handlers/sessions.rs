@@ -100,18 +100,19 @@ pub async fn create_session(
             ))
         })?;
 
-    // Validate all controlled team IDs exist
+    // Validate all controlled team IDs are participants in this draft
     for team_id in &req.controlled_team_ids {
-        state
-            .team_repo
-            .find_by_id(*team_id)
-            .await?
-            .ok_or_else(|| {
-                domain::errors::DomainError::NotFound(format!(
-                    "Team with id {} not found",
-                    team_id
-                ))
-            })?;
+        let picks = state
+            .draft_pick_repo
+            .find_by_draft_and_team(req.draft_id, *team_id)
+            .await?;
+        if picks.is_empty() {
+            return Err(domain::errors::DomainError::ValidationError(format!(
+                "Team {} does not have picks in draft {}",
+                team_id, req.draft_id
+            ))
+            .into());
+        }
     }
 
     // Create session
