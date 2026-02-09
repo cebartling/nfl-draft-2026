@@ -34,20 +34,29 @@
 	let timePerPick = $state(120);
 
 	// --- Clock effects ---
+	// Track only the values that should restart the clock to avoid resetting
+	// the timer when unrelated session fields change (e.g., after auto-pick-run).
 	$effect(() => {
-		const session = draftState.session;
-		if (!session || session.status !== 'InProgress') {
+		const status = draftState.session?.status;
+		const pickNumber = draftState.currentPickNumber;
+		const isUserPick = draftState.isCurrentPickUserControlled;
+		const hasControlled = draftState.hasControlledTeams;
+		const timePerPickSeconds = draftState.session?.time_per_pick_seconds ?? 0;
+
+		if (status !== 'InProgress') {
 			timeRemaining = 0;
 			return;
 		}
 
 		// Only run clock for user-controlled picks (or when no teams are controlled)
-		if (draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled) {
+		if (hasControlled && !isUserPick) {
 			timeRemaining = 0;
 			return;
 		}
 
-		timeRemaining = session.time_per_pick_seconds;
+		// Reset to full time when pick changes or clock conditions change
+		void pickNumber; // ensure reactive tracking
+		timeRemaining = timePerPickSeconds;
 
 		const interval = setInterval(() => {
 			if (timeRemaining > 0) {
