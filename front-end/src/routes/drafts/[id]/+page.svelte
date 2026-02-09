@@ -188,7 +188,16 @@
 					{:else if draft.status === 'InProgress'}
 						<button
 							type="button"
-							onclick={() => handleCreateSession()}
+							onclick={async () => {
+								if (!draft) return;
+								try {
+									const session = await sessionsApi.getByDraftId(draft.id);
+									await goto(`/sessions/${session.id}`);
+								} catch (err) {
+									logger.error('Failed to find session:', err);
+									error = err instanceof Error ? err.message : 'Failed to find session';
+								}
+							}}
 							class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
 						>
 							Join Session

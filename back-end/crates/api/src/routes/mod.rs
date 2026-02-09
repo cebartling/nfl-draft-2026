@@ -68,6 +68,10 @@ pub fn create_router(state: AppState) -> Router {
             "/drafts/{id}/picks/available",
             get(handlers::drafts::get_available_picks),
         )
+        .route(
+            "/drafts/{id}/session",
+            get(handlers::sessions::get_session_by_draft),
+        )
         .route("/drafts/{id}/start", post(handlers::drafts::start_draft))
         .route("/drafts/{id}/pause", post(handlers::drafts::pause_draft))
         .route(

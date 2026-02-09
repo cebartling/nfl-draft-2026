@@ -61,7 +61,8 @@
 			await draftState.loadDraft(draftState.session.draft_id);
 
 			// Trigger AI auto-picks for subsequent AI teams
-			if (draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled) {
+			if ((draftState.session?.auto_pick_enabled || draftState.hasControlledTeams) && !draftState.isCurrentPickUserControlled) {
+				draftState.isAutoPickRunning = true;
 				try {
 					const result = await sessionsApi.autoPickRun(sessionId);
 					draftState.session = result.session;
@@ -70,6 +71,8 @@
 				} catch (err) {
 					logger.error('Auto-pick run failed:', err);
 					toastState.error('Auto-pick failed');
+				} finally {
+					draftState.isAutoPickRunning = false;
 				}
 			}
 

@@ -40,6 +40,13 @@ export const sessionsApi = {
 	},
 
 	/**
+	 * Get a draft session by draft ID
+	 */
+	async getByDraftId(draftId: string): Promise<DraftSession> {
+		return apiClient.get(`/drafts/${draftId}/session`, DraftSessionSchema);
+	},
+
+	/**
 	 * Start a draft session
 	 */
 	async start(id: string): Promise<DraftSession> {

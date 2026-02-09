@@ -119,11 +119,12 @@
 	}
 
 	async function triggerAutoPickRun() {
-		if (!draftState.hasControlledTeams) return;
+		if (!draftState.session?.auto_pick_enabled && !draftState.hasControlledTeams) return;
 		if (draftState.isCurrentPickUserControlled) return;
 		if (isAutoPickRunning) return;
 
 		isAutoPickRunning = true;
+		draftState.isAutoPickRunning = true;
 		try {
 			const result = await sessionsApi.autoPickRun(sessionId);
 			draftState.session = result.session;
@@ -136,6 +137,7 @@
 			toastState.error('Auto-pick failed');
 		} finally {
 			isAutoPickRunning = false;
+			draftState.isAutoPickRunning = false;
 		}
 	}
 

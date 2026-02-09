@@ -138,6 +138,22 @@ pub async fn create_session(
     Ok((StatusCode::CREATED, Json(created.into())))
 }
 
+/// GET /api/v1/drafts/:id/session
+pub async fn get_session_by_draft(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<SessionResponse>> {
+    let session = state
+        .session_repo
+        .find_by_draft_id(id)
+        .await?
+        .ok_or_else(|| {
+            domain::errors::DomainError::NotFound(format!("No session found for draft {}", id))
+        })?;
+
+    Ok(Json(session.into()))
+}
+
 /// GET /api/v1/sessions/:id
 pub async fn get_session(
     State(state): State<AppState>,
@@ -310,6 +326,17 @@ pub async fn auto_pick_run(
 
         // Small delay so WS messages arrive spaced out
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+
+    // Check if draft is complete (no more picks available)
+    let remaining = state.draft_engine.get_next_pick(session.draft_id).await?;
+    if remaining.is_none() {
+        session.complete()?;
+        let event = DraftEvent::session_completed(id);
+        state.event_repo.create(&event).await?;
+        // Broadcast completion via WebSocket
+        let message = websocket::ServerMessage::draft_status(id, "Completed".to_string());
+        state.ws_manager.broadcast_to_session(id, message).await;
     }
 
     // Batch session update — single DB write after all picks

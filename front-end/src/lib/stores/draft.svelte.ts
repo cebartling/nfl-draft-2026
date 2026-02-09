@@ -12,6 +12,7 @@ export class DraftState {
 	picks = $state<DraftPick[]>([]);
 	isLoading = $state(false);
 	error = $state<string | null>(null);
+	isAutoPickRunning = $state(false);
 
 	/**
 	 * Get the current pick number from the session
@@ -204,6 +205,7 @@ export class DraftState {
 		this.picks = [];
 		this.isLoading = false;
 		this.error = null;
+		this.isAutoPickRunning = false;
 	}
 }
 

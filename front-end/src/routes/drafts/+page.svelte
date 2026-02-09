@@ -215,7 +215,12 @@
 										type="button"
 										onclick={async (e) => {
 											e.stopPropagation();
-											await goto(`/sessions/${draft.id}`);
+											try {
+												const session = await sessionsApi.getByDraftId(draft.id);
+												await goto(`/sessions/${session.id}`);
+											} catch (err) {
+												logger.error('Failed to find session:', err);
+											}
 										}}
 										class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors"
 									>

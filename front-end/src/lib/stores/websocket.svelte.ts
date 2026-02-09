@@ -89,8 +89,11 @@ export class WebSocketStateManager {
 					player_id: message.player_id,
 					team_id: message.team_id,
 				});
-				// Advance to the next pick
-				draftState.advancePick();
+				// Skip advancing pick when auto-pick HTTP request is in-flight
+				// (the HTTP response will set the authoritative session state)
+				if (!draftState.isAutoPickRunning) {
+					draftState.advancePick();
+				}
 				break;
 
 			case 'clock_update':
