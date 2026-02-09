@@ -362,6 +362,7 @@ pub async fn auto_pick_run(
 
 /// POST /api/v1/sessions/:id/advance-pick
 /// Advance the session's current_pick_number by one.
+/// Validates that the current pick has been made (has a player assigned) before advancing.
 pub async fn advance_pick(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -371,6 +372,20 @@ pub async fn advance_pick(
         .find_by_id(id)
         .await?
         .ok_or_else(|| domain::errors::DomainError::NotFound(format!("Session {}", id)))?;
+
+    // Verify the current pick has been made before allowing advance
+    let next_unmade = state
+        .draft_engine
+        .get_next_pick(session.draft_id)
+        .await?;
+    if let Some(ref pick) = next_unmade {
+        if pick.overall_pick == session.current_pick_number {
+            return Err(domain::errors::DomainError::InvalidState(
+                "Cannot advance: current pick has not been made yet".to_string(),
+            )
+            .into());
+        }
+    }
 
     session.advance_pick()?;
     let updated = state.session_repo.update(&session).await?;
