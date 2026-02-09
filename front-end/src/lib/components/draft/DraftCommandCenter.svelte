@@ -15,6 +15,7 @@
 	// --- Clock state ---
 	let team = $state<Team | null>(null);
 	let controlledTeams = $state<Map<string, Team>>(new Map());
+	let failedLogos = $state<Set<string>>(new Set());
 	let timeRemaining = $state(0);
 	let isLoadingTeam = $state(false);
 
@@ -73,6 +74,7 @@
 				})
 				.catch((err) => {
 					logger.error('Failed to load team:', err);
+					toastState.error('Failed to load current team');
 				})
 				.finally(() => {
 					isLoadingTeam = false;
@@ -84,17 +86,14 @@
 	$effect(() => {
 		const ids = draftState.controlledTeamIds;
 		if (ids.length > 0 && controlledTeams.size === 0) {
-			for (const id of ids) {
-				teamsApi
-					.get(id)
-					.then((t) => {
-						controlledTeams.set(id, t);
-						controlledTeams = new Map(controlledTeams);
-					})
-					.catch((err) => {
-						logger.error('Failed to load controlled team:', err);
-					});
-			}
+			Promise.all(ids.map((id) => teamsApi.get(id)))
+				.then((teams) => {
+					controlledTeams = new Map(teams.map((t) => [t.id, t]));
+				})
+				.catch((err) => {
+					logger.error('Failed to load controlled teams:', err);
+					toastState.error('Failed to load team data');
+				});
 		}
 	});
 
@@ -242,20 +241,21 @@
 		<div class="flex items-center gap-2 border-t border-gray-100 pt-3">
 			<span class="text-xs font-medium text-gray-500">Your Teams:</span>
 			{#each Array.from(controlledTeams.values()) as ct (ct.id)}
-				<img
-					src={ct.logo_url || getTeamLogoPath(ct.abbreviation)}
-					alt="{ct.city} {ct.name}"
-					title="{ct.city} {ct.name}"
-					class="w-7 h-7 object-contain"
-					onerror={(e) => {
-						const img = e.currentTarget as HTMLImageElement;
-						img.style.display = 'none';
-						const fallback = document.createElement('span');
-						fallback.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
-						fallback.textContent = ct.abbreviation;
-						img.parentElement?.insertBefore(fallback, img);
-					}}
-				/>
+				{#if failedLogos.has(ct.id)}
+					<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+						{ct.abbreviation}
+					</span>
+				{:else}
+					<img
+						src={ct.logo_url || getTeamLogoPath(ct.abbreviation)}
+						alt="{ct.city} {ct.name}"
+						title="{ct.city} {ct.name}"
+						class="w-7 h-7 object-contain"
+						onerror={() => {
+							failedLogos = new Set(failedLogos).add(ct.id);
+						}}
+					/>
+				{/if}
 			{/each}
 		</div>
 	{/if}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO players (id, first_name, last_name, position, draft_year) VALUES ($1, 'Player', 'One', 'QB', 2026), ($2, 'Player', 'Two', 'RB', 2026)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "52bdfd757a4ba32c89331388976be2ad77d0c96463b0a378a743be3fb2b98127"
+}

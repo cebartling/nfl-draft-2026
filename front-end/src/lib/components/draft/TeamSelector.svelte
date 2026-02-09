@@ -12,6 +12,7 @@
 	let { teams, selectedTeamIds, onSelectionChange }: Props = $props();
 
 	let expandedDivisions = $state<Set<string>>(new Set());
+	let failedLogos = $state<Set<string>>(new Set());
 
 	const groupedTeams = $derived(() => {
 		const groups = new Map<Conference, Map<Division, Team[]>>();
@@ -141,12 +142,20 @@
 										? 'border-blue-500 bg-blue-50'
 										: 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}"
 								>
-									<img
-										src={team.logo_url || getTeamLogoPath(team.abbreviation)}
-										alt="{team.name} logo"
-										class="w-8 h-8 object-contain"
-										onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
-									/>
+									{#if failedLogos.has(team.id)}
+										<span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+											{team.abbreviation}
+										</span>
+									{:else}
+										<img
+											src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+											alt="{team.name} logo"
+											class="w-8 h-8 object-contain"
+											onerror={() => {
+												failedLogos = new Set(failedLogos).add(team.id);
+											}}
+										/>
+									{/if}
 									<div class="flex-1 min-w-0">
 										<div class="text-sm font-medium text-gray-900 truncate">
 											{team.city} {team.name}

@@ -87,6 +87,32 @@ pub async fn create_session(
     State(state): State<AppState>,
     Json(req): Json<CreateSessionRequest>,
 ) -> ApiResult<(StatusCode, Json<SessionResponse>)> {
+    // Validate draft exists
+    let _draft = state
+        .draft_repo
+        .find_by_id(req.draft_id)
+        .await?
+        .ok_or_else(|| {
+            domain::errors::DomainError::NotFound(format!(
+                "Draft with id {} not found",
+                req.draft_id
+            ))
+        })?;
+
+    // Validate all controlled team IDs exist
+    for team_id in &req.controlled_team_ids {
+        state
+            .team_repo
+            .find_by_id(*team_id)
+            .await?
+            .ok_or_else(|| {
+                domain::errors::DomainError::NotFound(format!(
+                    "Team with id {} not found",
+                    team_id
+                ))
+            })?;
+    }
+
     // Create session
     let session = DraftSession::new(
         req.draft_id,
@@ -213,6 +239,15 @@ pub async fn auto_pick_run(
 
     let mut picks_made = Vec::new();
 
+    // Cache draft outside the loop (fetch once)
+    let draft = state
+        .draft_engine
+        .get_draft(session.draft_id)
+        .await?
+        .ok_or_else(|| {
+            domain::errors::DomainError::NotFound("Draft not found".to_string())
+        })?;
+
     loop {
         // Get the next unmade pick
         let next_pick = state
@@ -228,15 +263,6 @@ pub async fn auto_pick_run(
         if !session.should_auto_pick(pick.team_id) {
             break;
         }
-
-        // Get draft year for fallback
-        let draft = state
-            .draft_engine
-            .get_draft(session.draft_id)
-            .await?
-            .ok_or_else(|| {
-                domain::errors::DomainError::NotFound("Draft not found".to_string())
-            })?;
 
         // Execute auto-pick (with fallback on failure)
         let made_pick = match state.draft_engine.execute_auto_pick(pick.id).await {
@@ -257,27 +283,27 @@ pub async fn auto_pick_run(
             }
         };
 
-        // Advance session pick number
+        // Advance session pick number in memory
         session.advance_pick()?;
-        state.session_repo.update(&session).await?;
 
-        // Broadcast pick_made via WebSocket
-        let player_id = made_pick.player_id.unwrap_or_default();
-        let team = state.team_repo.find_by_id(pick.team_id).await?;
-        let player = state.player_repo.find_by_id(player_id).await?;
+        // Broadcast pick_made via WebSocket (only fetch team/player if player was assigned)
+        if let Some(player_id) = made_pick.player_id {
+            let team = state.team_repo.find_by_id(pick.team_id).await?;
+            let player = state.player_repo.find_by_id(player_id).await?;
 
-        if let (Some(team), Some(player)) = (team, player) {
-            let ws_msg = websocket::ServerMessage::pick_made(
-                id,
-                pick.id,
-                pick.team_id,
-                player_id,
-                pick.round,
-                pick.pick_number,
-                format!("{} {}", player.first_name, player.last_name),
-                format!("{} {}", team.city, team.name),
-            );
-            state.ws_manager.broadcast_to_session(id, ws_msg).await;
+            if let (Some(team), Some(player)) = (team, player) {
+                let ws_msg = websocket::ServerMessage::pick_made(
+                    id,
+                    pick.id,
+                    pick.team_id,
+                    player_id,
+                    pick.round,
+                    pick.pick_number,
+                    format!("{} {}", player.first_name, player.last_name),
+                    format!("{} {}", team.city, team.name),
+                );
+                state.ws_manager.broadcast_to_session(id, ws_msg).await;
+            }
         }
 
         picks_made.push(DraftPickResponse::from(made_pick));
@@ -285,6 +311,9 @@ pub async fn auto_pick_run(
         // Small delay so WS messages arrive spaced out
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
+
+    // Batch session update — single DB write after all picks
+    state.session_repo.update(&session).await?;
 
     Ok(Json(AutoPickRunResponse {
         session: SessionResponse::from(session),

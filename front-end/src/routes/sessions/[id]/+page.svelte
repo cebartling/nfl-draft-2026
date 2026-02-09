@@ -72,8 +72,11 @@
 					toastState.error('Auto-pick failed');
 				}
 			}
+
+			toastState.success('Pick submitted');
 		} catch (error) {
 			logger.error('Failed to make pick:', error);
+			toastState.error('Failed to make pick');
 		} finally {
 			making_pick = false;
 		}
