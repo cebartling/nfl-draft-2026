@@ -549,6 +549,21 @@ async fn test_create_session_with_controlled_teams() {
     .await
     .unwrap();
 
+    // Add draft picks so controlled teams are valid draft participants
+    let pick_id_1 = Uuid::new_v4();
+    let pick_id_2 = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id) VALUES ($1, $2, 1, 1, 1, $3), ($4, $2, 1, 2, 2, $5)",
+        pick_id_1,
+        draft_id,
+        team_id_1,
+        pick_id_2,
+        team_id_2
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
     // Create session with controlled_team_ids
     let request_body = json!({
         "draft_id": draft_id,
@@ -588,6 +603,22 @@ async fn test_create_session_with_controlled_teams() {
     assert!(db_session.controlled_team_ids.contains(&team_id_1));
     assert!(db_session.controlled_team_ids.contains(&team_id_2));
 
+    // Verify session_created event was recorded with controlled_team_ids
+    let event = sqlx::query!(
+        "SELECT event_type, event_data FROM draft_events WHERE session_id = $1 AND event_type = 'SessionCreated'",
+        session_id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(event.event_type, "SessionCreated");
+    let event_data: Value = event.event_data;
+    assert!(event_data["controlled_team_ids"].is_array());
+    let event_team_ids: Vec<String> =
+        serde_json::from_value(event_data["controlled_team_ids"].clone()).unwrap();
+    assert_eq!(event_team_ids.len(), 2);
+
     common::cleanup_database(&pool).await;
 }
 
@@ -610,6 +641,18 @@ async fn test_controlled_teams_persist_through_lifecycle() {
 
     sqlx::query!(
         "INSERT INTO teams (id, name, city, abbreviation, conference, division) VALUES ($1, 'Giants', 'New York', 'NYG', 'NFC', 'NFC East')",
+        team_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Add draft pick so controlled team is a valid draft participant
+    let pick_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id) VALUES ($1, $2, 1, 1, 1, $3)",
+        pick_id,
+        draft_id,
         team_id
     )
     .execute(&pool)
