@@ -133,6 +133,8 @@ pub async fn create_session(
         serde_json::json!({
             "time_per_pick_seconds": req.time_per_pick_seconds,
             "auto_pick_enabled": req.auto_pick_enabled,
+            "chart_type": req.chart_type,
+            "controlled_team_ids": req.controlled_team_ids,
         }),
     );
     state.event_repo.create(&event).await?;
