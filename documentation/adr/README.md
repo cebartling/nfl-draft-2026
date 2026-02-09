@@ -47,6 +47,10 @@ Each ADR follows this structure:
   - HTTP admin endpoint for player data seeding in hosted environments
   - Env-var gated security, library crate reuse, embedded data via `include_str!`
 
+- [ADR-0009: Per-Session Mutex for Concurrency Control](./0009-per-session-mutex-concurrency-control.md)
+  - In-memory per-session mutex with `try_lock()` for immediate rejection
+  - Prevents concurrent mutation of draft session state
+
 ### Frontend Decisions
 
 - [ADR-0004: SvelteKit with Svelte 5 Runes](./0004-sveltekit-with-svelte-5-runes.md)
