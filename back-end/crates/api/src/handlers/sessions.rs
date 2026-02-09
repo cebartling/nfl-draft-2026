@@ -355,6 +355,18 @@ pub async fn auto_pick_run(
         session.complete()?;
         let event = DraftEvent::session_completed(id);
         state.event_repo.create(&event).await?;
+
+        // Also mark the draft itself as completed
+        let mut draft = state
+            .draft_engine
+            .get_draft(session.draft_id)
+            .await?
+            .ok_or_else(|| {
+                domain::errors::DomainError::NotFound("Draft not found".to_string())
+            })?;
+        draft.complete()?;
+        state.draft_repo.update(&draft).await?;
+
         // Broadcast completion via WebSocket
         let message = websocket::ServerMessage::draft_status(id, "Completed".to_string());
         state.ws_manager.broadcast_to_session(id, message).await;
