@@ -240,6 +240,18 @@ pub async fn auto_pick_run(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<AutoPickRunResponse>> {
+    // Acquire per-session lock to prevent concurrent auto-pick-run requests
+    let lock = state
+        .session_locks
+        .entry(id)
+        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .clone();
+    let _guard = lock.try_lock().map_err(|_| {
+        domain::errors::DomainError::InvalidState(
+            "Auto-pick run already in progress for this session".to_string(),
+        )
+    })?;
+
     let mut session = state
         .session_repo
         .find_by_id(id)

@@ -1,5 +1,8 @@
+use dashmap::DashMap;
 use sqlx::PgPool;
 use std::sync::Arc;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
 use db::repositories::{
     EventRepo, SessionRepo, SqlxCombineResultsRepository, SqlxDraftPickRepository,
@@ -35,6 +38,8 @@ pub struct AppState {
     pub trade_engine: Arc<TradeEngine>,
     pub ws_manager: ConnectionManager,
     pub seed_api_key: Option<String>,
+    /// Per-session mutex to prevent concurrent auto-pick-run requests
+    pub session_locks: Arc<DashMap<Uuid, Arc<Mutex<()>>>>,
 }
 
 impl AppState {
@@ -92,6 +97,7 @@ impl AppState {
         ));
 
         let ws_manager = ConnectionManager::new();
+        let session_locks = Arc::new(DashMap::new());
 
         Self {
             team_repo,
@@ -109,6 +115,7 @@ impl AppState {
             trade_engine,
             ws_manager,
             seed_api_key,
+            session_locks,
         }
     }
 }
