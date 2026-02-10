@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use anyhow::Result;
 use domain::models::{FitGrade, ScoutingReport};
-use domain::repositories::{PlayerRepository, ScoutingReportRepository, TeamRepository};
+use domain::repositories::{PlayerRepository, TeamRepository};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -169,7 +169,6 @@ pub async fn load_scouting_reports(
     data: &RankingData,
     player_repo: &dyn PlayerRepository,
     team_repo: &dyn TeamRepository,
-    scouting_repo: &dyn ScoutingReportRepository,
     pool: &sqlx::PgPool,
 ) -> Result<ScoutingReportLoadStats> {
     let mut stats = ScoutingReportLoadStats::default();
@@ -205,6 +204,10 @@ pub async fn load_scouting_reports(
         .map(|p| ((p.first_name.to_lowercase(), p.last_name.to_lowercase()), p))
         .collect();
 
+    // Wrap the DELETE + INSERTs in a transaction so that if the process fails
+    // mid-way, old reports are not lost and the database stays consistent.
+    let mut tx = pool.begin().await?;
+
     // Clear existing scouting reports for players in this draft year
     println!(
         "Clearing existing scouting reports for draft year {}...",
@@ -214,7 +217,7 @@ pub async fn load_scouting_reports(
         "DELETE FROM scouting_reports WHERE player_id IN (SELECT id FROM players WHERE draft_year = $1)"
     )
     .bind(data.meta.draft_year)
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
     println!(
         "Cleared {} existing scouting reports",
@@ -272,7 +275,26 @@ pub async fn load_scouting_reports(
                 }
             };
 
-            match scouting_repo.create(&report).await {
+            let fit_grade_str = report.fit_grade.map(|g| g.as_str().to_string());
+            let insert_result = sqlx::query(
+                "INSERT INTO scouting_reports \
+                 (id, player_id, team_id, grade, notes, fit_grade, injury_concern, character_concern, created_at, updated_at) \
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+            )
+            .bind(report.id)
+            .bind(report.player_id)
+            .bind(report.team_id)
+            .bind(report.grade)
+            .bind(&report.notes)
+            .bind(&fit_grade_str)
+            .bind(report.injury_concern)
+            .bind(report.character_concern)
+            .bind(report.created_at)
+            .bind(report.updated_at)
+            .execute(&mut *tx)
+            .await;
+
+            match insert_result {
                 Ok(_) => {
                     reports_created_for_player += 1;
                 }
@@ -314,6 +336,7 @@ pub async fn load_scouting_reports(
         }
     }
 
+    tx.commit().await?;
     Ok(stats)
 }
 

@@ -10,7 +10,7 @@ use db::{
     create_pool,
     repositories::{
         SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository,
-        SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
+        SqlxTeamNeedRepository, SqlxTeamRepository,
         SqlxTeamSeasonRepository,
     },
 };
@@ -798,13 +798,11 @@ async fn handle_scouting(action: ScoutingActions) -> Result<()> {
                 let pool = create_pool(&database_url).await?;
                 let player_repo = SqlxPlayerRepository::new(pool.clone());
                 let team_repo = SqlxTeamRepository::new(pool.clone());
-                let scouting_repo = SqlxScoutingReportRepository::new(pool.clone());
 
                 let stats = scouting_report_loader::load_scouting_reports(
                     &data,
                     &player_repo,
                     &team_repo,
-                    &scouting_repo,
                     &pool,
                 )
                 .await?;

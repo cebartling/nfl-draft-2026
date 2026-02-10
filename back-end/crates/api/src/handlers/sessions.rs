@@ -195,9 +195,9 @@ pub async fn start_session(
         .ok_or_else(|| domain::errors::DomainError::NotFound(format!("Session {}", id)))?;
 
     session.start()?;
-    let updated = state.session_repo.update(&session).await?;
 
-    // Also start the underlying draft if it hasn't been started yet
+    // Start the underlying draft BEFORE persisting the session, so that if
+    // the draft update fails the session is not left in an inconsistent state.
     let mut draft = state
         .draft_repo
         .find_by_id(session.draft_id)
@@ -209,6 +209,9 @@ pub async fn start_session(
         draft.start()?;
         state.draft_repo.update(&draft).await?;
     }
+
+    // Now persist the session (draft is already in correct state)
+    let updated = state.session_repo.update(&session).await?;
 
     // Record session started event
     let event = DraftEvent::session_started(id);
