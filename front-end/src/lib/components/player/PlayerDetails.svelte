@@ -32,6 +32,23 @@
 		return 'info';
 	}
 
+	function getFitGradeColor(grade: string): 'success' | 'warning' | 'danger' | 'default' {
+		switch (grade) {
+			case 'A':
+				return 'success';
+			case 'B':
+				return 'success';
+			case 'C':
+				return 'warning';
+			case 'D':
+				return 'danger';
+			case 'F':
+				return 'danger';
+			default:
+				return 'default';
+		}
+	}
+
 	// Load scouting reports when switching to scouting tab
 	$effect(() => {
 		if (activeTab === 'scouting' && scoutingReports.length === 0) {
@@ -123,7 +140,7 @@
 	<div class="p-6">
 		{#if activeTab === 'overview'}
 			<div class="space-y-6">
-				<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+				<div class="grid grid-cols-2 md:grid-cols-3 gap-6">
 					<div>
 						<p class="text-sm font-medium text-gray-600 mb-1">Height</p>
 						<p class="text-lg font-semibold text-gray-900">
@@ -139,12 +156,6 @@
 					<div>
 						<p class="text-sm font-medium text-gray-600 mb-1">Draft Year</p>
 						<p class="text-lg font-semibold text-gray-900">{player.draft_year}</p>
-					</div>
-					<div>
-						<p class="text-sm font-medium text-gray-600 mb-1">Projected Round</p>
-						<p class="text-lg font-semibold text-gray-900">
-							{player.projected_round ? `Round ${player.projected_round}` : 'N/A'}
-						</p>
 					</div>
 				</div>
 
@@ -168,25 +179,26 @@
 						<div class="border border-gray-200 rounded-lg p-4">
 							<div class="flex items-center justify-between mb-3">
 								<Badge variant="info" size="lg">
-									Grade: {report.grade}/100
+									Grade: {report.grade}
 								</Badge>
+								<div class="flex items-center gap-2">
+									{#if report.fit_grade}
+										<Badge variant={getFitGradeColor(report.fit_grade)} size="sm">
+											Fit: {report.fit_grade}
+										</Badge>
+									{/if}
+									{#if report.injury_concern}
+										<Badge variant="danger" size="sm">Injury Concern</Badge>
+									{/if}
+									{#if report.character_concern}
+										<Badge variant="warning" size="sm">Character Concern</Badge>
+									{/if}
+								</div>
 							</div>
 							{#if report.notes}
-								<div class="mb-3">
+								<div>
 									<p class="text-sm font-medium text-gray-600 mb-1">Notes</p>
 									<p class="text-sm text-gray-900">{report.notes}</p>
-								</div>
-							{/if}
-							{#if report.strengths}
-								<div class="mb-3">
-									<p class="text-sm font-medium text-gray-600 mb-1">Strengths</p>
-									<p class="text-sm text-gray-900">{report.strengths}</p>
-								</div>
-							{/if}
-							{#if report.weaknesses}
-								<div>
-									<p class="text-sm font-medium text-gray-600 mb-1">Weaknesses</p>
-									<p class="text-sm text-gray-900">{report.weaknesses}</p>
 								</div>
 							{/if}
 						</div>
@@ -242,11 +254,11 @@
 							</p>
 						</div>
 					{/if}
-					{#if combineResults.shuttle_run}
+					{#if combineResults.twenty_yard_shuttle}
 						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">Shuttle Run</p>
+							<p class="text-sm font-medium text-gray-600 mb-1">20-Yard Shuttle</p>
 							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.shuttle_run.toFixed(2)}s
+								{combineResults.twenty_yard_shuttle.toFixed(2)}s
 							</p>
 						</div>
 					{/if}

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { UUIDSchema } from './common';
+import { PositionSchema } from './player';
 
 // Conference schema and type
 export const ConferenceSchema = z.enum(['AFC', 'NFC']);
@@ -18,7 +19,7 @@ export const DivisionSchema = z.enum([
 ]);
 export type Division = z.infer<typeof DivisionSchema>;
 
-// Team schema and type
+// Team schema and type — matches backend TeamResponse
 export const TeamSchema = z.object({
 	id: UUIDSchema,
 	name: z.string(),
@@ -26,17 +27,15 @@ export const TeamSchema = z.object({
 	city: z.string(),
 	conference: ConferenceSchema,
 	division: DivisionSchema,
-	logo_url: z.string().optional(),
 });
 export type Team = z.infer<typeof TeamSchema>;
 
-// TeamNeed schema and type
+// TeamNeed schema and type — matches backend TeamNeedResponse
 export const TeamNeedSchema = z.object({
 	id: UUIDSchema,
 	team_id: UUIDSchema,
-	position: z.string(),
-	priority: z.number().min(1).max(10),
-	notes: z.string().optional(),
+	position: PositionSchema,
+	priority: z.number(),
 });
 export type TeamNeed = z.infer<typeof TeamNeedSchema>;
 

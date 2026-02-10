@@ -66,15 +66,6 @@
 				</p>
 			</div>
 		{/if}
-
-		{#if player.projected_round}
-			<div>
-				<p class="text-xs font-medium text-gray-600">Projected Round</p>
-				<Badge variant="default" size="sm">
-					Round {player.projected_round}
-				</Badge>
-			</div>
-		{/if}
 	</div>
 
 	<div class="pt-3 border-t border-gray-200">

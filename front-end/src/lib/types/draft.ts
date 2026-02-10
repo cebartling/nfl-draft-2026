@@ -5,7 +5,7 @@ import { UUIDSchema } from './common';
 export const DraftStatusSchema = z.enum(['NotStarted', 'InProgress', 'Paused', 'Completed']);
 export type DraftStatus = z.infer<typeof DraftStatusSchema>;
 
-// Draft schema and type
+// Draft schema and type — matches backend DraftResponse
 export const DraftSchema = z.object({
 	id: UUIDSchema,
 	name: z.string(),
@@ -15,12 +15,10 @@ export const DraftSchema = z.object({
 	picks_per_round: z.number().nullable(),
 	total_picks: z.number().nullable(),
 	is_realistic: z.boolean().optional(),
-	created_at: z.string().optional(),
-	updated_at: z.string().optional(),
 });
 export type Draft = z.infer<typeof DraftSchema>;
 
-// DraftPick schema and type
+// DraftPick schema and type — matches backend DraftPickResponse
 export const DraftPickSchema = z.object({
 	id: UUIDSchema,
 	draft_id: UUIDSchema,
@@ -31,8 +29,8 @@ export const DraftPickSchema = z.object({
 	player_id: UUIDSchema.nullable().optional(),
 	picked_at: z.string().nullable().optional(),
 	original_team_id: UUIDSchema.nullable().optional(),
-	is_compensatory: z.boolean().optional(),
-	is_traded: z.boolean().optional(),
+	is_compensatory: z.boolean(),
+	is_traded: z.boolean(),
 	notes: z.string().nullable().optional(),
 });
 export type DraftPick = z.infer<typeof DraftPickSchema>;
@@ -52,7 +50,7 @@ export const ChartTypeSchema = z.enum([
 ]);
 export type ChartType = z.infer<typeof ChartTypeSchema>;
 
-// DraftSession schema and type
+// DraftSession schema and type — matches backend SessionResponse
 export const DraftSessionSchema = z.object({
 	id: UUIDSchema,
 	draft_id: UUIDSchema,
@@ -64,12 +62,10 @@ export const DraftSessionSchema = z.object({
 	controlled_team_ids: z.array(UUIDSchema).default([]),
 	started_at: z.string().nullable().optional(),
 	completed_at: z.string().nullable().optional(),
-	created_at: z.string().nullable().optional(),
-	updated_at: z.string().nullable().optional(),
 });
 export type DraftSession = z.infer<typeof DraftSessionSchema>;
 
-// DraftEvent schema and type
+// DraftEvent schema and type — matches backend EventResponse
 export const DraftEventSchema = z.object({
 	id: UUIDSchema,
 	session_id: UUIDSchema,

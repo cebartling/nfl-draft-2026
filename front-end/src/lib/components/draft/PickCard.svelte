@@ -52,7 +52,7 @@
 		<div class="flex items-center gap-2">
 			{#if !logoError}
 				<img
-					src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+					src={getTeamLogoPath(team.abbreviation)}
 					alt="{team.abbreviation} logo"
 					class="w-8 h-8 object-contain"
 					onerror={() => { logoError = true; }}
