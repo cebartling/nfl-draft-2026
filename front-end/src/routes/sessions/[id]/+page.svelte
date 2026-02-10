@@ -189,40 +189,8 @@
 			{/if}
 		</div>
 
-		<!-- Current Pick Info + Selected Player (always visible) -->
+		<!-- Selected Player (always visible) -->
 		<div class="space-y-4">
-			<!-- Current Pick Info -->
-			{#if draftState.currentPick}
-				<div class="bg-white rounded-lg shadow p-4 border-2 {draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled ? 'border-gray-300' : 'border-blue-500'}">
-					<div class="flex items-center gap-2 mb-2">
-						<h3 class="text-sm font-semibold text-gray-600">ON THE CLOCK</h3>
-						{#if draftState.hasControlledTeams}
-							{#if draftState.isCurrentPickUserControlled}
-								<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-600 text-white">
-									YOUR PICK
-								</span>
-							{:else}
-								<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-500 text-white">
-									AI PICK
-								</span>
-							{/if}
-						{/if}
-					</div>
-					<div class="space-y-2">
-						<div class="text-lg font-bold text-gray-800">
-							Team {draftState.currentPick.team_id}
-						</div>
-						<div class="text-sm text-gray-600">
-							Round {draftState.currentPick.round}, Pick {draftState.currentPick.pick_number}
-						</div>
-						<div class="text-sm text-gray-600">
-							Overall Pick: {draftState.currentPick.overall_pick}
-						</div>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Selected Player (only show when user controls current pick or no controlled teams) -->
 			{#if selectedPlayer && (!draftState.hasControlledTeams || draftState.isCurrentPickUserControlled)}
 				<div class="bg-white rounded-lg shadow p-4 border-2 border-green-500">
 					<h3 class="text-sm font-semibold text-gray-600 mb-2">SELECTED PLAYER</h3>
