@@ -126,7 +126,7 @@
 					</span>
 				</button>
 				{#if !collapsedRounds.has(round)}
-					<div id="round-{round}-picks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+					<div id="round-{round}-picks" class="flex flex-col gap-1">
 						{#each picksByRound[round] as pick (pick.id)}
 							{@const team = teams.get(pick.team_id)}
 							{@const player = pick.player_id ? (players.get(pick.player_id) ?? null) : null}
