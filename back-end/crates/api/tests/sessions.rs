@@ -1021,6 +1021,113 @@ async fn test_auto_pick_run_empty_when_user_controlled_first() {
 }
 
 #[tokio::test]
+async fn test_start_session_transitions_draft_to_in_progress() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create draft in NotStarted state
+    let draft_id = Uuid::new_v4();
+    let session_id = Uuid::new_v4();
+
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query!(
+        "INSERT INTO draft_sessions (id, draft_id, status, current_pick_number, time_per_pick_seconds, auto_pick_enabled) VALUES ($1, $2, 'NotStarted', 1, 300, false)",
+        session_id,
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Verify draft starts as NotStarted
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(db_draft.status, "NotStarted");
+
+    // Start session
+    let response = client
+        .post(&format!("{}/api/v1/sessions/{}/start", app_url, session_id))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let session: Value = response.json().await.unwrap();
+    assert_eq!(session["status"], "InProgress");
+
+    // Verify both session AND draft are now InProgress in the database
+    let db_session = sqlx::query!("SELECT status FROM draft_sessions WHERE id = $1", session_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(db_session.status, "InProgress");
+
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(db_draft.status, "InProgress");
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
+async fn test_start_session_skips_draft_already_in_progress() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create draft already InProgress (e.g., resumed after pause)
+    let draft_id = Uuid::new_v4();
+    let session_id = Uuid::new_v4();
+
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'InProgress', 7, 32::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Session was paused and is being restarted
+    sqlx::query!(
+        "INSERT INTO draft_sessions (id, draft_id, status, current_pick_number, time_per_pick_seconds, auto_pick_enabled) VALUES ($1, $2, 'Paused', 1, 300, false)",
+        session_id,
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Start session (resume from paused)
+    let response = client
+        .post(&format!("{}/api/v1/sessions/{}/start", app_url, session_id))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // Draft should still be InProgress (not double-started)
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(db_draft.status, "InProgress");
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
 async fn test_create_session_with_nonexistent_draft() {
     let (app_url, pool) = common::spawn_app().await;
     let client = common::create_client();

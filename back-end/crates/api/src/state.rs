@@ -23,6 +23,7 @@ use websocket::ConnectionManager;
 /// Application state shared across all handlers
 #[derive(Clone)]
 pub struct AppState {
+    pub pool: PgPool,
     pub team_repo: Arc<dyn TeamRepository>,
     pub player_repo: Arc<dyn PlayerRepository>,
     pub draft_repo: Arc<dyn DraftRepository>,
@@ -62,7 +63,7 @@ impl AppState {
         let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool.clone()));
         let trade_repo: Arc<dyn TradeRepository> = Arc::new(SqlxTradeRepository::new(pool.clone()));
         let draft_strategy_repo: Arc<dyn DraftStrategyRepository> =
-            Arc::new(SqlxDraftStrategyRepository::new(pool));
+            Arc::new(SqlxDraftStrategyRepository::new(pool.clone()));
 
         let player_eval_service = Arc::new(PlayerEvaluationService::new(
             scouting_report_repo.clone(),
@@ -98,6 +99,7 @@ impl AppState {
         let session_locks = Arc::new(DashMap::new());
 
         Self {
+            pool,
             team_repo,
             player_repo,
             draft_repo,

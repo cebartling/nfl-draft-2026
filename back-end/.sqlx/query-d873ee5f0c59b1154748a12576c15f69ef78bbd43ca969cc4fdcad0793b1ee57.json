@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE draft_sessions\n        SET status = $2,\n            current_pick_number = $3,\n            time_per_pick_seconds = $4,\n            auto_pick_enabled = $5,\n            chart_type = $6,\n            controlled_team_ids = $7,\n            updated_at = $8,\n            started_at = $9,\n            completed_at = $10\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Bool",
+        "Varchar",
+        "UuidArray",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d873ee5f0c59b1154748a12576c15f69ef78bbd43ca969cc4fdcad0793b1ee57"
+}
