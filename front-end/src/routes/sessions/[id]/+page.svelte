@@ -181,6 +181,7 @@
 						<PlayerList
 							players={availablePlayers()}
 							title="Available Players"
+							{scoutingGrades}
 							onSelectPlayer={handleSelectPlayer}
 						/>
 					{/if}

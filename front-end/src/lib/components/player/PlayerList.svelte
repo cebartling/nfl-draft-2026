@@ -7,10 +7,11 @@
 	interface Props {
 		players: Player[];
 		title: string;
+		scoutingGrades?: Map<string, number>;
 		onSelectPlayer?: (player: Player) => void;
 	}
 
-	let { players, title, onSelectPlayer }: Props = $props();
+	let { players, title, scoutingGrades, onSelectPlayer }: Props = $props();
 
 	let searchQuery = $state('');
 	let selectedPosition = $state<Position | 'all'>('all');
@@ -104,9 +105,9 @@
 		{#if filteredPlayers.length === 0}
 			<p class="text-center text-gray-500 py-12">No players found</p>
 		{:else}
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			<div class="flex flex-col gap-3">
 				{#each filteredPlayers as player (player.id)}
-					<PlayerCard {player} onSelect={onSelectPlayer} />
+					<PlayerCard {player} scoutingGrade={scoutingGrades?.get(player.id)} onSelect={onSelectPlayer} />
 				{/each}
 			</div>
 		{/if}
