@@ -1,0 +1,362 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "source": "template",
+    "source_url": "N/A",
+    "draft_year": 2026,
+    "scraped_at": "2026-02-10",
+    "total_prospects": 50
+  },
+  "rankings": [
+    {
+      "rank": 1,
+      "first_name": "Shedeur",
+      "last_name": "Sanders",
+      "position": "QB",
+      "school": "Colorado"
+    },
+    {
+      "rank": 2,
+      "first_name": "Cam",
+      "last_name": "Ward",
+      "position": "QB",
+      "school": "Miami"
+    },
+    {
+      "rank": 3,
+      "first_name": "Travis",
+      "last_name": "Hunter",
+      "position": "CB",
+      "school": "Colorado"
+    },
+    {
+      "rank": 4,
+      "first_name": "Tetairoa",
+      "last_name": "McMillan",
+      "position": "WR",
+      "school": "Oregon"
+    },
+    {
+      "rank": 5,
+      "first_name": "Abdul",
+      "last_name": "Carter",
+      "position": "EDGE",
+      "school": "Penn State"
+    },
+    {
+      "rank": 6,
+      "first_name": "Kelvin",
+      "last_name": "Banks Jr.",
+      "position": "OT",
+      "school": "Texas"
+    },
+    {
+      "rank": 7,
+      "first_name": "Mason",
+      "last_name": "Graham",
+      "position": "DT",
+      "school": "Michigan"
+    },
+    {
+      "rank": 8,
+      "first_name": "Luther",
+      "last_name": "Burden III",
+      "position": "WR",
+      "school": "Missouri"
+    },
+    {
+      "rank": 9,
+      "first_name": "Malaki",
+      "last_name": "Starks",
+      "position": "S",
+      "school": "Georgia"
+    },
+    {
+      "rank": 10,
+      "first_name": "Will",
+      "last_name": "Campbell",
+      "position": "OT",
+      "school": "LSU"
+    },
+    {
+      "rank": 11,
+      "first_name": "Colston",
+      "last_name": "Loveland",
+      "position": "TE",
+      "school": "Michigan"
+    },
+    {
+      "rank": 12,
+      "first_name": "Kenneth",
+      "last_name": "Grant",
+      "position": "DT",
+      "school": "Michigan"
+    },
+    {
+      "rank": 13,
+      "first_name": "Jalon",
+      "last_name": "Walker",
+      "position": "LB",
+      "school": "Georgia"
+    },
+    {
+      "rank": 14,
+      "first_name": "Nic",
+      "last_name": "Scourton",
+      "position": "EDGE",
+      "school": "Texas A&M"
+    },
+    {
+      "rank": 15,
+      "first_name": "Will",
+      "last_name": "Johnson",
+      "position": "CB",
+      "school": "Michigan"
+    },
+    {
+      "rank": 16,
+      "first_name": "Mykel",
+      "last_name": "Williams",
+      "position": "EDGE",
+      "school": "Georgia"
+    },
+    {
+      "rank": 17,
+      "first_name": "James",
+      "last_name": "Pearce Jr.",
+      "position": "EDGE",
+      "school": "Tennessee"
+    },
+    {
+      "rank": 18,
+      "first_name": "Tyler",
+      "last_name": "Warren",
+      "position": "TE",
+      "school": "Penn State"
+    },
+    {
+      "rank": 19,
+      "first_name": "Emeka",
+      "last_name": "Egbuka",
+      "position": "WR",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 20,
+      "first_name": "Ashton",
+      "last_name": "Jeanty",
+      "position": "RB",
+      "school": "Boise State"
+    },
+    {
+      "rank": 21,
+      "first_name": "Derrick",
+      "last_name": "Harmon",
+      "position": "DT",
+      "school": "Oregon"
+    },
+    {
+      "rank": 22,
+      "first_name": "Benjamin",
+      "last_name": "Morrison",
+      "position": "CB",
+      "school": "Notre Dame"
+    },
+    {
+      "rank": 23,
+      "first_name": "Josh",
+      "last_name": "Simmons",
+      "position": "OT",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 24,
+      "first_name": "Donovan",
+      "last_name": "Jackson",
+      "position": "OG",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 25,
+      "first_name": "Ty",
+      "last_name": "Robinson",
+      "position": "DT",
+      "school": "Nebraska"
+    },
+    {
+      "rank": 26,
+      "first_name": "Shavon",
+      "last_name": "Revel Jr.",
+      "position": "CB",
+      "school": "East Carolina"
+    },
+    {
+      "rank": 27,
+      "first_name": "Nick",
+      "last_name": "Singleton",
+      "position": "RB",
+      "school": "Penn State"
+    },
+    {
+      "rank": 28,
+      "first_name": "Tyleik",
+      "last_name": "Williams",
+      "position": "DT",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 29,
+      "first_name": "Princely",
+      "last_name": "Umanmielen",
+      "position": "EDGE",
+      "school": "Ole Miss"
+    },
+    {
+      "rank": 30,
+      "first_name": "Matthew",
+      "last_name": "Golden",
+      "position": "WR",
+      "school": "Texas"
+    },
+    {
+      "rank": 31,
+      "first_name": "Trey",
+      "last_name": "Amos",
+      "position": "CB",
+      "school": "Ole Miss"
+    },
+    {
+      "rank": 32,
+      "first_name": "Grey",
+      "last_name": "Zabel",
+      "position": "OT",
+      "school": "North Dakota State"
+    },
+    {
+      "rank": 33,
+      "first_name": "Wyatt",
+      "last_name": "Milum",
+      "position": "OG",
+      "school": "West Virginia"
+    },
+    {
+      "rank": 34,
+      "first_name": "Kyle",
+      "last_name": "Kennard",
+      "position": "EDGE",
+      "school": "South Carolina"
+    },
+    {
+      "rank": 35,
+      "first_name": "Mike",
+      "last_name": "Matthews",
+      "position": "C",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 36,
+      "first_name": "Walter",
+      "last_name": "Nolen",
+      "position": "DT",
+      "school": "Ole Miss"
+    },
+    {
+      "rank": 37,
+      "first_name": "Kevin",
+      "last_name": "Winston Jr.",
+      "position": "S",
+      "school": "Penn State"
+    },
+    {
+      "rank": 38,
+      "first_name": "Tate",
+      "last_name": "Ratledge",
+      "position": "OG",
+      "school": "Georgia"
+    },
+    {
+      "rank": 39,
+      "first_name": "Deone",
+      "last_name": "Walker",
+      "position": "DT",
+      "school": "Kentucky"
+    },
+    {
+      "rank": 40,
+      "first_name": "Andrew",
+      "last_name": "Mukuba",
+      "position": "S",
+      "school": "Texas"
+    },
+    {
+      "rank": 41,
+      "first_name": "Harold",
+      "last_name": "Fannin Jr.",
+      "position": "TE",
+      "school": "Bowling Green"
+    },
+    {
+      "rank": 42,
+      "first_name": "Jack",
+      "last_name": "Sawyer",
+      "position": "EDGE",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 43,
+      "first_name": "Jihaad",
+      "last_name": "Campbell",
+      "position": "LB",
+      "school": "Alabama"
+    },
+    {
+      "rank": 44,
+      "first_name": "Smael",
+      "last_name": "Mondon Jr.",
+      "position": "LB",
+      "school": "Georgia"
+    },
+    {
+      "rank": 45,
+      "first_name": "Tyler",
+      "last_name": "Booker",
+      "position": "OG",
+      "school": "Alabama"
+    },
+    {
+      "rank": 46,
+      "first_name": "Quinshon",
+      "last_name": "Judkins",
+      "position": "RB",
+      "school": "Ohio State"
+    },
+    {
+      "rank": 47,
+      "first_name": "Omarion",
+      "last_name": "Hampton",
+      "position": "RB",
+      "school": "North Carolina"
+    },
+    {
+      "rank": 48,
+      "first_name": "Landon",
+      "last_name": "Jackson",
+      "position": "EDGE",
+      "school": "Arkansas"
+    },
+    {
+      "rank": 49,
+      "first_name": "Jalen",
+      "last_name": "Milroe",
+      "position": "QB",
+      "school": "Alabama"
+    },
+    {
+      "rank": 50,
+      "first_name": "Quinn",
+      "last_name": "Ewers",
+      "position": "QB",
+      "school": "Texas"
+    }
+  ]
+}

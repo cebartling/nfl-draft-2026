@@ -77,13 +77,10 @@ async fn test_make_pick_nonexistent_player_returns_404() {
     assert_eq!(response.status(), 404);
 
     // Verify pick is still unmade in DB
-    let db_pick = sqlx::query!(
-        "SELECT player_id FROM draft_picks WHERE id = $1",
-        pick_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_pick = sqlx::query!("SELECT player_id FROM draft_picks WHERE id = $1", pick_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert!(db_pick.player_id.is_none());
 }
 

@@ -313,16 +313,11 @@ pub async fn auto_pick_run(
         .draft_engine
         .get_draft(session.draft_id)
         .await?
-        .ok_or_else(|| {
-            domain::errors::DomainError::NotFound("Draft not found".to_string())
-        })?;
+        .ok_or_else(|| domain::errors::DomainError::NotFound("Draft not found".to_string()))?;
 
     loop {
         // Get the next unmade pick
-        let next_pick = state
-            .draft_engine
-            .get_next_pick(session.draft_id)
-            .await?;
+        let next_pick = state.draft_engine.get_next_pick(session.draft_id).await?;
         let Some(pick) = next_pick else {
             // No more picks — draft complete
             break;
@@ -344,9 +339,7 @@ pub async fn auto_pick_run(
                     .get_available_players(session.draft_id, draft.year)
                     .await?;
                 let first = available.first().ok_or_else(|| {
-                    domain::errors::DomainError::ValidationError(
-                        "No players available".to_string(),
-                    )
+                    domain::errors::DomainError::ValidationError("No players available".to_string())
                 })?;
                 state.draft_engine.make_pick(pick.id, first.id).await?
             }
@@ -399,9 +392,7 @@ pub async fn auto_pick_run(
             .draft_engine
             .get_draft(session.draft_id)
             .await?
-            .ok_or_else(|| {
-                domain::errors::DomainError::NotFound("Draft not found".to_string())
-            })?;
+            .ok_or_else(|| domain::errors::DomainError::NotFound("Draft not found".to_string()))?;
         draft.complete()?;
         state.draft_repo.update(&draft).await?;
 
@@ -450,10 +441,7 @@ pub async fn advance_pick(
         .ok_or_else(|| domain::errors::DomainError::NotFound(format!("Session {}", id)))?;
 
     // Verify the current pick has been made before allowing advance
-    let next_unmade = state
-        .draft_engine
-        .get_next_pick(session.draft_id)
-        .await?;
+    let next_unmade = state.draft_engine.get_next_pick(session.draft_id).await?;
     if let Some(ref pick) = next_unmade {
         if pick.overall_pick == session.current_pick_number {
             return Err(domain::errors::DomainError::InvalidState(

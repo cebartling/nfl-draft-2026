@@ -678,10 +678,7 @@ async fn test_controlled_teams_persist_through_lifecycle() {
 
     // Start session
     let start_response = client
-        .post(&format!(
-            "{}/api/v1/sessions/{}/start",
-            app_url, session_id
-        ))
+        .post(&format!("{}/api/v1/sessions/{}/start", app_url, session_id))
         .send()
         .await
         .unwrap();
@@ -695,10 +692,7 @@ async fn test_controlled_teams_persist_through_lifecycle() {
 
     // Pause session
     let pause_response = client
-        .post(&format!(
-            "{}/api/v1/sessions/{}/pause",
-            app_url, session_id
-        ))
+        .post(&format!("{}/api/v1/sessions/{}/pause", app_url, session_id))
         .send()
         .await
         .unwrap();
@@ -819,8 +813,7 @@ async fn test_advance_pick_requires_in_progress() {
 
     // Should return an error (400 or 409)
     assert!(
-        response.status() == StatusCode::BAD_REQUEST
-            || response.status() == StatusCode::CONFLICT
+        response.status() == StatusCode::BAD_REQUEST || response.status() == StatusCode::CONFLICT
     );
 
     // Verify pick number unchanged in database
@@ -933,23 +926,17 @@ async fn test_auto_pick_run_stops_at_controlled_team() {
     assert_eq!(result["session"]["current_pick_number"], 2);
 
     // Verify pick 1 was made (has player_id) in database
-    let db_pick_1 = sqlx::query!(
-        "SELECT player_id FROM draft_picks WHERE id = $1",
-        pick_1_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_pick_1 = sqlx::query!("SELECT player_id FROM draft_picks WHERE id = $1", pick_1_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert!(db_pick_1.player_id.is_some());
 
     // Verify pick 2 was NOT made (user-controlled)
-    let db_pick_2 = sqlx::query!(
-        "SELECT player_id FROM draft_picks WHERE id = $1",
-        pick_2_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_pick_2 = sqlx::query!("SELECT player_id FROM draft_picks WHERE id = $1", pick_2_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert!(db_pick_2.player_id.is_none());
 
     common::cleanup_database(&pool).await;
@@ -1024,13 +1011,10 @@ async fn test_auto_pick_run_empty_when_user_controlled_first() {
     assert_eq!(result["session"]["current_pick_number"], 1);
 
     // Verify pick was NOT made in database
-    let db_pick = sqlx::query!(
-        "SELECT player_id FROM draft_picks WHERE id = $1",
-        pick_1_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_pick = sqlx::query!("SELECT player_id FROM draft_picks WHERE id = $1", pick_1_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert!(db_pick.player_id.is_none());
 
     common::cleanup_database(&pool).await;
