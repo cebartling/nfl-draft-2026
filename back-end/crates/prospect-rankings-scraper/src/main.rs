@@ -28,6 +28,12 @@ struct Cli {
     /// Generate template without scraping (useful when site is unavailable)
     #[arg(long)]
     template: bool,
+
+    /// Use Playwright browser automation instead of HTTP scraping.
+    /// Requires Node.js and Playwright to be installed.
+    /// Handles JS-rendered SPAs that reqwest cannot parse.
+    #[arg(long)]
+    browser: bool,
 }
 
 #[tokio::main]
@@ -42,6 +48,16 @@ async fn main() -> Result<()> {
     let data = if cli.template {
         println!("\nGenerating template rankings...");
         template::generate_template(cli.year)
+    } else if cli.browser {
+        println!("\nUsing Playwright browser automation...");
+        match scrapers::tankathon::scrape_with_browser(cli.year, &cli.output) {
+            Ok(data) => data,
+            Err(e) => {
+                eprintln!("Browser scraping failed: {}", e);
+                println!("Generating template instead...");
+                template::generate_template(cli.year)
+            }
+        }
     } else {
         match cli.source.to_lowercase().as_str() {
             "tankathon" => {
@@ -57,6 +73,7 @@ async fn main() -> Result<()> {
                                 println!(
                                     "Edit the output file manually to match real prospect rankings."
                                 );
+                                println!("Tip: Use --browser flag for JS-rendered sites.");
                                 template::generate_template(cli.year)
                             }
                             Ok(data) => data,
@@ -124,10 +141,14 @@ async fn main() -> Result<()> {
         std::fs::create_dir_all(parent)?;
     }
 
-    // Write JSON output
-    let json = serde_json::to_string_pretty(&data)?;
-    std::fs::write(&cli.output, &json)?;
-    println!("\nWrote rankings to: {}", cli.output);
+    // Write JSON output (skip if --browser already wrote it)
+    if !cli.browser {
+        let json = serde_json::to_string_pretty(&data)?;
+        std::fs::write(&cli.output, &json)?;
+        println!("\nWrote rankings to: {}", cli.output);
+    } else {
+        println!("\nRankings written by browser scraper to: {}", cli.output);
+    }
 
     Ok(())
 }
