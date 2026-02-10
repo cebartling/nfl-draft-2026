@@ -67,8 +67,8 @@ pub fn validate_ranking_data(data: &RankingData) -> ScoutingReportValidationResu
     // Validate each entry
     let mut seen_ranks = HashSet::new();
     for entry in &data.rankings {
-        // Validate rank is positive
-        if entry.rank < 1 {
+        // Validate rank is non-negative (0 = unranked, 1+ = ranked)
+        if entry.rank < 0 {
             result.errors.push(format!(
                 "Invalid rank {} for {} {}",
                 entry.rank, entry.first_name, entry.last_name
@@ -76,8 +76,8 @@ pub fn validate_ranking_data(data: &RankingData) -> ScoutingReportValidationResu
             result.valid = false;
         }
 
-        // Check for duplicate ranks
-        if !seen_ranks.insert(entry.rank) {
+        // Check for duplicate ranks (only for positive/ranked entries)
+        if entry.rank > 0 && !seen_ranks.insert(entry.rank) {
             result.warnings.push(format!(
                 "Duplicate rank {} (may indicate tied rankings)",
                 entry.rank
@@ -244,6 +244,18 @@ mod tests {
 
         let result = validate_ranking_data(&data);
         assert!(result.valid);
+    }
+
+    #[test]
+    fn test_rank_zero_is_valid() {
+        let data = RankingData {
+            meta: make_meta(1),
+            rankings: vec![make_entry(0, "John", "Smith", "QB")],
+        };
+
+        let result = validate_ranking_data(&data);
+        assert!(result.valid);
+        assert!(result.errors.is_empty());
     }
 
     #[test]

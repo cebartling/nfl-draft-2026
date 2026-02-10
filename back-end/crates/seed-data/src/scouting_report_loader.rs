@@ -98,7 +98,11 @@ pub fn parse_ranking_file(file_path: &str) -> Result<RankingData> {
 /// - Rank 32 = 8.26 (first-round caliber)
 /// - Rank 100 = 5.54
 /// - Rank 150+ = 3.5 (floor)
+/// - Rank <= 0 is treated as "unranked" and assigned the floor grade (3.5)
 pub fn rank_to_grade(rank: i32) -> f64 {
+    if rank <= 0 {
+        return 3.5;
+    }
     let grade = 9.5 - (rank - 1) as f64 * 0.04;
     grade.max(3.5)
 }
@@ -343,6 +347,16 @@ pub async fn load_scouting_reports(
         }
     }
 
+    if !stats.errors.is_empty() {
+        // Roll back so old reports are preserved rather than committing partial data.
+        tx.rollback().await?;
+        anyhow::bail!(
+            "Rolling back transaction due to {} error(s). First: {}",
+            stats.errors.len(),
+            stats.errors[0]
+        );
+    }
+
     tx.commit().await?;
     Ok(stats)
 }
@@ -418,6 +432,22 @@ mod tests {
         assert!((grade - 3.5).abs() < f64::EPSILON);
 
         let grade = rank_to_grade(500);
+        assert!((grade - 3.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_rank_to_grade_zero_returns_floor() {
+        // Rank 0 means "unranked" — should get the floor grade
+        let grade = rank_to_grade(0);
+        assert!((grade - 3.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_rank_to_grade_negative_returns_floor() {
+        let grade = rank_to_grade(-1);
+        assert!((grade - 3.5).abs() < f64::EPSILON);
+
+        let grade = rank_to_grade(-100);
         assert!((grade - 3.5).abs() < f64::EPSILON);
     }
 
