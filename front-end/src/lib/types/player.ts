@@ -48,8 +48,8 @@ export const ScoutingReportSchema = z.object({
 	player_id: UUIDSchema,
 	team_id: UUIDSchema,
 	grade: z.number(),
-	notes: z.string().optional(),
-	fit_grade: FitGradeSchema.optional(),
+	notes: z.string().nullable().optional(),
+	fit_grade: FitGradeSchema.nullable().optional(),
 	injury_concern: z.boolean(),
 	character_concern: z.boolean(),
 });
