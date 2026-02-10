@@ -209,69 +209,12 @@ pub async fn start_session(
         draft.start()?;
     }
 
-    // Use a transaction to update both draft and session atomically.
-    // Without this, a failure in the session update could leave the draft
-    // in InProgress with no active session (or vice-versa).
-    let mut tx = state.pool.begin().await.map_err(|e| {
-        domain::errors::DomainError::DatabaseError(format!("Failed to begin transaction: {}", e))
-    })?;
-
-    if draft_needs_start {
-        sqlx::query!(
-            "UPDATE drafts SET status = $2, updated_at = $3 WHERE id = $1",
-            draft.id,
-            draft.status.to_string(),
-            draft.updated_at
-        )
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| {
-            domain::errors::DomainError::DatabaseError(format!(
-                "Failed to update draft status: {}",
-                e
-            ))
-        })?;
-    }
-
-    let chart_type_str = session.chart_type.to_string();
-    let session_status_str = session.status.to_string();
-    let controlled_ids = &session.controlled_team_ids;
-    sqlx::query!(
-        r#"
-        UPDATE draft_sessions
-        SET status = $2,
-            current_pick_number = $3,
-            time_per_pick_seconds = $4,
-            auto_pick_enabled = $5,
-            chart_type = $6,
-            controlled_team_ids = $7,
-            updated_at = $8,
-            started_at = $9,
-            completed_at = $10
-        WHERE id = $1
-        "#,
-        session.id,
-        session_status_str,
-        session.current_pick_number,
-        session.time_per_pick_seconds,
-        session.auto_pick_enabled,
-        chart_type_str,
-        controlled_ids as &[Uuid],
-        session.updated_at,
-        session.started_at,
-        session.completed_at
-    )
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| {
-        domain::errors::DomainError::DatabaseError(format!("Failed to update session: {}", e))
-    })?;
-
-    tx.commit().await.map_err(|e| {
-        domain::errors::DomainError::DatabaseError(format!("Failed to commit transaction: {}", e))
-    })?;
-
-    let updated = session;
+    // Atomically update both draft status and session in a single transaction
+    let draft_ref = if draft_needs_start { Some(&draft) } else { None };
+    let updated = state
+        .session_repo
+        .start_session_with_draft(&session, draft_ref)
+        .await?;
 
     // Record session started event
     let event = DraftEvent::session_started(id);

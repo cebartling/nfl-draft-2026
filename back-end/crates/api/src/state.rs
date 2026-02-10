@@ -23,7 +23,6 @@ use websocket::ConnectionManager;
 /// Application state shared across all handlers
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: PgPool,
     pub team_repo: Arc<dyn TeamRepository>,
     pub player_repo: Arc<dyn PlayerRepository>,
     pub draft_repo: Arc<dyn DraftRepository>,
@@ -99,7 +98,6 @@ impl AppState {
         let session_locks = Arc::new(DashMap::new());
 
         Self {
-            pool,
             team_repo,
             player_repo,
             draft_repo,
