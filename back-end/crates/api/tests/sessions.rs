@@ -614,9 +614,10 @@ async fn test_create_session_with_controlled_teams() {
 
     assert_eq!(event.event_type, "SessionCreated");
     let event_data: Value = event.event_data;
-    assert!(event_data["controlled_team_ids"].is_array());
+    let settings = &event_data["settings"];
+    assert!(settings["controlled_team_ids"].is_array());
     let event_team_ids: Vec<String> =
-        serde_json::from_value(event_data["controlled_team_ids"].clone()).unwrap();
+        serde_json::from_value(settings["controlled_team_ids"].clone()).unwrap();
     assert_eq!(event_team_ids.len(), 2);
 
     common::cleanup_database(&pool).await;
@@ -1092,7 +1093,7 @@ async fn test_create_session_with_nonexistent_team() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
     common::cleanup_database(&pool).await;
 }
