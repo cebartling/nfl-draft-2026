@@ -1,6 +1,7 @@
 use seed_data::{
-    draft_order_loader, draft_order_validator, loader, team_loader, team_need_loader,
-    team_need_validator, team_season_loader, team_season_validator, team_validator, validator,
+    draft_order_loader, draft_order_validator, loader, scouting_report_loader,
+    scouting_report_validator, team_loader, team_need_loader, team_need_validator,
+    team_season_loader, team_season_validator, team_validator, validator,
 };
 
 use anyhow::Result;
@@ -8,8 +9,9 @@ use clap::{Parser, Subcommand};
 use db::{
     create_pool,
     repositories::{
-        SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository, SqlxTeamNeedRepository,
-        SqlxTeamRepository, SqlxTeamSeasonRepository,
+        SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository,
+        SqlxTeamNeedRepository, SqlxTeamRepository,
+        SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -53,6 +55,12 @@ enum EntityCommands {
     DraftOrder {
         #[command(subcommand)]
         action: DraftOrderActions,
+    },
+
+    /// Manage scouting reports from prospect rankings
+    Scouting {
+        #[command(subcommand)]
+        action: ScoutingActions,
     },
 }
 
@@ -188,6 +196,34 @@ enum SeasonActions {
     },
 }
 
+#[derive(Subcommand)]
+enum ScoutingActions {
+    /// Load scouting reports from prospect rankings JSON file
+    Load {
+        /// Path to the rankings JSON data file
+        #[arg(short, long, default_value = "data/rankings/rankings.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear all scouting reports for a draft year
+    Clear {
+        /// The draft year to clear
+        #[arg(short, long)]
+        year: i32,
+    },
+
+    /// Validate rankings JSON file without loading
+    Validate {
+        /// Path to the rankings JSON data file
+        #[arg(short, long, default_value = "data/rankings/rankings.json")]
+        file: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -206,6 +242,7 @@ async fn main() -> Result<()> {
         EntityCommands::Needs { action } => handle_needs(action).await?,
         EntityCommands::Seasons { action } => handle_seasons(action).await?,
         EntityCommands::DraftOrder { action } => handle_draft_order(action).await?,
+        EntityCommands::Scouting { action } => handle_scouting(action).await?,
     }
 
     Ok(())
@@ -698,6 +735,115 @@ async fn handle_draft_order(action: DraftOrderActions) -> Result<()> {
                     println!("No draft found for year {}", year);
                 }
             }
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_scouting(action: ScoutingActions) -> Result<()> {
+    match action {
+        ScoutingActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = scouting_report_loader::parse_ranking_file(&file)?;
+            println!(
+                "Loaded {} rankings from file (draft year {}, source: {})",
+                data.rankings.len(),
+                data.meta.draft_year,
+                data.meta.source
+            );
+
+            let result = scouting_report_validator::validate_ranking_data(&data);
+            result.print_summary();
+
+            if !result.valid {
+                std::process::exit(1);
+            }
+        }
+
+        ScoutingActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading scouting reports from rankings: {}", file);
+            }
+
+            let data = scouting_report_loader::parse_ranking_file(&file)?;
+            println!(
+                "Parsed {} rankings from file (draft year {}, source: {})",
+                data.rankings.len(),
+                data.meta.draft_year,
+                data.meta.source
+            );
+
+            // Validate first
+            let validation = scouting_report_validator::validate_ranking_data(&data);
+            validation.print_summary();
+
+            if !validation.valid {
+                println!("\nAborting load due to validation errors.");
+                std::process::exit(1);
+            }
+
+            if dry_run {
+                let stats = scouting_report_loader::load_scouting_reports_dry_run(&data)?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let player_repo = SqlxPlayerRepository::new(pool.clone());
+                let team_repo = SqlxTeamRepository::new(pool.clone());
+
+                let stats = scouting_report_loader::load_scouting_reports(
+                    &data,
+                    &player_repo,
+                    &team_repo,
+                    &pool,
+                )
+                .await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        ScoutingActions::Clear { year } => {
+            println!("Clearing all scouting reports for draft year {}", year);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+
+            // Count existing scouting reports for this draft year
+            let count: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM scouting_reports WHERE player_id IN (SELECT id FROM players WHERE draft_year = $1)"
+            )
+            .bind(year)
+            .fetch_one(&pool)
+            .await?;
+
+            if count == 0 {
+                println!("No scouting reports found for draft year {}", year);
+                return Ok(());
+            }
+
+            println!("Found {} scouting reports to delete", count);
+
+            let result = sqlx::query(
+                "DELETE FROM scouting_reports WHERE player_id IN (SELECT id FROM players WHERE draft_year = $1)"
+            )
+            .bind(year)
+            .execute(&pool)
+            .await?;
+
+            println!("Deleted {} scouting reports", result.rows_affected());
         }
     }
 

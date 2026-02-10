@@ -28,3 +28,19 @@ echo "Draft order validation complete."
 echo "Seeding draft order..."
 /app/seed-data draft-order load --file /app/data/draft_order_2026.json
 echo "Draft order seeding complete."
+
+# Scouting reports depend on both players and teams being loaded
+RANKINGS_FILE="/app/data/rankings/rankings_2026.json"
+if [ ! -f "$RANKINGS_FILE" ]; then
+  echo "Rankings file not found, generating template..."
+  /app/prospect-rankings-scraper --template --output "$RANKINGS_FILE"
+  echo "Template rankings generated."
+fi
+
+echo "Validating scouting report rankings..."
+/app/seed-data scouting validate --file "$RANKINGS_FILE"
+echo "Scouting report validation complete."
+
+echo "Seeding scouting reports..."
+/app/seed-data scouting load --file "$RANKINGS_FILE"
+echo "Scouting report seeding complete."

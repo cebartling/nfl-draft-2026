@@ -62,7 +62,7 @@ impl AppState {
         let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool.clone()));
         let trade_repo: Arc<dyn TradeRepository> = Arc::new(SqlxTradeRepository::new(pool.clone()));
         let draft_strategy_repo: Arc<dyn DraftStrategyRepository> =
-            Arc::new(SqlxDraftStrategyRepository::new(pool));
+            Arc::new(SqlxDraftStrategyRepository::new(pool.clone()));
 
         let player_eval_service = Arc::new(PlayerEvaluationService::new(
             scouting_report_repo.clone(),
@@ -74,10 +74,8 @@ impl AppState {
             team_need_repo.clone(),
         ));
 
-        let auto_pick_service = Arc::new(AutoPickService::new(
-            player_eval_service,
-            strategy_service,
-        ));
+        let auto_pick_service =
+            Arc::new(AutoPickService::new(player_eval_service, strategy_service));
 
         let draft_engine = Arc::new(
             DraftEngine::new(

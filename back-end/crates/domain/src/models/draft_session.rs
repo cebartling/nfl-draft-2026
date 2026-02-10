@@ -247,14 +247,8 @@ mod tests {
     fn test_should_auto_pick_disabled() {
         let draft_id = Uuid::new_v4();
         let team = Uuid::new_v4();
-        let session = DraftSession::new(
-            draft_id,
-            300,
-            false,
-            ChartType::JimmyJohnson,
-            vec![],
-        )
-        .unwrap();
+        let session =
+            DraftSession::new(draft_id, 300, false, ChartType::JimmyJohnson, vec![]).unwrap();
 
         // Auto-pick disabled, no team should auto-pick
         assert!(!session.should_auto_pick(team));

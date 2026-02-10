@@ -99,9 +99,7 @@ impl DraftEngine {
             ));
         }
 
-        let picks_per_round = draft
-            .picks_per_round
-            .unwrap_or(teams_in_order.len() as i32);
+        let picks_per_round = draft.picks_per_round.unwrap_or(teams_in_order.len() as i32);
 
         // Validate picks_per_round matches team count
         if teams_in_order.len() != picks_per_round as usize {
@@ -443,7 +441,9 @@ mod tests {
             Arc::new(MockPlayerRepo::new()),
         );
 
-        let result = engine.create_draft("Test Draft".to_string(), 2026, 7, 32).await;
+        let result = engine
+            .create_draft("Test Draft".to_string(), 2026, 7, 32)
+            .await;
         assert!(result.is_ok());
 
         let draft = result.unwrap();
@@ -466,10 +466,14 @@ mod tests {
             Arc::new(MockPlayerRepo::new()),
         );
 
-        let result1 = engine.create_draft("Draft 1".to_string(), 2026, 7, 32).await;
+        let result1 = engine
+            .create_draft("Draft 1".to_string(), 2026, 7, 32)
+            .await;
         assert!(result1.is_ok());
 
-        let result2 = engine.create_draft("Draft 2".to_string(), 2026, 7, 32).await;
+        let result2 = engine
+            .create_draft("Draft 2".to_string(), 2026, 7, 32)
+            .await;
         assert!(result2.is_ok());
     }
 

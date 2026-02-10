@@ -3,8 +3,9 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::errors::DbError;
 use domain::errors::{DomainError, DomainResult};
-use domain::models::{ChartType, DraftSession, SessionStatus};
+use domain::models::{ChartType, Draft, DraftSession, SessionStatus};
 use domain::repositories::SessionRepository;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -213,6 +214,64 @@ impl SessionRepository for SessionRepo {
         .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
 
         Ok(sessions.into_iter().map(Into::into).collect())
+    }
+
+    async fn start_session_with_draft(
+        &self,
+        session: &DraftSession,
+        draft: Option<&Draft>,
+    ) -> DomainResult<DraftSession> {
+        let mut tx = self.pool.begin().await.map_err(DbError::DatabaseError)?;
+
+        if let Some(draft) = draft {
+            sqlx::query!(
+                "UPDATE drafts SET status = $2, updated_at = $3 WHERE id = $1",
+                draft.id,
+                draft.status.to_string(),
+                draft.updated_at
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(DbError::DatabaseError)?;
+        }
+
+        let chart_type_str = session.chart_type.to_string();
+        let session_status_str = session.status.to_string();
+        let controlled_ids = &session.controlled_team_ids;
+        let db_session = sqlx::query_as!(
+            DraftSessionDb,
+            r#"
+            UPDATE draft_sessions
+            SET status = $2,
+                current_pick_number = $3,
+                time_per_pick_seconds = $4,
+                auto_pick_enabled = $5,
+                chart_type = $6,
+                controlled_team_ids = $7,
+                updated_at = $8,
+                started_at = $9,
+                completed_at = $10
+            WHERE id = $1
+            RETURNING *
+            "#,
+            session.id,
+            session_status_str,
+            session.current_pick_number,
+            session.time_per_pick_seconds,
+            session.auto_pick_enabled,
+            chart_type_str,
+            controlled_ids as &[Uuid],
+            session.updated_at,
+            session.started_at,
+            session.completed_at
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        tx.commit().await.map_err(DbError::DatabaseError)?;
+
+        Ok(db_session.into())
     }
 }
 

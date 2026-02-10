@@ -37,13 +37,10 @@ async fn test_pause_not_started_draft_returns_400() {
     assert_eq!(response.status(), 400);
 
     // Verify DB status unchanged
-    let db_draft = sqlx::query!(
-        "SELECT status FROM drafts WHERE id = $1",
-        draft_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_draft.status, "NotStarted");
 }
 
@@ -55,10 +52,7 @@ async fn test_complete_not_started_draft_returns_400() {
     let draft_id = create_draft_with_status(&pool, "NotStarted").await;
 
     let response = client
-        .post(&format!(
-            "{}/api/v1/drafts/{}/complete",
-            base_url, draft_id
-        ))
+        .post(&format!("{}/api/v1/drafts/{}/complete", base_url, draft_id))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -66,13 +60,10 @@ async fn test_complete_not_started_draft_returns_400() {
 
     assert_eq!(response.status(), 400);
 
-    let db_draft = sqlx::query!(
-        "SELECT status FROM drafts WHERE id = $1",
-        draft_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_draft.status, "NotStarted");
 }
 
@@ -92,13 +83,10 @@ async fn test_start_already_in_progress_draft_returns_400() {
 
     assert_eq!(response.status(), 400);
 
-    let db_draft = sqlx::query!(
-        "SELECT status FROM drafts WHERE id = $1",
-        draft_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_draft.status, "InProgress");
 }
 
@@ -118,13 +106,10 @@ async fn test_pause_already_paused_draft_returns_400() {
 
     assert_eq!(response.status(), 400);
 
-    let db_draft = sqlx::query!(
-        "SELECT status FROM drafts WHERE id = $1",
-        draft_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_draft.status, "Paused");
 }
 
@@ -144,13 +129,10 @@ async fn test_start_completed_draft_returns_400() {
 
     assert_eq!(response.status(), 400);
 
-    let db_draft = sqlx::query!(
-        "SELECT status FROM drafts WHERE id = $1",
-        draft_id
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_draft.status, "Completed");
 }
 
