@@ -6,10 +6,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NFL Draft Simulator 2026 - A full-stack application for simulating NFL drafts with real-time updates, AI-driven team decision-making, and comprehensive scouting systems.
 
+This is a full-stack project: Rust backend + SvelteKit frontend + PostgreSQL, all orchestrated via Docker Compose. Backend tests: `cargo test --workspace`. Frontend tests: check package.json for test commands. Always run both test suites after cross-cutting changes.
+
 **Tech Stack:**
 - Backend: Rust + Axum + PostgreSQL 18
 - Frontend: SvelteKit + TypeScript + Tailwind CSS
 - Real-time: WebSocket (tokio-tungstenite)
+
+## Important Rules
+
+Never fabricate or hallucinate real-world data (NFL stats, draft orders, player records, season data). If real data is needed, scrape it from a credible source or ask the user to provide it. Always use the correct season year.
+
+## Docker Workflow
+
+When making code changes to a Dockerized application, always remind the user to rebuild containers (`docker compose up --build`) before testing. Never assume file changes will be reflected in running containers automatically.
+
+When the user says services are already running (e.g., Docker Compose is up), do not try to start dev servers or services again. Verify running state with `docker compose ps` if unsure.
+
+## Git & PR Conventions
+
+This repo uses squash merges only. Never attempt regular merges or fast-forward merges on PRs. Use `gh pr merge --squash` for all PR merges.
+
+## Rust Backend
+
+After any schema or query changes in Rust, regenerate the SQLx offline cache with `cargo sqlx prepare --workspace` before building. SQLx offline mode will fail with stale cache files.
+
+## Frontend (SvelteKit)
+
+When editing Svelte files, prefer using the Write tool to rewrite entire files rather than the Edit tool with partial matching, as tab-character matching frequently fails in Svelte/frontend files.
+
+## PR Review Workflow
+
+When replying to GitHub PR review comments via the API, use `gh api` with the `in_reply_to` parameter on the pulls/comments endpoint. Do not use the generic issues/comments endpoint.
 
 ## Architecture
 

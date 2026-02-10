@@ -32,7 +32,6 @@ describe('playersApi', () => {
 					weight_pounds: 220,
 					draft_year: 2026,
 					draft_eligible: true,
-					projected_round: 1,
 				},
 				{
 					id: '2',
@@ -44,7 +43,6 @@ describe('playersApi', () => {
 					weight_pounds: 195,
 					draft_year: 2026,
 					draft_eligible: true,
-					projected_round: 2,
 				},
 			];
 
@@ -77,7 +75,6 @@ describe('playersApi', () => {
 				weight_pounds: 220,
 				draft_year: 2026,
 				draft_eligible: true,
-				projected_round: 1,
 			};
 
 			mockGet.mockResolvedValueOnce(mockPlayer);
@@ -106,7 +103,6 @@ describe('playersApi', () => {
 				weight_pounds: 220,
 				draft_year: 2026,
 				draft_eligible: true,
-				projected_round: 1,
 			};
 
 			const createdPlayer: Player = {
@@ -147,7 +143,6 @@ describe('playersApi', () => {
 					weight_pounds: 220,
 					draft_year: 2026,
 					draft_eligible: true,
-					projected_round: 1,
 				},
 			];
 
@@ -203,10 +198,9 @@ describe('playersApi', () => {
 					team_id: '456',
 					grade: 85,
 					notes: 'Great arm talent',
-					strengths: 'Strong arm, good accuracy',
-					weaknesses: 'Needs to improve footwork',
-					created_at: '2026-01-01T00:00:00Z',
-					updated_at: '2026-01-01T00:00:00Z',
+					fit_grade: 'A',
+					injury_concern: false,
+					character_concern: false,
 				},
 				{
 					id: '2',
@@ -214,8 +208,8 @@ describe('playersApi', () => {
 					team_id: '789',
 					grade: 80,
 					notes: 'Solid prospect',
-					created_at: '2026-01-02T00:00:00Z',
-					updated_at: '2026-01-02T00:00:00Z',
+					injury_concern: true,
+					character_concern: false,
 				},
 			];
 
@@ -241,20 +235,19 @@ describe('playersApi', () => {
 
 	describe('createScoutingReport', () => {
 		it('should create a new scouting report', async () => {
-			const newReport: Omit<ScoutingReport, 'id' | 'created_at' | 'updated_at'> = {
+			const newReport: Omit<ScoutingReport, 'id'> = {
 				player_id: '123',
 				team_id: '456',
 				grade: 85,
 				notes: 'Great arm talent',
-				strengths: 'Strong arm, good accuracy',
-				weaknesses: 'Needs to improve footwork',
+				fit_grade: 'A',
+				injury_concern: false,
+				character_concern: false,
 			};
 
 			const createdReport: ScoutingReport = {
 				id: '789',
 				...newReport,
-				created_at: '2026-01-01T00:00:00Z',
-				updated_at: '2026-01-01T00:00:00Z',
 			};
 
 			mockPost.mockResolvedValueOnce(createdReport);
@@ -270,7 +263,7 @@ describe('playersApi', () => {
 				player_id: '123',
 				team_id: '456',
 				// Missing grade
-			} as Omit<ScoutingReport, 'id' | 'created_at' | 'updated_at'>;
+			} as Omit<ScoutingReport, 'id'>;
 
 			mockPost.mockRejectedValueOnce(new client.ApiClientError('Bad Request', 400));
 
@@ -284,12 +277,13 @@ describe('playersApi', () => {
 			const mockResults: CombineResults = {
 				id: '456',
 				player_id: playerId,
+				year: 2026,
 				forty_yard_dash: 4.5,
 				bench_press: 20,
 				vertical_jump: 36,
 				broad_jump: 120,
 				three_cone_drill: 7.0,
-				shuttle_run: 4.2,
+				twenty_yard_shuttle: 4.2,
 			};
 
 			mockGet.mockResolvedValueOnce(mockResults);
@@ -323,6 +317,7 @@ describe('playersApi', () => {
 			const mockResults: CombineResults = {
 				id: '456',
 				player_id: playerId,
+				year: 2026,
 				forty_yard_dash: 4.5,
 				// Other fields undefined
 			};

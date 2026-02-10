@@ -19,7 +19,6 @@
 	// New need form state
 	let newPosition = $state<Position>('QB');
 	let newPriority = $state(5);
-	let newNotes = $state('');
 	let isSubmitting = $state(false);
 
 	const positions = PositionSchema.options;
@@ -53,7 +52,6 @@
 				team_id: teamId,
 				position: newPosition,
 				priority: newPriority,
-				notes: newNotes.trim() || undefined,
 			});
 
 			needs = [...needs, need];
@@ -62,7 +60,6 @@
 			// Reset form
 			newPosition = 'QB';
 			newPriority = 5;
-			newNotes = '';
 			showAddModal = false;
 		} catch (err) {
 			toastState.error('Failed to add team need');
@@ -123,9 +120,6 @@
 							</div>
 						</div>
 					</div>
-					{#if need.notes}
-						<p class="text-sm text-gray-600">{need.notes}</p>
-					{/if}
 				</div>
 			{/each}
 		</div>
@@ -167,17 +161,6 @@
 				<span>Low</span>
 				<span>High</span>
 			</div>
-		</div>
-
-		<div>
-			<label for="notes" class="block text-sm font-medium text-gray-700 mb-2"> Notes </label>
-			<textarea
-				id="notes"
-				bind:value={newNotes}
-				rows="3"
-				class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-				placeholder="Additional details about this need..."
-			></textarea>
 		</div>
 
 		<div class="flex justify-end space-x-3">

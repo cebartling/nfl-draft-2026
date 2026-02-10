@@ -252,7 +252,7 @@
 					</span>
 				{:else}
 					<img
-						src={ct.logo_url || getTeamLogoPath(ct.abbreviation)}
+						src={getTeamLogoPath(ct.abbreviation)}
 						alt="{ct.city} {ct.name}"
 						title="{ct.city} {ct.name}"
 						class="w-7 h-7 object-contain"

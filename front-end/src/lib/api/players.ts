@@ -64,7 +64,7 @@ export const playersApi = {
 	 * Create a scouting report
 	 */
 	async createScoutingReport(
-		report: Omit<ScoutingReport, 'id' | 'created_at' | 'updated_at'>
+		report: Omit<ScoutingReport, 'id'>
 	): Promise<ScoutingReport> {
 		return apiClient.post('/scouting-reports', report, ScoutingReportSchema);
 	},

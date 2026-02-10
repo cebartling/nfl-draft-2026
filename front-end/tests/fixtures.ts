@@ -11,7 +11,6 @@ export const mockTeams: Team[] = [
 		city: 'New England',
 		conference: 'AFC',
 		division: 'AFC East',
-		logo_url: 'https://example.com/ne.png',
 	},
 	{
 		id: '22222222-2222-2222-2222-222222222222',
@@ -85,7 +84,6 @@ export const mockPlayers: Player[] = [
 		weight_pounds: 220,
 		draft_year: 2026,
 		draft_eligible: true,
-		projected_round: 1,
 	},
 	{
 		id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
@@ -97,7 +95,6 @@ export const mockPlayers: Player[] = [
 		weight_pounds: 200,
 		draft_year: 2026,
 		draft_eligible: true,
-		projected_round: 1,
 	},
 	{
 		id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
@@ -109,7 +106,6 @@ export const mockPlayers: Player[] = [
 		weight_pounds: 210,
 		draft_year: 2026,
 		draft_eligible: true,
-		projected_round: 2,
 	},
 	{
 		id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
@@ -121,7 +117,6 @@ export const mockPlayers: Player[] = [
 		weight_pounds: 240,
 		draft_year: 2026,
 		draft_eligible: true,
-		projected_round: 1,
 	},
 	{
 		id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
@@ -133,7 +128,6 @@ export const mockPlayers: Player[] = [
 		weight_pounds: 190,
 		draft_year: 2026,
 		draft_eligible: true,
-		projected_round: 2,
 	},
 ];
 
@@ -148,8 +142,6 @@ export const mockDraft: Draft = {
 	rounds: 7,
 	picks_per_round: 32,
 	total_picks: null,
-	created_at: '2026-01-01T00:00:00Z',
-	updated_at: '2026-01-01T00:00:00Z',
 };
 
 /**
@@ -163,6 +155,8 @@ export const mockDraftPicks: DraftPick[] = [
 		pick_number: 1,
 		overall_pick: 1,
 		team_id: mockTeams[0].id,
+		is_compensatory: false,
+		is_traded: false,
 		player_id: undefined,
 		picked_at: undefined,
 	},
@@ -173,6 +167,8 @@ export const mockDraftPicks: DraftPick[] = [
 		pick_number: 2,
 		overall_pick: 2,
 		team_id: mockTeams[1].id,
+		is_compensatory: false,
+		is_traded: false,
 		player_id: undefined,
 		picked_at: undefined,
 	},
@@ -183,6 +179,8 @@ export const mockDraftPicks: DraftPick[] = [
 		pick_number: 3,
 		overall_pick: 3,
 		team_id: mockTeams[2].id,
+		is_compensatory: false,
+		is_traded: false,
 		player_id: undefined,
 		picked_at: undefined,
 	},
@@ -193,6 +191,8 @@ export const mockDraftPicks: DraftPick[] = [
 		pick_number: 4,
 		overall_pick: 4,
 		team_id: mockTeams[3].id,
+		is_compensatory: false,
+		is_traded: false,
 		player_id: undefined,
 		picked_at: undefined,
 	},
@@ -208,12 +208,12 @@ export const mockTradeProposal: TradeProposal = {
 		from_team_id: mockTeams[0].id,
 		to_team_id: mockTeams[1].id,
 		status: 'Proposed',
-		proposed_at: '2026-01-01T00:00:00Z',
+		from_team_value: 0,
+		to_team_value: 0,
+		value_difference: 0,
 	},
 	from_team_picks: [],
 	to_team_picks: [],
-	from_team_total_value: 0,
-	to_team_total_value: 0,
 };
 
 /**
@@ -233,6 +233,8 @@ export function generateDraftPicks(numRounds: number = 7, numTeams: number = 32)
 				pick_number: pickNum,
 				overall_pick: overallPick,
 				team_id: mockTeams[teamIndex].id,
+				is_compensatory: false,
+				is_traded: false,
 				player_id: undefined,
 				picked_at: undefined,
 			});
@@ -255,8 +257,6 @@ export function createMockSession(
 		status,
 		current_pick_number: 1,
 		time_per_pick_seconds: 300,
-		created_at: '2026-01-01T00:00:00Z',
-		updated_at: '2026-01-01T00:00:00Z',
 	};
 }
 
@@ -276,8 +276,6 @@ export function createMockDraftWithPicks(
 		rounds,
 		picks_per_round: picksPerRound,
 		total_picks: null,
-		created_at: '2026-01-01T00:00:00Z',
-		updated_at: '2026-01-01T00:00:00Z',
 	};
 
 	const picks: DraftPick[] = [];
@@ -293,6 +291,8 @@ export function createMockDraftWithPicks(
 				pick_number: pickNum,
 				overall_pick: overallPick,
 				team_id: mockTeams[teamIndex].id,
+				is_compensatory: false,
+				is_traded: false,
 				player_id: undefined,
 				picked_at: undefined,
 			});
@@ -322,4 +322,3 @@ export function simulatePicks(
 		return pick;
 	});
 }
-

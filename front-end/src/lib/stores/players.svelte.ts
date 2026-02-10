@@ -34,13 +34,6 @@ export class PlayersState {
 	}
 
 	/**
-	 * Get players by draft round projection
-	 */
-	getByProjectedRound(round: number): Player[] {
-		return this.allPlayers.filter((player) => player.projected_round === round);
-	}
-
-	/**
 	 * Get draft eligible players only
 	 */
 	get draftEligible(): Player[] {

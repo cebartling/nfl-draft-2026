@@ -148,7 +148,7 @@
 										</span>
 									{:else}
 										<img
-											src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+											src={getTeamLogoPath(team.abbreviation)}
 											alt="{team.name} logo"
 											class="w-8 h-8 object-contain"
 											onerror={() => {

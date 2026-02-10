@@ -191,22 +191,6 @@
 										{draft.total_picks ?? 'Pending'}
 									</span>
 								</div>
-								{#if draft.created_at}
-								<div class="flex items-center justify-between">
-									<span>Created:</span>
-									<span class="font-medium">
-										{new Date(draft.created_at).toLocaleDateString()}
-									</span>
-								</div>
-							{/if}
-								{#if draft.updated_at}
-									<div class="flex items-center justify-between">
-										<span>Updated:</span>
-										<span class="font-medium">
-											{new Date(draft.updated_at).toLocaleDateString()}
-										</span>
-									</div>
-								{/if}
 							</div>
 
 							<div class="pt-3 border-t border-gray-200 space-y-2">

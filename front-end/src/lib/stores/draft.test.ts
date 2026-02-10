@@ -46,6 +46,8 @@ function makePick(overrides: Partial<DraftPick> = {}): DraftPick {
 		pick_number: 1,
 		overall_pick: 1,
 		team_id: 'team-1',
+		is_compensatory: false,
+		is_traded: false,
 		...overrides,
 	};
 }

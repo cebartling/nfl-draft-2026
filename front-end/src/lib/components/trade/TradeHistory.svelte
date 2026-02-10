@@ -50,7 +50,6 @@
 		{ value: 'Proposed', label: 'Proposed' },
 		{ value: 'Accepted', label: 'Accepted' },
 		{ value: 'Rejected', label: 'Rejected' },
-		{ value: 'Expired', label: 'Expired' },
 	];
 </script>
 

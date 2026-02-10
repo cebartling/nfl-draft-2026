@@ -32,7 +32,6 @@ describe('teamsApi', () => {
 					city: 'New England',
 					conference: 'AFC',
 					division: 'AFC East',
-					logo_url: 'https://example.com/ne.png',
 				},
 				{
 					id: '2',
@@ -127,7 +126,6 @@ describe('teamsApi', () => {
 			const teamId = '123';
 			const updates: Partial<Omit<Team, 'id'>> = {
 				name: 'Updated Patriots',
-				logo_url: 'https://example.com/new-logo.png',
 			};
 
 			const updatedTeam: Team = {
@@ -137,7 +135,6 @@ describe('teamsApi', () => {
 				city: 'New England',
 				conference: 'AFC',
 				division: 'AFC East',
-				logo_url: 'https://example.com/new-logo.png',
 			};
 
 			mockPut.mockResolvedValueOnce(updatedTeam);
@@ -164,14 +161,12 @@ describe('teamsApi', () => {
 					team_id: teamId,
 					position: 'QB',
 					priority: 1,
-					notes: 'Need franchise QB',
 				},
 				{
 					id: '2',
 					team_id: teamId,
 					position: 'WR',
 					priority: 2,
-					notes: 'Need deep threat',
 				},
 			];
 
@@ -198,7 +193,6 @@ describe('teamsApi', () => {
 				team_id: '123',
 				position: 'QB',
 				priority: 1,
-				notes: 'Need franchise QB',
 			};
 
 			const createdNeed: TeamNeed = {

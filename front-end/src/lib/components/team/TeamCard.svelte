@@ -39,7 +39,7 @@
 			<p class="text-sm text-gray-600">{team.abbreviation}</p>
 		</div>
 		<img
-			src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+			src={getTeamLogoPath(team.abbreviation)}
 			alt="{team.name} logo"
 			class="w-12 h-12 object-contain"
 			onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}

@@ -132,7 +132,7 @@
 		<div class="bg-white rounded-lg shadow p-6">
 			<div class="flex items-center gap-6">
 				<img
-					src={team.logo_url || getTeamLogoPath(team.abbreviation)}
+					src={getTeamLogoPath(team.abbreviation)}
 					alt="{team.name} logo"
 					class="w-24 h-24 object-contain"
 					onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}

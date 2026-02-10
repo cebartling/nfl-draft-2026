@@ -4,7 +4,6 @@
 	import { toastState } from '$stores';
 	import { logger } from '$lib/utils/logger';
 	import type { TradeProposal, Team } from '$types';
-	import dayjs from 'dayjs';
 
 	interface Props {
 		proposal: TradeProposal;
@@ -26,9 +25,7 @@
 			currentTeamId === proposal.trade.to_team_id
 	);
 
-	const valueDifference = $derived(
-		Math.abs(proposal.from_team_total_value - proposal.to_team_total_value)
-	);
+	const valueDifference = $derived(Math.abs(proposal.trade.value_difference));
 
 	const isFairTrade = $derived(valueDifference < 100);
 
@@ -94,10 +91,8 @@
 				return { variant: 'success' as const, text: 'Accepted' };
 			case 'Rejected':
 				return { variant: 'danger' as const, text: 'Rejected' };
-			case 'Expired':
-				return { variant: 'default' as const, text: 'Expired' };
 			default:
-				return { variant: 'default' as const, text: 'Unknown' };
+				return { variant: 'default' as const, text: status };
 		}
 	}
 
@@ -133,16 +128,15 @@
 						Picks ({proposal.from_team_picks.length})
 					</p>
 					<div class="space-y-1">
-						{#each proposal.from_team_picks as pick (pick.pick_id)}
+						{#each proposal.from_team_picks as pickId (pickId)}
 							<div class="text-sm text-gray-900">
-								Round {pick.pick_id.slice(0, 8)}...
-								<span class="text-xs text-gray-500">(Value: {pick.pick_value})</span>
+								Pick {pickId.slice(0, 8)}...
 							</div>
 						{/each}
 					</div>
 					<div class="mt-3 pt-3 border-t border-gray-200">
 						<p class="text-sm font-semibold text-gray-900">
-							Total Value: {proposal.from_team_total_value}
+							Total Value: {proposal.trade.from_team_value}
 						</p>
 					</div>
 				</div>
@@ -175,16 +169,15 @@
 						Picks ({proposal.to_team_picks.length})
 					</p>
 					<div class="space-y-1">
-						{#each proposal.to_team_picks as pick (pick.pick_id)}
+						{#each proposal.to_team_picks as pickId (pickId)}
 							<div class="text-sm text-gray-900">
-								Round {pick.pick_id.slice(0, 8)}...
-								<span class="text-xs text-gray-500">(Value: {pick.pick_value})</span>
+								Pick {pickId.slice(0, 8)}...
 							</div>
 						{/each}
 					</div>
 					<div class="mt-3 pt-3 border-t border-gray-200">
 						<p class="text-sm font-semibold text-gray-900">
-							Total Value: {proposal.to_team_total_value}
+							Total Value: {proposal.trade.to_team_value}
 						</p>
 					</div>
 				</div>
@@ -204,15 +197,6 @@
 					? 'This is a fair trade (difference < 100 points)'
 					: 'This trade may be unbalanced (difference >= 100 points)'}
 			</p>
-		</div>
-
-		<!-- Trade Details -->
-		<div class="text-xs text-gray-500 mb-4">
-			Proposed at {dayjs(proposal.trade.proposed_at).format('MMM D, YYYY h:mm A')}
-			{#if proposal.trade.resolved_at}
-				<br />
-				Resolved at {dayjs(proposal.trade.resolved_at).format('MMM D, YYYY h:mm A')}
-			{/if}
 		</div>
 
 		<!-- Action Buttons -->
