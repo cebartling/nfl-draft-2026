@@ -1,9 +1,14 @@
 {
   "hooks": {
-    "postToolUse": [
+    "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "bash -c 'CHANGED=$(git diff --name-only HEAD | grep -E \"\\.rs$\" | head -1); if [ -n \"$CHANGED\" ]; then cd back-end && cargo check --workspace 2>&1 | tail -5; fi'"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'CHANGED=$(git diff --name-only HEAD | grep -E \"\\.rs$\" | head -1); if [ -n \"$CHANGED\" ]; then cd back-end && cargo check --workspace 2>&1 | tail -5; fi'"
+          }
+        ]
       }
     ]
   }
