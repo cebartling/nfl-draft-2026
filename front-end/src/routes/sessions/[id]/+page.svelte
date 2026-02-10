@@ -4,13 +4,11 @@
 	import { draftState } from '$stores/draft.svelte';
 	import { toastState } from '$stores';
 	import { playersState } from '$stores/players.svelte';
-	import { websocketState } from '$stores/websocket.svelte';
 	import { draftsApi, sessionsApi, teamsApi } from '$lib/api';
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
-	import Badge from '$components/ui/Badge.svelte';
 	import Tabs from '$components/ui/Tabs.svelte';
 	import { onMount } from 'svelte';
 	import type { Player, UUID } from '$lib/types';
@@ -133,22 +131,7 @@
 	}
 </script>
 
-<div class="space-y-6">
-	<!-- Connection Status -->
-	<div class="flex items-center justify-between">
-		<h1 class="text-3xl font-bold text-gray-800">Draft Room</h1>
-		<div class="flex items-center gap-2">
-			<Badge variant={websocketState.isConnected ? 'success' : 'danger'}>
-				{websocketState.isConnected ? '● Connected' : '○ Disconnected'}
-			</Badge>
-			{#if websocketState.lastMessage}
-				<span class="text-sm text-gray-600">
-					Last update: {new Date().toLocaleTimeString()}
-				</span>
-			{/if}
-		</div>
-	</div>
-
+<div class="space-y-3">
 	{#if !draftState.session}
 		<div class="flex justify-center py-12">
 			<LoadingSpinner size="lg" />

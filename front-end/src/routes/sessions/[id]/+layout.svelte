@@ -36,4 +36,17 @@
 	});
 </script>
 
-{@render children()}
+<div class="pb-12">
+	{@render children()}
+</div>
+
+<footer class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200">
+	<div class="max-w-7xl mx-auto px-4 py-1.5 flex items-center gap-2 text-sm">
+		<span class="{websocketState.isConnected ? 'text-green-500' : 'text-red-500'} text-xs">
+			{websocketState.isConnected ? '●' : '○'}
+		</span>
+		<span class="text-gray-600">
+			{websocketState.isConnected ? 'Connected' : 'Disconnected'}
+		</span>
+	</div>
+</footer>
