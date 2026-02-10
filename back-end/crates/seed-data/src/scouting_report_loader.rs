@@ -1,11 +1,26 @@
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
 
 use anyhow::Result;
 use domain::models::{FitGrade, ScoutingReport};
 use domain::repositories::{PlayerRepository, TeamRepository};
 use serde::Deserialize;
+
+/// FNV-1a hash for deterministic, Rust-version-stable hashing.
+///
+/// Unlike `DefaultHasher`, whose algorithm is explicitly not guaranteed to be
+/// stable across Rust releases, FNV-1a is a fixed specification that will
+/// produce identical output regardless of toolchain version.
+fn fnv1a_hash(data: &[u8]) -> u64 {
+    const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
+    const FNV_PRIME: u64 = 0x00000100000001B3;
+
+    let mut hash = FNV_OFFSET_BASIS;
+    for &byte in data {
+        hash ^= byte as u64;
+        hash = hash.wrapping_mul(FNV_PRIME);
+    }
+    hash
+}
 
 #[derive(Debug, Deserialize)]
 pub struct RankingData {
@@ -90,13 +105,11 @@ pub fn rank_to_grade(rank: i32) -> f64 {
 
 /// Generate a deterministic team-specific grade variation from a consensus grade.
 ///
-/// Uses a hash of the team abbreviation + player name to produce a deterministic
-/// offset in the range [-0.8, +0.8], clamped to [0.0, 10.0].
+/// Uses FNV-1a hash of the team abbreviation + player name to produce a
+/// deterministic offset in the range [-0.8, +0.8], clamped to [0.0, 10.0].
 pub fn generate_team_grade(consensus_grade: f64, team_abbr: &str, first: &str, last: &str) -> f64 {
     let key = format!("{}-{}-{}", team_abbr, first, last);
-    let mut hasher = DefaultHasher::new();
-    key.hash(&mut hasher);
-    let hash = hasher.finish();
+    let hash = fnv1a_hash(key.as_bytes());
 
     // Map hash to range [-0.8, 0.8]
     let offset = ((hash % 1601) as f64 / 1000.0) - 0.8;
@@ -109,9 +122,7 @@ pub fn generate_team_grade(consensus_grade: f64, team_abbr: &str, first: &str, l
 /// 70% chance of B (consensus), 15% chance of A (bump up), 15% chance of C (bump down).
 fn generate_fit_grade(team_abbr: &str, first: &str, last: &str) -> FitGrade {
     let key = format!("fit-{}-{}-{}", team_abbr, first, last);
-    let mut hasher = DefaultHasher::new();
-    key.hash(&mut hasher);
-    let hash = hasher.finish();
+    let hash = fnv1a_hash(key.as_bytes());
 
     let bucket = hash % 100;
     if bucket < 15 {
@@ -128,14 +139,10 @@ fn generate_fit_grade(team_abbr: &str, first: &str, last: &str) -> FitGrade {
 /// ~5% chance of each flag being set.
 fn generate_concern_flags(team_abbr: &str, first: &str, last: &str) -> (bool, bool) {
     let injury_key = format!("injury-{}-{}-{}", team_abbr, first, last);
-    let mut hasher = DefaultHasher::new();
-    injury_key.hash(&mut hasher);
-    let injury_hash = hasher.finish();
+    let injury_hash = fnv1a_hash(injury_key.as_bytes());
 
     let character_key = format!("character-{}-{}-{}", team_abbr, first, last);
-    let mut hasher2 = DefaultHasher::new();
-    character_key.hash(&mut hasher2);
-    let character_hash = hasher2.finish();
+    let character_hash = fnv1a_hash(character_key.as_bytes());
 
     (injury_hash % 100 < 5, character_hash % 100 < 5)
 }
@@ -432,11 +439,10 @@ mod tests {
     fn test_generate_team_grade_varies_by_team() {
         let grade_dal = generate_team_grade(8.0, "DAL", "John", "Smith");
         let grade_buf = generate_team_grade(8.0, "BUF", "John", "Smith");
-        // Different teams should generally produce different grades
-        // (can be the same by coincidence but very unlikely)
+        // Different teams should produce different grades for the same player
         assert!(
-            (grade_dal - grade_buf).abs() > f64::EPSILON || grade_dal == grade_buf, // Allow same by coincidence
-            "Grades should generally vary: DAL={}, BUF={}",
+            (grade_dal - grade_buf).abs() > f64::EPSILON,
+            "Grades should differ: DAL={}, BUF={}",
             grade_dal,
             grade_buf
         );
