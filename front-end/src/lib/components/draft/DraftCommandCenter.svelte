@@ -3,14 +3,24 @@
 	import { teamsApi, sessionsApi } from '$api';
 	import { Badge, Button, LoadingSpinner } from '$components/ui';
 	import { getTeamLogoPath } from '$lib/utils/logo';
-	import type { ChartType, Team, UUID } from '$types';
+	import type { ChartType, Player, Team, UUID } from '$types';
 	import { logger } from '$lib/utils/logger';
 
 	interface Props {
 		sessionId: UUID;
+		selectedPlayer?: Player | null;
+		makingPick?: boolean;
+		onConfirmPick?: () => void;
+		onCancelPick?: () => void;
 	}
 
-	let { sessionId }: Props = $props();
+	let {
+		sessionId,
+		selectedPlayer = null,
+		makingPick = false,
+		onConfirmPick,
+		onCancelPick,
+	}: Props = $props();
 
 	// --- Clock state ---
 	let team = $state<Team | null>(null);
@@ -182,7 +192,7 @@
 </script>
 
 <div class="bg-white rounded-lg shadow-md p-4 lg:p-6 space-y-4">
-	<!-- Row 1: Clock, Round/Pick, Team on the Clock -->
+	<!-- Row 1: Clock, Round/Pick, Team on the Clock, Selected Player, Status -->
 	<div class="flex flex-col lg:flex-row lg:items-center lg:divide-x lg:divide-gray-200 gap-4 lg:gap-0">
 		<!-- Timer & Round/Pick -->
 		<div class="flex items-center gap-4 lg:pr-6">
@@ -232,6 +242,51 @@
 				<span class="text-gray-400">-</span>
 			{/if}
 		</div>
+
+		<!-- Selected Player / AI Picking Indicator -->
+		{#if selectedPlayer && (!draftState.hasControlledTeams || draftState.isCurrentPickUserControlled)}
+			<div class="lg:px-6 min-w-0">
+				<p class="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">Selected Player</p>
+				<div class="flex items-center gap-3">
+					<div class="min-w-0">
+						<div class="text-sm font-bold text-gray-900 truncate">
+							{selectedPlayer.first_name} {selectedPlayer.last_name}
+						</div>
+						<div class="text-xs text-gray-500">{selectedPlayer.position} - {selectedPlayer.college}</div>
+					</div>
+					<div class="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							onclick={onConfirmPick}
+							disabled={makingPick}
+							class="px-3 py-1.5 text-xs font-semibold rounded bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white transition-colors"
+						>
+							{makingPick ? 'Picking...' : 'Confirm'}
+						</button>
+						<button
+							type="button"
+							onclick={onCancelPick}
+							disabled={makingPick}
+							class="px-3 py-1.5 text-xs font-medium rounded bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 transition-colors"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</div>
+		{:else if draftState.hasControlledTeams && !draftState.isCurrentPickUserControlled && draftState.session?.status === 'InProgress'}
+			<div class="lg:px-6 min-w-0">
+				<div class="flex items-center gap-2 text-gray-400">
+					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+					</svg>
+					<div>
+						<p class="text-xs font-medium text-gray-500">AI is selecting...</p>
+						<p class="text-[10px] text-gray-400">Waiting for AI to make this pick</p>
+					</div>
+				</div>
+			</div>
+		{/if}
 
 		<!-- Status Badge (right-aligned) -->
 		<div class="lg:pl-6 lg:ml-auto">
