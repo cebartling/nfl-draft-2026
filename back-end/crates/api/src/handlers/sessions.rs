@@ -197,6 +197,19 @@ pub async fn start_session(
     session.start()?;
     let updated = state.session_repo.update(&session).await?;
 
+    // Also start the underlying draft if it hasn't been started yet
+    let mut draft = state
+        .draft_repo
+        .find_by_id(session.draft_id)
+        .await?
+        .ok_or_else(|| {
+            domain::errors::DomainError::NotFound(format!("Draft {}", session.draft_id))
+        })?;
+    if draft.status == domain::models::DraftStatus::NotStarted {
+        draft.start()?;
+        state.draft_repo.update(&draft).await?;
+    }
+
     // Record session started event
     let event = DraftEvent::session_started(id);
     state.event_repo.create(&event).await?;
