@@ -939,15 +939,14 @@ async fn handle_rankings(action: RankingsActions) -> Result<()> {
                 let player_repo = SqlxPlayerRepository::new(pool.clone());
                 let team_repo = SqlxTeamRepository::new(pool.clone());
                 let ranking_source_repo = SqlxRankingSourceRepository::new(pool.clone());
-                let prospect_ranking_repo = SqlxProspectRankingRepository::new(pool.clone());
                 let scouting_report_repo = SqlxScoutingReportRepository::new(pool.clone());
 
                 let stats = rankings_loader::load_rankings(
                     &data,
+                    &pool,
                     &player_repo,
                     &team_repo,
                     &ranking_source_repo,
-                    &prospect_ranking_repo,
                     &scouting_report_repo,
                 )
                 .await?;

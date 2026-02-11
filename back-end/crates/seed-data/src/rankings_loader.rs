@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
+use chrono::{DateTime, NaiveDate};
 use domain::models::{Player, ProspectRanking, RankingSource};
 use domain::repositories::{
     PlayerRepository, ProspectRankingRepository, RankingSourceRepository,
     ScoutingReportRepository, TeamRepository,
 };
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::grade_generator::create_scouting_report;
@@ -83,10 +85,10 @@ pub fn load_rankings_dry_run(data: &RankingData) -> Result<RankingsLoadStats> {
 
 pub async fn load_rankings(
     data: &RankingData,
+    pool: &PgPool,
     player_repo: &dyn PlayerRepository,
     team_repo: &dyn TeamRepository,
     ranking_source_repo: &dyn RankingSourceRepository,
-    prospect_ranking_repo: &dyn ProspectRankingRepository,
     scouting_report_repo: &dyn ScoutingReportRepository,
 ) -> Result<RankingsLoadStats> {
     let mut stats = RankingsLoadStats::default();
@@ -135,18 +137,6 @@ pub async fn load_rankings(
     // Parse scraped_at date
     let scraped_at = chrono::NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d")
         .map_err(|e| anyhow::anyhow!("Invalid scraped_at date '{}': {}", data.meta.scraped_at, e))?;
-
-    // Delete existing rankings for this source (replace strategy)
-    let deleted = prospect_ranking_repo
-        .delete_by_source(source.id)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to delete existing rankings: {}", e))?;
-    if deleted > 0 {
-        println!(
-            "Cleared {} existing rankings for source '{}'",
-            deleted, source.name
-        );
-    }
 
     // Track newly created players for scouting report generation
     let mut new_player_entries: Vec<(Uuid, &RankingEntry)> = Vec::new();
@@ -241,12 +231,61 @@ pub async fn load_rankings(
         rankings_to_insert.push(ranking);
     }
 
-    // Batch insert all rankings
-    let inserted = prospect_ranking_repo
-        .create_batch(&rankings_to_insert)
+    // Delete old + insert new rankings in a transaction (replace strategy)
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to begin transaction: {}", e))?;
+
+    let delete_result = sqlx::query("DELETE FROM prospect_rankings WHERE ranking_source_id = $1")
+        .bind(source.id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to delete existing rankings: {}", e))?;
+
+    if delete_result.rows_affected() > 0 {
+        println!(
+            "Cleared {} existing rankings for source '{}'",
+            delete_result.rows_affected(),
+            source.name
+        );
+    }
+
+    if !rankings_to_insert.is_empty() {
+        let ids: Vec<Uuid> = rankings_to_insert.iter().map(|r| r.id).collect();
+        let source_ids: Vec<Uuid> = rankings_to_insert
+            .iter()
+            .map(|r| r.ranking_source_id)
+            .collect();
+        let player_ids: Vec<Uuid> = rankings_to_insert.iter().map(|r| r.player_id).collect();
+        let ranks: Vec<i32> = rankings_to_insert.iter().map(|r| r.rank).collect();
+        let scraped_dates: Vec<NaiveDate> =
+            rankings_to_insert.iter().map(|r| r.scraped_at).collect();
+        let created_dates: Vec<DateTime<chrono::Utc>> =
+            rankings_to_insert.iter().map(|r| r.created_at).collect();
+
+        let insert_result = sqlx::query(
+            r#"
+            INSERT INTO prospect_rankings (id, ranking_source_id, player_id, rank, scraped_at, created_at)
+            SELECT * FROM UNNEST($1::uuid[], $2::uuid[], $3::uuid[], $4::int4[], $5::date[], $6::timestamptz[])
+            "#,
+        )
+        .bind(&ids)
+        .bind(&source_ids)
+        .bind(&player_ids)
+        .bind(&ranks)
+        .bind(&scraped_dates)
+        .bind(&created_dates)
+        .execute(&mut *tx)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to insert rankings batch: {}", e))?;
-    stats.rankings_inserted = inserted;
+
+        stats.rankings_inserted = insert_result.rows_affected() as usize;
+    }
+
+    tx.commit()
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to commit rankings transaction: {}", e))?;
 
     // Generate scouting reports for newly discovered prospects
     if !new_player_entries.is_empty() {
