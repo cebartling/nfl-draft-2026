@@ -16,6 +16,7 @@ pub struct ProspectRanking {
 /// A ranking with the source name pre-joined (avoids N+1 queries)
 #[derive(Debug, Clone)]
 pub struct PlayerRankingWithSource {
+    pub player_id: Uuid,
     pub source_name: String,
     pub source_id: Uuid,
     pub rank: i32,

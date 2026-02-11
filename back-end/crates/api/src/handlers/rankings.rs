@@ -119,3 +119,40 @@ pub struct SourceRankingResponse {
     pub rank: i32,
     pub scraped_at: NaiveDate,
 }
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AllRankingEntry {
+    pub player_id: Uuid,
+    pub source_name: String,
+    pub source_id: Uuid,
+    pub rank: i32,
+    pub scraped_at: NaiveDate,
+}
+
+/// GET /api/v1/rankings - Get all rankings across all sources in one request
+#[utoipa::path(
+    get,
+    path = "/api/v1/rankings",
+    responses(
+        (status = 200, description = "All rankings across all sources", body = Vec<AllRankingEntry>)
+    ),
+    tag = "rankings"
+)]
+pub async fn get_all_rankings(
+    State(state): State<AppState>,
+) -> ApiResult<Json<Vec<AllRankingEntry>>> {
+    let rankings = state.prospect_ranking_repo.find_all_with_source().await?;
+
+    let response: Vec<AllRankingEntry> = rankings
+        .into_iter()
+        .map(|r| AllRankingEntry {
+            player_id: r.player_id,
+            source_name: r.source_name,
+            source_id: r.source_id,
+            rank: r.rank,
+            scraped_at: r.scraped_at,
+        })
+        .collect();
+
+    Ok(Json(response))
+}

@@ -27,6 +27,16 @@ export const SourceRankingSchema = z.object({
 });
 export type SourceRanking = z.infer<typeof SourceRankingSchema>;
 
+// AllRankingEntry schema and type — matches backend AllRankingEntry
+export const AllRankingEntrySchema = z.object({
+	player_id: UUIDSchema,
+	source_name: z.string(),
+	source_id: UUIDSchema,
+	rank: z.number(),
+	scraped_at: z.string(),
+});
+export type AllRankingEntry = z.infer<typeof AllRankingEntrySchema>;
+
 // Per-player ranking badge info (used in UI components)
 export interface RankingBadge {
 	source_name: string;

@@ -13,6 +13,7 @@ use crate::models::ProspectRankingDb;
 /// Row type for the JOIN query returning ranking + source name
 #[derive(Debug, FromRow)]
 struct PlayerRankingWithSourceRow {
+    player_id: Uuid,
     source_name: String,
     source_id: Uuid,
     rank: i32,
@@ -79,7 +80,7 @@ impl ProspectRankingRepository for SqlxProspectRankingRepository {
         let results = sqlx::query_as!(
             PlayerRankingWithSourceRow,
             r#"
-            SELECT rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at
+            SELECT pr.player_id, rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at
             FROM prospect_rankings pr
             JOIN ranking_sources rs ON pr.ranking_source_id = rs.id
             WHERE pr.player_id = $1
@@ -91,15 +92,24 @@ impl ProspectRankingRepository for SqlxProspectRankingRepository {
         .await
         .map_err(DbError::DatabaseError)?;
 
-        Ok(results
-            .into_iter()
-            .map(|r| PlayerRankingWithSource {
-                source_name: r.source_name,
-                source_id: r.source_id,
-                rank: r.rank,
-                scraped_at: r.scraped_at,
-            })
-            .collect())
+        Ok(results.into_iter().map(row_to_domain).collect())
+    }
+
+    async fn find_all_with_source(&self) -> DomainResult<Vec<PlayerRankingWithSource>> {
+        let results = sqlx::query_as!(
+            PlayerRankingWithSourceRow,
+            r#"
+            SELECT pr.player_id, rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at
+            FROM prospect_rankings pr
+            JOIN ranking_sources rs ON pr.ranking_source_id = rs.id
+            ORDER BY rs.name, pr.rank
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        Ok(results.into_iter().map(row_to_domain).collect())
     }
 
     async fn find_by_player(&self, player_id: Uuid) -> DomainResult<Vec<ProspectRanking>> {
@@ -156,5 +166,15 @@ impl ProspectRankingRepository for SqlxProspectRankingRepository {
         .map_err(DbError::DatabaseError)?;
 
         Ok(result.rows_affected())
+    }
+}
+
+fn row_to_domain(r: PlayerRankingWithSourceRow) -> PlayerRankingWithSource {
+    PlayerRankingWithSource {
+        player_id: r.player_id,
+        source_name: r.source_name,
+        source_id: r.source_id,
+        rank: r.rank,
+        scraped_at: r.scraped_at,
     }
 }

@@ -152,7 +152,8 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::team_seasons::list_team_seasons),
         )
         .route("/draft-order", get(handlers::team_seasons::get_draft_order))
-        // Ranking Sources
+        // Rankings
+        .route("/rankings", get(handlers::rankings::get_all_rankings))
         .route(
             "/ranking-sources",
             get(handlers::rankings::list_ranking_sources),

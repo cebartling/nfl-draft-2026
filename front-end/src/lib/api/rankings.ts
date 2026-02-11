@@ -4,6 +4,7 @@ import {
 	RankingSourceSchema,
 	PlayerRankingSchema,
 	SourceRankingSchema,
+	AllRankingEntrySchema,
 	type RankingSource,
 	type PlayerRanking,
 	type SourceRanking,
@@ -48,34 +49,23 @@ export const rankingsApi = {
 	},
 
 	/**
-	 * Build a map of player_id -> RankingBadge[] by fetching all sources and their rankings.
-	 * This is more efficient than fetching per-player rankings.
+	 * Build a map of player_id -> RankingBadge[] using a single API request.
 	 */
 	async loadAllPlayerRankings(): Promise<Map<string, RankingBadge[]>> {
-		const sources = await this.listSources();
+		const entries = await apiClient.get('/rankings', z.array(AllRankingEntrySchema));
 		const map = new Map<string, RankingBadge[]>();
 
-		const results = await Promise.all(
-			sources.map(async (source) => {
-				const rankings = await this.getSourceRankings(source.id);
-				return { source, rankings };
-			})
-		);
-
-		for (const { source, rankings } of results) {
-			const abbr = abbreviateSource(source.name);
-			for (const ranking of rankings) {
-				const badge: RankingBadge = {
-					source_name: source.name,
-					abbreviation: abbr,
-					rank: ranking.rank,
-				};
-				const existing = map.get(ranking.player_id);
-				if (existing) {
-					existing.push(badge);
-				} else {
-					map.set(ranking.player_id, [badge]);
-				}
+		for (const entry of entries) {
+			const badge: RankingBadge = {
+				source_name: entry.source_name,
+				abbreviation: abbreviateSource(entry.source_name),
+				rank: entry.rank,
+			};
+			const existing = map.get(entry.player_id);
+			if (existing) {
+				existing.push(badge);
+			} else {
+				map.set(entry.player_id, [badge]);
 			}
 		}
 

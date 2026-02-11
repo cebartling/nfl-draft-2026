@@ -16,6 +16,9 @@ pub trait ProspectRankingRepository: Send + Sync {
         player_id: Uuid,
     ) -> DomainResult<Vec<PlayerRankingWithSource>>;
 
+    /// Find all rankings across all sources with source names pre-joined
+    async fn find_all_with_source(&self) -> DomainResult<Vec<PlayerRankingWithSource>>;
+
     /// Find all rankings for a player (across all sources)
     async fn find_by_player(&self, player_id: Uuid) -> DomainResult<Vec<ProspectRanking>>;
 
