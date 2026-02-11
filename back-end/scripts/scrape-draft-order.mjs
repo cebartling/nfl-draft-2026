@@ -144,6 +144,12 @@ try {
   const roundCount = new Set(rawPicks.map((p) => p.round)).size;
   console.error(`Extracted ${rawPicks.length} raw picks from ${roundCount} rounds`);
 
+  if (roundCount !== 7) {
+    throw new Error(
+      `Expected 7 rounds but found ${roundCount}. Page structure may have changed.`,
+    );
+  }
+
   // Normalize abbreviations and compute pick_in_round
   const roundCounters = {};
   const draftOrder = rawPicks.map((pick) => {
