@@ -27,9 +27,9 @@
 	}
 
 	function getGradeColor(grade: number): string {
-		if (grade >= 8) return 'text-green-700 bg-green-100';
-		if (grade >= 6) return 'text-blue-700 bg-blue-100';
-		if (grade >= 4) return 'text-yellow-700 bg-yellow-100';
+		if (grade >= 80) return 'text-green-700 bg-green-100';
+		if (grade >= 60) return 'text-blue-700 bg-blue-100';
+		if (grade >= 40) return 'text-yellow-700 bg-yellow-100';
 		return 'text-gray-700 bg-gray-100';
 	}
 </script>

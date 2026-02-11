@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { PlayerCard } from '$components/player';
-	import { Button, Badge } from '$components/ui';
+	import { Badge } from '$components/ui';
 	import type { Player, Position } from '$types';
 	import { OFFENSE_POSITIONS, DEFENSE_POSITIONS, SPECIAL_POSITIONS } from '$types';
 

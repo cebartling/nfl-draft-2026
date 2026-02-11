@@ -40,7 +40,7 @@
 		{#if !logoError}
 			<img
 				src={getTeamLogoPath(team.abbreviation)}
-				alt="{team.abbreviation} logo"
+				alt={`${team.abbreviation} logo`}
 				class="w-5 h-5 object-contain"
 				onerror={() => { logoError = true; }}
 			/>

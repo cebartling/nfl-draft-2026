@@ -12,6 +12,7 @@
 	import Tabs from '$components/ui/Tabs.svelte';
 	import { onMount } from 'svelte';
 	import type { Player, UUID } from '$lib/types';
+	import { sortByScoutingGrade } from '$lib/utils/player-sort';
 
 	let sessionId = $derived($page.params.id! as UUID);
 
@@ -27,7 +28,6 @@
 	];
 
 	onMount(async () => {
-		// Load all players
 		try {
 			await playersState.loadAll();
 		} catch (error) {
@@ -35,46 +35,32 @@
 		} finally {
 			players_loading = false;
 		}
+	});
 
-		// Load scouting grades for the user's controlled team
-		try {
-			const controlledTeamId = draftState.controlledTeamIds[0];
-			if (controlledTeamId) {
-				const reports = await teamsApi.getScoutingReports(controlledTeamId);
-				const grades = new Map<string, number>();
-				for (const report of reports) {
-					grades.set(report.player_id, report.grade);
-				}
-				scoutingGrades = grades;
-			}
-		} catch (error) {
-			logger.error('Failed to load scouting grades:', error);
+	// Reactively load scouting grades when controlled team changes
+	$effect(() => {
+		const controlledTeamId = draftState.controlledTeamIds[0];
+		if (controlledTeamId) {
+			teamsApi
+				.getScoutingReports(controlledTeamId)
+				.then((reports) => {
+					const grades = new Map<string, number>();
+					for (const report of reports) {
+						grades.set(report.player_id, report.grade);
+					}
+					scoutingGrades = grades;
+				})
+				.catch((error) => {
+					logger.error('Failed to load scouting grades:', error);
+				});
 		}
 	});
 
 	// Get available players (filter out already picked), sorted by scouting grade
-	let availablePlayers = $derived(() => {
+	let availablePlayers = $derived.by(() => {
 		const pickedPlayerIds = new Set(draftState.picks.map((p) => p.player_id));
 		const available = playersState.allPlayers.filter((p) => !pickedPlayerIds.has(p.id));
-
-		return available.sort((a, b) => {
-			const gradeA = scoutingGrades.get(a.id);
-			const gradeB = scoutingGrades.get(b.id);
-
-			// Players with grades sort before players without
-			if (gradeA !== undefined && gradeB === undefined) return -1;
-			if (gradeA === undefined && gradeB !== undefined) return 1;
-
-			// Both have grades: sort descending
-			if (gradeA !== undefined && gradeB !== undefined) {
-				if (gradeB !== gradeA) return gradeB - gradeA;
-			}
-
-			// Tiebreaker: alphabetical by last name, then first name
-			const lastCmp = a.last_name.localeCompare(b.last_name);
-			if (lastCmp !== 0) return lastCmp;
-			return a.first_name.localeCompare(b.first_name);
-		});
+		return sortByScoutingGrade(available, scoutingGrades);
 	});
 
 	async function handleMakePick() {
@@ -162,13 +148,13 @@
 		<div id="tabpanel-available-players" role="tabpanel" aria-labelledby="tab-available-players" hidden={activeTab !== 'available-players'}>
 			{#if activeTab === 'available-players'}
 				<div class="bg-white rounded-lg shadow p-4">
-		{#if players_loading}
+					{#if players_loading}
 						<div class="flex justify-center py-8">
 							<LoadingSpinner />
 						</div>
 					{:else}
 						<PlayerList
-							players={availablePlayers()}
+							players={availablePlayers}
 							title="Available Players"
 							{scoutingGrades}
 							onSelectPlayer={handleSelectPlayer}
