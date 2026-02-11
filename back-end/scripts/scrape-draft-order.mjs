@@ -108,7 +108,12 @@ try {
           );
           const teamImgSrc = teamImg?.getAttribute("src") || "";
           const teamAbbrMatch = teamImgSrc.match(/\/nfl\/([a-z0-9]+)\.svg/i);
-          const teamAbbr = teamAbbrMatch ? teamAbbrMatch[1] : "";
+          if (!teamAbbrMatch) {
+            throw new Error(
+              `Could not extract team abbreviation for pick ${overallPick} (img src: "${teamImgSrc}")`,
+            );
+          }
+          const teamAbbr = teamAbbrMatch[1];
 
           // Check for traded pick: div.trade contains a link with the original team's img
           let originalTeamAbbr = teamAbbr;
