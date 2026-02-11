@@ -118,9 +118,9 @@ pub fn validate_ranking_data(data: &RankingData) -> RankingsValidationResult {
             ));
         }
 
-        // School must not be empty
+        // School should be provided but is not required
         if entry.school.trim().is_empty() {
-            errors.push(format!(
+            warnings.push(format!(
                 "Entry {}: empty school for {} {}",
                 i + 1,
                 entry.first_name,
