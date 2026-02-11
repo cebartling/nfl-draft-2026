@@ -134,7 +134,7 @@ pub async fn load_rankings(
 
     // Parse scraped_at date
     let scraped_at = chrono::NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d")
-        .unwrap_or_else(|_| chrono::Utc::now().date_naive());
+        .map_err(|e| anyhow::anyhow!("Invalid scraped_at date '{}': {}", data.meta.scraped_at, e))?;
 
     // Delete existing rankings for this source (replace strategy)
     let deleted = prospect_ranking_repo
