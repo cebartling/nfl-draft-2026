@@ -5,7 +5,7 @@ import { UUIDSchema } from './common';
 export const RankingSourceSchema = z.object({
 	id: UUIDSchema,
 	name: z.string(),
-	url: z.string().nullable().optional(),
+	url: z.string().url().nullable().optional(),
 	description: z.string().nullable().optional(),
 });
 export type RankingSource = z.infer<typeof RankingSourceSchema>;
@@ -15,7 +15,7 @@ export const PlayerRankingSchema = z.object({
 	source_name: z.string(),
 	source_id: UUIDSchema,
 	rank: z.number(),
-	scraped_at: z.string(),
+	scraped_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 export type PlayerRanking = z.infer<typeof PlayerRankingSchema>;
 
@@ -23,7 +23,7 @@ export type PlayerRanking = z.infer<typeof PlayerRankingSchema>;
 export const SourceRankingSchema = z.object({
 	player_id: UUIDSchema,
 	rank: z.number(),
-	scraped_at: z.string(),
+	scraped_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 export type SourceRanking = z.infer<typeof SourceRankingSchema>;
 
@@ -33,7 +33,7 @@ export const AllRankingEntrySchema = z.object({
 	source_name: z.string(),
 	source_id: UUIDSchema,
 	rank: z.number(),
-	scraped_at: z.string(),
+	scraped_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 export type AllRankingEntry = z.infer<typeof AllRankingEntrySchema>;
 
