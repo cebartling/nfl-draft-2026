@@ -2,33 +2,15 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use domain::models::{Player, ProspectRanking, RankingSource};
-use domain::repositories::{PlayerRepository, RankingSourceRepository, TeamRepository};
+use domain::repositories::{
+    PlayerRepository, ProspectRankingRepository, RankingSourceRepository,
+    ScoutingReportRepository, TeamRepository,
+};
 use uuid::Uuid;
 
 use crate::grade_generator::create_scouting_report;
 use crate::position_mapper::map_position;
 use crate::scouting_report_loader::{RankingData, RankingEntry};
-
-/// Convert a Position enum to its string representation for SQL binding
-fn position_to_str(pos: &domain::models::Position) -> &'static str {
-    use domain::models::Position;
-    match pos {
-        Position::QB => "QB",
-        Position::RB => "RB",
-        Position::WR => "WR",
-        Position::TE => "TE",
-        Position::OT => "OT",
-        Position::OG => "OG",
-        Position::C => "C",
-        Position::DE => "DE",
-        Position::DT => "DT",
-        Position::LB => "LB",
-        Position::CB => "CB",
-        Position::S => "S",
-        Position::K => "K",
-        Position::P => "P",
-    }
-}
 
 #[derive(Debug, Default)]
 pub struct RankingsLoadStats {
@@ -94,7 +76,8 @@ pub async fn load_rankings(
     player_repo: &dyn PlayerRepository,
     team_repo: &dyn TeamRepository,
     ranking_source_repo: &dyn RankingSourceRepository,
-    pool: &sqlx::PgPool,
+    prospect_ranking_repo: &dyn ProspectRankingRepository,
+    scouting_report_repo: &dyn ScoutingReportRepository,
 ) -> Result<RankingsLoadStats> {
     let mut stats = RankingsLoadStats::default();
 
@@ -105,28 +88,7 @@ pub async fn load_rankings(
     );
 
     // Find or create the ranking source
-    let source = match ranking_source_repo
-        .find_by_name(&data.meta.source)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to look up ranking source: {}", e))?
-    {
-        Some(s) => {
-            println!("Found existing ranking source: {} ({})", s.name, s.id);
-            s
-        }
-        None => {
-            println!("Creating new ranking source: {}", data.meta.source);
-            let new_source = RankingSource::new(data.meta.source.clone())?;
-            let new_source = match new_source.with_url(data.meta.source_url.clone()) {
-                Ok(s) => s,
-                Err(_) => RankingSource::new(data.meta.source.clone())?,
-            };
-            ranking_source_repo
-                .create(&new_source)
-                .await
-                .map_err(|e| anyhow::anyhow!("Failed to create ranking source: {}", e))?
-        }
-    };
+    let source = find_or_create_source(data, ranking_source_repo).await?;
 
     // Load all teams for scouting report generation
     let teams = team_repo
@@ -164,24 +126,21 @@ pub async fn load_rankings(
     let scraped_at = chrono::NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d")
         .unwrap_or_else(|_| chrono::Utc::now().date_naive());
 
-    // Start a transaction
-    let mut tx = pool.begin().await?;
-
     // Delete existing rankings for this source (replace strategy)
-    let deleted = sqlx::query("DELETE FROM prospect_rankings WHERE ranking_source_id = $1")
-        .bind(source.id)
-        .execute(&mut *tx)
-        .await?;
-    if deleted.rows_affected() > 0 {
+    let deleted = prospect_ranking_repo
+        .delete_by_source(source.id)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to delete existing rankings: {}", e))?;
+    if deleted > 0 {
         println!(
             "Cleared {} existing rankings for source '{}'",
-            deleted.rows_affected(),
-            source.name
+            deleted, source.name
         );
     }
 
     // Track newly created players for scouting report generation
     let mut new_player_entries: Vec<(Uuid, &RankingEntry)> = Vec::new();
+    let mut rankings_to_insert: Vec<ProspectRanking> = Vec::new();
 
     // Process each ranking entry
     for entry in &data.rankings {
@@ -231,27 +190,8 @@ pub async fn load_rankings(
                 )
             })?;
 
-            // Insert the player into the database
             let player_id = new_player.id;
-            sqlx::query(
-                "INSERT INTO players \
-                 (id, first_name, last_name, position, college, height_inches, weight_pounds, draft_year, draft_eligible, created_at, updated_at) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
-            )
-            .bind(new_player.id)
-            .bind(&new_player.first_name)
-            .bind(&new_player.last_name)
-            .bind(position_to_str(&new_player.position))
-            .bind(&new_player.college)
-            .bind(new_player.height_inches)
-            .bind(new_player.weight_pounds)
-            .bind(new_player.draft_year)
-            .bind(new_player.draft_eligible)
-            .bind(new_player.created_at)
-            .bind(new_player.updated_at)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| {
+            player_repo.create(&new_player).await.map_err(|e| {
                 anyhow::anyhow!(
                     "Failed to insert player {} {}: {}",
                     entry.first_name,
@@ -277,7 +217,7 @@ pub async fn load_rankings(
             player_id
         };
 
-        // Create the prospect ranking
+        // Collect the prospect ranking for batch insert
         let ranking = ProspectRanking::new(source.id, player_id, entry.rank, scraped_at)
             .map_err(|e| {
                 anyhow::anyhow!(
@@ -288,29 +228,15 @@ pub async fn load_rankings(
                 )
             })?;
 
-        sqlx::query(
-            "INSERT INTO prospect_rankings (id, ranking_source_id, player_id, rank, scraped_at, created_at) \
-             VALUES ($1, $2, $3, $4, $5, $6)"
-        )
-        .bind(ranking.id)
-        .bind(ranking.ranking_source_id)
-        .bind(ranking.player_id)
-        .bind(ranking.rank)
-        .bind(ranking.scraped_at)
-        .bind(ranking.created_at)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| {
-            anyhow::anyhow!(
-                "Failed to insert ranking for {} {}: {}",
-                entry.first_name,
-                entry.last_name,
-                e
-            )
-        })?;
-
-        stats.rankings_inserted += 1;
+        rankings_to_insert.push(ranking);
     }
+
+    // Batch insert all rankings
+    let inserted = prospect_ranking_repo
+        .create_batch(&rankings_to_insert)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to insert rankings batch: {}", e))?;
+    stats.rankings_inserted = inserted;
 
     // Generate scouting reports for newly discovered prospects
     if !new_player_entries.is_empty() {
@@ -343,25 +269,7 @@ pub async fn load_rankings(
                     }
                 };
 
-                let fit_grade_str = report.fit_grade.map(|g| g.as_str().to_string());
-                sqlx::query(
-                    "INSERT INTO scouting_reports \
-                     (id, player_id, team_id, grade, notes, fit_grade, injury_concern, character_concern, created_at, updated_at) \
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
-                )
-                .bind(report.id)
-                .bind(report.player_id)
-                .bind(report.team_id)
-                .bind(report.grade)
-                .bind(&report.notes)
-                .bind(&fit_grade_str)
-                .bind(report.injury_concern)
-                .bind(report.character_concern)
-                .bind(report.created_at)
-                .bind(report.updated_at)
-                .execute(&mut *tx)
-                .await
-                .map_err(|e| {
+                scouting_report_repo.create(&report).await.map_err(|e| {
                     anyhow::anyhow!(
                         "Failed to insert scouting report for {} {} / {}: {}",
                         entry.first_name,
@@ -382,8 +290,6 @@ pub async fn load_rankings(
         );
     }
 
-    tx.commit().await?;
-
     println!(
         "  Matched {} prospects to existing players",
         stats.prospects_matched
@@ -396,10 +302,37 @@ pub async fn load_rankings(
     Ok(stats)
 }
 
+async fn find_or_create_source(
+    data: &RankingData,
+    ranking_source_repo: &dyn RankingSourceRepository,
+) -> Result<RankingSource> {
+    match ranking_source_repo
+        .find_by_name(&data.meta.source)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to look up ranking source: {}", e))?
+    {
+        Some(s) => {
+            println!("Found existing ranking source: {} ({})", s.name, s.id);
+            Ok(s)
+        }
+        None => {
+            println!("Creating new ranking source: {}", data.meta.source);
+            let mut new_source = RankingSource::new(data.meta.source.clone())?;
+            if let Ok(s) = new_source.clone().with_url(data.meta.source_url.clone()) {
+                new_source = s;
+            }
+            ranking_source_repo
+                .create(&new_source)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to create ranking source: {}", e))
+        }
+    }
+}
+
 pub async fn clear_rankings(
     source_name: &str,
     ranking_source_repo: &dyn RankingSourceRepository,
-    pool: &sqlx::PgPool,
+    prospect_ranking_repo: &dyn ProspectRankingRepository,
 ) -> Result<u64> {
     let source = ranking_source_repo
         .find_by_name(source_name)
@@ -408,11 +341,11 @@ pub async fn clear_rankings(
 
     match source {
         Some(s) => {
-            let result = sqlx::query("DELETE FROM prospect_rankings WHERE ranking_source_id = $1")
-                .bind(s.id)
-                .execute(pool)
-                .await?;
-            Ok(result.rows_affected())
+            let deleted = prospect_ranking_repo
+                .delete_by_source(s.id)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to delete rankings: {}", e))?;
+            Ok(deleted)
         }
         None => {
             println!("No ranking source found with name '{}'", source_name);

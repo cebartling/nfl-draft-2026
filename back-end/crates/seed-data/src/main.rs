@@ -10,8 +10,8 @@ use db::{
     create_pool,
     repositories::{
         SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository,
-        SqlxRankingSourceRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
-        SqlxTeamSeasonRepository,
+        SqlxProspectRankingRepository, SqlxRankingSourceRepository, SqlxScoutingReportRepository,
+        SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -939,13 +939,16 @@ async fn handle_rankings(action: RankingsActions) -> Result<()> {
                 let player_repo = SqlxPlayerRepository::new(pool.clone());
                 let team_repo = SqlxTeamRepository::new(pool.clone());
                 let ranking_source_repo = SqlxRankingSourceRepository::new(pool.clone());
+                let prospect_ranking_repo = SqlxProspectRankingRepository::new(pool.clone());
+                let scouting_report_repo = SqlxScoutingReportRepository::new(pool.clone());
 
                 let stats = rankings_loader::load_rankings(
                     &data,
                     &player_repo,
                     &team_repo,
                     &ranking_source_repo,
-                    &pool,
+                    &prospect_ranking_repo,
+                    &scouting_report_repo,
                 )
                 .await?;
                 stats.print_summary();
@@ -963,9 +966,14 @@ async fn handle_rankings(action: RankingsActions) -> Result<()> {
                 .expect("DATABASE_URL must be set in environment or .env file");
             let pool = create_pool(&database_url).await?;
             let ranking_source_repo = SqlxRankingSourceRepository::new(pool.clone());
+            let prospect_ranking_repo = SqlxProspectRankingRepository::new(pool.clone());
 
-            let deleted =
-                rankings_loader::clear_rankings(&source, &ranking_source_repo, &pool).await?;
+            let deleted = rankings_loader::clear_rankings(
+                &source,
+                &ranking_source_repo,
+                &prospect_ranking_repo,
+            )
+            .await?;
             println!("Deleted {} rankings", deleted);
         }
     }
