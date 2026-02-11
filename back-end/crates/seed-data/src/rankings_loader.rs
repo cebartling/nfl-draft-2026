@@ -12,6 +12,16 @@ use crate::grade_generator::create_scouting_report;
 use crate::position_mapper::map_position;
 use crate::scouting_report_loader::{RankingData, RankingEntry};
 
+/// Normalize a name component for matching by stripping periods and collapsing whitespace.
+/// This handles variations like "C.J." vs "CJ", "Jr." vs "Jr", "L.T." vs "LT".
+fn normalize_name(name: &str) -> String {
+    name.replace('.', "")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
 #[derive(Debug, Default)]
 pub struct RankingsLoadStats {
     pub prospects_matched: usize,
@@ -116,7 +126,7 @@ pub async fn load_rankings(
         .into_iter()
         .map(|p| {
             (
-                (p.first_name.to_lowercase(), p.last_name.to_lowercase()),
+                (normalize_name(&p.first_name), normalize_name(&p.last_name)),
                 p,
             )
         })
@@ -145,8 +155,8 @@ pub async fn load_rankings(
     // Process each ranking entry
     for entry in &data.rankings {
         let lookup_key = (
-            entry.first_name.to_lowercase(),
-            entry.last_name.to_lowercase(),
+            normalize_name(&entry.first_name),
+            normalize_name(&entry.last_name),
         );
 
         // Match or create player
@@ -351,5 +361,49 @@ pub async fn clear_rankings(
             println!("No ranking source found with name '{}'", source_name);
             Ok(0)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_name_strips_periods() {
+        assert_eq!(normalize_name("C.J."), "cj");
+        assert_eq!(normalize_name("L.T."), "lt");
+        assert_eq!(normalize_name("K.C."), "kc");
+        assert_eq!(normalize_name("T.J."), "tj");
+    }
+
+    #[test]
+    fn test_normalize_name_handles_suffix() {
+        assert_eq!(normalize_name("Jr."), "jr");
+        assert_eq!(normalize_name("Jr"), "jr");
+        assert_eq!(normalize_name("III"), "iii");
+    }
+
+    #[test]
+    fn test_normalize_name_plain_names() {
+        assert_eq!(normalize_name("Fernando"), "fernando");
+        assert_eq!(normalize_name("Mendoza"), "mendoza");
+    }
+
+    #[test]
+    fn test_normalize_name_collapses_whitespace() {
+        assert_eq!(normalize_name("R. Mason"), "r mason");
+        assert_eq!(normalize_name("R Mason"), "r mason");
+    }
+
+    #[test]
+    fn test_normalize_name_matches_duplicates() {
+        // C.J. Allen vs CJ Allen
+        assert_eq!(normalize_name("C.J."), normalize_name("CJ"));
+        // Harold Perkins Jr vs Harold Perkins Jr.
+        assert_eq!(normalize_name("Perkins Jr"), normalize_name("Perkins Jr."));
+        // L.T. vs LT
+        assert_eq!(normalize_name("L.T."), normalize_name("LT"));
+        // R. Mason vs R Mason
+        assert_eq!(normalize_name("R."), normalize_name("R"));
     }
 }

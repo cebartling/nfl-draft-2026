@@ -43,19 +43,21 @@ pub async fn fetch_html(year: i32) -> Result<String> {
 /// Parse Walter Football big board HTML into RankingData.
 ///
 /// Walter Football uses a pattern of:
-///   <strong>N.</strong>
-///   <strong><a href="...">Player Name</a>, Position, School.</strong>
+///   <b>N.</b>
+///   <b><a href="...">Player Name</a>, Position, School.</b>
 ///
 /// or sometimes combined:
-///   <strong>N. <a href="...">Player Name</a>, Position, School.</strong>
+///   <b>N. <a href="...">Player Name</a>, Position, School.</b>
+///
+/// Note: The site uses `<b>` tags (not `<strong>`), so we select both for robustness.
 pub fn parse_html(html: &str, year: i32) -> Result<RankingData> {
     let document = Html::parse_document(html);
-    let strong_selector = Selector::parse("strong").unwrap();
+    let bold_selector = Selector::parse("b, strong").unwrap();
 
     let mut entries = Vec::new();
     let mut current_rank: Option<i32> = None;
 
-    for element in document.select(&strong_selector) {
+    for element in document.select(&bold_selector) {
         let text = element.text().collect::<String>();
         let trimmed = text.trim();
 
@@ -119,45 +121,72 @@ fn parse_rank_number(text: &str) -> Option<i32> {
     None
 }
 
-/// Try to parse a combined element like "<strong>1. <a>Name</a>, Pos, School.</strong>"
+/// Try to parse a combined element like "<b>1. <a>Name</a>, Pos, School.</b>"
+/// or plain text "<b>1. Name, Pos, School.</b>"
 fn try_parse_combined_element(
     element: &scraper::ElementRef,
     rank: i32,
 ) -> Option<RankingEntry> {
-    // Look for an <a> tag child
+    // First, try with an <a> tag child
     let a_selector = Selector::parse("a").unwrap();
-    let anchor = element.select(&a_selector).next()?;
-    let name = anchor.text().collect::<String>().trim().to_string();
-
-    if name.is_empty() {
-        return None;
+    if let Some(anchor) = element.select(&a_selector).next() {
+        let name = anchor.text().collect::<String>().trim().to_string();
+        if !name.is_empty() {
+            let full_text = element.text().collect::<String>();
+            if let Some(after_name) = full_text.split(&name).nth(1) {
+                return parse_position_school(after_name, rank, &name);
+            }
+        }
     }
 
-    // Get the full inner text and find the part after the name
+    // Fallback: plain text format "N. Name, Position, School."
     let full_text = element.text().collect::<String>();
+    let trimmed = full_text.trim();
+    // Strip the rank prefix like "1. "
+    let after_rank = trimmed
+        .strip_prefix(&format!("{}.", rank))
+        .or_else(|| trimmed.strip_prefix(&format!("{} ", rank)))?
+        .trim();
+    let parts: Vec<&str> = after_rank.splitn(3, ',').collect();
+    if parts.len() >= 3 {
+        let name = parts[0].trim();
+        let after_name = &after_rank[name.len()..];
+        return parse_position_school(after_name, rank, name);
+    }
 
-    // Find the position and school after the name
-    // Pattern: "N. Name, Position, School."
-    let after_name = full_text.split(&name).nth(1)?;
-    parse_position_school(after_name, rank, &name)
+    None
 }
 
-/// Try to parse a prospect element like "<strong><a>Name</a>, Pos, School.</strong>"
+/// Try to parse a prospect element like "<b><a>Name</a>, Pos, School.</b>"
+/// or plain text "<b> Name, Pos, School.</b>" (no link)
 fn try_parse_prospect_element(
     element: &scraper::ElementRef,
     rank: i32,
 ) -> Option<RankingEntry> {
+    // First, try with an <a> tag child
     let a_selector = Selector::parse("a").unwrap();
-    let anchor = element.select(&a_selector).next()?;
-    let name = anchor.text().collect::<String>().trim().to_string();
-
-    if name.is_empty() {
-        return None;
+    if let Some(anchor) = element.select(&a_selector).next() {
+        let name = anchor.text().collect::<String>().trim().to_string();
+        if !name.is_empty() {
+            let full_text = element.text().collect::<String>();
+            if let Some(after_name) = full_text.split(&name).nth(1) {
+                return parse_position_school(after_name, rank, &name);
+            }
+        }
     }
 
+    // Fallback: plain text format "Name, Position, School."
     let full_text = element.text().collect::<String>();
-    let after_name = full_text.split(&name).nth(1)?;
-    parse_position_school(after_name, rank, &name)
+    let trimmed = full_text.trim();
+    // Must contain at least two commas: "Name, Pos, School"
+    let parts: Vec<&str> = trimmed.splitn(3, ',').collect();
+    if parts.len() >= 3 {
+        let name = parts[0].trim();
+        let after_name = &trimmed[name.len()..];
+        return parse_position_school(after_name, rank, name);
+    }
+
+    None
 }
 
 /// Parse ", Position, School." from text after the player name
@@ -330,5 +359,47 @@ mod tests {
         let data = parse_html(html, 2026).unwrap();
         assert_eq!(data.rankings[0].position, "LB");
         assert_eq!(data.rankings[1].position, "OG");
+    }
+
+    #[test]
+    fn test_parse_html_with_b_tags() {
+        let html = r#"
+        <html><body>
+        <b>1.</b>
+        <b><a href="/scout.php">Fernando Mendoza</a>, QB, Indiana.</b>
+        <b>2.</b>
+        <b><a href="/scout.php">Jeremiyah Love</a>, RB, Notre Dame.</b>
+        </body></html>
+        "#;
+
+        let data = parse_html(html, 2026).unwrap();
+        assert_eq!(data.rankings.len(), 2);
+        assert_eq!(data.rankings[0].first_name, "Fernando");
+        assert_eq!(data.rankings[1].first_name, "Jeremiyah");
+    }
+
+    #[test]
+    fn test_parse_html_without_links() {
+        // Some Walter Football entries have no <a> tag — just plain text
+        let html = r#"
+        <html><body>
+        <b>1.</b>
+        <b><a href="/scout.php">Fernando Mendoza</a>, QB, Indiana.</b>
+        <b>2.</b>
+        <b> Francis Mauigoa, OT, Miami.</b>
+        <b>3.</b>
+        <b><a href="/scout.php">David Bailey</a>, DE, Texas Tech.</b>
+        </body></html>
+        "#;
+
+        let data = parse_html(html, 2026).unwrap();
+        assert_eq!(data.rankings.len(), 3);
+        assert_eq!(data.rankings[0].first_name, "Fernando");
+        assert_eq!(data.rankings[1].rank, 2);
+        assert_eq!(data.rankings[1].first_name, "Francis");
+        assert_eq!(data.rankings[1].last_name, "Mauigoa");
+        assert_eq!(data.rankings[1].position, "OT");
+        assert_eq!(data.rankings[1].school, "Miami");
+        assert_eq!(data.rankings[2].first_name, "David");
     }
 }
