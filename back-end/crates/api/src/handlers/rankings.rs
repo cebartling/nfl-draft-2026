@@ -148,16 +148,18 @@ pub async fn get_source_rankings(
     State(state): State<AppState>,
     Path(source_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<SourceRankingResponse>>> {
-    // Verify source exists, return 404 if not
-    let source = state.ranking_source_repo.find_by_id(source_id).await?;
-    if source.is_none() {
-        return Err(crate::error::ApiError::NotFound(format!(
-            "Ranking source {} not found",
-            source_id
-        )));
-    }
-
     let rankings = state.prospect_ranking_repo.find_by_source(source_id).await?;
+
+    // If no rankings found, check whether the source exists at all
+    if rankings.is_empty() {
+        let source = state.ranking_source_repo.find_by_id(source_id).await?;
+        if source.is_none() {
+            return Err(crate::error::ApiError::NotFound(format!(
+                "Ranking source {} not found",
+                source_id
+            )));
+        }
+    }
 
     let response: Vec<SourceRankingResponse> = rankings
         .into_iter()
