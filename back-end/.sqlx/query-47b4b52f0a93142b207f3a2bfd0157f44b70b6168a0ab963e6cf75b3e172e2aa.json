@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO prospect_rankings (id, ranking_source_id, player_id, rank, scraped_at) VALUES ($1, $2, $3, $4, '2026-02-11')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "47b4b52f0a93142b207f3a2bfd0157f44b70b6168a0ab963e6cf75b3e172e2aa"
+}

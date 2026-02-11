@@ -83,6 +83,14 @@ pub async fn cleanup_database(pool: &sqlx::PgPool) {
         .execute(pool)
         .await
         .expect("Failed to cleanup drafts");
+    sqlx::query!("DELETE FROM prospect_rankings")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup prospect_rankings");
+    sqlx::query!("DELETE FROM ranking_sources")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup ranking_sources");
     sqlx::query!("DELETE FROM scouting_reports")
         .execute(pool)
         .await
