@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
@@ -37,38 +37,39 @@ impl ProspectRankingRepository for SqlxProspectRankingRepository {
             return Ok(0);
         }
 
-        let mut count = 0;
-        for ranking in rankings {
-            let db = ProspectRankingDb::from_domain(ranking);
-            sqlx::query!(
-                r#"
-                INSERT INTO prospect_rankings (id, ranking_source_id, player_id, rank, scraped_at, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                "#,
-                db.id,
-                db.ranking_source_id,
-                db.player_id,
-                db.rank,
-                db.scraped_at,
-                db.created_at
-            )
-            .execute(&self.pool)
-            .await
-            .map_err(|e| {
-                if let sqlx::Error::Database(db_err) = &e {
-                    if db_err.is_unique_violation() {
-                        return DbError::DuplicateEntry(format!(
-                            "Ranking for source {} and player {} already exists",
-                            ranking.ranking_source_id, ranking.player_id
-                        ));
-                    }
-                }
-                DbError::DatabaseError(e)
-            })?;
-            count += 1;
-        }
+        let ids: Vec<Uuid> = rankings.iter().map(|r| r.id).collect();
+        let source_ids: Vec<Uuid> = rankings.iter().map(|r| r.ranking_source_id).collect();
+        let player_ids: Vec<Uuid> = rankings.iter().map(|r| r.player_id).collect();
+        let ranks: Vec<i32> = rankings.iter().map(|r| r.rank).collect();
+        let scraped_dates: Vec<NaiveDate> = rankings.iter().map(|r| r.scraped_at).collect();
+        let created_dates: Vec<DateTime<Utc>> = rankings.iter().map(|r| r.created_at).collect();
 
-        Ok(count)
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO prospect_rankings (id, ranking_source_id, player_id, rank, scraped_at, created_at)
+            SELECT * FROM UNNEST($1::uuid[], $2::uuid[], $3::uuid[], $4::int4[], $5::date[], $6::timestamptz[])
+            "#,
+            &ids,
+            &source_ids,
+            &player_ids,
+            &ranks,
+            &scraped_dates,
+            &created_dates
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            if let sqlx::Error::Database(db_err) = &e {
+                if db_err.is_unique_violation() {
+                    return DbError::DuplicateEntry(
+                        "Duplicate ranking entry in batch".to_string(),
+                    );
+                }
+            }
+            DbError::DatabaseError(e)
+        })?;
+
+        Ok(result.rows_affected() as usize)
     }
 
     async fn find_by_player_with_source(
