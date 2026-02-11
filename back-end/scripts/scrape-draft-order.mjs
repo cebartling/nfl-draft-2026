@@ -136,7 +136,8 @@ try {
     },
   );
 
-  console.error(`Extracted ${rawPicks.length} raw picks from ${7} rounds`);
+  const roundCount = new Set(rawPicks.map((p) => p.round)).size;
+  console.error(`Extracted ${rawPicks.length} raw picks from ${roundCount} rounds`);
 
   // Normalize abbreviations and compute pick_in_round
   const roundCounters = {};
