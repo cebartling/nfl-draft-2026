@@ -122,7 +122,7 @@
 	</nav>
 
 	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto px-4 py-8">
+	<main class="max-w-7xl mx-auto px-4 py-4">
 		{@render children()}
 	</main>
 

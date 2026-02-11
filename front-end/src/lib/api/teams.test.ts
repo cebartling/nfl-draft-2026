@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { teamsApi } from './teams';
 import * as client from './client';
-import type { Team, TeamNeed } from '$lib/types';
+import type { Team, TeamNeed, ScoutingReport } from '$lib/types';
 
 describe('teamsApi', () => {
 	let mockGet: ReturnType<typeof vi.fn>;
@@ -218,6 +218,47 @@ describe('teamsApi', () => {
 			mockPost.mockRejectedValueOnce(new client.ApiClientError('Bad Request', 400));
 
 			await expect(teamsApi.createNeed(invalidNeed)).rejects.toThrow('Bad Request');
+		});
+	});
+
+	describe('getScoutingReports', () => {
+		it('should fetch scouting reports for a team', async () => {
+			const teamId = '123';
+			const mockReports: ScoutingReport[] = [
+				{
+					id: 'r1',
+					player_id: 'p1',
+					team_id: teamId,
+					grade: 92,
+					fit_grade: 'A',
+					injury_concern: false,
+					character_concern: false,
+				},
+				{
+					id: 'r2',
+					player_id: 'p2',
+					team_id: teamId,
+					grade: 78,
+					fit_grade: 'B',
+					injury_concern: true,
+					character_concern: false,
+				},
+			];
+
+			mockGet.mockResolvedValueOnce(mockReports);
+
+			const result = await teamsApi.getScoutingReports(teamId);
+
+			expect(mockGet).toHaveBeenCalledWith(`/teams/${teamId}/scouting-reports`, expect.any(Object));
+			expect(result).toEqual(mockReports);
+		});
+
+		it('should handle team with no scouting reports', async () => {
+			mockGet.mockResolvedValueOnce([]);
+
+			const result = await teamsApi.getScoutingReports('123');
+
+			expect(result).toEqual([]);
 		});
 	});
 });

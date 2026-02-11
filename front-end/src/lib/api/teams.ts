@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { apiClient } from './client';
-import { TeamSchema, TeamNeedSchema, type Team, type TeamNeed } from '$lib/types';
+import {
+	TeamSchema,
+	TeamNeedSchema,
+	ScoutingReportSchema,
+	type Team,
+	type TeamNeed,
+	type ScoutingReport,
+} from '$lib/types';
 
 /**
  * Teams API module
@@ -46,5 +53,12 @@ export const teamsApi = {
 	 */
 	async createNeed(need: Omit<TeamNeed, 'id'>): Promise<TeamNeed> {
 		return apiClient.post('/teams/needs', need, TeamNeedSchema);
+	},
+
+	/**
+	 * Get scouting reports for a team (sorted by grade DESC from backend)
+	 */
+	async getScoutingReports(teamId: string): Promise<ScoutingReport[]> {
+		return apiClient.get(`/teams/${teamId}/scouting-reports`, z.array(ScoutingReportSchema));
 	},
 };

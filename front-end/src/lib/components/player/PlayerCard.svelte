@@ -4,10 +4,11 @@
 
 	interface Props {
 		player: Player;
+		scoutingGrade?: number;
 		onSelect?: (player: Player) => void;
 	}
 
-	let { player, onSelect }: Props = $props();
+	let { player, scoutingGrade, onSelect }: Props = $props();
 
 	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
 		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
@@ -24,11 +25,18 @@
 		const remainingInches = inches % 12;
 		return `${feet}'${remainingInches}"`;
 	}
+
+	function getGradeColor(grade: number): string {
+		if (grade >= 80) return 'text-green-700 bg-green-100';
+		if (grade >= 60) return 'text-blue-700 bg-blue-100';
+		if (grade >= 40) return 'text-yellow-700 bg-yellow-100';
+		return 'text-gray-700 bg-gray-100';
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-	class="bg-white rounded-lg shadow-md p-4 transition-all {onSelect
+	class="bg-white rounded-lg shadow-md px-4 py-3 transition-all {onSelect
 		? 'hover:shadow-lg cursor-pointer'
 		: ''}"
 	onclick={() => onSelect?.(player)}
@@ -41,34 +49,26 @@
 		}
 	}}
 >
-	<div class="flex items-start justify-between mb-3">
-		<div class="flex-1">
-			<h3 class="text-lg font-semibold text-gray-900">
-				{player.first_name}
-				{player.last_name}
-			</h3>
-			<p class="text-sm text-gray-600">{player.college || 'N/A'}</p>
-		</div>
+	<div class="flex items-center gap-4">
+		{#if scoutingGrade !== undefined}
+			<span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(scoutingGrade)}">
+				{scoutingGrade.toFixed(1)}
+			</span>
+		{/if}
 		<Badge variant={getPositionColor(player.position)} size="lg">
 			{player.position}
 		</Badge>
-	</div>
-
-	<div class="grid grid-cols-2 gap-3 mb-3">
+		<div class="flex-1 min-w-0">
+			<h3 class="text-base font-semibold text-gray-900 truncate">
+				{player.first_name}
+				{player.last_name}
+			</h3>
+		</div>
+		<p class="text-sm text-gray-600 hidden sm:block">{player.college || 'N/A'}</p>
 		{#if player.height_inches || player.weight_pounds}
-			<div>
-				<p class="text-xs font-medium text-gray-600">Measurables</p>
-				<p class="text-sm text-gray-900">
-					{formatHeight(player.height_inches)}
-					{#if player.weight_pounds}
-						/ {player.weight_pounds} lbs
-					{/if}
-				</p>
-			</div>
+			<p class="text-sm text-gray-500 hidden md:block">
+				{formatHeight(player.height_inches)}{#if player.weight_pounds}, {player.weight_pounds} lbs{/if}
+			</p>
 		{/if}
-	</div>
-
-	<div class="pt-3 border-t border-gray-200">
-		<p class="text-xs text-gray-500">Draft Year: {player.draft_year}</p>
 	</div>
 </div>
