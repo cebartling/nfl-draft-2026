@@ -30,14 +30,15 @@ impl RankingSourceDb {
     }
 
     pub fn to_domain(&self) -> DbResult<RankingSource> {
-        Ok(RankingSource {
-            id: self.id,
-            name: self.name.clone(),
-            url: self.url.clone(),
-            description: self.description.clone(),
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-        })
+        // Create via constructor to derive abbreviation from name
+        let mut source = RankingSource::new(self.name.clone())
+            .map_err(|e| crate::errors::DbError::MappingError(e.to_string()))?;
+        source.id = self.id;
+        source.url = self.url.clone();
+        source.description = self.description.clone();
+        source.created_at = self.created_at;
+        source.updated_at = self.updated_at;
+        Ok(source)
     }
 }
 
@@ -74,5 +75,6 @@ mod tests {
         assert!(result.is_ok());
         let source = result.unwrap();
         assert_eq!(source.name, "Tankathon");
+        assert_eq!(source.abbreviation, "TK");
     }
 }

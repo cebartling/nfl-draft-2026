@@ -11,18 +11,6 @@ import {
 	type RankingBadge,
 } from '$lib/types';
 
-/** Map a source name to a short abbreviation for badge display */
-function abbreviateSource(name: string): string {
-	const lower = name.toLowerCase();
-	if (lower.includes('tankathon')) return 'TK';
-	if (lower.includes('walter')) return 'WF';
-	if (lower.includes('espn')) return 'ESPN';
-	if (lower.includes('nfl')) return 'NFL';
-	if (lower.includes('pff')) return 'PFF';
-	// Fallback: first 2 chars uppercase
-	return name.slice(0, 2).toUpperCase();
-}
-
 /**
  * Rankings API module
  */
@@ -49,16 +37,27 @@ export const rankingsApi = {
 	},
 
 	/**
-	 * Build a map of player_id -> RankingBadge[] using a single API request.
+	 * Build a map of player_id -> RankingBadge[] using two API requests:
+	 * one for sources (abbreviations) and one for all rankings.
 	 */
 	async loadAllPlayerRankings(): Promise<Map<string, RankingBadge[]>> {
-		const entries = await apiClient.get('/rankings', z.array(AllRankingEntrySchema));
+		const [sources, entries] = await Promise.all([
+			apiClient.get('/ranking-sources', z.array(RankingSourceSchema)),
+			apiClient.get('/rankings', z.array(AllRankingEntrySchema)),
+		]);
+
+		// Build abbreviation lookup from backend-provided values
+		const abbreviations = new Map<string, string>();
+		for (const source of sources) {
+			abbreviations.set(source.name, source.abbreviation);
+		}
+
 		const map = new Map<string, RankingBadge[]>();
 
 		for (const entry of entries) {
 			const badge: RankingBadge = {
 				source_name: entry.source_name,
-				abbreviation: abbreviateSource(entry.source_name),
+				abbreviation: abbreviations.get(entry.source_name) ?? entry.source_name.slice(0, 2).toUpperCase(),
 				rank: entry.rank,
 			};
 			const existing = map.get(entry.player_id);

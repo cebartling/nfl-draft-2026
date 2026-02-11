@@ -121,6 +121,7 @@ async fn test_list_ranking_sources_with_data() {
     let body: Vec<serde_json::Value> = resp.json().await.unwrap();
     assert_eq!(body.len(), 1);
     assert_eq!(body[0]["name"], "Tankathon");
+    assert_eq!(body[0]["abbreviation"], "TK");
     assert_eq!(body[0]["url"], "https://tankathon.com");
     assert_eq!(body[0]["id"], source_id.to_string());
 }

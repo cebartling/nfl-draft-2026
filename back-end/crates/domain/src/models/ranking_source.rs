@@ -7,10 +7,30 @@ use crate::errors::{DomainError, DomainResult};
 pub struct RankingSource {
     pub id: Uuid,
     pub name: String,
+    pub abbreviation: String,
     pub url: Option<String>,
     pub description: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// Derive a short abbreviation from a ranking source name.
+fn abbreviate_source_name(name: &str) -> String {
+    let lower = name.to_lowercase();
+    if lower.contains("tankathon") {
+        "TK".to_string()
+    } else if lower.contains("walter") {
+        "WF".to_string()
+    } else if lower.contains("espn") {
+        "ESPN".to_string()
+    } else if lower.contains("nfl") {
+        "NFL".to_string()
+    } else if lower.contains("pff") {
+        "PFF".to_string()
+    } else {
+        // Fallback: first 2 chars uppercase
+        name.chars().take(2).collect::<String>().to_uppercase()
+    }
 }
 
 impl RankingSource {
@@ -26,10 +46,12 @@ impl RankingSource {
             ));
         }
 
+        let abbreviation = abbreviate_source_name(&name);
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
             name,
+            abbreviation,
             url: None,
             description: None,
             created_at: now,

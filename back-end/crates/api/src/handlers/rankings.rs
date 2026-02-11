@@ -14,6 +14,7 @@ use crate::state::AppState;
 pub struct RankingSourceResponse {
     pub id: Uuid,
     pub name: String,
+    pub abbreviation: String,
     pub url: Option<String>,
     pub description: Option<String>,
 }
@@ -23,6 +24,7 @@ impl From<RankingSource> for RankingSourceResponse {
         Self {
             id: s.id,
             name: s.name,
+            abbreviation: s.abbreviation,
             url: s.url,
             description: s.description,
         }

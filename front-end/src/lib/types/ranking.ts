@@ -5,6 +5,7 @@ import { UUIDSchema } from './common';
 export const RankingSourceSchema = z.object({
 	id: UUIDSchema,
 	name: z.string(),
+	abbreviation: z.string(),
 	url: z.string().url().nullable().optional(),
 	description: z.string().nullable().optional(),
 });

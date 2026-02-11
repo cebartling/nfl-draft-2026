@@ -18,8 +18,19 @@ describe('rankingsApi', () => {
 	describe('listSources', () => {
 		it('should fetch all ranking sources', async () => {
 			const mockSources: RankingSource[] = [
-				{ id: 'src-1', name: 'Tankathon', url: 'https://tankathon.com', description: null },
-				{ id: 'src-2', name: 'Walter Football', url: 'https://walterfootball.com' },
+				{
+					id: 'src-1',
+					name: 'Tankathon',
+					abbreviation: 'TK',
+					url: 'https://tankathon.com',
+					description: null,
+				},
+				{
+					id: 'src-2',
+					name: 'Walter Football',
+					abbreviation: 'WF',
+					url: 'https://walterfootball.com',
+				},
 			];
 
 			mockGet.mockResolvedValueOnce(mockSources);
@@ -93,7 +104,11 @@ describe('rankingsApi', () => {
 	});
 
 	describe('loadAllPlayerRankings', () => {
-		it('should build badge map from all ranking entries', async () => {
+		it('should build badge map using backend abbreviations', async () => {
+			const mockSources: RankingSource[] = [
+				{ id: 'src-1', name: 'Tankathon', abbreviation: 'TK' },
+				{ id: 'src-2', name: 'Walter Football', abbreviation: 'WF' },
+			];
 			const mockEntries: AllRankingEntry[] = [
 				{
 					player_id: 'p-1',
@@ -115,11 +130,13 @@ describe('rankingsApi', () => {
 				},
 			];
 
+			// First call returns sources, second returns rankings
+			mockGet.mockResolvedValueOnce(mockSources);
 			mockGet.mockResolvedValueOnce(mockEntries);
 
 			const result = await rankingsApi.loadAllPlayerRankings();
 
-			expect(mockGet).toHaveBeenCalledWith('/rankings', expect.any(Object));
+			expect(mockGet).toHaveBeenCalledTimes(2);
 			expect(result).toBeInstanceOf(Map);
 
 			// Player 1 has two badges, sorted by rank (best first)
@@ -139,7 +156,8 @@ describe('rankingsApi', () => {
 		});
 
 		it('should return empty map when no rankings exist', async () => {
-			mockGet.mockResolvedValueOnce([]);
+			mockGet.mockResolvedValueOnce([]); // sources
+			mockGet.mockResolvedValueOnce([]); // rankings
 
 			const result = await rankingsApi.loadAllPlayerRankings();
 
@@ -147,7 +165,10 @@ describe('rankingsApi', () => {
 			expect(result.size).toBe(0);
 		});
 
-		it('should abbreviate known sources correctly', async () => {
+		it('should fall back to first 2 chars for unknown sources', async () => {
+			const mockSources: RankingSource[] = [
+				{ id: 's-1', name: 'ESPN Draft Board', abbreviation: 'ESPN' },
+			];
 			const mockEntries: AllRankingEntry[] = [
 				{
 					player_id: 'p-1',
@@ -157,33 +178,20 @@ describe('rankingsApi', () => {
 				},
 				{
 					player_id: 'p-1',
-					source_name: 'NFL.com',
+					source_name: 'Unknown Source',
 					rank: 2,
-					scraped_at: '2026-02-01',
-				},
-				{
-					player_id: 'p-1',
-					source_name: 'PFF Rankings',
-					rank: 3,
-					scraped_at: '2026-02-01',
-				},
-				{
-					player_id: 'p-1',
-					source_name: 'Custom Source',
-					rank: 4,
 					scraped_at: '2026-02-01',
 				},
 			];
 
+			mockGet.mockResolvedValueOnce(mockSources);
 			mockGet.mockResolvedValueOnce(mockEntries);
 
 			const result = await rankingsApi.loadAllPlayerRankings();
 			const badges = result.get('p-1')!;
 
 			expect(badges[0].abbreviation).toBe('ESPN');
-			expect(badges[1].abbreviation).toBe('NFL');
-			expect(badges[2].abbreviation).toBe('PFF');
-			expect(badges[3].abbreviation).toBe('CU'); // fallback: first 2 chars
+			expect(badges[1].abbreviation).toBe('UN'); // fallback: first 2 chars
 		});
 	});
 
