@@ -20,7 +20,7 @@ pub use draft_event::{DraftEvent, EventType};
 pub use draft_session::{DraftSession, SessionStatus};
 pub use draft_strategy::{DraftStrategy, PositionValueMap};
 pub use player::{Player, Position};
-pub use prospect_ranking::ProspectRanking;
+pub use prospect_ranking::{PlayerRankingWithSource, ProspectRanking};
 pub use ranking_source::RankingSource;
 pub use scouting_report::{FitGrade, ScoutingReport};
 pub use team::{Conference, Division, Team};

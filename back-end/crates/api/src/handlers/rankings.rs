@@ -65,23 +65,16 @@ pub async fn get_player_rankings(
     State(state): State<AppState>,
     Path(player_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<PlayerRankingResponse>>> {
-    let rankings = state.prospect_ranking_repo.find_by_player(player_id).await?;
-
-    // Load all sources for name lookup
-    let sources = state.ranking_source_repo.find_all().await?;
-    let source_map: std::collections::HashMap<Uuid, String> = sources
-        .into_iter()
-        .map(|s| (s.id, s.name))
-        .collect();
+    let rankings = state
+        .prospect_ranking_repo
+        .find_by_player_with_source(player_id)
+        .await?;
 
     let response: Vec<PlayerRankingResponse> = rankings
         .into_iter()
         .map(|r| PlayerRankingResponse {
-            source_name: source_map
-                .get(&r.ranking_source_id)
-                .cloned()
-                .unwrap_or_else(|| "Unknown".to_string()),
-            source_id: r.ranking_source_id,
+            source_name: r.source_name,
+            source_id: r.source_id,
             rank: r.rank,
             scraped_at: r.scraped_at,
         })

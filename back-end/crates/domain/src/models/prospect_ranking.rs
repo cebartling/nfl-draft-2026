@@ -13,6 +13,15 @@ pub struct ProspectRanking {
     pub created_at: DateTime<Utc>,
 }
 
+/// A ranking with the source name pre-joined (avoids N+1 queries)
+#[derive(Debug, Clone)]
+pub struct PlayerRankingWithSource {
+    pub source_name: String,
+    pub source_id: Uuid,
+    pub rank: i32,
+    pub scraped_at: NaiveDate,
+}
+
 impl ProspectRanking {
     pub fn new(
         ranking_source_id: Uuid,
