@@ -31,7 +31,6 @@ export type SourceRanking = z.infer<typeof SourceRankingSchema>;
 export const AllRankingEntrySchema = z.object({
 	player_id: UUIDSchema,
 	source_name: z.string(),
-	source_id: UUIDSchema,
 	rank: z.number(),
 	scraped_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });

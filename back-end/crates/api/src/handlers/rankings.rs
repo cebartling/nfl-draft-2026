@@ -69,7 +69,6 @@ impl From<ProspectRanking> for SourceRankingResponse {
 pub struct AllRankingEntry {
     pub player_id: Uuid,
     pub source_name: String,
-    pub source_id: Uuid,
     pub rank: i32,
     pub scraped_at: NaiveDate,
 }
@@ -79,7 +78,6 @@ impl From<PlayerRankingWithSource> for AllRankingEntry {
         Self {
             player_id: r.player_id,
             source_name: r.source_name,
-            source_id: r.source_id,
             rank: r.rank,
             scraped_at: r.scraped_at,
         }

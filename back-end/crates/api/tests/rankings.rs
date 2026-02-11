@@ -271,7 +271,6 @@ async fn test_get_all_rankings() {
     for entry in &body {
         assert!(entry["player_id"].is_string());
         assert!(entry["source_name"].is_string());
-        assert!(entry["source_id"].is_string());
         assert!(entry["rank"].is_number());
         assert!(entry["scraped_at"].is_string());
     }
