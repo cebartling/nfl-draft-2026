@@ -45,6 +45,7 @@
 			})
 			.catch((error) => {
 				logger.error('Failed to load rankings:', error);
+				toastState.warning('Rankings unavailable');
 			});
 	});
 
