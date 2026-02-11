@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT pr.player_id, rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at\n            FROM prospect_rankings pr\n            JOIN ranking_sources rs ON pr.ranking_source_id = rs.id\n            ORDER BY rs.name, pr.rank\n            ",
+  "query": "\n            SELECT pr.player_id, rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at\n            FROM prospect_rankings pr\n            JOIN ranking_sources rs ON pr.ranking_source_id = rs.id\n            ORDER BY rs.name, pr.rank\n            LIMIT 10000\n            ",
   "describe": {
     "columns": [
       {
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "27bd8929767680c805777a88c23da1c077c0fbc9ebe7b6e6d1f89b18e8dd3f3c"
+  "hash": "d0f2f36e7cadbd031b20f994b68e28bd207b3819e7383e8310a7a9315dce991c"
 }

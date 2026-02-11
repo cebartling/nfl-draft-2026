@@ -103,6 +103,7 @@ impl ProspectRankingRepository for SqlxProspectRankingRepository {
             FROM prospect_rankings pr
             JOIN ranking_sources rs ON pr.ranking_source_id = rs.id
             ORDER BY rs.name, pr.rank
+            LIMIT 10000
             "#
         )
         .fetch_all(&self.pool)
