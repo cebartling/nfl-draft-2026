@@ -5,6 +5,8 @@ use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use domain::models::{PlayerRankingWithSource, ProspectRanking, RankingSource};
+
 use crate::error::ApiResult;
 use crate::state::AppState;
 
@@ -16,12 +18,72 @@ pub struct RankingSourceResponse {
     pub description: Option<String>,
 }
 
+impl From<RankingSource> for RankingSourceResponse {
+    fn from(s: RankingSource) -> Self {
+        Self {
+            id: s.id,
+            name: s.name,
+            url: s.url,
+            description: s.description,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PlayerRankingResponse {
     pub source_name: String,
     pub source_id: Uuid,
     pub rank: i32,
     pub scraped_at: NaiveDate,
+}
+
+impl From<PlayerRankingWithSource> for PlayerRankingResponse {
+    fn from(r: PlayerRankingWithSource) -> Self {
+        Self {
+            source_name: r.source_name,
+            source_id: r.source_id,
+            rank: r.rank,
+            scraped_at: r.scraped_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SourceRankingResponse {
+    pub player_id: Uuid,
+    pub rank: i32,
+    pub scraped_at: NaiveDate,
+}
+
+impl From<ProspectRanking> for SourceRankingResponse {
+    fn from(r: ProspectRanking) -> Self {
+        Self {
+            player_id: r.player_id,
+            rank: r.rank,
+            scraped_at: r.scraped_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AllRankingEntry {
+    pub player_id: Uuid,
+    pub source_name: String,
+    pub source_id: Uuid,
+    pub rank: i32,
+    pub scraped_at: NaiveDate,
+}
+
+impl From<PlayerRankingWithSource> for AllRankingEntry {
+    fn from(r: PlayerRankingWithSource) -> Self {
+        Self {
+            player_id: r.player_id,
+            source_name: r.source_name,
+            source_id: r.source_id,
+            rank: r.rank,
+            scraped_at: r.scraped_at,
+        }
+    }
 }
 
 /// GET /api/v1/ranking-sources - List all ranking sources
@@ -37,15 +99,8 @@ pub async fn list_ranking_sources(
     State(state): State<AppState>,
 ) -> ApiResult<Json<Vec<RankingSourceResponse>>> {
     let sources = state.ranking_source_repo.find_all().await?;
-    let response: Vec<RankingSourceResponse> = sources
-        .into_iter()
-        .map(|s| RankingSourceResponse {
-            id: s.id,
-            name: s.name,
-            url: s.url,
-            description: s.description,
-        })
-        .collect();
+    let response: Vec<RankingSourceResponse> =
+        sources.into_iter().map(RankingSourceResponse::from).collect();
     Ok(Json(response))
 }
 
@@ -72,12 +127,7 @@ pub async fn get_player_rankings(
 
     let response: Vec<PlayerRankingResponse> = rankings
         .into_iter()
-        .map(|r| PlayerRankingResponse {
-            source_name: r.source_name,
-            source_id: r.source_id,
-            rank: r.rank,
-            scraped_at: r.scraped_at,
-        })
+        .map(PlayerRankingResponse::from)
         .collect();
 
     Ok(Json(response))
@@ -113,30 +163,10 @@ pub async fn get_source_rankings(
 
     let response: Vec<SourceRankingResponse> = rankings
         .into_iter()
-        .map(|r| SourceRankingResponse {
-            player_id: r.player_id,
-            rank: r.rank,
-            scraped_at: r.scraped_at,
-        })
+        .map(SourceRankingResponse::from)
         .collect();
 
     Ok(Json(response))
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct SourceRankingResponse {
-    pub player_id: Uuid,
-    pub rank: i32,
-    pub scraped_at: NaiveDate,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct AllRankingEntry {
-    pub player_id: Uuid,
-    pub source_name: String,
-    pub source_id: Uuid,
-    pub rank: i32,
-    pub scraped_at: NaiveDate,
 }
 
 /// GET /api/v1/rankings - Get all rankings across all sources in one request
@@ -153,16 +183,8 @@ pub async fn get_all_rankings(
 ) -> ApiResult<Json<Vec<AllRankingEntry>>> {
     let rankings = state.prospect_ranking_repo.find_all_with_source().await?;
 
-    let response: Vec<AllRankingEntry> = rankings
-        .into_iter()
-        .map(|r| AllRankingEntry {
-            player_id: r.player_id,
-            source_name: r.source_name,
-            source_id: r.source_id,
-            rank: r.rank,
-            scraped_at: r.scraped_at,
-        })
-        .collect();
+    let response: Vec<AllRankingEntry> =
+        rankings.into_iter().map(AllRankingEntry::from).collect();
 
     Ok(Json(response))
 }
