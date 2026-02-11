@@ -49,6 +49,10 @@ pub fn create_router(state: AppState) -> Router {
             "/players/{player_id}/scouting-reports",
             get(handlers::scouting_reports::get_player_scouting_reports),
         )
+        .route(
+            "/players/{player_id}/rankings",
+            get(handlers::rankings::get_player_rankings),
+        )
         // Drafts
         .route(
             "/drafts",
@@ -148,6 +152,15 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::team_seasons::list_team_seasons),
         )
         .route("/draft-order", get(handlers::team_seasons::get_draft_order))
+        // Ranking Sources
+        .route(
+            "/ranking-sources",
+            get(handlers::rankings::list_ranking_sources),
+        )
+        .route(
+            "/ranking-sources/{source_id}/rankings",
+            get(handlers::rankings::get_source_rankings),
+        )
         // Admin
         .route("/admin/seed-players", post(handlers::seed::seed_players))
         .route("/admin/seed-teams", post(handlers::seed::seed_teams))

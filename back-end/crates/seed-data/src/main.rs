@@ -1,7 +1,7 @@
 use seed_data::{
-    draft_order_loader, draft_order_validator, loader, scouting_report_loader,
-    scouting_report_validator, team_loader, team_need_loader, team_need_validator,
-    team_season_loader, team_season_validator, team_validator, validator,
+    draft_order_loader, draft_order_validator, loader, rankings_loader, rankings_validator,
+    scouting_report_loader, scouting_report_validator, team_loader, team_need_loader,
+    team_need_validator, team_season_loader, team_season_validator, team_validator, validator,
 };
 
 use anyhow::Result;
@@ -10,7 +10,7 @@ use db::{
     create_pool,
     repositories::{
         SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository,
-        SqlxTeamNeedRepository, SqlxTeamRepository,
+        SqlxRankingSourceRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
         SqlxTeamSeasonRepository,
     },
 };
@@ -61,6 +61,12 @@ enum EntityCommands {
     Scouting {
         #[command(subcommand)]
         action: ScoutingActions,
+    },
+
+    /// Manage prospect rankings from external sources (big boards)
+    Rankings {
+        #[command(subcommand)]
+        action: RankingsActions,
     },
 }
 
@@ -224,6 +230,34 @@ enum ScoutingActions {
     },
 }
 
+#[derive(Subcommand)]
+enum RankingsActions {
+    /// Load prospect rankings from JSON file (auto-creates new players + scouting reports)
+    Load {
+        /// Path to the rankings JSON data file
+        #[arg(short, long)]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear rankings for a source
+    Clear {
+        /// The ranking source name (e.g., "Tankathon", "Walter Football")
+        #[arg(short, long)]
+        source: String,
+    },
+
+    /// Validate rankings JSON file without loading
+    Validate {
+        /// Path to the rankings JSON data file
+        #[arg(short, long)]
+        file: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -243,6 +277,7 @@ async fn main() -> Result<()> {
         EntityCommands::Seasons { action } => handle_seasons(action).await?,
         EntityCommands::DraftOrder { action } => handle_draft_order(action).await?,
         EntityCommands::Scouting { action } => handle_scouting(action).await?,
+        EntityCommands::Rankings { action } => handle_rankings(action).await?,
     }
 
     Ok(())
@@ -844,6 +879,94 @@ async fn handle_scouting(action: ScoutingActions) -> Result<()> {
             .await?;
 
             println!("Deleted {} scouting reports", result.rows_affected());
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_rankings(action: RankingsActions) -> Result<()> {
+    match action {
+        RankingsActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = scouting_report_loader::parse_ranking_file(&file)?;
+            println!(
+                "Loaded {} rankings from file (draft year {}, source: {})",
+                data.rankings.len(),
+                data.meta.draft_year,
+                data.meta.source
+            );
+
+            let result = rankings_validator::validate_ranking_data(&data);
+            result.print_summary();
+
+            if !result.valid {
+                std::process::exit(1);
+            }
+        }
+
+        RankingsActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading prospect rankings from: {}", file);
+            }
+
+            let data = scouting_report_loader::parse_ranking_file(&file)?;
+            println!(
+                "Parsed {} rankings from file (draft year {}, source: {})",
+                data.rankings.len(),
+                data.meta.draft_year,
+                data.meta.source
+            );
+
+            // Validate first
+            let validation = rankings_validator::validate_ranking_data(&data);
+            validation.print_summary();
+
+            if !validation.valid {
+                println!("\nAborting load due to validation errors.");
+                std::process::exit(1);
+            }
+
+            if dry_run {
+                let stats = rankings_loader::load_rankings_dry_run(&data)?;
+                stats.print_summary();
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let player_repo = SqlxPlayerRepository::new(pool.clone());
+                let team_repo = SqlxTeamRepository::new(pool.clone());
+                let ranking_source_repo = SqlxRankingSourceRepository::new(pool.clone());
+
+                let stats = rankings_loader::load_rankings(
+                    &data,
+                    &player_repo,
+                    &team_repo,
+                    &ranking_source_repo,
+                    &pool,
+                )
+                .await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        RankingsActions::Clear { source } => {
+            println!("Clearing rankings for source: {}", source);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+            let ranking_source_repo = SqlxRankingSourceRepository::new(pool.clone());
+
+            let deleted =
+                rankings_loader::clear_rankings(&source, &ranking_source_repo, &pool).await?;
+            println!("Deleted {} rankings", deleted);
         }
     }
 

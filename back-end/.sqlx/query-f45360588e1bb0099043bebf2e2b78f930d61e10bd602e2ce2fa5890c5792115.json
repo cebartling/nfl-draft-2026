@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM prospect_rankings WHERE ranking_source_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f45360588e1bb0099043bebf2e2b78f930d61e10bd602e2ce2fa5890c5792115"
+}

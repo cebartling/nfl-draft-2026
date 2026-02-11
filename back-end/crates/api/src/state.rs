@@ -7,13 +7,14 @@ use uuid::Uuid;
 use db::repositories::{
     EventRepo, SessionRepo, SqlxCombineResultsRepository, SqlxDraftPickRepository,
     SqlxDraftRepository, SqlxDraftStrategyRepository, SqlxPlayerRepository,
-    SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
-    SqlxTeamSeasonRepository, SqlxTradeRepository,
+    SqlxProspectRankingRepository, SqlxRankingSourceRepository, SqlxScoutingReportRepository,
+    SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository, SqlxTradeRepository,
 };
 use domain::repositories::{
     CombineResultsRepository, DraftPickRepository, DraftRepository, DraftStrategyRepository,
-    EventRepository, PlayerRepository, ScoutingReportRepository, SessionRepository,
-    TeamNeedRepository, TeamRepository, TeamSeasonRepository, TradeRepository,
+    EventRepository, PlayerRepository, ProspectRankingRepository, RankingSourceRepository,
+    ScoutingReportRepository, SessionRepository, TeamNeedRepository, TeamRepository,
+    TeamSeasonRepository, TradeRepository,
 };
 use domain::services::{
     AutoPickService, DraftEngine, DraftStrategyService, PlayerEvaluationService, TradeEngine,
@@ -34,6 +35,8 @@ pub struct AppState {
     pub session_repo: Arc<dyn SessionRepository>,
     pub event_repo: Arc<dyn EventRepository>,
     pub trade_repo: Arc<dyn TradeRepository>,
+    pub ranking_source_repo: Arc<dyn RankingSourceRepository>,
+    pub prospect_ranking_repo: Arc<dyn ProspectRankingRepository>,
     pub draft_engine: Arc<DraftEngine>,
     pub trade_engine: Arc<TradeEngine>,
     pub ws_manager: ConnectionManager,
@@ -61,6 +64,10 @@ impl AppState {
         let session_repo: Arc<dyn SessionRepository> = Arc::new(SessionRepo::new(pool.clone()));
         let event_repo: Arc<dyn EventRepository> = Arc::new(EventRepo::new(pool.clone()));
         let trade_repo: Arc<dyn TradeRepository> = Arc::new(SqlxTradeRepository::new(pool.clone()));
+        let ranking_source_repo: Arc<dyn RankingSourceRepository> =
+            Arc::new(SqlxRankingSourceRepository::new(pool.clone()));
+        let prospect_ranking_repo: Arc<dyn ProspectRankingRepository> =
+            Arc::new(SqlxProspectRankingRepository::new(pool.clone()));
         let draft_strategy_repo: Arc<dyn DraftStrategyRepository> =
             Arc::new(SqlxDraftStrategyRepository::new(pool.clone()));
 
@@ -109,6 +116,8 @@ impl AppState {
             session_repo,
             event_repo,
             trade_repo,
+            ranking_source_repo,
+            prospect_ranking_repo,
             draft_engine,
             trade_engine,
             ws_manager,
