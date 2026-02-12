@@ -10,6 +10,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "baseUrl": ".",
     "paths": {
       "@screenplay/*": ["./src/screenplay/*"],
       "@db/*": ["./src/db/*"],
