@@ -13,19 +13,6 @@ interface AutoPickRunResponse {
   }>;
 }
 
-class RunAutoPickOnceTask implements Task {
-  public result: AutoPickRunResponse | null = null;
-
-  async performAs(actor: Actor): Promise<void> {
-    const api = actor.abilityTo(CallApi);
-    // We need the session ID - this task is typically used after StartSession
-    // The session ID should be passed via context or discovered
-    throw new Error(
-      'RunAutoPick.once() requires a session ID. Use RunAutoPickForSession.once(sessionId) instead.',
-    );
-  }
-}
-
 class RunAutoPickForSessionTask implements Task {
   public result: AutoPickRunResponse | null = null;
 
@@ -50,12 +37,6 @@ class AdvancePickTask implements Task {
     if (!res.ok) throw new Error(`Advance pick failed: ${res.status}`);
   }
 }
-
-export const RunAutoPick = {
-  once(): RunAutoPickOnceTask {
-    return new RunAutoPickOnceTask();
-  },
-};
 
 export const RunAutoPickForSession = {
   once(sessionId: string): RunAutoPickForSessionTask {
