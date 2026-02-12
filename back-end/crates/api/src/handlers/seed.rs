@@ -385,7 +385,7 @@ pub async fn seed_rankings(
         // Load rankings into the database
         let stats = seed_data::rankings_loader::load_rankings(
             &data,
-            &state.pool,
+            state.pool(),
             state.player_repo.as_ref(),
             state.team_repo.as_ref(),
             state.ranking_source_repo.as_ref(),

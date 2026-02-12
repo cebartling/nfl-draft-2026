@@ -24,7 +24,7 @@ use websocket::ConnectionManager;
 /// Application state shared across all handlers
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: PgPool,
+    pool: PgPool,
     pub team_repo: Arc<dyn TeamRepository>,
     pub player_repo: Arc<dyn PlayerRepository>,
     pub draft_repo: Arc<dyn DraftRepository>,
@@ -47,6 +47,12 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Access the raw database pool. Prefer repository methods where possible;
+    /// this exists for seed-data loaders that need transaction control.
+    pub(crate) fn pool(&self) -> &PgPool {
+        &self.pool
+    }
+
     pub fn new(pool: PgPool, seed_api_key: Option<String>) -> Self {
         let team_repo: Arc<dyn TeamRepository> = Arc::new(SqlxTeamRepository::new(pool.clone()));
         let player_repo: Arc<dyn PlayerRepository> =
