@@ -1,6 +1,17 @@
 import type pg from 'pg';
 import type { Ability } from '../actor.js';
 
+const VALID_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
+
+function assertSafeIdentifier(value: string, label: string): void {
+  if (!VALID_IDENTIFIER.test(value)) {
+    throw new Error(
+      `Unsafe SQL identifier for ${label}: "${value}". ` +
+        `Only lowercase letters, digits, and underscores are allowed.`,
+    );
+  }
+}
+
 export class QueryDatabase implements Ability {
   private constructor(private readonly pool: pg.Pool) {}
 
@@ -23,7 +34,15 @@ export class QueryDatabase implements Ability {
     return result.rows[0] ?? null;
   }
 
+  /**
+   * Count rows in a table with an optional WHERE clause.
+   *
+   * @param table - Table name (must be a safe SQL identifier: lowercase, digits, underscores)
+   * @param where - Optional WHERE clause using $1, $2, etc. for parameters
+   * @param params - Optional bind parameters for the WHERE clause
+   */
   async count(table: string, where?: string, params?: unknown[]): Promise<number> {
+    assertSafeIdentifier(table, 'table');
     const sql = where
       ? `SELECT COUNT(*)::int AS count FROM ${table} WHERE ${where}`
       : `SELECT COUNT(*)::int AS count FROM ${table}`;
