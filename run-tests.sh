@@ -143,7 +143,7 @@ echo -e "${BOLD}═════════════════════�
 if [ "$STARTED_POSTGRES" = true ]; then
     echo ""
     echo -e "${YELLOW}${BOLD}Stopping PostgreSQL container (started by this script)...${NC}"
-    docker compose down
+    docker compose stop postgres
     echo -e "${GREEN}PostgreSQL container stopped.${NC}"
 fi
 
