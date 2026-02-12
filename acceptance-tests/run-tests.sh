@@ -10,6 +10,14 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Parse flags
+BUILD_FLAG=""
+for arg in "$@"; do
+    case "$arg" in
+        --build) BUILD_FLAG="--build" ;;
+    esac
+done
+
 echo -e "${BOLD}════════════════════════════════════════${NC}"
 echo -e "${BOLD}  E2E Acceptance Tests (Containerized)${NC}"
 echo -e "${BOLD}════════════════════════════════════════${NC}"
@@ -19,7 +27,7 @@ echo ""
 
 echo -e "${YELLOW}${BOLD}Step 1: Starting Docker containers...${NC}"
 cd "$REPO_ROOT"
-docker compose up -d --build postgres api frontend
+docker compose up -d $BUILD_FLAG postgres api frontend
 
 # ── Step 2: Wait for services to be healthy ──────────────────────
 
@@ -54,7 +62,7 @@ echo ""
 # ── Step 3: Seed the database ────────────────────────────────────
 
 echo -e "${YELLOW}${BOLD}Step 3: Seeding the database...${NC}"
-docker compose --profile seed up seed --build --exit-code-from seed 2>&1 || {
+docker compose --profile seed up seed $BUILD_FLAG --exit-code-from seed 2>&1 || {
     echo -e "${YELLOW}  Seed may have already run (data exists). Continuing...${NC}"
 }
 echo ""
