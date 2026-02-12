@@ -3,14 +3,16 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
+	import { rankingsApi } from '$lib/api';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
-	import type { Player } from '$lib/types';
+	import type { Player, RankingBadge } from '$lib/types';
 
 	let loading = $state(true);
 	let searchQuery = $state('');
 	let selectedPosition = $state<string>('all');
 	let selectedGroup = $state<string>('all');
+	let playerRankings = $state<Map<string, RankingBadge[]>>(new Map());
 
 	onMount(async () => {
 		try {
@@ -20,6 +22,16 @@
 		} finally {
 			loading = false;
 		}
+
+		// Load rankings in the background (non-blocking)
+		rankingsApi
+			.loadAllPlayerRankings()
+			.then((rankings) => {
+				playerRankings = rankings;
+			})
+			.catch((error) => {
+				logger.error('Failed to load rankings:', error);
+			});
 	});
 
 	// Position groups
@@ -200,6 +212,7 @@
 				<PlayerList
 					players={filteredPlayers()}
 					title="Available Players"
+					{playerRankings}
 					onSelectPlayer={handleSelectPlayer}
 				/>
 			{/if}
