@@ -168,6 +168,10 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/admin/seed-team-seasons",
             post(handlers::seed::seed_team_seasons),
+        )
+        .route(
+            "/admin/seed-rankings",
+            post(handlers::seed::seed_rankings),
         );
 
     // Create stateful routes

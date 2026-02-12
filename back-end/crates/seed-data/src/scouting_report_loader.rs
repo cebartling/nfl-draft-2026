@@ -78,6 +78,11 @@ pub fn parse_ranking_file(file_path: &str) -> Result<RankingData> {
     Ok(data)
 }
 
+pub fn parse_ranking_json(json: &str) -> Result<RankingData> {
+    let data: RankingData = serde_json::from_str(json)?;
+    Ok(data)
+}
+
 pub fn load_scouting_reports_dry_run(data: &RankingData) -> Result<ScoutingReportLoadStats> {
     let mut stats = ScoutingReportLoadStats::default();
     // In dry run, we assume 32 teams and simulate the fan-out
