@@ -75,16 +75,12 @@ echo ""
 # ── Step 3: Seed the database ────────────────────────────────────
 
 echo -e "${YELLOW}${BOLD}Step 3: Seeding the database...${NC}"
+# The seed binary is idempotent: it exits 0 and logs "Skipping" for existing data.
+# Any non-zero exit code is a real failure.
 if ! docker compose --profile seed up seed $BUILD_FLAG --exit-code-from seed 2>&1; then
-    # Check if failure was due to data already existing (unique constraint violations)
-    SEED_LOGS=$(docker compose --profile seed logs seed 2>&1 || true)
-    if echo "$SEED_LOGS" | grep -qi "duplicate key\|already exists\|unique.*constraint\|UniqueViolation"; then
-        echo -e "${YELLOW}  Seed data already exists. Continuing...${NC}"
-    else
-        echo -e "${RED}  Database seeding failed. See seed container logs below.${NC}"
-        echo "$SEED_LOGS"
-        exit 1
-    fi
+    echo -e "${RED}  Database seeding failed. See seed container logs below.${NC}"
+    docker compose --profile seed logs seed 2>&1 || true
+    exit 1
 fi
 echo ""
 
