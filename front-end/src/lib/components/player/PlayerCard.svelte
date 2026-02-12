@@ -1,16 +1,14 @@
 <script lang="ts">
 	import { Badge } from '$components/ui';
-	import type { Player, RankingBadge } from '$types';
+	import type { AvailablePlayer } from '$types';
 
 	interface Props {
-		player: Player;
-		scoutingGrade?: number;
-		rankings?: RankingBadge[];
-		onSelect?: (player: Player) => void;
-		onViewDetails?: (player: Player) => void;
+		player: AvailablePlayer;
+		onSelect?: (player: AvailablePlayer) => void;
+		onViewDetails?: (player: AvailablePlayer) => void;
 	}
 
-	let { player, scoutingGrade, rankings, onSelect, onViewDetails }: Props = $props();
+	let { player, onSelect, onViewDetails }: Props = $props();
 
 	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
 		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
@@ -57,9 +55,9 @@
 	}}
 >
 	<div class="flex items-center gap-4">
-		{#if scoutingGrade !== undefined}
-			<span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(scoutingGrade)}">
-				{scoutingGrade.toFixed(1)}
+		{#if player.scouting_grade != null}
+			<span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(player.scouting_grade)}">
+				{player.scouting_grade.toFixed(1)}
 			</span>
 		{/if}
 		<Badge variant={getPositionColor(player.position)} size="lg">
@@ -71,9 +69,9 @@
 				{player.last_name}
 			</h3>
 		</div>
-		{#if rankings && rankings.length > 0}
+		{#if player.rankings && player.rankings.length > 0}
 			<div class="flex items-center gap-1.5">
-				{#each rankings as badge (badge.source_name)}
+				{#each player.rankings as badge (badge.source_name)}
 					<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700" title="{badge.source_name}: #{badge.rank}">
 						{badge.abbreviation}:&nbsp;#{badge.rank}
 					</span>

@@ -73,6 +73,10 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::drafts::get_available_picks),
         )
         .route(
+            "/drafts/{id}/available-players",
+            get(handlers::drafts::get_available_players),
+        )
+        .route(
             "/drafts/{id}/session",
             get(handlers::sessions::get_session_by_draft),
         )

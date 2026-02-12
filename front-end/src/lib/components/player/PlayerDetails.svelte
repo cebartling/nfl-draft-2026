@@ -2,10 +2,10 @@
 	import { Badge, LoadingSpinner } from '$components/ui';
 	import { playersApi, rankingsApi } from '$api';
 	import { logger } from '$lib/utils/logger';
-	import type { Player, ScoutingReport, CombineResults, PlayerRanking, RankingSource } from '$types';
+	import type { AvailablePlayer, ScoutingReport, CombineResults, PlayerRanking, RankingSource } from '$types';
 
 	interface Props {
-		player: Player;
+		player: AvailablePlayer;
 	}
 
 	let { player }: Props = $props();

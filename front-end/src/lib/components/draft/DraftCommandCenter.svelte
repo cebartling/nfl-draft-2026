@@ -3,12 +3,12 @@
 	import { teamsApi, sessionsApi } from '$api';
 	import { Badge, Button, LoadingSpinner } from '$components/ui';
 	import { getTeamLogoPath } from '$lib/utils/logo';
-	import type { ChartType, Player, Team, UUID } from '$types';
+	import type { AvailablePlayer, ChartType, Team, UUID } from '$types';
 	import { logger } from '$lib/utils/logger';
 
 	interface Props {
 		sessionId: UUID;
-		selectedPlayer?: Player | null;
+		selectedPlayer?: AvailablePlayer | null;
 		makingPick?: boolean;
 		onConfirmPick?: () => void;
 		onCancelPick?: () => void;

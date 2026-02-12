@@ -268,6 +268,18 @@ impl DraftEngine {
             ));
         }
 
+        // Verify player has not already been drafted in this draft
+        let existing_picks = self.pick_repo.find_by_draft_id(pick.draft_id).await?;
+        let already_drafted = existing_picks
+            .iter()
+            .any(|p| p.player_id == Some(player_id));
+        if already_drafted {
+            return Err(DomainError::ValidationError(format!(
+                "Player {} has already been drafted in this draft",
+                player.full_name()
+            )));
+        }
+
         // Make the pick
         pick.make_pick(player_id)?;
 
@@ -340,24 +352,44 @@ impl DraftEngine {
             .await?
             .ok_or_else(|| DomainError::NotFound("Draft not found".to_string()))?;
 
-        // Get available players
-        let available_players = self
-            .get_available_players(pick.draft_id, draft.year)
-            .await?;
+        // Retry loop: if the chosen player was already drafted (race condition),
+        // re-fetch available players and try again.
+        const MAX_RETRIES: usize = 3;
+        for attempt in 0..MAX_RETRIES {
+            let available_players = self
+                .get_available_players(pick.draft_id, draft.year)
+                .await?;
 
-        if available_players.is_empty() {
-            return Err(DomainError::ValidationError(
-                "No available players to pick from".to_string(),
-            ));
+            if available_players.is_empty() {
+                return Err(DomainError::ValidationError(
+                    "No available players to pick from".to_string(),
+                ));
+            }
+
+            // Use auto-pick service to decide
+            let (selected_player_id, _scores) = auto_pick_service
+                .decide_pick(pick.team_id, pick.draft_id, &available_players)
+                .await?;
+
+            // Make the pick — retry on validation errors (player already drafted)
+            match self.make_pick(pick_id, selected_player_id).await {
+                Ok(result) => return Ok(result),
+                Err(DomainError::ValidationError(msg))
+                    if msg.contains("already been drafted") && attempt < MAX_RETRIES - 1 =>
+                {
+                    tracing::warn!(
+                        "Auto-pick retry {}: player already drafted, re-fetching",
+                        attempt + 1
+                    );
+                    continue;
+                }
+                Err(e) => return Err(e),
+            }
         }
 
-        // Use auto-pick service to decide
-        let (selected_player_id, _scores) = auto_pick_service
-            .decide_pick(pick.team_id, pick.draft_id, &available_players)
-            .await?;
-
-        // Make the pick
-        self.make_pick(pick_id, selected_player_id).await
+        Err(DomainError::InternalError(
+            "Auto-pick failed after retries".to_string(),
+        ))
     }
 }
 
