@@ -20,6 +20,9 @@
 	let isLoadingRankings = $state(false);
 	let rankingsLoaded = $state(false);
 
+	// Use embedded rankings from consolidated endpoint if available
+	let hasEmbeddedRankings = $derived(player.rankings && player.rankings.length > 0);
+
 	function formatHeight(inches?: number | null): string {
 		if (!inches) return 'N/A';
 		const feet = Math.floor(inches / 12);
@@ -94,9 +97,9 @@
 		}
 	});
 
-	// Load rankings when switching to rankings tab
+	// Load rankings from API only when embedded data is not available
 	$effect(() => {
-		if (activeTab === 'rankings' && !rankingsLoaded && !isLoadingRankings) {
+		if (activeTab === 'rankings' && !hasEmbeddedRankings && !rankingsLoaded && !isLoadingRankings) {
 			isLoadingRankings = true;
 			Promise.all([
 				rankingsApi.getPlayerRankings(player.id),
@@ -207,7 +210,42 @@
 				</div>
 			</div>
 		{:else if activeTab === 'rankings'}
-			{#if isLoadingRankings}
+			{#if hasEmbeddedRankings}
+				<!-- Use embedded rankings from consolidated endpoint -->
+				<div class="space-y-4">
+					<div class="overflow-x-auto">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Source
+									</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Rank
+									</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-200">
+								{#each player.rankings as badge (badge.source_name)}
+									<tr>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="flex items-center gap-2">
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+													{badge.abbreviation}
+												</span>
+												<span class="text-sm text-gray-900">{badge.source_name}</span>
+											</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<span class="text-lg font-bold text-gray-900">#{badge.rank}</span>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{:else if isLoadingRankings}
 				<div class="flex justify-center py-12">
 					<LoadingSpinner size="lg" />
 				</div>
