@@ -3,6 +3,7 @@ import { Navigate } from '../src/screenplay/tasks/navigate.js';
 import { CreateDraft } from '../src/screenplay/tasks/draft-tasks.js';
 import { CurrentUrl } from '../src/screenplay/questions/web-questions.js';
 import { DraftStatus, DraftPickCount } from '../src/screenplay/questions/draft-questions.js';
+import { BrowseTheWeb } from '../src/screenplay/abilities/browse-the-web.js';
 import { cleanupTestDrafts } from '../src/db/cleanup.js';
 
 test.describe('Draft Lifecycle', () => {
@@ -45,7 +46,6 @@ test.describe('Draft Lifecycle', () => {
     await actor.attemptsTo(Navigate.toDrafts());
 
     // Verify the draft appears in the list
-    const { BrowseTheWeb } = await import('../src/screenplay/abilities/browse-the-web.js');
     const page = actor.abilityTo(BrowseTheWeb).getPage();
     await expect(page.getByText('E2E List Test Draft')).toBeVisible();
   });
