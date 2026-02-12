@@ -31,8 +31,8 @@ export const PlayerSchema = z.object({
 	last_name: z.string(),
 	position: PositionSchema,
 	college: z.string().optional(),
-	height_inches: z.number().optional(),
-	weight_pounds: z.number().optional(),
+	height_inches: z.number().nullable().optional(),
+	weight_pounds: z.number().nullable().optional(),
 	draft_year: z.number(),
 	draft_eligible: z.boolean(),
 });

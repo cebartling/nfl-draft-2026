@@ -45,7 +45,7 @@ function getArg(name, defaultValue) {
 
 const year = parseInt(getArg("--year", "2026"), 10);
 const outputPath = resolve(
-  getArg("--output", `data/rankings/rankings_${year}.json`),
+  getArg("--output", `data/rankings/tankathon_${year}.json`),
 );
 
 const url =

@@ -2,6 +2,7 @@ pub mod combine_results;
 pub mod drafts;
 pub mod health;
 pub mod players;
+pub mod rankings;
 pub mod scouting_reports;
 pub mod seed;
 pub mod sessions;

@@ -16,7 +16,7 @@
 	let isLoadingScouting = $state(false);
 	let isLoadingCombine = $state(false);
 
-	function formatHeight(inches?: number): string {
+	function formatHeight(inches?: number | null): string {
 		if (!inches) return 'N/A';
 		const feet = Math.floor(inches / 12);
 		const remainingInches = inches % 12;

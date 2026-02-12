@@ -110,9 +110,36 @@ async fn main() -> Result<()> {
                     }
                 }
             }
+            "walterfootball" => {
+                println!("\nFetching prospect rankings from WalterFootball.com...");
+                match scrapers::walterfootball::fetch_html(cli.year).await {
+                    Ok(html) => {
+                        println!("Fetched {} bytes of HTML", html.len());
+                        match scrapers::walterfootball::parse_html(&html, cli.year) {
+                            Ok(data) if data.rankings.is_empty() => {
+                                println!(
+                                    "\nScraping produced no results. Generating template instead."
+                                );
+                                template::generate_template(cli.year)
+                            }
+                            Ok(data) => data,
+                            Err(e) => {
+                                eprintln!("Failed to parse HTML: {}", e);
+                                println!("Generating template instead...");
+                                template::generate_template(cli.year)
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to fetch Walter Football: {}", e);
+                        println!("Generating template instead...");
+                        template::generate_template(cli.year)
+                    }
+                }
+            }
             other => {
                 eprintln!(
-                    "Unknown source '{}'. Supported sources: tankathon, drafttek",
+                    "Unknown source '{}'. Supported sources: tankathon, drafttek, walterfootball",
                     other
                 );
                 eprintln!("Generating template instead...");

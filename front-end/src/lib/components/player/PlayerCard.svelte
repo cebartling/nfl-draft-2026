@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { Badge } from '$components/ui';
-	import type { Player } from '$types';
+	import type { Player, RankingBadge } from '$types';
 
 	interface Props {
 		player: Player;
 		scoutingGrade?: number;
+		rankings?: RankingBadge[];
 		onSelect?: (player: Player) => void;
 	}
 
-	let { player, scoutingGrade, onSelect }: Props = $props();
+	let { player, scoutingGrade, rankings, onSelect }: Props = $props();
 
 	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
 		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
@@ -19,7 +20,7 @@
 		return 'info';
 	}
 
-	function formatHeight(inches?: number): string {
+	function formatHeight(inches?: number | null): string {
 		if (!inches) return 'N/A';
 		const feet = Math.floor(inches / 12);
 		const remainingInches = inches % 12;
@@ -64,6 +65,15 @@
 				{player.last_name}
 			</h3>
 		</div>
+		{#if rankings && rankings.length > 0}
+			<div class="flex items-center gap-1.5">
+				{#each rankings as badge (badge.source_name)}
+					<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700" title="{badge.source_name}: #{badge.rank}">
+						{badge.abbreviation}:&nbsp;#{badge.rank}
+					</span>
+				{/each}
+			</div>
+		{/if}
 		<p class="text-sm text-gray-600 hidden sm:block">{player.college || 'N/A'}</p>
 		{#if player.height_inches || player.weight_pounds}
 			<p class="text-sm text-gray-500 hidden md:block">

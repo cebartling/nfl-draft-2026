@@ -4,14 +4,14 @@
 	import { draftState } from '$stores/draft.svelte';
 	import { toastState } from '$stores';
 	import { playersState } from '$stores/players.svelte';
-	import { draftsApi, sessionsApi, teamsApi } from '$lib/api';
+	import { draftsApi, sessionsApi, teamsApi, rankingsApi } from '$lib/api';
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import Tabs from '$components/ui/Tabs.svelte';
 	import { onMount } from 'svelte';
-	import type { Player, UUID } from '$lib/types';
+	import type { Player, UUID, RankingBadge } from '$lib/types';
 	import { sortByScoutingGrade } from '$lib/utils/player-sort';
 
 	let sessionId = $derived($page.params.id! as UUID);
@@ -21,6 +21,7 @@
 	let players_loading = $state(true);
 	let activeTab = $state('draft-board');
 	let scoutingGrades = $state<Map<string, number>>(new Map());
+	let playerRankings = $state<Map<string, RankingBadge[]>>(new Map());
 
 	const tabs = [
 		{ id: 'draft-board', label: 'Draft Board' },
@@ -35,6 +36,17 @@
 		} finally {
 			players_loading = false;
 		}
+
+		// Load rankings in the background (non-blocking)
+		rankingsApi
+			.loadAllPlayerRankings()
+			.then((rankings) => {
+				playerRankings = rankings;
+			})
+			.catch((error) => {
+				logger.error('Failed to load rankings:', error);
+				toastState.warning('Rankings unavailable');
+			});
 	});
 
 	// Reactively load scouting grades when controlled team changes
@@ -157,6 +169,7 @@
 							players={availablePlayers}
 							title="Available Players"
 							{scoutingGrades}
+							{playerRankings}
 							onSelectPlayer={handleSelectPlayer}
 						/>
 					{/if}

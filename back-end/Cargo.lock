@@ -94,6 +94,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "chrono",
  "dashmap",
  "db",
  "domain",
@@ -2195,6 +2196,7 @@ name = "seed-data"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "clap",
  "db",
  "domain",
@@ -2205,6 +2207,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

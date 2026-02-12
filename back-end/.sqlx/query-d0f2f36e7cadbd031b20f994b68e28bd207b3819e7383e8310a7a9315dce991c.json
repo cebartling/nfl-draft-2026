@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT pr.player_id, rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at\n            FROM prospect_rankings pr\n            JOIN ranking_sources rs ON pr.ranking_source_id = rs.id\n            ORDER BY rs.name, pr.rank\n            LIMIT 10000\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "source_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "source_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "rank",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "scraped_at",
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d0f2f36e7cadbd031b20f994b68e28bd207b3819e7383e8310a7a9315dce991c"
+}
