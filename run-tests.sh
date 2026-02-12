@@ -106,7 +106,8 @@ echo ""
 # ── E2E acceptance tests (containerized) ──────────────────────────
 
 echo -e "${MAGENTA}${BOLD}Running E2E acceptance tests...${NC}"
-if "$SCRIPT_DIR/acceptance-tests/run-tests.sh" 2>&1; then
+# Let the E2E runner manage its own container cleanup via its EXIT trap
+if KEEP_CONTAINERS=false "$SCRIPT_DIR/acceptance-tests/run-tests.sh" 2>&1; then
     E2E_ACCEPTANCE=1
     E2E_ACCEPTANCE_RESULT="${GREEN}PASS${NC}"
 else
