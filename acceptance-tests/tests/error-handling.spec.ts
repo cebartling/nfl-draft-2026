@@ -10,30 +10,16 @@ test.describe('Error Handling', () => {
 
     const page = actor.abilityTo(BrowseTheWeb).getPage();
 
-    // The page should show some error indication (error message, not found, etc.)
-    // Wait for content to load
-    await page.waitForLoadState('networkidle');
-
-    // Look for error indicators - the app may show "not found", "error", or redirect
-    const content = await page.textContent('body');
-    const hasError =
-      content?.toLowerCase().includes('not found') ||
-      content?.toLowerCase().includes('error') ||
-      content?.toLowerCase().includes('does not exist');
-    expect(hasError).toBe(true);
+    // The app renders an h2 "Draft Not Found" for missing drafts
+    await expect(page.getByRole('heading', { name: 'Draft Not Found' })).toBeVisible();
   });
 
   test('navigating to a nonexistent team shows error state', async ({ actor }) => {
     await actor.attemptsTo(Navigate.to(`/teams/${NONEXISTENT_UUID}`));
 
     const page = actor.abilityTo(BrowseTheWeb).getPage();
-    await page.waitForLoadState('networkidle');
 
-    const content = await page.textContent('body');
-    const hasError =
-      content?.toLowerCase().includes('not found') ||
-      content?.toLowerCase().includes('error') ||
-      content?.toLowerCase().includes('does not exist');
-    expect(hasError).toBe(true);
+    // The app renders an h2 "Team Not Found" for missing teams
+    await expect(page.getByRole('heading', { name: 'Team Not Found' })).toBeVisible();
   });
 });
