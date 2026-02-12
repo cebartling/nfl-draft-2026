@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "paths": {
+      "@screenplay/*": ["./src/screenplay/*"],
+      "@db/*": ["./src/db/*"],
+      "@fixtures/*": ["./src/fixtures/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "global-setup.ts", "global-teardown.ts"],
+  "exclude": ["node_modules"]
+}

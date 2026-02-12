@@ -6,6 +6,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m'
 
@@ -18,11 +19,13 @@ BACKEND_UNIT=0
 BACKEND_ACCEPTANCE=0
 FRONTEND_CHECK=0
 FRONTEND_UNIT=0
+E2E_ACCEPTANCE=0
 
 BACKEND_UNIT_RESULT=""
 BACKEND_ACCEPTANCE_RESULT=""
 FRONTEND_CHECK_RESULT=""
 FRONTEND_UNIT_RESULT=""
+E2E_ACCEPTANCE_RESULT=""
 
 # ── Ensure PostgreSQL is running ───────────────────────────────────
 
@@ -100,9 +103,20 @@ fi
 cd "$SCRIPT_DIR"
 echo ""
 
+# ── E2E acceptance tests (containerized) ──────────────────────────
+
+echo -e "${MAGENTA}${BOLD}Running E2E acceptance tests...${NC}"
+if "$SCRIPT_DIR/acceptance-tests/run-tests.sh" 2>&1; then
+    E2E_ACCEPTANCE=1
+    E2E_ACCEPTANCE_RESULT="${GREEN}PASS${NC}"
+else
+    E2E_ACCEPTANCE_RESULT="${RED}FAIL${NC}"
+fi
+echo ""
+
 # ── Summary ─────────────────────────────────────────────────────────
 
-TOTAL=$((BACKEND_UNIT + BACKEND_ACCEPTANCE + FRONTEND_CHECK + FRONTEND_UNIT))
+TOTAL=$((BACKEND_UNIT + BACKEND_ACCEPTANCE + FRONTEND_CHECK + FRONTEND_UNIT + E2E_ACCEPTANCE))
 
 echo -e "${BOLD}════════════════════════════════════════${NC}"
 echo -e "${BOLD}           TEST SUMMARY${NC}"
@@ -111,13 +125,14 @@ echo -e "  Backend unit tests:        ${BACKEND_UNIT_RESULT}"
 echo -e "  Backend acceptance tests:  ${BACKEND_ACCEPTANCE_RESULT}"
 echo -e "  Frontend type checks:      ${FRONTEND_CHECK_RESULT}"
 echo -e "  Frontend unit tests:       ${FRONTEND_UNIT_RESULT}"
+echo -e "  E2E acceptance tests:      ${E2E_ACCEPTANCE_RESULT}"
 echo -e "${BOLD}════════════════════════════════════════${NC}"
 
-if [ "$TOTAL" -eq 4 ]; then
-    echo -e "  ${GREEN}${BOLD}All 4 test suites passed.${NC}"
+if [ "$TOTAL" -eq 5 ]; then
+    echo -e "  ${GREEN}${BOLD}All 5 test suites passed.${NC}"
 else
-    FAILED=$((4 - TOTAL))
-    echo -e "  ${RED}${BOLD}${FAILED} of 4 test suites failed.${NC}"
+    FAILED=$((5 - TOTAL))
+    echo -e "  ${RED}${BOLD}${FAILED} of 5 test suites failed.${NC}"
 fi
 
 echo -e "${BOLD}════════════════════════════════════════${NC}"
@@ -131,4 +146,4 @@ if [ "$STARTED_POSTGRES" = true ]; then
     echo -e "${GREEN}PostgreSQL container stopped.${NC}"
 fi
 
-[ "$TOTAL" -eq 4 ]
+[ "$TOTAL" -eq 5 ]

@@ -67,6 +67,18 @@ Each ADR follows this structure:
   - Multi-layered testing approach (unit, integration, E2E)
   - Test database isolation and CI/CD integration
 
+- [ADR-0010: Full-Stack Containerized Acceptance Testing](./0010-full-stack-containerized-acceptance-testing.md)
+  - Browser-level acceptance tests against Docker Compose stack
+  - Playwright + direct PostgreSQL verification via `pg`
+
+- [ADR-0011: Screenplay Pattern for Acceptance Tests](./0011-screenplay-pattern-for-acceptance-tests.md)
+  - Actors, Abilities, Tasks, and Questions for multi-channel testing
+  - Cleanly separates browser, API, and database interactions
+
+- [ADR-0012: Update to Testing Strategy — Cross-Cutting](./0012-update-testing-strategy-cross-cutting.md)
+  - Three-tier testing model: backend acceptance, frontend E2E, full-stack acceptance
+  - Bug category matrix across tiers
+
 ## Decision Status
 
 ### Accepted
