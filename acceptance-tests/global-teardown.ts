@@ -9,13 +9,16 @@ async function globalTeardown(_config: FullConfig): Promise<void> {
     await cleanupTestDrafts();
     console.log('  Test drafts cleaned up.');
   } catch (err) {
-    console.warn('  Warning: cleanup failed:', err);
+    // Re-throw so orphaned test data doesn't silently accumulate
+    await closePool().catch(() => {});
+    throw new Error(`Global teardown: cleanup failed: ${err}`);
   }
 
   try {
     await closePool();
     console.log('  Database pool closed.');
   } catch (err) {
+    // Pool close failures are non-fatal; connections are cleaned up on process exit
     console.warn('  Warning: pool close failed:', err);
   }
 
