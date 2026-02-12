@@ -61,3 +61,6 @@ coverage/
 
 # MCP configuration
 .mcp.json
+
+# Playwright MCP
+.playwright-mcp/
