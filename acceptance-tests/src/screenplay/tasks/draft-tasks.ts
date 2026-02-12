@@ -106,16 +106,6 @@ class CreateDraftViaApiTask implements Task {
   }
 }
 
-class InitializePicksTask implements Task {
-  constructor(private readonly draftId: string) {}
-
-  async performAs(actor: Actor): Promise<void> {
-    const api = actor.abilityTo(CallApi);
-    const res = await api.post(`/api/v1/drafts/${this.draftId}/initialize`);
-    if (!res.ok) throw new Error(`Failed to initialize picks: ${res.status}`);
-  }
-}
-
 class StartSessionTask implements Task {
   private draftId: string;
   private timePerPick: number = 30;
@@ -166,12 +156,6 @@ export const CreateDraft = {
 export const CreateDraftViaApi = {
   named(name: string): CreateDraftViaApiTask {
     return new CreateDraftViaApiTask(name);
-  },
-};
-
-export const InitializePicks = {
-  forDraft(draftId: string): InitializePicksTask {
-    return new InitializePicksTask(draftId);
   },
 };
 
