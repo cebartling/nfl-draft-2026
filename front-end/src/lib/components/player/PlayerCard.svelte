@@ -7,10 +7,9 @@
 		scoutingGrade?: number;
 		rankings?: RankingBadge[];
 		onSelect?: (player: Player) => void;
-		onViewDetails?: (player: Player) => void;
 	}
 
-	let { player, scoutingGrade, rankings, onSelect, onViewDetails }: Props = $props();
+	let { player, scoutingGrade, rankings, onSelect }: Props = $props();
 
 	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
 		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
@@ -33,11 +32,6 @@
 		if (grade >= 60) return 'text-blue-700 bg-blue-100';
 		if (grade >= 40) return 'text-yellow-700 bg-yellow-100';
 		return 'text-gray-700 bg-gray-100';
-	}
-
-	function handleInfoClick(event: MouseEvent) {
-		event.stopPropagation();
-		onViewDetails?.(player);
 	}
 </script>
 
@@ -85,19 +79,6 @@
 			<p class="text-sm text-gray-500 hidden md:block">
 				{formatHeight(player.height_inches)}{#if player.weight_pounds}, {player.weight_pounds} lbs{/if}
 			</p>
-		{/if}
-		{#if onViewDetails}
-			<button
-				type="button"
-				class="flex-shrink-0 p-1.5 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-				onclick={handleInfoClick}
-				aria-label="View details for {player.first_name} {player.last_name}"
-				title="View player details"
-			>
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-				</svg>
-			</button>
 		{/if}
 	</div>
 </div>

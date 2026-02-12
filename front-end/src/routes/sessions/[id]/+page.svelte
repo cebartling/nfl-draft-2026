@@ -8,8 +8,6 @@
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
-	import PlayerDetails from '$components/player/PlayerDetails.svelte';
-	import Modal from '$components/ui/Modal.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import Tabs from '$components/ui/Tabs.svelte';
 	import { onMount } from 'svelte';
@@ -19,13 +17,11 @@
 	let sessionId = $derived($page.params.id! as UUID);
 
 	let selectedPlayer = $state<Player | null>(null);
-	let detailPlayer = $state<Player | null>(null);
 	let making_pick = $state(false);
 	let players_loading = $state(true);
 	let activeTab = $state('draft-board');
 	let scoutingGrades = $state<Map<string, number>>(new Map());
 	let playerRankings = $state<Map<string, RankingBadge[]>>(new Map());
-	let rankingsLoaded = $state(false);
 
 	const tabs = [
 		{ id: 'draft-board', label: 'Draft Board' },
@@ -41,30 +37,25 @@
 			players_loading = false;
 		}
 
-		// Load rankings alongside players (awaited, not fire-and-forget)
-		if (!rankingsLoaded) {
-			try {
-				const rankings = await rankingsApi.loadAllPlayerRankings();
+		// Load rankings in the background (non-blocking)
+		rankingsApi
+			.loadAllPlayerRankings()
+			.then((rankings) => {
 				playerRankings = rankings;
-				rankingsLoaded = true;
-			} catch (error) {
+			})
+			.catch((error) => {
 				logger.error('Failed to load rankings:', error);
 				toastState.warning('Rankings unavailable');
-			}
-		}
+			});
 	});
 
 	// Reactively load scouting grades when controlled team changes
-	let scoutingGradesVersion = $state(0);
 	$effect(() => {
 		const controlledTeamId = draftState.controlledTeamIds[0];
 		if (controlledTeamId) {
-			const currentVersion = ++scoutingGradesVersion;
 			teamsApi
 				.getScoutingReports(controlledTeamId)
 				.then((reports) => {
-					// Guard against stale responses
-					if (currentVersion !== scoutingGradesVersion) return;
 					const grades = new Map<string, number>();
 					for (const report of reports) {
 						grades.set(report.player_id, report.grade);
@@ -136,14 +127,6 @@
 	function handleSelectPlayer(player: Player) {
 		selectedPlayer = player;
 	}
-
-	function handleViewDetails(player: Player) {
-		detailPlayer = player;
-	}
-
-	function handleCloseDetails() {
-		detailPlayer = null;
-	}
 </script>
 
 <div class="space-y-3">
@@ -188,7 +171,6 @@
 							{scoutingGrades}
 							{playerRankings}
 							onSelectPlayer={handleSelectPlayer}
-							onViewDetails={handleViewDetails}
 						/>
 					{/if}
 				</div>
@@ -196,10 +178,3 @@
 		</div>
 	{/if}
 </div>
-
-<!-- Player Detail Modal -->
-<Modal open={detailPlayer !== null} onClose={handleCloseDetails} width="xl" title="{detailPlayer?.first_name ?? ''} {detailPlayer?.last_name ?? ''}">
-	{#if detailPlayer}
-		<PlayerDetails player={detailPlayer} />
-	{/if}
-</Modal>
