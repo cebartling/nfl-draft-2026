@@ -18,6 +18,19 @@ for arg in "$@"; do
     esac
 done
 
+KEEP_CONTAINERS="${KEEP_CONTAINERS:-false}"
+
+cleanup() {
+    if [ "$KEEP_CONTAINERS" != "true" ]; then
+        echo -e "${YELLOW}${BOLD}Cleaning up E2E containers (api, frontend)...${NC}"
+        cd "$REPO_ROOT"
+        docker compose stop api frontend 2>/dev/null || true
+        docker compose rm -f api frontend 2>/dev/null || true
+        echo -e "${GREEN}E2E containers stopped.${NC}"
+    fi
+}
+trap cleanup EXIT
+
 echo -e "${BOLD}════════════════════════════════════════${NC}"
 echo -e "${BOLD}  E2E Acceptance Tests (Containerized)${NC}"
 echo -e "${BOLD}════════════════════════════════════════${NC}"
@@ -62,9 +75,17 @@ echo ""
 # ── Step 3: Seed the database ────────────────────────────────────
 
 echo -e "${YELLOW}${BOLD}Step 3: Seeding the database...${NC}"
-docker compose --profile seed up seed $BUILD_FLAG --exit-code-from seed 2>&1 || {
-    echo -e "${YELLOW}  Seed may have already run (data exists). Continuing...${NC}"
-}
+if ! docker compose --profile seed up seed $BUILD_FLAG --exit-code-from seed 2>&1; then
+    # Check if failure was due to data already existing (unique constraint violations)
+    SEED_LOGS=$(docker compose --profile seed logs seed 2>&1 || true)
+    if echo "$SEED_LOGS" | grep -qi "duplicate key\|already exists\|unique.*constraint\|UniqueViolation"; then
+        echo -e "${YELLOW}  Seed data already exists. Continuing...${NC}"
+    else
+        echo -e "${RED}  Database seeding failed. See seed container logs below.${NC}"
+        echo "$SEED_LOGS"
+        exit 1
+    fi
+fi
 echo ""
 
 # ── Step 4: Install test dependencies ────────────────────────────
