@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { draftsApi, sessionsApi, teamsApi } from '$lib/api';
+	import { ApiClientError } from '$lib/api/client';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import TeamSelector from '$components/draft/TeamSelector.svelte';
 	import Card from '$components/ui/Card.svelte';
@@ -108,8 +109,19 @@
 			});
 			await goto(`/sessions/${session.id}`);
 		} catch (e) {
-			logger.error('Failed to create session:', e);
-			error = e instanceof Error ? e.message : 'Failed to create session';
+			if (e instanceof ApiClientError && e.status === 409) {
+				// Session already exists — find it and redirect
+				try {
+					const existing = await sessionsApi.getByDraftId(draft.id);
+					await goto(`/sessions/${existing.id}`);
+				} catch (innerErr) {
+					logger.error('Failed to find existing session:', innerErr);
+					error = 'A session already exists for this draft but could not be loaded';
+				}
+			} else {
+				logger.error('Failed to create session:', e);
+				error = e instanceof Error ? e.message : 'Failed to create session';
+			}
 		}
 	}
 

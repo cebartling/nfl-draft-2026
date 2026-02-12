@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { draftsApi, sessionsApi } from '$lib/api';
+	import { ApiClientError } from '$lib/api/client';
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
@@ -224,7 +225,17 @@
 												});
 												await goto(`/sessions/${session.id}`);
 											} catch (err) {
-												logger.error('Failed to create session:', err);
+												if (err instanceof ApiClientError && err.status === 409) {
+													// Session already exists — find it and redirect
+													try {
+														const existing = await sessionsApi.getByDraftId(draft.id);
+														await goto(`/sessions/${existing.id}`);
+													} catch (innerErr) {
+														logger.error('Failed to find existing session:', innerErr);
+													}
+												} else {
+													logger.error('Failed to create session:', err);
+												}
 											}
 										}}
 										class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
