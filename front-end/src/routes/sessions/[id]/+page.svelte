@@ -55,7 +55,10 @@
 	});
 
 	// Reactively load scouting grades when controlled team changes
-	let scoutingGradesVersion = $state(0);
+	// Plain variable (not $state) to avoid the effect tracking it as a dependency.
+	// Using $state here would cause an infinite loop: the effect reads and writes
+	// the version counter, triggering itself repeatedly.
+	let scoutingGradesVersion = 0;
 	$effect(() => {
 		const controlledTeamId = draftState.controlledTeamIds[0];
 		if (controlledTeamId) {
