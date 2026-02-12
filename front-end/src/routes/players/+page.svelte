@@ -214,6 +214,7 @@
 					title="Available Players"
 					{playerRankings}
 					onSelectPlayer={handleSelectPlayer}
+					onViewDetails={handleSelectPlayer}
 				/>
 			{/if}
 		</div>
