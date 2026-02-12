@@ -273,3 +273,80 @@ async fn test_make_pick_ineligible_player_returns_400() {
 
     assert_eq!(response.status(), 400);
 }
+
+#[tokio::test]
+async fn test_make_pick_player_already_drafted_returns_409() {
+    let (base_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create team
+    let team_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO teams (id, name, abbreviation, city, conference, division) VALUES ($1, 'Dup Pick Team', 'DPT', 'Dup City', 'AFC', 'AFC East')",
+        team_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create draft
+    let draft_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'InProgress', 1, 2::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create two picks for the same team
+    let pick1_id = Uuid::new_v4();
+    let pick2_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id) VALUES ($1, $2, 1, 1, 1, $3), ($4, $2, 1, 2, 2, $3)",
+        pick1_id,
+        draft_id,
+        team_id,
+        pick2_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create one player
+    let player_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO players (id, first_name, last_name, position, draft_year, draft_eligible) VALUES ($1, 'Only', 'Player', 'QB', 2026, true)",
+        player_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Draft the player with pick 1 — should succeed
+    let first_response = client
+        .post(&format!("{}/api/v1/picks/{}/make", base_url, pick1_id))
+        .json(&json!({ "player_id": player_id }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to make first pick");
+    assert_eq!(first_response.status(), 200);
+
+    // Try to draft the same player with pick 2 — should return 409
+    let second_response = client
+        .post(&format!("{}/api/v1/picks/{}/make", base_url, pick2_id))
+        .json(&json!({ "player_id": player_id }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to send second pick request");
+    assert_eq!(second_response.status(), 409);
+
+    // Verify pick 2 is still unmade in the database
+    let db_pick = sqlx::query!("SELECT player_id FROM draft_picks WHERE id = $1", pick2_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert!(db_pick.player_id.is_none());
+}

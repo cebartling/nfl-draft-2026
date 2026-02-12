@@ -1248,3 +1248,58 @@ async fn test_get_session_by_draft_id() {
 
     common::cleanup_database(&pool).await;
 }
+
+#[tokio::test]
+async fn test_create_duplicate_session_returns_409() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create a draft
+    let draft_id = Uuid::new_v4();
+    sqlx::query!(
+        "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, 'NotStarted', 7, 32::INTEGER)",
+        draft_id
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let request_body = json!({
+        "draft_id": draft_id,
+        "time_per_pick_seconds": 300,
+        "auto_pick_enabled": false
+    });
+
+    // First session creation — should succeed
+    let first_response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&request_body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(first_response.status(), StatusCode::CREATED);
+
+    // Second session for the same draft — should fail with 409
+    let second_response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&request_body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(second_response.status(), StatusCode::CONFLICT);
+
+    // Verify only one session exists in the database
+    let session_count = sqlx::query!(
+        "SELECT COUNT(*) as count FROM draft_sessions WHERE draft_id = $1",
+        draft_id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(session_count.count.unwrap(), 1);
+
+    common::cleanup_database(&pool).await;
+}
