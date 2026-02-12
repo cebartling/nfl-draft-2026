@@ -13,6 +13,7 @@ export function getPool(): pg.Pool {
       user: process.env.DB_USER || 'nfl_draft_user',
       password: process.env.DB_PASSWORD || 'nfl_draft_pass',
       max: 5,
+      connectionTimeoutMillis: 10_000,
     });
   }
   return pool;
