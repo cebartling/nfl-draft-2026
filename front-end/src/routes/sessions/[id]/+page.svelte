@@ -177,7 +177,7 @@
 </div>
 
 <!-- Player Detail Modal -->
-<Modal open={detailPlayer !== null} onClose={handleCloseDetails} width="xl" title="{detailPlayer?.first_name ?? ''} {detailPlayer?.last_name ?? ''}">
+<Modal open={detailPlayer !== null} onClose={handleCloseDetails} width="xl" title={`${detailPlayer?.first_name ?? ''} ${detailPlayer?.last_name ?? ''}`}>
 	{#if detailPlayer}
 		<PlayerDetails player={detailPlayer} />
 	{/if}
