@@ -7,6 +7,7 @@
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import type { AvailablePlayer, RankingBadge } from '$lib/types';
+	import { toAvailablePlayer } from '$lib/types';
 
 	let loading = $state(true);
 	let searchQuery = $state('');
@@ -74,16 +75,7 @@
 			players = players.filter((p) => p.position === selectedPosition);
 		}
 
-		// Enrich Player -> AvailablePlayer with rankings
-		return players.map((p): AvailablePlayer => ({
-			...p,
-			college: p.college ?? null,
-			scouting_grade: null,
-			fit_grade: null,
-			injury_concern: null,
-			character_concern: null,
-			rankings: playerRankings.get(p.id) ?? [],
-		}));
+		return players.map((p) => toAvailablePlayer(p, playerRankings.get(p.id)));
 	});
 
 	async function handleSelectPlayer(player: AvailablePlayer) {
