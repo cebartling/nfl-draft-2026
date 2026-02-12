@@ -100,6 +100,14 @@ pub async fn create_session(
             ))
         })?;
 
+    // Check for an existing active session for this draft
+    if let Some(_existing) = state.session_repo.find_by_draft_id(req.draft_id).await? {
+        return Err(domain::errors::DomainError::DuplicateEntry(
+            format!("Draft {} already has an active session", req.draft_id),
+        )
+        .into());
+    }
+
     // Validate all controlled team IDs are participants in this draft
     for team_id in &req.controlled_team_ids {
         let picks = state

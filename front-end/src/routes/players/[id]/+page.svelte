@@ -6,6 +6,8 @@
 	import { playersState } from '$stores/players.svelte';
 	import PlayerDetails from '$components/player/PlayerDetails.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
+	import type { AvailablePlayer } from '$lib/types';
+	import { toAvailablePlayer } from '$lib/types';
 
 	let playerId = $derived($page.params.id!);
 	let loading = $state(true);
@@ -22,8 +24,10 @@
 		}
 	});
 
-	let player = $derived(() => {
-		return playersState.allPlayers.find((p) => p.id === playerId);
+	let player = $derived((): AvailablePlayer | null => {
+		const p = playersState.allPlayers.find((p) => p.id === playerId);
+		if (!p) return null;
+		return toAvailablePlayer(p);
 	});
 </script>
 

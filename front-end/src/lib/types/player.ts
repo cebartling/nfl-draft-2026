@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { UUIDSchema } from './common';
+import type { RankingBadge } from './ranking';
 
 // Position schema and type
 export const PositionSchema = z.enum([
@@ -54,6 +55,48 @@ export const ScoutingReportSchema = z.object({
 	character_concern: z.boolean(),
 });
 export type ScoutingReport = z.infer<typeof ScoutingReportSchema>;
+
+// RankingBadge schema (embedded in AvailablePlayer response)
+export const RankingBadgeSchema = z.object({
+	source_name: z.string(),
+	abbreviation: z.string(),
+	rank: z.number(),
+});
+
+// AvailablePlayer schema — matches backend AvailablePlayerResponse
+export const AvailablePlayerSchema = z.object({
+	id: UUIDSchema,
+	first_name: z.string(),
+	last_name: z.string(),
+	position: PositionSchema,
+	college: z.string().nullable().optional(),
+	height_inches: z.number().nullable().optional(),
+	weight_pounds: z.number().nullable().optional(),
+	draft_year: z.number(),
+	draft_eligible: z.boolean(),
+	scouting_grade: z.number().nullable().optional(),
+	fit_grade: FitGradeSchema.nullable().optional(),
+	injury_concern: z.boolean().nullable().optional(),
+	character_concern: z.boolean().nullable().optional(),
+	rankings: z.array(RankingBadgeSchema),
+});
+export type AvailablePlayer = z.infer<typeof AvailablePlayerSchema>;
+
+/** Convert a Player to an AvailablePlayer with optional ranking badges. */
+export function toAvailablePlayer(
+	player: Player,
+	rankings: RankingBadge[] = [],
+): AvailablePlayer {
+	return {
+		...player,
+		college: player.college ?? null,
+		scouting_grade: null,
+		fit_grade: null,
+		injury_concern: null,
+		character_concern: null,
+		rankings,
+	};
+}
 
 // CombineResults schema and type — matches backend CombineResultsResponse
 export const CombineResultsSchema = z.object({

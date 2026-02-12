@@ -3,14 +3,17 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
+	import { rankingsApi } from '$lib/api';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
-	import type { Player } from '$lib/types';
+	import type { AvailablePlayer, RankingBadge } from '$lib/types';
+	import { toAvailablePlayer } from '$lib/types';
 
 	let loading = $state(true);
 	let searchQuery = $state('');
 	let selectedPosition = $state<string>('all');
 	let selectedGroup = $state<string>('all');
+	let playerRankings = $state<Map<string, RankingBadge[]>>(new Map());
 
 	onMount(async () => {
 		try {
@@ -20,6 +23,16 @@
 		} finally {
 			loading = false;
 		}
+
+		// Load rankings in the background (non-blocking)
+		rankingsApi
+			.loadAllPlayerRankings()
+			.then((rankings) => {
+				playerRankings = rankings;
+			})
+			.catch((error) => {
+				logger.error('Failed to load rankings:', error);
+			});
 	});
 
 	// Position groups
@@ -36,7 +49,7 @@
 		...positionGroups.special_teams,
 	];
 
-	// Filter players
+	// Filter players and enrich with rankings
 	let filteredPlayers = $derived(() => {
 		let players = playersState.allPlayers;
 
@@ -62,10 +75,10 @@
 			players = players.filter((p) => p.position === selectedPosition);
 		}
 
-		return players;
+		return players.map((p) => toAvailablePlayer(p, playerRankings.get(p.id)));
 	});
 
-	async function handleSelectPlayer(player: Player) {
+	async function handleSelectPlayer(player: AvailablePlayer) {
 		await goto(`/players/${player.id}`);
 	}
 </script>
@@ -201,6 +214,7 @@
 					players={filteredPlayers()}
 					title="Available Players"
 					onSelectPlayer={handleSelectPlayer}
+					onViewDetails={handleSelectPlayer}
 				/>
 			{/if}
 		</div>

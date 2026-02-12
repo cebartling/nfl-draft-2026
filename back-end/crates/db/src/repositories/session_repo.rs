@@ -93,7 +93,17 @@ impl SessionRepository for SessionRepo {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+        .map_err(|e| {
+            if let sqlx::Error::Database(ref db_err) = e {
+                if db_err.is_unique_violation() {
+                    return DomainError::DuplicateEntry(format!(
+                        "Draft {} already has an active session",
+                        session.draft_id
+                    ));
+                }
+            }
+            DomainError::DatabaseError(e.to_string())
+        })?;
 
         Ok(db_session.into())
     }

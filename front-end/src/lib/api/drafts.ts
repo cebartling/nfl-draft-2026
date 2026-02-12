@@ -3,10 +3,10 @@ import { apiClient } from './client';
 import {
 	DraftSchema,
 	DraftPickSchema,
-	PlayerSchema,
+	AvailablePlayerSchema,
 	type Draft,
 	type DraftPick,
-	type Player,
+	type AvailablePlayer,
 } from '$lib/types';
 
 /**
@@ -49,10 +49,15 @@ export const draftsApi = {
 	},
 
 	/**
-	 * Get available players for a draft (not yet picked)
+	 * Get consolidated available players with scouting grades and rankings.
+	 * Replaces separate calls to /players, /rankings, /ranking-sources, and /scouting-reports.
 	 */
-	async getAvailablePlayers(draftId: string): Promise<Player[]> {
-		return apiClient.get(`/drafts/${draftId}/available-players`, z.array(PlayerSchema));
+	async getAvailablePlayers(draftId: string, teamId?: string): Promise<AvailablePlayer[]> {
+		const params = teamId ? `?team_id=${teamId}` : '';
+		return apiClient.get(
+			`/drafts/${draftId}/available-players${params}`,
+			z.array(AvailablePlayerSchema)
+		);
 	},
 
 	/**

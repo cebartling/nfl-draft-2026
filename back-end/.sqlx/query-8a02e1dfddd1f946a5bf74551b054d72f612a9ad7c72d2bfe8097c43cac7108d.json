@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO scouting_reports (id, player_id, team_id, grade, fit_grade, injury_concern, character_concern) VALUES ($1, $2, $3, 8.5, 'A', false, false)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8a02e1dfddd1f946a5bf74551b054d72f612a9ad7c72d2bfe8097c43cac7108d"
+}

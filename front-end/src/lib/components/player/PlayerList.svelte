@@ -1,18 +1,17 @@
 <script lang="ts">
 	import { PlayerCard } from '$components/player';
 	import { Badge } from '$components/ui';
-	import type { Player, Position, RankingBadge } from '$types';
+	import type { AvailablePlayer, Position } from '$types';
 	import { OFFENSE_POSITIONS, DEFENSE_POSITIONS, SPECIAL_POSITIONS } from '$types';
 
 	interface Props {
-		players: Player[];
+		players: AvailablePlayer[];
 		title: string;
-		scoutingGrades?: Map<string, number>;
-		playerRankings?: Map<string, RankingBadge[]>;
-		onSelectPlayer?: (player: Player) => void;
+		onSelectPlayer?: (player: AvailablePlayer) => void;
+		onViewDetails?: (player: AvailablePlayer) => void;
 	}
 
-	let { players, title, scoutingGrades, playerRankings, onSelectPlayer }: Props = $props();
+	let { players, title, onSelectPlayer, onViewDetails }: Props = $props();
 
 	let searchQuery = $state('');
 	let selectedPosition = $state<Position | 'all'>('all');
@@ -80,7 +79,7 @@
 		{:else}
 			<div class="flex flex-col gap-2">
 				{#each filteredPlayers as player (player.id)}
-					<PlayerCard {player} scoutingGrade={scoutingGrades?.get(player.id)} rankings={playerRankings?.get(player.id)} onSelect={onSelectPlayer} />
+					<PlayerCard {player} onSelect={onSelectPlayer} {onViewDetails} />
 				{/each}
 			</div>
 		{/if}

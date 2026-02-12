@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { Badge } from '$components/ui';
-	import type { Player, RankingBadge } from '$types';
+	import type { AvailablePlayer } from '$types';
 
 	interface Props {
-		player: Player;
-		scoutingGrade?: number;
-		rankings?: RankingBadge[];
-		onSelect?: (player: Player) => void;
+		player: AvailablePlayer;
+		onSelect?: (player: AvailablePlayer) => void;
+		onViewDetails?: (player: AvailablePlayer) => void;
 	}
 
-	let { player, scoutingGrade, rankings, onSelect }: Props = $props();
+	let { player, onSelect, onViewDetails }: Props = $props();
 
 	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
 		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
@@ -33,6 +32,11 @@
 		if (grade >= 40) return 'text-yellow-700 bg-yellow-100';
 		return 'text-gray-700 bg-gray-100';
 	}
+
+	function handleInfoClick(event: MouseEvent) {
+		event.stopPropagation();
+		onViewDetails?.(player);
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -51,9 +55,9 @@
 	}}
 >
 	<div class="flex items-center gap-4">
-		{#if scoutingGrade !== undefined}
-			<span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(scoutingGrade)}">
-				{scoutingGrade.toFixed(1)}
+		{#if player.scouting_grade != null}
+			<span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(player.scouting_grade)}">
+				{player.scouting_grade.toFixed(1)}
 			</span>
 		{/if}
 		<Badge variant={getPositionColor(player.position)} size="lg">
@@ -65,9 +69,9 @@
 				{player.last_name}
 			</h3>
 		</div>
-		{#if rankings && rankings.length > 0}
+		{#if player.rankings && player.rankings.length > 0}
 			<div class="flex items-center gap-1.5">
-				{#each rankings as badge (badge.source_name)}
+				{#each player.rankings as badge (badge.source_name)}
 					<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700" title="{badge.source_name}: #{badge.rank}">
 						{badge.abbreviation}:&nbsp;#{badge.rank}
 					</span>
@@ -79,6 +83,19 @@
 			<p class="text-sm text-gray-500 hidden md:block">
 				{formatHeight(player.height_inches)}{#if player.weight_pounds}, {player.weight_pounds} lbs{/if}
 			</p>
+		{/if}
+		{#if onViewDetails}
+			<button
+				type="button"
+				class="flex-shrink-0 p-1.5 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+				onclick={handleInfoClick}
+				aria-label="View details for {player.first_name} {player.last_name}"
+				title="View player details"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+				</svg>
+			</button>
 		{/if}
 	</div>
 </div>

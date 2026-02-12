@@ -3,76 +3,55 @@
 	import { page } from '$app/stores';
 	import { draftState } from '$stores/draft.svelte';
 	import { toastState } from '$stores';
-	import { playersState } from '$stores/players.svelte';
-	import { draftsApi, sessionsApi, teamsApi, rankingsApi } from '$lib/api';
+	import { draftsApi, sessionsApi } from '$lib/api';
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
 	import PlayerList from '$components/player/PlayerList.svelte';
+	import PlayerDetails from '$components/player/PlayerDetails.svelte';
+	import Modal from '$components/ui/Modal.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import Tabs from '$components/ui/Tabs.svelte';
-	import { onMount } from 'svelte';
-	import type { Player, UUID, RankingBadge } from '$lib/types';
-	import { sortByScoutingGrade } from '$lib/utils/player-sort';
+	import type { UUID, AvailablePlayer } from '$lib/types';
 
 	let sessionId = $derived($page.params.id! as UUID);
 
-	let selectedPlayer = $state<Player | null>(null);
+	let selectedPlayer = $state<AvailablePlayer | null>(null);
+	let detailPlayer = $state<AvailablePlayer | null>(null);
 	let making_pick = $state(false);
 	let players_loading = $state(true);
 	let activeTab = $state('draft-board');
-	let scoutingGrades = $state<Map<string, number>>(new Map());
-	let playerRankings = $state<Map<string, RankingBadge[]>>(new Map());
+	let availablePlayers = $state<AvailablePlayer[]>([]);
+	let playersLoaded = $state(false);
 
 	const tabs = [
 		{ id: 'draft-board', label: 'Draft Board' },
 		{ id: 'available-players', label: 'Available Players' }
 	];
 
-	onMount(async () => {
+	async function loadAvailablePlayers() {
+		if (!draftState.session) return;
+		players_loading = true;
 		try {
-			await playersState.loadAll();
+			const teamId = draftState.controlledTeamIds[0];
+			availablePlayers = await draftsApi.getAvailablePlayers(
+				draftState.session.draft_id,
+				teamId
+			);
+			playersLoaded = true;
 		} catch (error) {
-			logger.error('Failed to load players:', error);
+			logger.error('Failed to load available players:', error);
+			toastState.error('Failed to load available players');
 		} finally {
 			players_loading = false;
 		}
+	}
 
-		// Load rankings in the background (non-blocking)
-		rankingsApi
-			.loadAllPlayerRankings()
-			.then((rankings) => {
-				playerRankings = rankings;
-			})
-			.catch((error) => {
-				logger.error('Failed to load rankings:', error);
-				toastState.warning('Rankings unavailable');
-			});
-	});
-
-	// Reactively load scouting grades when controlled team changes
+	// Load available players once the session becomes available
 	$effect(() => {
-		const controlledTeamId = draftState.controlledTeamIds[0];
-		if (controlledTeamId) {
-			teamsApi
-				.getScoutingReports(controlledTeamId)
-				.then((reports) => {
-					const grades = new Map<string, number>();
-					for (const report of reports) {
-						grades.set(report.player_id, report.grade);
-					}
-					scoutingGrades = grades;
-				})
-				.catch((error) => {
-					logger.error('Failed to load scouting grades:', error);
-				});
+		const session = draftState.session;
+		if (session && !playersLoaded) {
+			loadAvailablePlayers();
 		}
-	});
-
-	// Get available players (filter out already picked), sorted by scouting grade
-	let availablePlayers = $derived.by(() => {
-		const pickedPlayerIds = new Set(draftState.picks.map((p) => p.player_id));
-		const available = playersState.allPlayers.filter((p) => !pickedPlayerIds.has(p.id));
-		return sortByScoutingGrade(available, scoutingGrades);
 	});
 
 	async function handleMakePick() {
@@ -115,17 +94,36 @@
 				}
 			}
 
+			// Refresh available players so the list reflects all picks just made
+			await loadAvailablePlayers();
+
 			toastState.success('Pick submitted');
-		} catch (error) {
+		} catch (error: unknown) {
 			logger.error('Failed to make pick:', error);
-			toastState.error('Failed to make pick');
+			// Check if the player was already drafted (stale list)
+			const message =
+				error instanceof Error && error.message.includes('already been drafted')
+					? 'That player was already drafted — please pick another.'
+					: 'Failed to make pick';
+			toastState.error(message);
+			selectedPlayer = null;
+			// Refresh the list to remove stale players
+			await loadAvailablePlayers();
 		} finally {
 			making_pick = false;
 		}
 	}
 
-	function handleSelectPlayer(player: Player) {
+	function handleSelectPlayer(player: AvailablePlayer) {
 		selectedPlayer = player;
+	}
+
+	function handleViewDetails(player: AvailablePlayer) {
+		detailPlayer = player;
+	}
+
+	function handleCloseDetails() {
+		detailPlayer = null;
 	}
 </script>
 
@@ -168,9 +166,8 @@
 						<PlayerList
 							players={availablePlayers}
 							title="Available Players"
-							{scoutingGrades}
-							{playerRankings}
 							onSelectPlayer={handleSelectPlayer}
+							onViewDetails={handleViewDetails}
 						/>
 					{/if}
 				</div>
@@ -178,3 +175,10 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Player Detail Modal -->
+<Modal open={detailPlayer !== null} onClose={handleCloseDetails} width="xl" title={`${detailPlayer?.first_name ?? ''} ${detailPlayer?.last_name ?? ''}`}>
+	{#if detailPlayer}
+		<PlayerDetails player={detailPlayer} />
+	{/if}
+</Modal>

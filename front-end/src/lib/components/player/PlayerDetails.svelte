@@ -1,20 +1,27 @@
 <script lang="ts">
 	import { Badge, LoadingSpinner } from '$components/ui';
-	import { playersApi } from '$api';
+	import { playersApi, rankingsApi } from '$api';
 	import { logger } from '$lib/utils/logger';
-	import type { Player, ScoutingReport, CombineResults } from '$types';
+	import type { AvailablePlayer, ScoutingReport, CombineResults, PlayerRanking, RankingSource } from '$types';
 
 	interface Props {
-		player: Player;
+		player: AvailablePlayer;
 	}
 
 	let { player }: Props = $props();
 
-	let activeTab = $state<'overview' | 'scouting' | 'combine'>('overview');
+	let activeTab = $state<'overview' | 'scouting' | 'combine' | 'rankings'>('overview');
 	let scoutingReports = $state<ScoutingReport[]>([]);
 	let combineResults = $state<CombineResults | null>(null);
+	let playerRankings = $state<PlayerRanking[]>([]);
+	let rankingSources = $state<RankingSource[]>([]);
 	let isLoadingScouting = $state(false);
 	let isLoadingCombine = $state(false);
+	let isLoadingRankings = $state(false);
+	let rankingsLoaded = $state(false);
+
+	// Use embedded rankings from consolidated endpoint if available
+	let hasEmbeddedRankings = $derived(player.rankings && player.rankings.length > 0);
 
 	function formatHeight(inches?: number | null): string {
 		if (!inches) return 'N/A';
@@ -47,6 +54,11 @@
 			default:
 				return 'default';
 		}
+	}
+
+	function getSourceAbbreviation(sourceName: string): string {
+		const source = rankingSources.find((s) => s.name === sourceName);
+		return source?.abbreviation ?? sourceName.slice(0, 2).toUpperCase();
 	}
 
 	// Load scouting reports when switching to scouting tab
@@ -84,6 +96,28 @@
 				});
 		}
 	});
+
+	// Load rankings from API only when embedded data is not available
+	$effect(() => {
+		if (activeTab === 'rankings' && !hasEmbeddedRankings && !rankingsLoaded && !isLoadingRankings) {
+			isLoadingRankings = true;
+			Promise.all([
+				rankingsApi.getPlayerRankings(player.id),
+				rankingsApi.listSources(),
+			])
+				.then(([rankings, sources]) => {
+					playerRankings = rankings;
+					rankingSources = sources;
+					rankingsLoaded = true;
+				})
+				.catch((err) => {
+					logger.error('Failed to load rankings:', err);
+				})
+				.finally(() => {
+					isLoadingRankings = false;
+				});
+		}
+	});
 </script>
 
 <div class="bg-white rounded-lg shadow-md overflow-hidden">
@@ -114,6 +148,15 @@
 				onclick={() => (activeTab = 'overview')}
 			>
 				Overview
+			</button>
+			<button
+				type="button"
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab === 'rankings'
+					? 'border-blue-600 text-blue-600'
+					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+				onclick={() => (activeTab = 'rankings')}
+			>
+				Rankings
 			</button>
 			<button
 				type="button"
@@ -166,6 +209,89 @@
 					</Badge>
 				</div>
 			</div>
+		{:else if activeTab === 'rankings'}
+			{#if hasEmbeddedRankings}
+				<!-- Use embedded rankings from consolidated endpoint -->
+				<div class="space-y-4">
+					<div class="overflow-x-auto">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Source
+									</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Rank
+									</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-200">
+								{#each player.rankings as badge (badge.source_name)}
+									<tr>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="flex items-center gap-2">
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+													{badge.abbreviation}
+												</span>
+												<span class="text-sm text-gray-900">{badge.source_name}</span>
+											</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<span class="text-lg font-bold text-gray-900">#{badge.rank}</span>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{:else if isLoadingRankings}
+				<div class="flex justify-center py-12">
+					<LoadingSpinner size="lg" />
+				</div>
+			{:else if playerRankings.length === 0}
+				<p class="text-center text-gray-500 py-12">No rankings available</p>
+			{:else}
+				<div class="space-y-4">
+					<div class="overflow-x-auto">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Source
+									</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Rank
+									</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Date
+									</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-200">
+								{#each playerRankings as ranking (ranking.source_id)}
+									<tr>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="flex items-center gap-2">
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+													{getSourceAbbreviation(ranking.source_name)}
+												</span>
+												<span class="text-sm text-gray-900">{ranking.source_name}</span>
+											</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<span class="text-lg font-bold text-gray-900">#{ranking.rank}</span>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+											{ranking.scraped_at}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{/if}
 		{:else if activeTab === 'scouting'}
 			{#if isLoadingScouting}
 				<div class="flex justify-center py-12">

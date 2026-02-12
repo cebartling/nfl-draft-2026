@@ -54,6 +54,7 @@ impl IntoResponse for ApiError {
                             "Internal server error".to_string(),
                         )
                     }
+                    DomainError::PlayerAlreadyDrafted(msg) => (StatusCode::CONFLICT, msg),
                 }
             }
         };

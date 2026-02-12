@@ -73,6 +73,10 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::drafts::get_available_picks),
         )
         .route(
+            "/drafts/{id}/available-players",
+            get(handlers::drafts::get_available_players),
+        )
+        .route(
             "/drafts/{id}/session",
             get(handlers::sessions::get_session_by_draft),
         )
@@ -168,6 +172,10 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/admin/seed-team-seasons",
             post(handlers::seed::seed_team_seasons),
+        )
+        .route(
+            "/admin/seed-rankings",
+            post(handlers::seed::seed_rankings),
         );
 
     // Create stateful routes

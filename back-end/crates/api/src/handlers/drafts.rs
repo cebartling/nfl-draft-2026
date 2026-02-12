@@ -1,11 +1,13 @@
-use axum::extract::{Path, State};
+use std::collections::{HashMap, HashSet};
+
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use domain::models::{Draft, DraftPick};
+use domain::models::{Draft, DraftPick, FitGrade, Position};
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -331,6 +333,177 @@ pub async fn complete_draft(
 ) -> ApiResult<Json<DraftResponse>> {
     let draft = state.draft_engine.complete_draft(id).await?;
     Ok(Json(DraftResponse::from(draft)))
+}
+
+// --- Available Players (consolidated endpoint) ---
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RankingBadgeResponse {
+    pub source_name: String,
+    pub abbreviation: String,
+    pub rank: i32,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AvailablePlayerResponse {
+    pub id: Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub position: Position,
+    pub college: Option<String>,
+    pub height_inches: Option<i32>,
+    pub weight_pounds: Option<i32>,
+    pub draft_year: i32,
+    pub draft_eligible: bool,
+    // Scouting report for the requesting team (if exists)
+    pub scouting_grade: Option<f64>,
+    pub fit_grade: Option<FitGrade>,
+    pub injury_concern: Option<bool>,
+    pub character_concern: Option<bool>,
+    // Big board rankings across all sources
+    pub rankings: Vec<RankingBadgeResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AvailablePlayersQuery {
+    pub team_id: Option<Uuid>,
+}
+
+/// GET /api/v1/drafts/:id/available-players?team_id=<uuid>
+///
+/// Returns all undrafted players for the given draft, each enriched with
+/// scouting report data (for `team_id`) and big-board ranking badges.
+#[utoipa::path(
+    get,
+    path = "/api/v1/drafts/{id}/available-players",
+    responses(
+        (status = 200, description = "Consolidated available players", body = Vec<AvailablePlayerResponse>),
+        (status = 404, description = "Draft not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Draft ID"),
+        ("team_id" = Option<Uuid>, Query, description = "Team ID for scouting report lookup")
+    ),
+    tag = "drafts"
+)]
+pub async fn get_available_players(
+    State(state): State<AppState>,
+    Path(draft_id): Path<Uuid>,
+    Query(params): Query<AvailablePlayersQuery>,
+) -> ApiResult<Json<Vec<AvailablePlayerResponse>>> {
+    // 1. Verify draft exists and get picked player IDs concurrently
+    let (draft_result, picks_result) = tokio::join!(
+        state.draft_repo.find_by_id(draft_id),
+        state.draft_pick_repo.find_by_draft_id(draft_id),
+    );
+
+    let draft = draft_result?
+        .ok_or_else(|| ApiError::NotFound(format!("Draft with id {} not found", draft_id)))?;
+
+    let picks = picks_result?;
+    let picked_ids: HashSet<Uuid> = picks.iter().filter_map(|p| p.player_id).collect();
+
+    // 2. Fetch players (scoped to draft year), rankings, sources, and optionally scouting reports concurrently
+    let players_fut = state.player_repo.find_by_draft_year(draft.year);
+    let rankings_fut = state.prospect_ranking_repo.find_all_with_source();
+    let sources_fut = state.ranking_source_repo.find_all();
+
+    let (all_players, all_rankings, sources, scouting_map) = if let Some(team_id) = params.team_id
+    {
+        let scouting_fut = state.scouting_report_repo.find_by_team_id(team_id);
+        let (players_res, rankings_res, sources_res, scouting_res) =
+            tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut);
+        let map: HashMap<Uuid, domain::models::ScoutingReport> = scouting_res?
+            .into_iter()
+            .map(|r| (r.player_id, r))
+            .collect();
+        (players_res?, rankings_res?, sources_res?, map)
+    } else {
+        let (players_res, rankings_res, sources_res) =
+            tokio::join!(players_fut, rankings_fut, sources_fut);
+        (
+            players_res?,
+            rankings_res?,
+            sources_res?,
+            HashMap::new(),
+        )
+    };
+
+    // 3. Filter out already-picked players
+    let available: Vec<_> = all_players
+        .into_iter()
+        .filter(|p| !picked_ids.contains(&p.id))
+        .collect();
+
+    // 4. Build abbreviation lookup and rankings map
+    let abbreviation_map: HashMap<String, String> = sources
+        .into_iter()
+        .map(|s| (s.name.clone(), s.abbreviation.clone()))
+        .collect();
+
+    let mut rankings_map: HashMap<Uuid, Vec<RankingBadgeResponse>> = HashMap::new();
+    for entry in all_rankings {
+        let abbreviation = abbreviation_map
+            .get(&entry.source_name)
+            .cloned()
+            .unwrap_or_else(|| {
+                entry
+                    .source_name
+                    .chars()
+                    .take(2)
+                    .collect::<String>()
+                    .to_uppercase()
+            });
+        rankings_map
+            .entry(entry.player_id)
+            .or_default()
+            .push(RankingBadgeResponse {
+                source_name: entry.source_name,
+                abbreviation,
+                rank: entry.rank,
+            });
+    }
+    for badges in rankings_map.values_mut() {
+        badges.sort_by_key(|b| b.rank);
+    }
+
+    // 5. Assemble response, sorted by scouting grade desc (graded first)
+    let mut response: Vec<AvailablePlayerResponse> = available
+        .into_iter()
+        .map(|player| {
+            let report = scouting_map.get(&player.id);
+            let rankings = rankings_map.remove(&player.id).unwrap_or_default();
+            AvailablePlayerResponse {
+                id: player.id,
+                first_name: player.first_name,
+                last_name: player.last_name,
+                position: player.position,
+                college: player.college,
+                height_inches: player.height_inches,
+                weight_pounds: player.weight_pounds,
+                draft_year: player.draft_year,
+                draft_eligible: player.draft_eligible,
+                scouting_grade: report.map(|r| r.grade),
+                fit_grade: report.and_then(|r| r.fit_grade),
+                injury_concern: report.map(|r| r.injury_concern),
+                character_concern: report.map(|r| r.character_concern),
+                rankings,
+            }
+        })
+        .collect();
+
+    response.sort_by(|a, b| {
+        match (a.scouting_grade, b.scouting_grade) {
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (Some(ga), Some(gb)) => gb.partial_cmp(&ga).unwrap_or(std::cmp::Ordering::Equal),
+            (None, None) => std::cmp::Ordering::Equal,
+        }
+        .then_with(|| a.last_name.cmp(&b.last_name))
+        .then_with(|| a.first_name.cmp(&b.first_name))
+    });
+
+    Ok(Json(response))
 }
 
 #[cfg(test)]

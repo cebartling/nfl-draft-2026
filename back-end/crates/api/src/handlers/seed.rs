@@ -28,6 +28,9 @@ fn verify_api_key(provided: &str, expected: &str) -> bool {
 const PLAYERS_2026_JSON: &str = include_str!("../../../../data/players_2026.json");
 const TEAMS_NFL_JSON: &str = include_str!("../../../../data/teams_nfl.json");
 const TEAM_SEASONS_2025_JSON: &str = include_str!("../../../../data/team_seasons_2025.json");
+const RANKINGS_TANKATHON_JSON: &str = include_str!("../../../../data/rankings/tankathon_2026.json");
+const RANKINGS_WALTERFOOTBALL_JSON: &str =
+    include_str!("../../../../data/rankings/walterfootball_2026.json");
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SeedResponse {
@@ -294,5 +297,130 @@ pub async fn seed_team_seasons(
         error_count: stats.errors.len(),
         errors: stats.errors,
         validation_warnings,
+    }))
+}
+
+/// Seed the database with embedded prospect ranking data (Tankathon + WalterFootball)
+///
+/// Requires the `X-Seed-Api-Key` header matching the server's `SEED_API_KEY` environment variable.
+/// Returns 404 if `SEED_API_KEY` is not configured (endpoint is hidden).
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/seed-rankings",
+    tag = "admin",
+    responses(
+        (status = 200, description = "Rankings seeded successfully", body = SeedResponse),
+        (status = 401, description = "Unauthorized - invalid or missing API key"),
+        (status = 404, description = "Not found - endpoint not enabled"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+pub async fn seed_rankings(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> ApiResult<Json<SeedResponse>> {
+    // If SEED_API_KEY is not configured, hide the endpoint entirely
+    let expected_key = match &state.seed_api_key {
+        Some(key) => key,
+        None => {
+            return Err(ApiError::NotFound("Not found".to_string()));
+        }
+    };
+
+    // Validate the API key from the request header using constant-time comparison
+    let provided_key = headers
+        .get("X-Seed-Api-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !verify_api_key(provided_key, expected_key) {
+        return Err(ApiError::Unauthorized(
+            "Invalid or missing API key".to_string(),
+        ));
+    }
+
+    let ranking_files = [
+        ("Tankathon", RANKINGS_TANKATHON_JSON),
+        ("WalterFootball", RANKINGS_WALTERFOOTBALL_JSON),
+    ];
+
+    let mut total_rankings_inserted: usize = 0;
+    let mut total_prospects_matched: usize = 0;
+    let mut total_prospects_discovered: usize = 0;
+    let mut all_errors: Vec<String> = Vec::new();
+    let mut all_warnings: Vec<String> = Vec::new();
+
+    for (label, json) in &ranking_files {
+        // Parse the embedded ranking data
+        let data =
+            seed_data::scouting_report_loader::parse_ranking_json(json).map_err(|e| {
+                ApiError::InternalError(format!(
+                    "Failed to parse embedded {} ranking data: {}",
+                    label, e
+                ))
+            })?;
+
+        // Validate the data
+        let validation = seed_data::rankings_validator::validate_ranking_data(&data);
+        all_warnings.extend(
+            validation
+                .warnings
+                .into_iter()
+                .map(|w| format!("[{}] {}", label, w)),
+        );
+
+        if !validation.valid {
+            all_errors.extend(
+                validation
+                    .errors
+                    .into_iter()
+                    .map(|e| format!("[{}] {}", label, e)),
+            );
+            continue;
+        }
+
+        // Load rankings into the database
+        let stats = seed_data::rankings_loader::load_rankings(
+            &data,
+            state.pool(),
+            state.player_repo.as_ref(),
+            state.team_repo.as_ref(),
+            state.ranking_source_repo.as_ref(),
+            state.scouting_report_repo.as_ref(),
+        )
+        .await
+        .map_err(|e| {
+            ApiError::InternalError(format!("Failed to load {} rankings: {}", label, e))
+        })?;
+
+        total_rankings_inserted += stats.rankings_inserted;
+        total_prospects_matched += stats.prospects_matched;
+        total_prospects_discovered += stats.prospects_discovered;
+        all_errors.extend(
+            stats
+                .errors
+                .into_iter()
+                .map(|e| format!("[{}] {}", label, e)),
+        );
+    }
+
+    let message = format!(
+        "Rankings seeding complete: {} rankings inserted, {} prospects matched, {} new prospects discovered, {} errors",
+        total_rankings_inserted,
+        total_prospects_matched,
+        total_prospects_discovered,
+        all_errors.len()
+    );
+
+    Ok(Json(SeedResponse {
+        message,
+        success_count: total_rankings_inserted,
+        skipped_count: total_prospects_matched,
+        error_count: all_errors.len(),
+        errors: all_errors,
+        validation_warnings: all_warnings,
     }))
 }

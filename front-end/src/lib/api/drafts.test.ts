@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { draftsApi } from './drafts';
 import * as client from './client';
-import type { Draft, DraftPick, Player } from '$lib/types';
+import type { Draft, DraftPick, AvailablePlayer } from '$lib/types';
 
 describe('draftsApi', () => {
 	let mockGet: ReturnType<typeof vi.fn>;
@@ -204,8 +204,8 @@ describe('draftsApi', () => {
 	});
 
 	describe('getAvailablePlayers', () => {
-		it('should fetch available players for a draft', async () => {
-			const mockPlayers: Player[] = [
+		it('should fetch available players for a draft without team_id', async () => {
+			const mockPlayers: AvailablePlayer[] = [
 				{
 					id: 'player-1',
 					first_name: 'John',
@@ -216,6 +216,11 @@ describe('draftsApi', () => {
 					weight_pounds: 220,
 					draft_year: 2026,
 					draft_eligible: true,
+					scouting_grade: null,
+					fit_grade: null,
+					injury_concern: null,
+					character_concern: null,
+					rankings: [],
 				},
 				{
 					id: 'player-2',
@@ -227,6 +232,11 @@ describe('draftsApi', () => {
 					weight_pounds: 200,
 					draft_year: 2026,
 					draft_eligible: true,
+					scouting_grade: null,
+					fit_grade: null,
+					injury_concern: null,
+					character_concern: null,
+					rankings: [],
 				},
 			];
 
@@ -236,6 +246,39 @@ describe('draftsApi', () => {
 
 			expect(mockGet).toHaveBeenCalledWith('/drafts/draft-1/available-players', expect.any(Object));
 			expect(result).toEqual(mockPlayers);
+		});
+
+		it('should include team_id query param when provided', async () => {
+			const mockPlayers: AvailablePlayer[] = [
+				{
+					id: 'player-1',
+					first_name: 'John',
+					last_name: 'Quarterback',
+					position: 'QB',
+					college: 'Alabama',
+					height_inches: 76,
+					weight_pounds: 220,
+					draft_year: 2026,
+					draft_eligible: true,
+					scouting_grade: 8.5,
+					fit_grade: 'A',
+					injury_concern: false,
+					character_concern: false,
+					rankings: [{ source_name: 'Tankathon', abbreviation: 'TK', rank: 1 }],
+				},
+			];
+
+			mockGet.mockResolvedValueOnce(mockPlayers);
+
+			const result = await draftsApi.getAvailablePlayers('draft-1', 'team-abc');
+
+			expect(mockGet).toHaveBeenCalledWith(
+				'/drafts/draft-1/available-players?team_id=team-abc',
+				expect.any(Object)
+			);
+			expect(result).toEqual(mockPlayers);
+			expect(result[0].scouting_grade).toBe(8.5);
+			expect(result[0].rankings).toHaveLength(1);
 		});
 	});
 
