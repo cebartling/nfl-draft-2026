@@ -54,16 +54,6 @@
 		}
 	});
 
-	// Reload available players when picks change (a pick was made)
-	let lastPickCount = $state(0);
-	$effect(() => {
-		const pickCount = draftState.picks.length;
-		if (pickCount !== lastPickCount && lastPickCount > 0) {
-			loadAvailablePlayers();
-		}
-		lastPickCount = pickCount;
-	});
-
 	async function handleMakePick() {
 		if (!selectedPlayer || !draftState.session || !draftState.currentPick) {
 			return;
