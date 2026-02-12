@@ -397,14 +397,14 @@ pub async fn get_available_players(
         state.draft_pick_repo.find_by_draft_id(draft_id),
     );
 
-    let _draft = draft_result?
+    let draft = draft_result?
         .ok_or_else(|| ApiError::NotFound(format!("Draft with id {} not found", draft_id)))?;
 
     let picks = picks_result?;
     let picked_ids: HashSet<Uuid> = picks.iter().filter_map(|p| p.player_id).collect();
 
-    // 2. Fetch players, rankings, sources, and optionally scouting reports concurrently
-    let players_fut = state.player_repo.find_all();
+    // 2. Fetch players (scoped to draft year), rankings, sources, and optionally scouting reports concurrently
+    let players_fut = state.player_repo.find_by_draft_year(draft.year);
     let rankings_fut = state.prospect_ranking_repo.find_all_with_source();
     let sources_fut = state.ranking_source_repo.find_all();
 
