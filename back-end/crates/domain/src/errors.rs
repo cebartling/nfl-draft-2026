@@ -19,6 +19,9 @@ pub enum DomainError {
 
     #[error("Database error: {0}")]
     DatabaseError(String),
+
+    #[error("Player already drafted: {0}")]
+    PlayerAlreadyDrafted(String),
 }
 
 pub type DomainResult<T> = Result<T, DomainError>;

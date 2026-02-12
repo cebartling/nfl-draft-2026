@@ -274,7 +274,7 @@ impl DraftEngine {
             .iter()
             .any(|p| p.player_id == Some(player_id));
         if already_drafted {
-            return Err(DomainError::ValidationError(format!(
+            return Err(DomainError::PlayerAlreadyDrafted(format!(
                 "Player {} has already been drafted in this draft",
                 player.full_name()
             )));
@@ -371,12 +371,10 @@ impl DraftEngine {
                 .decide_pick(pick.team_id, pick.draft_id, &available_players)
                 .await?;
 
-            // Make the pick — retry on validation errors (player already drafted)
+            // Make the pick — retry if player was already drafted (race condition)
             match self.make_pick(pick_id, selected_player_id).await {
                 Ok(result) => return Ok(result),
-                Err(DomainError::ValidationError(msg))
-                    if msg.contains("already been drafted") && attempt < MAX_RETRIES - 1 =>
-                {
+                Err(DomainError::PlayerAlreadyDrafted(_)) if attempt < MAX_RETRIES - 1 => {
                     tracing::warn!(
                         "Auto-pick retry {}: player already drafted, re-fetching",
                         attempt + 1
