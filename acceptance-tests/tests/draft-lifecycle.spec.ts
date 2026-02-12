@@ -31,9 +31,9 @@ test.describe('Draft Lifecycle', () => {
     const status = await actor.asks(DraftStatus.inDatabaseFor(draftId));
     expect(status).toBe('NotStarted');
 
-    // The create draft page auto-initializes picks, so verify pick count
+    // The create draft page auto-initializes picks: 1 round × 32 teams = 32 picks
     const pickCount = await actor.asks(DraftPickCount.inDatabaseFor(draftId));
-    expect(pickCount).toBeGreaterThan(0);
+    expect(pickCount).toBe(32);
   });
 
   test('created draft appears on drafts list page', async ({ actor }) => {

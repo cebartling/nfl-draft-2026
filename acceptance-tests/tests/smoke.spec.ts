@@ -13,9 +13,11 @@ test.describe('Smoke Tests', () => {
 
   test('API health endpoint responds', async ({ actor }) => {
     const api = actor.abilityTo(CallApi);
-    const response = await api.get('/health');
+    const response = await api.get<{ status: string }>('/health');
     expect(response.ok).toBe(true);
     expect(response.status).toBe(200);
+    expect(response.data).toHaveProperty('status');
+    expect(response.data.status).toBe('healthy');
   });
 
   test('database has seeded teams', async ({ actor }) => {

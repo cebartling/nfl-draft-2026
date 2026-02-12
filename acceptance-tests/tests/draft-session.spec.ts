@@ -22,33 +22,38 @@ test.describe('Draft Session', () => {
     const createTask = CreateDraftViaApi.named('E2E Session Test Draft').withRounds(1);
     await actor.attemptsTo(createTask);
 
-    const draftId = createTask.response!.id;
-    expect(draftId).toBeTruthy();
+    const draft = createTask.response!;
+    expect(draft.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(draft.name).toBe('E2E Session Test Draft');
+    expect(draft.status).toBe('NotStarted');
+    expect(draft.rounds).toBe(1);
 
     // Start session via API
-    const startTask = StartSession.forDraft(draftId).withTimePer(30);
+    const startTask = StartSession.forDraft(draft.id).withTimePer(30);
     await actor.attemptsTo(startTask);
 
-    const sessionId = startTask.sessionResponse!.id;
-    expect(sessionId).toBeTruthy();
+    const session = startTask.sessionResponse!;
+    expect(session.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(session.draft_id).toBe(draft.id);
+    expect(session.status).toBe('InProgress');
 
     // Verify session is in progress in DB
-    const sessionStatus = await actor.asks(SessionStatus.inDatabaseForDraft(draftId));
+    const sessionStatus = await actor.asks(SessionStatus.inDatabaseForDraft(draft.id));
     expect(sessionStatus).toBe('InProgress');
 
     // Verify draft status changed
-    const draftStatus = await actor.asks(DraftStatus.inDatabaseFor(draftId));
+    const draftStatus = await actor.asks(DraftStatus.inDatabaseFor(draft.id));
     expect(draftStatus).toBe('InProgress');
 
     // Navigate to session page in browser
-    await actor.attemptsTo(Navigate.to(`/sessions/${sessionId}`));
+    await actor.attemptsTo(Navigate.to(`/sessions/${session.id}`));
 
     // Run auto-pick once via API
-    const autoPickTask = RunAutoPickForSession.once(sessionId);
+    const autoPickTask = RunAutoPickForSession.once(session.id);
     await actor.attemptsTo(autoPickTask);
 
     // Verify picks were made in DB
-    const madeCount = await actor.asks(MadePickCount.inDatabaseFor(draftId));
+    const madeCount = await actor.asks(MadePickCount.inDatabaseFor(draft.id));
     expect(madeCount).toBeGreaterThan(0);
   });
 });
