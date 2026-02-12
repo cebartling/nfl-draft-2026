@@ -418,7 +418,7 @@ pub async fn seed_rankings(
     Ok(Json(SeedResponse {
         message,
         success_count: total_rankings_inserted,
-        skipped_count: total_prospects_discovered,
+        skipped_count: total_prospects_matched,
         error_count: all_errors.len(),
         errors: all_errors,
         validation_warnings: all_warnings,
