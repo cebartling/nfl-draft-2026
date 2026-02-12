@@ -93,11 +93,14 @@ echo ""
 echo -e "${YELLOW}${BOLD}Step 4: Installing test dependencies...${NC}"
 cd "$SCRIPT_DIR"
 
-# Use nvm if available
+# Use nvm if available (disable set -e around nvm; its internals
+# re-enable set -e before returning non-zero, which bypasses || chains)
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    set +e
     # shellcheck source=/dev/null
     source "$HOME/.nvm/nvm.sh"
     nvm use 2>/dev/null || nvm install 2>/dev/null || true
+    set -e
 fi
 
 npm ci
