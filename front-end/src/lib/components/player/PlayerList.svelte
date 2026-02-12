@@ -10,9 +10,10 @@
 		scoutingGrades?: Map<string, number>;
 		playerRankings?: Map<string, RankingBadge[]>;
 		onSelectPlayer?: (player: Player) => void;
+		onViewDetails?: (player: Player) => void;
 	}
 
-	let { players, title, scoutingGrades, playerRankings, onSelectPlayer }: Props = $props();
+	let { players, title, scoutingGrades, playerRankings, onSelectPlayer, onViewDetails }: Props = $props();
 
 	let searchQuery = $state('');
 	let selectedPosition = $state<Position | 'all'>('all');
@@ -80,7 +81,7 @@
 		{:else}
 			<div class="flex flex-col gap-2">
 				{#each filteredPlayers as player (player.id)}
-					<PlayerCard {player} scoutingGrade={scoutingGrades?.get(player.id)} rankings={playerRankings?.get(player.id)} onSelect={onSelectPlayer} />
+					<PlayerCard {player} scoutingGrade={scoutingGrades?.get(player.id)} rankings={playerRankings?.get(player.id)} onSelect={onSelectPlayer} {onViewDetails} />
 				{/each}
 			</div>
 		{/if}
