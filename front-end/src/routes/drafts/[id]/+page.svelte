@@ -12,6 +12,8 @@
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import type { Draft, DraftPick, Team } from '$lib/types';
 
+	const DEFAULT_TIME_PER_PICK = 120;
+
 	let draftId = $derived($page.params.id!);
 	let draft = $state<Draft | null>(null);
 	let picks = $state<DraftPick[]>([]);
@@ -70,7 +72,7 @@
 				allTeams = await teamsApi.list();
 			} catch (e) {
 				logger.error('Failed to load teams:', e);
-				error = e instanceof Error ? e.message : 'Failed to load teams';
+				error = error || (e instanceof Error ? e.message : 'Failed to load teams');
 			} finally {
 				teamsLoading = false;
 			}
@@ -99,7 +101,7 @@
 		try {
 			const session = await sessionsApi.create({
 				draft_id: draft.id,
-				time_per_pick_seconds: 120,
+				time_per_pick_seconds: DEFAULT_TIME_PER_PICK,
 				auto_pick_enabled: true,
 				chart_type: 'JimmyJohnson',
 				controlled_team_ids: controlledTeamIds
@@ -187,7 +189,7 @@
 								Rounds: {draft.rounds}
 							</span>
 							<span class="text-sm text-gray-600">
-								Pick Timer: 120s
+								Pick Timer: {DEFAULT_TIME_PER_PICK}s
 							</span>
 						</div>
 					</div>

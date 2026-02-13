@@ -7,13 +7,6 @@ class SelectTeamByNameTask implements Task {
   async performAs(actor: Actor): Promise<void> {
     const page = actor.abilityTo(BrowseTheWeb).getPage();
 
-    // First, expand the division containing the team by finding the team's button
-    // Teams are inside collapsed division accordions, so we need to expand them first.
-    // Look through all division toggle buttons and expand them until we find our team.
-    const divisionButtons = page.locator(
-      'button:has(svg.rotate-180), button:has(svg:not(.rotate-180))',
-    );
-
     // Expand all divisions to make the team visible
     const accordionButtons = page.locator(
       'button.w-full.flex.items-center.justify-between',

@@ -4,6 +4,7 @@ import { Navigate } from '../src/screenplay/tasks/navigate.js';
 import {
   ClickAutoPickAllTeams,
   ClickCancel,
+  ClickStartWithTeams,
   SelectTeam,
 } from '../src/screenplay/tasks/draft-page-tasks.js';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../src/screenplay/questions/draft-detail-questions.js';
 import { CurrentUrl } from '../src/screenplay/questions/web-questions.js';
 import { SessionStatus } from '../src/screenplay/questions/draft-questions.js';
+import { BrowseTheWeb } from '../src/screenplay/abilities/browse-the-web.js';
 import { cleanupTestDrafts } from '../src/db/cleanup.js';
 
 test.describe('Draft Detail Page', () => {
@@ -35,8 +37,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load and teams to be fetched
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('[data-testid="auto-pick-all"]', { timeout: 10000 });
 
     // Verify team selector is immediately visible
@@ -64,8 +65,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('[data-testid="auto-pick-all"]', { timeout: 10000 });
 
     // Verify initial state shows 0 teams selected
@@ -84,6 +84,42 @@ test.describe('Draft Detail Page', () => {
     expect(count).toBe(1);
   });
 
+  test('starting draft with selected teams creates session and redirects', async ({ actor }) => {
+    // Create draft via API
+    const createTask = CreateDraftViaApi.named('E2E Start With Teams Test').withRounds(1);
+    await actor.attemptsTo(createTask);
+    const draft = createTask.response!;
+
+    // Navigate to draft detail page
+    await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
+
+    // Wait for the page to load
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
+    await actorPage.waitForSelector('[data-testid="auto-pick-all"]', { timeout: 10000 });
+
+    // Select two teams
+    await actor.attemptsTo(SelectTeam.byName('Kansas City Chiefs'));
+    await actor.attemptsTo(SelectTeam.byName('Buffalo Bills'));
+
+    // Verify the button text reflects selected team count
+    const startText = await actor.asks(StartButtonText.onPage());
+    expect(startText).toBe('Start with 2 Teams');
+
+    // Click the "Start with N Teams" button
+    await actor.attemptsTo(ClickStartWithTeams.now());
+
+    // Wait for navigation to session page
+    await actorPage.waitForURL(/\/sessions\/[0-9a-f-]+/, { timeout: 15000 });
+
+    // Verify we're on a session page
+    const currentUrl = await actor.asks(CurrentUrl.value());
+    expect(currentUrl).toMatch(/\/sessions\/[0-9a-f-]+/);
+
+    // Verify session was created in DB
+    const sessionStatus = await actor.asks(SessionStatus.inDatabaseForDraft(draft.id));
+    expect(sessionStatus).not.toBeNull();
+  });
+
   test('auto-pick all teams creates session and redirects', async ({ actor }) => {
     // Create draft via API
     const createTask = CreateDraftViaApi.named('E2E Auto-Pick Test').withRounds(1);
@@ -94,8 +130,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('[data-testid="auto-pick-all"]', { timeout: 10000 });
 
     // Click "Auto-pick All Teams"
@@ -123,8 +158,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('[data-testid="cancel-draft"]', { timeout: 10000 });
 
     // Click "Cancel"
@@ -148,8 +182,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('[data-testid="auto-pick-all"]', { timeout: 10000 });
 
     // Verify draft progress is NOT visible
@@ -179,8 +212,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('[data-testid="draft-board"]', { timeout: 10000 });
 
     // Verify draft progress is visible
@@ -210,8 +242,7 @@ test.describe('Draft Detail Page', () => {
     await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
 
     // Wait for the page to load
-    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
-    const actorPage = actor.abilityTo(page).getPage();
+    const actorPage = actor.abilityTo(BrowseTheWeb).getPage();
     await actorPage.waitForSelector('h1', { timeout: 10000 });
 
     // Verify team selector is NOT visible
