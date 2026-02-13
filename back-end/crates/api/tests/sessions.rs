@@ -1303,3 +1303,78 @@ async fn test_create_duplicate_session_returns_409() {
 
     common::cleanup_database(&pool).await;
 }
+
+#[tokio::test]
+async fn test_get_nonexistent_session() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    let nonexistent_id = Uuid::new_v4();
+
+    let response = client
+        .get(&format!("{}/api/v1/sessions/{}", app_url, nonexistent_id))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    common::cleanup_database(&pool).await;
+}
+
+#[tokio::test]
+async fn test_propose_trade_nonexistent_team() {
+    let (app_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create draft via API
+    let draft_response = client
+        .post(&format!("{}/api/v1/drafts", app_url))
+        .json(&json!({
+            "name": "Trade Test Draft",
+            "year": 2026,
+            "rounds": 7
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(draft_response.status(), StatusCode::CREATED);
+    let draft: serde_json::Value = draft_response.json().await.unwrap();
+    let draft_id = draft["id"].as_str().unwrap();
+
+    // Create session via API
+    let session_response = client
+        .post(&format!("{}/api/v1/sessions", app_url))
+        .json(&json!({
+            "draft_id": draft_id,
+            "time_per_pick_seconds": 300,
+            "auto_pick_enabled": false
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(session_response.status(), StatusCode::CREATED);
+    let session: serde_json::Value = session_response.json().await.unwrap();
+    let session_id = session["id"].as_str().unwrap();
+
+    // Propose trade with nonexistent team
+    let nonexistent_team = Uuid::new_v4();
+    let request_body = json!({
+        "session_id": session_id,
+        "from_team_id": nonexistent_team,
+        "to_team_id": Uuid::new_v4(),
+        "from_team_pick_ids": [Uuid::new_v4()],
+        "to_team_pick_ids": [Uuid::new_v4()]
+    });
+
+    let response = client
+        .post(&format!("{}/api/v1/trades", app_url))
+        .json(&request_body)
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    common::cleanup_database(&pool).await;
+}

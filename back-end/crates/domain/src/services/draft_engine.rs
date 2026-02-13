@@ -566,4 +566,322 @@ mod tests {
         assert_eq!(picks[0].overall_pick, 1);
         assert_eq!(picks[13].overall_pick, 14);
     }
+
+    // --- make_pick tests ---
+
+    fn make_test_draft() -> Draft {
+        Draft::new("Test Draft".to_string(), 2026, 7, 32).unwrap()
+    }
+
+    fn make_test_player(draft_year: i32, eligible: bool) -> Player {
+        let mut player = Player::new(
+            "John".to_string(),
+            "Doe".to_string(),
+            Position::QB,
+            draft_year,
+        )
+        .unwrap();
+        player.draft_eligible = eligible;
+        player
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_success() {
+        let draft = make_test_draft();
+        let draft_id = draft.id;
+        let team_id = Uuid::new_v4();
+        let pick = DraftPick::new(draft_id, 1, 1, 1, team_id).unwrap();
+        let pick_id = pick.id;
+        let player = make_test_player(2026, true);
+        let player_id = player.id;
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        let pick_c = pick.clone();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(move |_| Ok(Some(pick_c.clone())));
+        pick_repo
+            .expect_find_by_draft_id()
+            .with(eq(draft_id))
+            .returning(|_| Ok(vec![])); // No existing picks
+        pick_repo
+            .expect_update()
+            .returning(|p| Ok(p.clone()));
+
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_id()
+            .with(eq(draft_id))
+            .returning(move |_| Ok(Some(draft.clone())));
+
+        let mut player_repo = MockPlayerRepo::new();
+        let player_c = player.clone();
+        player_repo
+            .expect_find_by_id()
+            .with(eq(player_id))
+            .returning(move |_| Ok(Some(player_c.clone())));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(player_repo),
+        );
+
+        let result = engine.make_pick(pick_id, player_id).await;
+        assert!(result.is_ok());
+        let made_pick = result.unwrap();
+        assert_eq!(made_pick.player_id, Some(player_id));
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_pick_not_found() {
+        let pick_id = Uuid::new_v4();
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(|_| Ok(None));
+
+        let engine = DraftEngine::new(
+            Arc::new(MockDraftRepo::new()),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(MockPlayerRepo::new()),
+        );
+
+        let result = engine.make_pick(pick_id, Uuid::new_v4()).await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), DomainError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_player_not_found() {
+        let draft = make_test_draft();
+        let pick = DraftPick::new(draft.id, 1, 1, 1, Uuid::new_v4()).unwrap();
+        let pick_id = pick.id;
+        let player_id = Uuid::new_v4();
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(move |_| Ok(Some(pick.clone())));
+
+        let mut player_repo = MockPlayerRepo::new();
+        player_repo
+            .expect_find_by_id()
+            .with(eq(player_id))
+            .returning(|_| Ok(None));
+
+        let engine = DraftEngine::new(
+            Arc::new(MockDraftRepo::new()),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(player_repo),
+        );
+
+        let result = engine.make_pick(pick_id, player_id).await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), DomainError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_wrong_draft_year() {
+        let draft = make_test_draft(); // year = 2026
+        let draft_id = draft.id;
+        let pick = DraftPick::new(draft_id, 1, 1, 1, Uuid::new_v4()).unwrap();
+        let pick_id = pick.id;
+        let player = make_test_player(2025, true); // Wrong year
+        let player_id = player.id;
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(move |_| Ok(Some(pick.clone())));
+
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_id()
+            .with(eq(draft_id))
+            .returning(move |_| Ok(Some(draft.clone())));
+
+        let mut player_repo = MockPlayerRepo::new();
+        let player_c = player.clone();
+        player_repo
+            .expect_find_by_id()
+            .with(eq(player_id))
+            .returning(move |_| Ok(Some(player_c.clone())));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(player_repo),
+        );
+
+        let result = engine.make_pick(pick_id, player_id).await;
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            DomainError::ValidationError(msg) => assert!(msg.contains("2025")),
+            e => panic!("Expected ValidationError, got {:?}", e),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_player_not_eligible() {
+        let draft = make_test_draft();
+        let draft_id = draft.id;
+        let pick = DraftPick::new(draft_id, 1, 1, 1, Uuid::new_v4()).unwrap();
+        let pick_id = pick.id;
+        let player = make_test_player(2026, false); // Not eligible
+        let player_id = player.id;
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(move |_| Ok(Some(pick.clone())));
+
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_id()
+            .with(eq(draft_id))
+            .returning(move |_| Ok(Some(draft.clone())));
+
+        let mut player_repo = MockPlayerRepo::new();
+        let player_c = player.clone();
+        player_repo
+            .expect_find_by_id()
+            .with(eq(player_id))
+            .returning(move |_| Ok(Some(player_c.clone())));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(player_repo),
+        );
+
+        let result = engine.make_pick(pick_id, player_id).await;
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            DomainError::ValidationError(msg) => assert!(msg.contains("not draft eligible")),
+            e => panic!("Expected ValidationError, got {:?}", e),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_player_already_drafted() {
+        let draft = make_test_draft();
+        let draft_id = draft.id;
+        let pick = DraftPick::new(draft_id, 1, 2, 2, Uuid::new_v4()).unwrap();
+        let pick_id = pick.id;
+        let player = make_test_player(2026, true);
+        let player_id = player.id;
+
+        // Another pick already has this player
+        let mut existing_pick = DraftPick::new(draft_id, 1, 1, 1, Uuid::new_v4()).unwrap();
+        existing_pick.make_pick(player_id).unwrap();
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        let pick_c = pick.clone();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(move |_| Ok(Some(pick_c.clone())));
+        pick_repo
+            .expect_find_by_draft_id()
+            .with(eq(draft_id))
+            .returning(move |_| Ok(vec![existing_pick.clone()]));
+
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_id()
+            .with(eq(draft_id))
+            .returning(move |_| Ok(Some(draft.clone())));
+
+        let mut player_repo = MockPlayerRepo::new();
+        let player_c = player.clone();
+        player_repo
+            .expect_find_by_id()
+            .with(eq(player_id))
+            .returning(move |_| Ok(Some(player_c.clone())));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(player_repo),
+        );
+
+        let result = engine.make_pick(pick_id, player_id).await;
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            DomainError::PlayerAlreadyDrafted(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_make_pick_draft_not_found() {
+        let draft_id = Uuid::new_v4();
+        let pick = DraftPick::new(draft_id, 1, 1, 1, Uuid::new_v4()).unwrap();
+        let pick_id = pick.id;
+        let player = make_test_player(2026, true);
+        let player_id = player.id;
+
+        let mut pick_repo = MockDraftPickRepo::new();
+        pick_repo
+            .expect_find_by_id()
+            .with(eq(pick_id))
+            .returning(move |_| Ok(Some(pick.clone())));
+
+        let mut draft_repo = MockDraftRepo::new();
+        draft_repo
+            .expect_find_by_id()
+            .with(eq(draft_id))
+            .returning(|_| Ok(None));
+
+        let mut player_repo = MockPlayerRepo::new();
+        let player_c = player.clone();
+        player_repo
+            .expect_find_by_id()
+            .with(eq(player_id))
+            .returning(move |_| Ok(Some(player_c.clone())));
+
+        let engine = DraftEngine::new(
+            Arc::new(draft_repo),
+            Arc::new(pick_repo),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(player_repo),
+        );
+
+        let result = engine.make_pick(pick_id, player_id).await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), DomainError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn test_execute_auto_pick_no_service() {
+        let engine = DraftEngine::new(
+            Arc::new(MockDraftRepo::new()),
+            Arc::new(MockDraftPickRepo::new()),
+            Arc::new(MockTeamRepo::new()),
+            Arc::new(MockPlayerRepo::new()),
+        );
+        // No auto_pick_service configured
+
+        let result = engine.execute_auto_pick(Uuid::new_v4()).await;
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            DomainError::InternalError(msg) => {
+                assert!(msg.contains("Auto-pick service not configured"))
+            }
+            e => panic!("Expected InternalError, got {:?}", e),
+        }
+    }
 }
