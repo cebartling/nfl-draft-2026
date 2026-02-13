@@ -394,18 +394,23 @@ mod tests {
         let mut pick_repo = MockDraftPickRepo::new();
         let pick_a_clone = pick_a.clone();
         let pick_b_clone = pick_b.clone();
+        // find_by_id called twice per pick: ownership validation + value calculation
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_a_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_a_clone.clone())));
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_b_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_b_clone.clone())));
 
         let mut trade_repo = MockTradeRepo::new();
+        // is_pick_in_active_trade called once per pick (2 total)
         trade_repo
             .expect_is_pick_in_active_trade()
+            .times(2)
             .returning(|_, _| Ok(false));
         trade_repo
             .expect_create_trade()
@@ -673,19 +678,22 @@ mod tests {
         let mut pick_repo = MockDraftPickRepo::new();
         let pick_a_c = pick_a.clone();
         let pick_b_c = pick_b.clone();
-        // find_by_id called for ownership validation and value calculation
+        // find_by_id called twice per pick: ownership validation + value calculation
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_a_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_a_c.clone())));
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_b_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_b_c.clone())));
 
         let mut trade_repo = MockTradeRepo::new();
         trade_repo
             .expect_is_pick_in_active_trade()
+            .times(2)
             .returning(|_, _| Ok(false));
 
         let engine = setup_engine(trade_repo, pick_repo, team_repo);
@@ -737,18 +745,22 @@ mod tests {
         let mut pick_repo = MockDraftPickRepo::new();
         let pick_a_c = pick_a.clone();
         let pick_b_c = pick_b.clone();
+        // find_by_id called twice per pick: ownership validation + value calculation
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_a_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_a_c.clone())));
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_b_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_b_c.clone())));
 
         let mut trade_repo = MockTradeRepo::new();
         trade_repo
             .expect_is_pick_in_active_trade()
+            .times(2)
             .returning(|_, _| Ok(false));
         // Verify that RichHill chart type is passed to create_trade
         trade_repo
@@ -806,18 +818,22 @@ mod tests {
         let mut pick_repo = MockDraftPickRepo::new();
         let pick_a_c = pick_a.clone();
         let pick_b_c = pick_b.clone();
+        // find_by_id called twice per pick: ownership validation + value calculation
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_a_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_a_c.clone())));
         pick_repo
             .expect_find_by_id()
             .with(eq(pick_b_id))
+            .times(2)
             .returning(move |_| Ok(Some(pick_b_c.clone())));
 
         let mut trade_repo = MockTradeRepo::new();
         trade_repo
             .expect_is_pick_in_active_trade()
+            .times(2)
             .returning(|_, _| Ok(false));
         // Verify RichHill chart type is passed even though default is JimmyJohnson
         trade_repo
@@ -872,8 +888,10 @@ mod tests {
             .expect_find_trade_with_details()
             .with(eq(trade_id))
             .returning(move |_| Ok(Some(proposal_c.clone())));
+        // is_pick_in_active_trade called once per pick during revalidation (2 total)
         trade_repo
             .expect_is_pick_in_active_trade()
+            .times(2)
             .returning(|_, _| Ok(false));
         trade_repo
             .expect_transfer_picks()
