@@ -69,3 +69,6 @@ coverage/
 acceptance-tests/node_modules/
 acceptance-tests/playwright-report/
 acceptance-tests/test-results/
+
+# Test results
+test-results/
