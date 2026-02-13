@@ -354,39 +354,39 @@ mod tests {
     #[test]
     fn test_rank_to_grade_first_round() {
         let grade = rank_to_grade(32);
-        // 9.5 - 31 * 0.04 = 9.5 - 1.24 = 8.26
-        assert!((grade - 8.26).abs() < 0.01);
+        // 9.5 - 31 * 0.03 = 9.5 - 0.93 = 8.57
+        assert!((grade - 8.57).abs() < 0.01);
     }
 
     #[test]
     fn test_rank_to_grade_floor() {
-        let grade = rank_to_grade(200);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        let grade = rank_to_grade(250);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
 
         let grade = rank_to_grade(500);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_rank_to_grade_zero_returns_floor() {
         let grade = rank_to_grade(0);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_rank_to_grade_negative_returns_floor() {
         let grade = rank_to_grade(-1);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
 
         let grade = rank_to_grade(-100);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_rank_to_grade_mid_range() {
         let grade = rank_to_grade(100);
-        // 9.5 - 99 * 0.04 = 9.5 - 3.96 = 5.54
-        assert!((grade - 5.54).abs() < 0.01);
+        // 9.5 - 99 * 0.03 = 9.5 - 2.97 = 6.53
+        assert!((grade - 6.53).abs() < 0.01);
     }
 
     #[test]

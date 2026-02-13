@@ -1,3 +1,4 @@
+mod merge;
 mod models;
 mod scrapers;
 mod template;
@@ -34,11 +35,28 @@ struct Cli {
     /// Handles JS-rendered SPAs that reqwest cannot parse.
     #[arg(long)]
     browser: bool,
+
+    /// Merge multiple ranking files instead of scraping.
+    /// Requires --primary and at least one --secondary.
+    #[arg(long)]
+    merge: bool,
+
+    /// Primary ranking file for merge (provides base rankings)
+    #[arg(long)]
+    primary: Option<String>,
+
+    /// Secondary ranking file(s) for merge (unique prospects appended)
+    #[arg(long)]
+    secondary: Vec<String>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    if cli.merge {
+        return run_merge(&cli);
+    }
 
     println!("NFL Prospect Rankings Scraper");
     println!("Source: {}", cli.source);
@@ -176,6 +194,59 @@ async fn main() -> Result<()> {
     } else {
         println!("\nRankings written by browser scraper to: {}", cli.output);
     }
+
+    Ok(())
+}
+
+fn run_merge(cli: &Cli) -> Result<()> {
+    let primary_path = cli.primary.as_deref().ok_or_else(|| {
+        anyhow::anyhow!("--merge requires --primary <file>")
+    })?;
+
+    if cli.secondary.is_empty() {
+        anyhow::bail!("--merge requires at least one --secondary <file>");
+    }
+
+    println!("NFL Prospect Rankings Merger");
+    println!("Primary: {}", primary_path);
+    for (i, s) in cli.secondary.iter().enumerate() {
+        println!("Secondary {}: {}", i + 1, s);
+    }
+    println!("Output: {}", cli.output);
+
+    let primary = merge::load_ranking_file(primary_path)?;
+    println!("\nLoaded primary: {} prospects from {}", primary.rankings.len(), primary.meta.source);
+
+    let mut secondaries = Vec::new();
+    for path in &cli.secondary {
+        let data = merge::load_ranking_file(path)?;
+        println!("Loaded secondary: {} prospects from {}", data.rankings.len(), data.meta.source);
+        secondaries.push(data);
+    }
+
+    let merged = merge::merge_rankings(primary, secondaries)?;
+
+    println!("\nMerge result:");
+    println!("  Total unique prospects: {}", merged.rankings.len());
+
+    if !merged.rankings.is_empty() {
+        println!("\n  Top 10:");
+        for entry in merged.rankings.iter().take(10) {
+            println!(
+                "    {}. {} {} - {} ({})",
+                entry.rank, entry.first_name, entry.last_name, entry.position, entry.school
+            );
+        }
+    }
+
+    // Ensure output directory exists
+    if let Some(parent) = std::path::Path::new(&cli.output).parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let json = serde_json::to_string_pretty(&merged)?;
+    std::fs::write(&cli.output, &json)?;
+    println!("\nWrote merged rankings to: {}", cli.output);
 
     Ok(())
 }
