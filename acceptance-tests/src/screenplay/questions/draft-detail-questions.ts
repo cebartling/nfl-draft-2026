@@ -73,3 +73,45 @@ export const CancelButtonVisible = {
     return new CancelButtonVisibleQuestion();
   },
 };
+
+class DraftProgressVisibleQuestion implements Question<boolean> {
+  async answeredBy(actor: Actor): Promise<boolean> {
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    const section = page.getByTestId('draft-progress');
+    return section.isVisible();
+  }
+}
+
+class DraftBoardVisibleQuestion implements Question<boolean> {
+  async answeredBy(actor: Actor): Promise<boolean> {
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    const section = page.getByTestId('draft-board');
+    return section.isVisible();
+  }
+}
+
+class DraftStatisticsVisibleQuestion implements Question<boolean> {
+  async answeredBy(actor: Actor): Promise<boolean> {
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    const section = page.getByTestId('draft-statistics');
+    return section.isVisible();
+  }
+}
+
+export const DraftProgressVisible = {
+  onPage(): Question<boolean> {
+    return new DraftProgressVisibleQuestion();
+  },
+};
+
+export const DraftBoardVisible = {
+  onPage(): Question<boolean> {
+    return new DraftBoardVisibleQuestion();
+  },
+};
+
+export const DraftStatisticsVisible = {
+  onPage(): Question<boolean> {
+    return new DraftStatisticsVisibleQuestion();
+  },
+};

@@ -12,6 +12,9 @@ import {
   StartButtonText,
   CancelButtonVisible,
   SelectedTeamCount,
+  DraftProgressVisible,
+  DraftBoardVisible,
+  DraftStatisticsVisible,
 } from '../src/screenplay/questions/draft-detail-questions.js';
 import { CurrentUrl } from '../src/screenplay/questions/web-questions.js';
 import { SessionStatus } from '../src/screenplay/questions/draft-questions.js';
@@ -133,6 +136,64 @@ test.describe('Draft Detail Page', () => {
     // Verify URL is /drafts
     const currentUrl = await actor.asks(CurrentUrl.value());
     expect(currentUrl).toMatch(/\/drafts$/);
+  });
+
+  test('NotStarted draft hides draft progress, board, and statistics', async ({ actor }) => {
+    // Create draft via API
+    const createTask = CreateDraftViaApi.named('E2E Hidden Sections Test').withRounds(1);
+    await actor.attemptsTo(createTask);
+    const draft = createTask.response!;
+
+    // Navigate to draft detail page
+    await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
+
+    // Wait for the page to load
+    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
+    const actorPage = actor.abilityTo(page).getPage();
+    await actorPage.waitForSelector('[data-testid="auto-pick-all"]', { timeout: 10000 });
+
+    // Verify draft progress is NOT visible
+    const progressVisible = await actor.asks(DraftProgressVisible.onPage());
+    expect(progressVisible).toBe(false);
+
+    // Verify draft board is NOT visible
+    const boardVisible = await actor.asks(DraftBoardVisible.onPage());
+    expect(boardVisible).toBe(false);
+
+    // Verify draft statistics is NOT visible
+    const statsVisible = await actor.asks(DraftStatisticsVisible.onPage());
+    expect(statsVisible).toBe(false);
+  });
+
+  test('InProgress draft shows draft progress, board, and statistics', async ({ actor }) => {
+    // Create draft + session via API
+    const createTask = CreateDraftViaApi.named('E2E Visible Sections Test').withRounds(1);
+    await actor.attemptsTo(createTask);
+    const draft = createTask.response!;
+
+    // Start a session via API
+    const startTask = StartSession.forDraft(draft.id).withTimePer(30);
+    await actor.attemptsTo(startTask);
+
+    // Navigate to draft detail page
+    await actor.attemptsTo(Navigate.to(`/drafts/${draft.id}`));
+
+    // Wait for the page to load
+    const page = (await import('../src/screenplay/abilities/browse-the-web.js')).BrowseTheWeb;
+    const actorPage = actor.abilityTo(page).getPage();
+    await actorPage.waitForSelector('[data-testid="draft-board"]', { timeout: 10000 });
+
+    // Verify draft progress is visible
+    const progressVisible = await actor.asks(DraftProgressVisible.onPage());
+    expect(progressVisible).toBe(true);
+
+    // Verify draft board is visible
+    const boardVisible = await actor.asks(DraftBoardVisible.onPage());
+    expect(boardVisible).toBe(true);
+
+    // Verify draft statistics is visible
+    const statsVisible = await actor.asks(DraftStatisticsVisible.onPage());
+    expect(statsVisible).toBe(true);
   });
 
   test('InProgress draft shows session info, not setup panel', async ({ actor }) => {

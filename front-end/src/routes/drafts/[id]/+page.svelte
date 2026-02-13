@@ -301,46 +301,52 @@
 		{/if}
 
 		<!-- Draft Progress -->
-		{#if picks.length > 0}
-			<Card>
-				<div class="space-y-2">
-					<div class="flex items-center justify-between">
-						<h2 class="text-xl font-bold text-gray-800">Draft Progress</h2>
-						<span class="text-sm text-gray-600">
-							{completedPicks} / {totalPicks} picks made
-						</span>
+		{#if draft.status !== 'NotStarted' && picks.length > 0}
+			<section data-testid="draft-progress">
+				<Card>
+					<div class="space-y-2">
+						<div class="flex items-center justify-between">
+							<h2 class="text-xl font-bold text-gray-800">Draft Progress</h2>
+							<span class="text-sm text-gray-600">
+								{completedPicks} / {totalPicks} picks made
+							</span>
+						</div>
+						<div class="w-full bg-gray-200 rounded-full h-2">
+							<div
+								class="bg-blue-600 h-2 rounded-full transition-all"
+								style={`width: ${totalPicks > 0 ? (completedPicks / totalPicks) * 100 : 0}%`}
+							></div>
+						</div>
+						{#if picks.length > 0 && completedPicks === 0}
+							<p class="text-xs text-gray-500 text-center">
+								{picks.length} picks initialized, ready to start drafting
+							</p>
+						{/if}
 					</div>
-					<div class="w-full bg-gray-200 rounded-full h-2">
-						<div
-							class="bg-blue-600 h-2 rounded-full transition-all"
-							style={`width: ${totalPicks > 0 ? (completedPicks / totalPicks) * 100 : 0}%`}
-						></div>
-					</div>
-					{#if picks.length > 0 && completedPicks === 0}
-						<p class="text-xs text-gray-500 text-center">
-							{picks.length} picks initialized, ready to start drafting
-						</p>
-					{/if}
-				</div>
-			</Card>
+				</Card>
+			</section>
 		{/if}
 
 		<!-- Draft Board -->
-		{#if picksLoading}
-			<div class="flex justify-center py-8">
-				<LoadingSpinner />
-			</div>
-		{:else if picks.length === 0}
-			<div class="text-center py-8 text-gray-600">
-				<p>No picks available for this draft.</p>
-			</div>
-		{:else}
-			<DraftBoard {picks} />
+		{#if draft.status !== 'NotStarted'}
+			<section data-testid="draft-board">
+				{#if picksLoading}
+					<div class="flex justify-center py-8">
+						<LoadingSpinner />
+					</div>
+				{:else if picks.length === 0}
+					<div class="text-center py-8 text-gray-600">
+						<p>No picks available for this draft.</p>
+					</div>
+				{:else}
+					<DraftBoard {picks} />
+				{/if}
+			</section>
 		{/if}
 
 		<!-- Draft Statistics -->
-		{#if picks.length > 0}
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		{#if draft.status !== 'NotStarted' && picks.length > 0}
+			<section data-testid="draft-statistics" class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-blue-600">
@@ -365,7 +371,7 @@
 						<div class="text-sm text-gray-600 mt-1">Picks Remaining</div>
 					</div>
 				</Card>
-			</div>
+			</section>
 		{/if}
 	{:else}
 		<div class="bg-white rounded-lg shadow p-8 text-center">
