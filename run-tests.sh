@@ -79,10 +79,17 @@ fi
 cd "$SCRIPT_DIR"
 echo ""
 
+# ── Install frontend dependencies ─────────────────────────────────
+
+echo -e "${CYAN}${BOLD}Installing frontend dependencies...${NC}"
+cd front-end
+npm ci
+echo -e "${GREEN}Frontend dependencies installed.${NC}"
+echo ""
+
 # ── Frontend type checks ───────────────────────────────────────────
 
 echo -e "${CYAN}${BOLD}Running frontend type checks...${NC}"
-cd front-end
 if npm run check 2>&1; then
     FRONTEND_CHECK=1
     FRONTEND_CHECK_RESULT="${GREEN}PASS${NC}"
