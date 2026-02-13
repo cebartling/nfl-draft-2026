@@ -12,6 +12,8 @@
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import type { Draft, DraftPick, Team } from '$lib/types';
 
+	const DEFAULT_TIME_PER_PICK = 120;
+
 	let draftId = $derived($page.params.id!);
 	let draft = $state<Draft | null>(null);
 	let picks = $state<DraftPick[]>([]);
@@ -19,7 +21,6 @@
 	let picksLoading = $state(true);
 	let error = $state<string | null>(null);
 	// Team selector state
-	let showTeamSelector = $state(false);
 	let selectedTeamIds = $state<string[]>([]);
 	let allTeams = $state<Team[]>([]);
 	let teamsLoading = $state(false);
@@ -63,6 +64,19 @@
 		} finally {
 			picksLoading = false;
 		}
+
+		// Eagerly load teams for NotStarted drafts
+		if (draft && draft.status === 'NotStarted') {
+			teamsLoading = true;
+			try {
+				allTeams = await teamsApi.list();
+			} catch (e) {
+				logger.error('Failed to load teams:', e);
+				error = error || (e instanceof Error ? e.message : 'Failed to load teams');
+			} finally {
+				teamsLoading = false;
+			}
+		}
 	});
 
 	function getStatusVariant(
@@ -82,27 +96,12 @@
 		}
 	}
 
-	async function handleShowTeamSelector() {
-		showTeamSelector = true;
-		if (allTeams.length === 0) {
-			teamsLoading = true;
-			try {
-				allTeams = await teamsApi.list();
-			} catch (e) {
-				logger.error('Failed to load teams:', e);
-				error = e instanceof Error ? e.message : 'Failed to load teams';
-			} finally {
-				teamsLoading = false;
-			}
-		}
-	}
-
 	async function handleCreateSession(controlledTeamIds: string[] = []) {
 		if (!draft) return;
 		try {
 			const session = await sessionsApi.create({
 				draft_id: draft.id,
-				time_per_pick_seconds: 120,
+				time_per_pick_seconds: DEFAULT_TIME_PER_PICK,
 				auto_pick_enabled: true,
 				chart_type: 'JimmyJohnson',
 				controlled_team_ids: controlledTeamIds
@@ -173,81 +172,35 @@
 			</button>
 		</div>
 	{:else if draft}
-		<!-- Draft Header -->
-		<div class="bg-white rounded-lg shadow p-6">
-			<div class="flex items-start justify-between mb-4">
-				<div>
-					<h1 class="text-3xl font-bold text-gray-800 mb-2">
-						{draft.name}
-					</h1>
-					<div class="flex items-center gap-2">
-						<Badge variant={getStatusVariant(draft.status)}>
-							{draft.status}
-						</Badge>
-					</div>
-				</div>
-				<div class="flex gap-2">
-					{#if draft.status === 'NotStarted'}
-						{#if !showTeamSelector}
-							<button
-								type="button"
-								onclick={handleShowTeamSelector}
-								class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
-							>
-								Start Draft
-							</button>
-						{/if}
-					{:else if draft.status === 'InProgress'}
-						<button
-							type="button"
-							onclick={async () => {
-								if (!draft) return;
-								try {
-									const session = await sessionsApi.getByDraftId(draft.id);
-									await goto(`/sessions/${session.id}`);
-								} catch (err) {
-									logger.error('Failed to find session:', err);
-									error = err instanceof Error ? err.message : 'Failed to find session';
-								}
-							}}
-							class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
-						>
-							Join Session
-						</button>
-					{/if}
-				</div>
-			</div>
-
-			<!-- Draft Details Grid -->
-			<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-				<div>
-					<div class="text-sm text-gray-600">Year</div>
-					<div class="text-lg font-semibold text-gray-800">{draft.year}</div>
-				</div>
-				<div>
-					<div class="text-sm text-gray-600">Rounds</div>
-					<div class="text-lg font-semibold text-gray-800">{draft.rounds}</div>
-				</div>
-				<div>
-					<div class="text-sm text-gray-600">Total Picks</div>
-					<div class="text-lg font-semibold text-gray-800">
-						{totalPicks}
-					</div>
-				</div>
-			</div>
-
-		</div>
-
-		<!-- Team Selector -->
-		{#if showTeamSelector}
-			<Card>
-				<div class="space-y-4">
+		{#if draft.status === 'NotStarted'}
+			<!-- Unified Setup Panel for NotStarted drafts -->
+			<div class="bg-white rounded-lg shadow p-6 space-y-6">
+				<!-- Draft Header -->
+				<div class="flex items-start justify-between">
 					<div>
-						<h2 class="text-xl font-bold text-gray-800 mb-1">Select Your Teams</h2>
-						<p class="text-sm text-gray-600">
-							Choose teams you want to manually control. Unselected teams will be managed by AI.
-						</p>
+						<h1 class="text-3xl font-bold text-gray-800 mb-2">
+							{draft.name}
+						</h1>
+						<div class="flex items-center gap-4">
+							<Badge variant={getStatusVariant(draft.status)}>
+								{draft.status}
+							</Badge>
+							<span class="text-sm text-gray-600">
+								Rounds: {draft.rounds}
+							</span>
+							<span class="text-sm text-gray-600">
+								Pick Timer: {DEFAULT_TIME_PER_PICK}s
+							</span>
+						</div>
 					</div>
+				</div>
+
+				<!-- Divider + Team Selector -->
+				<div class="border-t border-gray-200 pt-4">
+					<h2 class="text-lg font-bold text-gray-800 mb-1">Select Teams to Control</h2>
+					<p class="text-sm text-gray-600 mb-4">
+						Choose teams you want to manually control. Unselected teams will be managed by AI.
+					</p>
 
 					{#if teamsLoading}
 						<div class="flex justify-center py-8">
@@ -260,79 +213,142 @@
 							onSelectionChange={(ids) => (selectedTeamIds = ids)}
 						/>
 					{/if}
+				</div>
 
-					<div class="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-200">
-						<button
-							type="button"
-							onclick={() => handleCreateSession(selectedTeamIds)}
-							disabled={selectedTeamIds.length === 0}
-							class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
-						>
-							Start with {selectedTeamIds.length} Team{selectedTeamIds.length !== 1 ? 's' : ''}
-						</button>
-						<button
-							type="button"
-							onclick={() => handleCreateSession([])}
-							class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
-						>
-							Auto-pick All Teams
-						</button>
-						<button
-							type="button"
-							onclick={() => {
-								showTeamSelector = false;
-								selectedTeamIds = [];
-							}}
-							class="px-4 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors"
-						>
-							Cancel
-						</button>
+				<!-- Action Buttons -->
+				<div class="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-200">
+					<button
+						type="button"
+						data-testid="start-with-teams"
+						onclick={() => handleCreateSession(selectedTeamIds)}
+						disabled={selectedTeamIds.length === 0}
+						class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
+					>
+						Start with {selectedTeamIds.length} Team{selectedTeamIds.length !== 1 ? 's' : ''}
+					</button>
+					<button
+						type="button"
+						data-testid="auto-pick-all"
+						onclick={() => handleCreateSession([])}
+						class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
+					>
+						Auto-pick All Teams
+					</button>
+					<button
+						type="button"
+						data-testid="cancel-draft"
+						onclick={async () => {
+							await goto('/drafts');
+						}}
+						class="px-4 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		{:else}
+			<!-- Draft Header for non-NotStarted drafts -->
+			<div class="bg-white rounded-lg shadow p-6">
+				<div class="flex items-start justify-between mb-4">
+					<div>
+						<h1 class="text-3xl font-bold text-gray-800 mb-2">
+							{draft.name}
+						</h1>
+						<div class="flex items-center gap-2">
+							<Badge variant={getStatusVariant(draft.status)}>
+								{draft.status}
+							</Badge>
+						</div>
+					</div>
+					<div class="flex gap-2">
+						{#if draft.status === 'InProgress'}
+							<button
+								type="button"
+								onclick={async () => {
+									if (!draft) return;
+									try {
+										const session = await sessionsApi.getByDraftId(draft.id);
+										await goto(`/sessions/${session.id}`);
+									} catch (err) {
+										logger.error('Failed to find session:', err);
+										error = err instanceof Error ? err.message : 'Failed to find session';
+									}
+								}}
+								class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+							>
+								Join Session
+							</button>
+						{/if}
 					</div>
 				</div>
-			</Card>
+
+				<!-- Draft Details Grid -->
+				<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+					<div>
+						<div class="text-sm text-gray-600">Year</div>
+						<div class="text-lg font-semibold text-gray-800">{draft.year}</div>
+					</div>
+					<div>
+						<div class="text-sm text-gray-600">Rounds</div>
+						<div class="text-lg font-semibold text-gray-800">{draft.rounds}</div>
+					</div>
+					<div>
+						<div class="text-sm text-gray-600">Total Picks</div>
+						<div class="text-lg font-semibold text-gray-800">
+							{totalPicks}
+						</div>
+					</div>
+				</div>
+			</div>
 		{/if}
 
 		<!-- Draft Progress -->
-		{#if picks.length > 0}
-			<Card>
-				<div class="space-y-2">
-					<div class="flex items-center justify-between">
-						<h2 class="text-xl font-bold text-gray-800">Draft Progress</h2>
-						<span class="text-sm text-gray-600">
-							{completedPicks} / {totalPicks} picks made
-						</span>
+		{#if draft.status !== 'NotStarted' && picks.length > 0}
+			<section data-testid="draft-progress">
+				<Card>
+					<div class="space-y-2">
+						<div class="flex items-center justify-between">
+							<h2 class="text-xl font-bold text-gray-800">Draft Progress</h2>
+							<span class="text-sm text-gray-600">
+								{completedPicks} / {totalPicks} picks made
+							</span>
+						</div>
+						<div class="w-full bg-gray-200 rounded-full h-2">
+							<div
+								class="bg-blue-600 h-2 rounded-full transition-all"
+								style={`width: ${totalPicks > 0 ? (completedPicks / totalPicks) * 100 : 0}%`}
+							></div>
+						</div>
+						{#if picks.length > 0 && completedPicks === 0}
+							<p class="text-xs text-gray-500 text-center">
+								{picks.length} picks initialized, ready to start drafting
+							</p>
+						{/if}
 					</div>
-					<div class="w-full bg-gray-200 rounded-full h-2">
-						<div
-							class="bg-blue-600 h-2 rounded-full transition-all"
-							style={`width: ${totalPicks > 0 ? (completedPicks / totalPicks) * 100 : 0}%`}
-						></div>
-					</div>
-					{#if picks.length > 0 && completedPicks === 0}
-						<p class="text-xs text-gray-500 text-center">
-							{picks.length} picks initialized, ready to start drafting
-						</p>
-					{/if}
-				</div>
-			</Card>
+				</Card>
+			</section>
 		{/if}
 
 		<!-- Draft Board -->
-		{#if picksLoading}
-			<div class="flex justify-center py-8">
-				<LoadingSpinner />
-			</div>
-		{:else if picks.length === 0}
-			<div class="text-center py-8 text-gray-600">
-				<p>No picks available for this draft.</p>
-			</div>
-		{:else}
-			<DraftBoard {picks} />
+		{#if draft.status !== 'NotStarted'}
+			<section data-testid="draft-board">
+				{#if picksLoading}
+					<div class="flex justify-center py-8">
+						<LoadingSpinner />
+					</div>
+				{:else if picks.length === 0}
+					<div class="text-center py-8 text-gray-600">
+						<p>No picks available for this draft.</p>
+					</div>
+				{:else}
+					<DraftBoard {picks} />
+				{/if}
+			</section>
 		{/if}
 
 		<!-- Draft Statistics -->
-		{#if picks.length > 0}
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		{#if draft.status !== 'NotStarted' && picks.length > 0}
+			<section data-testid="draft-statistics" class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<Card>
 					<div class="text-center">
 						<div class="text-3xl font-bold text-blue-600">
@@ -357,7 +373,7 @@
 						<div class="text-sm text-gray-600 mt-1">Picks Remaining</div>
 					</div>
 				</Card>
-			</div>
+			</section>
 		{/if}
 	{:else}
 		<div class="bg-white rounded-lg shadow p-8 text-center">
