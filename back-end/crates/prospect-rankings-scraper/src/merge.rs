@@ -6,13 +6,28 @@ use crate::models::{RankingData, RankingMeta};
 
 /// Normalize a name component for deduplication matching.
 ///
-/// Strips periods, collapses whitespace, and lowercases.
+/// Strips periods, Unicode curly quotes, common suffixes (Jr, Sr, II, III, IV),
+/// collapses whitespace, and lowercases.
 fn normalize_name(name: &str) -> String {
-    name.replace('.', "")
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-        .to_lowercase()
+    let cleaned = name
+        .replace('.', "")
+        .replace('\u{2019}', "'") // right single quotation mark → ASCII apostrophe
+        .replace('\u{2018}', "'"); // left single quotation mark → ASCII apostrophe
+
+    let mut parts: Vec<&str> = cleaned.split_whitespace().collect();
+
+    // Strip common suffixes from the end
+    if let Some(last) = parts.last().copied() {
+        let last_lower = last.to_ascii_lowercase();
+        match last_lower.as_str() {
+            "jr" | "sr" | "ii" | "iii" | "iv" => {
+                parts.pop();
+            }
+            _ => {}
+        }
+    }
+
+    parts.join(" ").to_lowercase()
 }
 
 /// Build a lookup key from first and last name.
@@ -104,10 +119,25 @@ mod tests {
     #[test]
     fn test_normalize_name() {
         assert_eq!(normalize_name("C.J."), "cj");
-        assert_eq!(normalize_name("Jr."), "jr");
+        assert_eq!(normalize_name("Jr."), "");
         assert_eq!(normalize_name("Fernando"), "fernando");
         assert_eq!(normalize_name("R. Mason"), "r mason");
         assert_eq!(normalize_name("  Extra   Spaces  "), "extra spaces");
+    }
+
+    #[test]
+    fn test_normalize_name_unicode_quotes() {
+        // U+2019 right single quotation mark vs ASCII apostrophe
+        assert_eq!(normalize_name("D\u{2019}Angelo"), normalize_name("D'Angelo"));
+    }
+
+    #[test]
+    fn test_normalize_name_strips_suffixes() {
+        assert_eq!(normalize_name("Carmona Jr."), "carmona");
+        assert_eq!(normalize_name("Carmona Jr"), "carmona");
+        assert_eq!(normalize_name("Lee III"), "lee");
+        assert_eq!(normalize_name("Brazzell II"), "brazzell");
+        assert_eq!(normalize_name("Washington Sr."), "washington");
     }
 
     #[test]
@@ -230,6 +260,28 @@ mod tests {
 
         let result = merge_rankings(primary, vec![secondary]).unwrap();
         assert_eq!(result.meta.draft_year, 2026);
+    }
+
+    #[test]
+    fn test_merge_deduplicates_with_suffix_variations() {
+        let primary = RankingData {
+            meta: make_meta("primary", 2026, 2),
+            rankings: vec![
+                make_entry(1, "Fernando", "Carmona Jr.", "OT", "Arkansas"),
+                make_entry(2, "Will", "Lee III", "CB", "Texas A&M"),
+            ],
+        };
+
+        let secondary = RankingData {
+            meta: make_meta("secondary", 2026, 2),
+            rankings: vec![
+                make_entry(1, "Fernando", "Carmona", "OT", "Arkansas"),
+                make_entry(2, "Will", "Lee", "CB", "Texas A&M"),
+            ],
+        };
+
+        let result = merge_rankings(primary, vec![secondary]).unwrap();
+        assert_eq!(result.rankings.len(), 2);
     }
 
     #[test]

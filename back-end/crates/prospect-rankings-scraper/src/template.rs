@@ -4,8 +4,8 @@ use crate::models::{RankingData, RankingEntry, RankingMeta};
 /// This serves as a fallback when scraping fails and provides a starting
 /// point that can be edited manually with real prospect rankings.
 ///
-/// Contains 197 prospects sourced from Tankathon and Walter Football
-/// via the merge tool.
+/// Contains 184 prospects sourced from Tankathon and Walter Football
+/// via the merge tool, deduplicated by normalized name.
 pub fn generate_template(year: i32) -> RankingData {
     let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
 
@@ -189,25 +189,12 @@ pub fn generate_template(year: i32) -> RankingData {
         ("Trey", "Moore", "EDGE", "Texas"),
         ("Trey", "Zuhn III", "OT", "Texas A&M"),
         ("Keyron", "Crawford", "EDGE", "Auburn"),
-        ("Kayden", "Proctor", "OT", "Alabama"),
         ("Ola", "Ioane", "OG", "Penn State"),
-        ("Max", "Iheanschor", "OT", "Arizona State"),
-        ("Will", "Lee", "CB", "Texas A&M"),
-        ("Drew", "Bowry", "OT", "Boston College"),
         ("Jaylon", "Guilbeau", "CB", "Texas"),
-        ("Kobi", "Lane", "WR", "USC"),
-        ("Chris", "Brazzell", "WR", "Tennessee"),
-        ("D'Angelo", "Ponds", "CB", "Indiana"),
-        ("Nick", "Singleton", "RB", "Penn State"),
-        ("Javon", "Kilgore", "CB", "South Carolina"),
-        ("Fernando", "Carmona", "OT", "Arkansas"),
         ("Diego", "Pounds", "OT", "Ole Miss"),
-        ("Deonte", "Lawson", "LB", "Alabama"),
         ("Matthew", "Hibner", "TE", "SMU"),
-        ("Mike", "Washington", "RB", "Arkansas"),
         ("Nate", "Boerkircher", "TE", "Texas A&M"),
         ("Tanner", "Koziol", "TE", "Houston"),
-        ("Romello", "Heights", "DE", "Texas Tech"),
         ("Earnest", "Greene III", "OT", "Georgia"),
     ];
 
@@ -246,7 +233,7 @@ mod tests {
     fn test_generate_template_has_prospects() {
         let data = generate_template(2026);
         assert!(!data.rankings.is_empty());
-        assert!(data.rankings.len() >= 190);
+        assert!(data.rankings.len() >= 180);
         assert_eq!(data.meta.draft_year, 2026);
         assert_eq!(data.meta.source, "template");
         assert_eq!(data.meta.total_prospects, data.rankings.len());

@@ -143,7 +143,7 @@ pub fn validate_ranking_data(data: &RankingData) -> ScoutingReportValidationResu
     // Warn if prospect count is unusually low
     if data.rankings.len() < 100 {
         result.warnings.push(format!(
-            "Only {} prospects (recommend at least 200 for realistic scouting reports)",
+            "Only {} prospects (recommend at least 100 for realistic scouting reports)",
             data.rankings.len()
         ));
     }
