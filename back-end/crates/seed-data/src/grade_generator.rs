@@ -24,7 +24,7 @@ pub fn fnv1a_hash(data: &[u8]) -> u64 {
 /// - Rank 32 = 8.57 (first-round caliber)
 /// - Rank 100 = 6.53
 /// - Rank 200 = 3.53
-/// - Rank 217+ = 3.0 (floor)
+/// - Rank 218+ = 3.0 (floor)
 /// - Rank <= 0 is treated as "unranked" and assigned the floor grade (3.0)
 pub fn rank_to_grade(rank: i32) -> f64 {
     if rank <= 0 {
