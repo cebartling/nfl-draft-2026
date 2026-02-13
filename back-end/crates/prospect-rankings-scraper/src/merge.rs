@@ -4,15 +4,32 @@ use anyhow::Result;
 
 use crate::models::{RankingData, RankingMeta};
 
-/// Normalize a name component for deduplication matching.
+/// Clean a name component for deduplication matching.
 ///
-/// Strips periods, Unicode curly quotes, common suffixes (Jr, Sr, II, III, IV),
-/// collapses whitespace, and lowercases.
-fn normalize_name(name: &str) -> String {
+/// Strips periods, Unicode curly quotes, collapses whitespace, and lowercases.
+/// Does NOT strip suffixes — use `normalize_last_name` for that.
+fn clean_name(name: &str) -> String {
     let cleaned = name
         .replace('.', "")
         .replace('\u{2019}', "'") // right single quotation mark → ASCII apostrophe
         .replace('\u{2018}', "'"); // left single quotation mark → ASCII apostrophe
+
+    cleaned
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+/// Normalize a last name for deduplication matching.
+///
+/// Applies `clean_name` and then strips common suffixes (Jr, Sr, II, III, IV)
+/// from the end. Suffix stripping is only appropriate for last names, not first names.
+fn normalize_last_name(name: &str) -> String {
+    let cleaned = name
+        .replace('.', "")
+        .replace('\u{2019}', "'")
+        .replace('\u{2018}', "'");
 
     let mut parts: Vec<&str> = cleaned.split_whitespace().collect();
 
@@ -31,8 +48,11 @@ fn normalize_name(name: &str) -> String {
 }
 
 /// Build a lookup key from first and last name.
+///
+/// Applies punctuation/case cleanup to both names, but only strips
+/// generational suffixes (Jr, Sr, II, III, IV) from the last name.
 fn name_key(first: &str, last: &str) -> String {
-    format!("{} {}", normalize_name(first), normalize_name(last))
+    format!("{} {}", clean_name(first), normalize_last_name(last))
 }
 
 /// Merge multiple ranking files into a single combined ranking.
@@ -117,27 +137,47 @@ mod tests {
     }
 
     #[test]
-    fn test_normalize_name() {
-        assert_eq!(normalize_name("C.J."), "cj");
-        assert_eq!(normalize_name("Jr."), "");
-        assert_eq!(normalize_name("Fernando"), "fernando");
-        assert_eq!(normalize_name("R. Mason"), "r mason");
-        assert_eq!(normalize_name("  Extra   Spaces  "), "extra spaces");
+    fn test_clean_name() {
+        assert_eq!(clean_name("C.J."), "cj");
+        assert_eq!(clean_name("Fernando"), "fernando");
+        assert_eq!(clean_name("R. Mason"), "r mason");
+        assert_eq!(clean_name("  Extra   Spaces  "), "extra spaces");
     }
 
     #[test]
-    fn test_normalize_name_unicode_quotes() {
+    fn test_clean_name_preserves_suffixes() {
+        // clean_name does NOT strip suffixes — that's normalize_last_name's job
+        assert_eq!(clean_name("Jr."), "jr");
+        assert_eq!(clean_name("Lee III"), "lee iii");
+    }
+
+    #[test]
+    fn test_clean_name_unicode_quotes() {
         // U+2019 right single quotation mark vs ASCII apostrophe
-        assert_eq!(normalize_name("D\u{2019}Angelo"), normalize_name("D'Angelo"));
+        assert_eq!(clean_name("D\u{2019}Angelo"), clean_name("D'Angelo"));
+        // U+2018 left single quotation mark vs ASCII apostrophe
+        assert_eq!(clean_name("D\u{2018}Angelo"), clean_name("D'Angelo"));
     }
 
     #[test]
-    fn test_normalize_name_strips_suffixes() {
-        assert_eq!(normalize_name("Carmona Jr."), "carmona");
-        assert_eq!(normalize_name("Carmona Jr"), "carmona");
-        assert_eq!(normalize_name("Lee III"), "lee");
-        assert_eq!(normalize_name("Brazzell II"), "brazzell");
-        assert_eq!(normalize_name("Washington Sr."), "washington");
+    fn test_normalize_last_name_strips_suffixes() {
+        assert_eq!(normalize_last_name("Carmona Jr."), "carmona");
+        assert_eq!(normalize_last_name("Carmona Jr"), "carmona");
+        assert_eq!(normalize_last_name("Lee III"), "lee");
+        assert_eq!(normalize_last_name("Brazzell II"), "brazzell");
+        assert_eq!(normalize_last_name("Washington Sr."), "washington");
+        assert_eq!(normalize_last_name("Zuhn IV"), "zuhn");
+    }
+
+    #[test]
+    fn test_name_key_only_strips_suffixes_from_last_name() {
+        // A first name that happens to match a suffix should be preserved
+        let key = name_key("Jr", "Smith");
+        assert_eq!(key, "jr smith");
+
+        // But suffixes in last names are stripped
+        let key = name_key("Fernando", "Carmona Jr.");
+        assert_eq!(key, "fernando carmona");
     }
 
     #[test]
