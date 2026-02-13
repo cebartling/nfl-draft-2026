@@ -346,4 +346,107 @@ mod tests {
         let result = ClientMessage::from_json(invalid_json);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_server_message_trade_proposed_serialization() {
+        let session_id = Uuid::new_v4();
+        let trade_id = Uuid::new_v4();
+        let from_team_id = Uuid::new_v4();
+        let to_team_id = Uuid::new_v4();
+        let pick1 = Uuid::new_v4();
+        let pick2 = Uuid::new_v4();
+
+        let msg = ServerMessage::trade_proposed(
+            session_id,
+            trade_id,
+            from_team_id,
+            to_team_id,
+            "Team A".to_string(),
+            "Team B".to_string(),
+            vec![pick1],
+            vec![pick2],
+            3000,
+            2600,
+        );
+
+        let json = msg.to_json().unwrap();
+        let parsed = ServerMessage::from_json(&json).unwrap();
+
+        assert_eq!(msg, parsed);
+        assert!(json.contains("\"type\":\"trade_proposed\""));
+        assert!(json.contains("Team A"));
+        assert!(json.contains("Team B"));
+        assert!(json.contains("3000"));
+        assert!(json.contains("2600"));
+    }
+
+    #[test]
+    fn test_server_message_trade_executed_serialization() {
+        let session_id = Uuid::new_v4();
+        let trade_id = Uuid::new_v4();
+        let from_team_id = Uuid::new_v4();
+        let to_team_id = Uuid::new_v4();
+
+        let msg = ServerMessage::trade_executed(session_id, trade_id, from_team_id, to_team_id);
+
+        let json = msg.to_json().unwrap();
+        let parsed = ServerMessage::from_json(&json).unwrap();
+
+        assert_eq!(msg, parsed);
+        assert!(json.contains("\"type\":\"trade_executed\""));
+        assert!(json.contains(&trade_id.to_string()));
+    }
+
+    #[test]
+    fn test_server_message_trade_rejected_serialization() {
+        let session_id = Uuid::new_v4();
+        let trade_id = Uuid::new_v4();
+        let rejecting_team_id = Uuid::new_v4();
+
+        let msg = ServerMessage::trade_rejected(session_id, trade_id, rejecting_team_id);
+
+        let json = msg.to_json().unwrap();
+        let parsed = ServerMessage::from_json(&json).unwrap();
+
+        assert_eq!(msg, parsed);
+        assert!(json.contains("\"type\":\"trade_rejected\""));
+        assert!(json.contains(&rejecting_team_id.to_string()));
+    }
+
+    #[test]
+    fn test_client_message_propose_trade_serialization() {
+        let session_id = Uuid::new_v4();
+        let from_team_id = Uuid::new_v4();
+        let to_team_id = Uuid::new_v4();
+        let pick1 = Uuid::new_v4();
+        let pick2 = Uuid::new_v4();
+
+        let msg = ClientMessage::propose_trade(
+            session_id,
+            from_team_id,
+            to_team_id,
+            vec![pick1, pick2],
+        );
+
+        let json = msg.to_json().unwrap();
+        let parsed = ClientMessage::from_json(&json).unwrap();
+
+        assert_eq!(msg, parsed);
+        assert!(json.contains("\"type\":\"propose_trade\""));
+        assert!(json.contains(&from_team_id.to_string()));
+        assert!(json.contains(&to_team_id.to_string()));
+    }
+
+    #[test]
+    fn test_server_message_draft_status_serialization() {
+        let session_id = Uuid::new_v4();
+        let msg = ServerMessage::draft_status(session_id, "InProgress".to_string());
+
+        let json = msg.to_json().unwrap();
+        let parsed = ServerMessage::from_json(&json).unwrap();
+
+        assert_eq!(msg, parsed);
+        assert!(json.contains("\"type\":\"draft_status\""));
+        assert!(json.contains("InProgress"));
+    }
 }
