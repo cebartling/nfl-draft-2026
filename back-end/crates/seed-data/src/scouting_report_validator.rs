@@ -141,9 +141,9 @@ pub fn validate_ranking_data(data: &RankingData) -> ScoutingReportValidationResu
     }
 
     // Warn if prospect count is unusually low
-    if data.rankings.len() < 20 {
+    if data.rankings.len() < 100 {
         result.warnings.push(format!(
-            "Only {} prospects (recommend at least 50 for realistic scouting reports)",
+            "Only {} prospects (recommend at least 100 for realistic scouting reports)",
             data.rankings.len()
         ));
     }
@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn test_valid_data_passes() {
+    fn test_small_valid_data_has_no_errors() {
         let data = RankingData {
             meta: make_meta(3),
             rankings: vec![
@@ -191,6 +191,33 @@ mod tests {
         let result = validate_ranking_data(&data);
         assert!(result.valid);
         assert!(result.errors.is_empty());
+        // Low count warning is expected for < 100 prospects
+        assert!(result.warnings.iter().any(|w| w.contains("Only 3 prospects")));
+    }
+
+    #[test]
+    fn test_full_valid_data_has_no_warnings() {
+        let positions = ["QB", "RB", "WR", "TE", "OT", "OG", "DT", "EDGE", "CB", "S"];
+        let rankings: Vec<RankingEntry> = (1..=100)
+            .map(|i| {
+                make_entry(
+                    i,
+                    &format!("First{}", i),
+                    &format!("Last{}", i),
+                    positions[(i as usize - 1) % positions.len()],
+                )
+            })
+            .collect();
+
+        let data = RankingData {
+            meta: make_meta(100),
+            rankings,
+        };
+
+        let result = validate_ranking_data(&data);
+        assert!(result.valid);
+        assert!(result.errors.is_empty());
+        assert!(result.warnings.is_empty());
     }
 
     #[test]

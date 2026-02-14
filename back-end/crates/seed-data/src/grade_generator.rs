@@ -19,18 +19,19 @@ pub fn fnv1a_hash(data: &[u8]) -> u64 {
 
 /// Convert a ranking position (1-based) to a scouting grade (0.0-10.0 scale).
 ///
-/// Formula: grade = max(3.5, 9.5 - (rank - 1) * 0.04)
-/// - Rank 1 = 9.5 (elite prospect)
-/// - Rank 32 = 8.26 (first-round caliber)
-/// - Rank 100 = 5.54
-/// - Rank 150+ = 3.5 (floor)
-/// - Rank <= 0 is treated as "unranked" and assigned the floor grade (3.5)
+/// Formula: grade = max(3.0, 9.5 - (rank - 1) * 0.03)
+/// - Rank 1 = 9.50 (elite prospect)
+/// - Rank 32 = 8.57 (first-round caliber)
+/// - Rank 100 = 6.53
+/// - Rank 200 = 3.53
+/// - Rank 218+ = 3.0 (floor)
+/// - Rank <= 0 is treated as "unranked" and assigned the floor grade (3.0)
 pub fn rank_to_grade(rank: i32) -> f64 {
     if rank <= 0 {
-        return 3.5;
+        return 3.0;
     }
-    let grade = 9.5 - (rank - 1) as f64 * 0.04;
-    grade.max(3.5)
+    let grade = 9.5 - (rank - 1) as f64 * 0.03;
+    grade.max(3.0)
 }
 
 /// Generate a deterministic team-specific grade variation from a consensus grade.
@@ -111,19 +112,20 @@ mod tests {
     #[test]
     fn test_rank_to_grade_first_round() {
         let grade = rank_to_grade(32);
-        assert!((grade - 8.26).abs() < 0.01);
+        // 9.5 - 31 * 0.03 = 9.5 - 0.93 = 8.57
+        assert!((grade - 8.57).abs() < 0.01);
     }
 
     #[test]
     fn test_rank_to_grade_floor() {
-        let grade = rank_to_grade(200);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        let grade = rank_to_grade(250);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_rank_to_grade_zero_returns_floor() {
         let grade = rank_to_grade(0);
-        assert!((grade - 3.5).abs() < f64::EPSILON);
+        assert!((grade - 3.0).abs() < f64::EPSILON);
     }
 
     #[test]
