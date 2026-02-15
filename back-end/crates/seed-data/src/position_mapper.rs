@@ -19,10 +19,13 @@ pub fn map_position(source: &str) -> Result<Position> {
         "T" => (Position::OT, "OT"),
         "OG" => (Position::OG, "OG"),
         "G" => (Position::OG, "OG"),
+        "IOL" => (Position::OG, "OG"),
         "C" => (Position::C, "C"),
         "DE" => (Position::DE, "DE"),
         "EDGE" => (Position::DE, "DE"),
+        "EDGE/LB" => (Position::DE, "DE"),
         "DT" => (Position::DT, "DT"),
+        "DL" => (Position::DT, "DT"),
         "NT" => (Position::DT, "DT"),
         "LB" => (Position::LB, "LB"),
         "OLB" => (Position::LB, "LB"),
@@ -95,7 +98,10 @@ mod tests {
         assert_eq!(map_position("HB").unwrap(), Position::RB);
         assert_eq!(map_position("T").unwrap(), Position::OT);
         assert_eq!(map_position("G").unwrap(), Position::OG);
+        assert_eq!(map_position("IOL").unwrap(), Position::OG);
         assert_eq!(map_position("EDGE").unwrap(), Position::DE);
+        assert_eq!(map_position("EDGE/LB").unwrap(), Position::DE);
+        assert_eq!(map_position("DL").unwrap(), Position::DT);
         assert_eq!(map_position("NT").unwrap(), Position::DT);
         assert_eq!(map_position("OLB").unwrap(), Position::LB);
         assert_eq!(map_position("ILB").unwrap(), Position::LB);
@@ -109,7 +115,6 @@ mod tests {
         assert!(map_position("ATH").is_err());
         assert!(map_position("DB").is_err());
         assert!(map_position("OL").is_err());
-        assert!(map_position("DL").is_err());
         assert!(map_position("").is_err());
         assert!(map_position("INVALID").is_err());
     }

@@ -196,7 +196,7 @@ fn parse_full_draft_rounds(document: &Html) -> Vec<DraftOrderEntry> {
 
         let picks = parse_round_picks(&round_div);
 
-        for (pick_in_round_idx, (pick_number, team_abbr, original_team_abbr, is_comp)) in
+        for (pick_in_round_idx, (_pick_number, team_abbr, original_team_abbr, is_comp)) in
             picks.into_iter().enumerate()
         {
             // Build notes
@@ -216,7 +216,7 @@ fn parse_full_draft_rounds(document: &Html) -> Vec<DraftOrderEntry> {
 
             entries.push(DraftOrderEntry {
                 round: round_number,
-                pick_in_round: pick_number.max((pick_in_round_idx + 1) as i32),
+                pick_in_round: (pick_in_round_idx + 1) as i32,
                 overall_pick,
                 team_abbreviation: team_abbr,
                 original_team_abbreviation: original_team_abbr,
@@ -687,7 +687,8 @@ mod tests {
     #[test]
     fn test_parse_multiple_rounds() {
         let round1_rows = [make_pick_row(1, "ten"), make_pick_row(2, "cle")].join("\n");
-        let round2_rows = [make_pick_row(1, "cle"), make_pick_row(2, "ten")].join("\n");
+        // Use realistic overall pick numbers (33, 34) like Tankathon does
+        let round2_rows = [make_pick_row(33, "cle"), make_pick_row(34, "ten")].join("\n");
         let html = format!(
             "<html><body>{}{}</body></html>",
             make_round_html("1st Round", &round1_rows),
@@ -701,15 +702,18 @@ mod tests {
         // Round 1
         assert_eq!(data.draft_order[0].round, 1);
         assert_eq!(data.draft_order[0].overall_pick, 1);
+        assert_eq!(data.draft_order[0].pick_in_round, 1);
         assert_eq!(data.draft_order[1].round, 1);
         assert_eq!(data.draft_order[1].overall_pick, 2);
+        assert_eq!(data.draft_order[1].pick_in_round, 2);
 
-        // Round 2
+        // Round 2: pick_in_round must be 1-based per round, NOT overall numbers
         assert_eq!(data.draft_order[2].round, 2);
         assert_eq!(data.draft_order[2].overall_pick, 3);
         assert_eq!(data.draft_order[2].pick_in_round, 1);
         assert_eq!(data.draft_order[3].round, 2);
         assert_eq!(data.draft_order[3].overall_pick, 4);
+        assert_eq!(data.draft_order[3].pick_in_round, 2);
     }
 
     #[test]

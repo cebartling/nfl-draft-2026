@@ -366,8 +366,11 @@ async fn find_or_create_source(
         None => {
             println!("Creating new ranking source: {}", data.meta.source);
             let mut new_source = RankingSource::new(data.meta.source.clone())?;
-            if let Ok(s) = new_source.clone().with_url(data.meta.source_url.clone()) {
-                new_source = s;
+            let url = &data.meta.source_url;
+            if !url.is_empty() && url != "N/A" {
+                if let Ok(s) = new_source.clone().with_url(url.clone()) {
+                    new_source = s;
+                }
             }
             ranking_source_repo
                 .create(&new_source)
