@@ -1,0 +1,83 @@
+name: Scrape Prospect Rankings
+
+on:
+  schedule:
+    # Daily at 07:00 UTC (1:00 AM CT) — offset 1h from draft-order at 06:00
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            back-end/target
+          key: ${{ runner.os }}-cargo-rankings-scraper-${{ hashFiles('back-end/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-rankings-scraper-
+
+      - name: Build scraper
+        working-directory: back-end
+        run: cargo build --release -p prospect-rankings-scraper
+
+      - name: Scrape Tankathon
+        working-directory: back-end
+        continue-on-error: true
+        run: |
+          ./target/release/prospect-rankings-scraper \
+            --source tankathon \
+            --year 2026 \
+            --output data/rankings/tankathon_2026.json
+
+      - name: Scrape WalterFootball
+        working-directory: back-end
+        continue-on-error: true
+        run: |
+          ./target/release/prospect-rankings-scraper \
+            --source walterfootball \
+            --year 2026 \
+            --output data/rankings/walterfootball_2026.json
+
+      - name: Merge rankings
+        working-directory: back-end
+        run: |
+          ./target/release/prospect-rankings-scraper \
+            --merge \
+            --primary data/rankings/tankathon_2026.json \
+            --secondary data/rankings/walterfootball_2026.json \
+            --output data/rankings/template_2026.json
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet back-end/data/rankings/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add back-end/data/rankings/tankathon_2026.json
+          git add back-end/data/rankings/walterfootball_2026.json
+          git add back-end/data/rankings/template_2026.json
+          git commit -m "Update prospect rankings data ($(date -u +%Y-%m-%d))"
+          git push

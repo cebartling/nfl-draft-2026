@@ -3,6 +3,8 @@ mod models;
 mod scrapers;
 mod template;
 
+use std::path::Path;
+
 use anyhow::Result;
 use clap::Parser;
 
@@ -48,6 +50,55 @@ struct Cli {
     /// Secondary ranking file(s) for merge (unique prospects appended)
     #[arg(long)]
     secondary: Vec<String>,
+
+    /// Allow template fallback to overwrite existing non-template data
+    #[arg(long)]
+    allow_template_fallback: bool,
+}
+
+/// Minimal struct for reading just the meta.source field from an existing file.
+/// Uses Option<String> so it works even if the field is absent (older files).
+#[derive(serde::Deserialize)]
+struct ExistingMeta {
+    source: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct ExistingFile {
+    meta: ExistingMeta,
+}
+
+/// Check if the existing output file contains non-template (curated/scraped) data.
+/// Returns true if the file exists and its meta.source is NOT "template"
+/// (or if the source field is absent, which implies real data).
+fn existing_file_has_real_data(path: &str) -> bool {
+    let Ok(contents) = std::fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(data) = serde_json::from_str::<ExistingFile>(&contents) else {
+        // If we can't parse it, treat it as real data to be safe
+        return true;
+    };
+    data.meta.source.as_deref() != Some("template")
+}
+
+/// Check if the generated data is template-based (either explicitly requested
+/// or produced by a scraping fallback).
+fn is_template_data(data: &models::RankingData) -> bool {
+    data.meta.source == "template"
+}
+
+/// Write an RFC 3339 timestamp file alongside the output to track when
+/// rankings were last successfully scraped/generated.
+fn write_timestamp_file(output_path: &str) -> Result<()> {
+    let parent = Path::new(output_path)
+        .parent()
+        .unwrap_or_else(|| Path::new("."));
+    let timestamp_path = parent.join(".rankings_last_scraped");
+    let now = chrono::Utc::now().to_rfc3339();
+    std::fs::write(&timestamp_path, &now)?;
+    println!("Wrote timestamp to: {}", timestamp_path.display());
+    Ok(())
 }
 
 #[tokio::main]
@@ -166,6 +217,20 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Safety guard: refuse to overwrite real data with template output
+    if is_template_data(&data) && !cli.template && !cli.allow_template_fallback {
+        if existing_file_has_real_data(&cli.output) {
+            eprintln!(
+                "\nERROR: Scraping failed and would fall back to template data, but '{}' \
+                 already contains real (non-template) data.",
+                cli.output
+            );
+            eprintln!("Refusing to overwrite to protect your curated rankings.");
+            eprintln!("To overwrite anyway, pass --allow-template-fallback");
+            std::process::exit(1);
+        }
+    }
+
     println!("\nRankings summary:");
     println!("  Source: {}", data.meta.source);
     println!("  Year: {}", data.meta.draft_year);
@@ -194,6 +259,9 @@ async fn main() -> Result<()> {
     } else {
         println!("\nRankings written by browser scraper to: {}", cli.output);
     }
+
+    // Write timestamp file for staleness tracking
+    write_timestamp_file(&cli.output)?;
 
     Ok(())
 }
@@ -247,6 +315,9 @@ fn run_merge(cli: &Cli) -> Result<()> {
     let json = serde_json::to_string_pretty(&merged)?;
     std::fs::write(&cli.output, &json)?;
     println!("\nWrote merged rankings to: {}", cli.output);
+
+    // Write timestamp file for staleness tracking
+    write_timestamp_file(&cli.output)?;
 
     Ok(())
 }
