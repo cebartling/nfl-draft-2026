@@ -46,6 +46,15 @@ jobs:
             --year 2026 \
             --output data/draft_order_2026.json
 
+      - name: Validate JSON output
+        working-directory: back-end
+        run: |
+          if ! python3 -m json.tool data/draft_order_2026.json > /dev/null 2>&1; then
+            echo "ERROR: data/draft_order_2026.json is not valid JSON" >&2
+            exit 1
+          fi
+          echo "Validated: data/draft_order_2026.json"
+
       - name: Check for changes
         id: changes
         run: |

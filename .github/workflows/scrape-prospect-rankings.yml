@@ -79,6 +79,19 @@ jobs:
             exit 1
           fi
 
+      - name: Validate JSON output
+        working-directory: back-end
+        run: |
+          for f in data/rankings/tankathon_2026.json data/rankings/walterfootball_2026.json data/rankings/rankings_2026.json; do
+            if [ -f "$f" ]; then
+              if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+                echo "ERROR: $f is not valid JSON" >&2
+                exit 1
+              fi
+              echo "Validated: $f"
+            fi
+          done
+
       - name: Check for changes
         id: changes
         run: |
