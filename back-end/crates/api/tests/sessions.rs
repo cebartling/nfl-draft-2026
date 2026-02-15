@@ -1363,8 +1363,8 @@ async fn test_propose_trade_nonexistent_team() {
         "session_id": session_id,
         "from_team_id": nonexistent_team,
         "to_team_id": Uuid::new_v4(),
-        "from_team_pick_ids": [Uuid::new_v4()],
-        "to_team_pick_ids": [Uuid::new_v4()]
+        "from_team_picks": [Uuid::new_v4()],
+        "to_team_picks": [Uuid::new_v4()]
     });
 
     let response = client
