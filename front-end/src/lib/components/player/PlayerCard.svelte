@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Badge } from '$components/ui';
+	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
 	import type { AvailablePlayer } from '$types';
 
 	interface Props {
@@ -9,22 +10,6 @@
 	}
 
 	let { player, onSelect, onViewDetails }: Props = $props();
-
-	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
-		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
-		const defensePositions = ['DE', 'DT', 'LB', 'CB', 'S'];
-
-		if (offensePositions.includes(position)) return 'primary';
-		if (defensePositions.includes(position)) return 'danger';
-		return 'info';
-	}
-
-	function formatHeight(inches?: number | null): string {
-		if (!inches) return 'N/A';
-		const feet = Math.floor(inches / 12);
-		const remainingInches = inches % 12;
-		return `${feet}'${remainingInches}"`;
-	}
 
 	function getGradeColor(grade: number): string {
 		if (grade >= 80) return 'text-green-700 bg-green-100';
