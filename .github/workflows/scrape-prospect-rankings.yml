@@ -56,11 +56,23 @@ jobs:
       - name: Merge rankings
         working-directory: back-end
         run: |
-          ./target/release/prospect-rankings-scraper \
-            --merge \
-            --primary data/rankings/tankathon_2026.json \
-            --secondary data/rankings/walterfootball_2026.json \
-            --output data/rankings/rankings_2026.json
+          PRIMARY=data/rankings/tankathon_2026.json
+          SECONDARY=data/rankings/walterfootball_2026.json
+          if [ -f "$PRIMARY" ] && [ -f "$SECONDARY" ]; then
+            ./target/release/prospect-rankings-scraper \
+              --merge \
+              --primary "$PRIMARY" \
+              --secondary "$SECONDARY" \
+              --output data/rankings/rankings_2026.json
+          elif [ -f "$PRIMARY" ]; then
+            echo "Only primary source available; copying as merged output."
+            cp "$PRIMARY" data/rankings/rankings_2026.json
+          elif [ -f "$SECONDARY" ]; then
+            echo "Only secondary source available; copying as merged output."
+            cp "$SECONDARY" data/rankings/rankings_2026.json
+          else
+            echo "No ranking files produced; skipping merge."
+          fi
 
       - name: Check for changes
         id: changes
