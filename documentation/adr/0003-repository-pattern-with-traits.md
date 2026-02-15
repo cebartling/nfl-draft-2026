@@ -27,30 +27,16 @@ We will use the **Repository Pattern with Trait-Based Abstraction**.
 
 Architecture:
 
-```
-┌─────────────────────────────────────────────────────┐
-│ API Layer (crates/api)                              │
-│ - Routes, handlers, middleware                      │
-└──────────────────────┬──────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────┐
-│ Domain Layer (crates/domain)                        │
-│ - Services (business logic)                         │
-│ - Domain models                                     │
-│ - Repository traits (interfaces)                    │
-└──────────────────────┬──────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────┐
-│ Database Layer (crates/db)                          │
-│ - Repository implementations (SQLx)                 │
-│ - Database models                                   │
-│ - Mapping between domain and database models        │
-└──────────────────────┬──────────────────────────────┘
-                       │
-                       ▼
-               PostgreSQL Database
+```mermaid
+graph TD
+    API["<strong>API Layer</strong> (crates/api)<br/>Routes, handlers, middleware"]
+    Domain["<strong>Domain Layer</strong> (crates/domain)<br/>Services, domain models,<br/>repository traits"]
+    DB["<strong>Database Layer</strong> (crates/db)<br/>Repository implementations (SQLx),<br/>database models, mapping"]
+    PG[("PostgreSQL Database")]
+
+    API --> Domain
+    Domain --> DB
+    DB --> PG
 ```
 
 ## Decision Details
