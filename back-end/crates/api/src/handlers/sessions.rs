@@ -102,9 +102,10 @@ pub async fn create_session(
 
     // Check for an existing active session for this draft
     if let Some(_existing) = state.session_repo.find_by_draft_id(req.draft_id).await? {
-        return Err(domain::errors::DomainError::DuplicateEntry(
-            format!("Draft {} already has an active session", req.draft_id),
-        )
+        return Err(domain::errors::DomainError::DuplicateEntry(format!(
+            "Draft {} already has an active session",
+            req.draft_id
+        ))
         .into());
     }
 
@@ -218,7 +219,11 @@ pub async fn start_session(
     }
 
     // Atomically update both draft status and session in a single transaction
-    let draft_ref = if draft_needs_start { Some(&draft) } else { None };
+    let draft_ref = if draft_needs_start {
+        Some(&draft)
+    } else {
+        None
+    };
     let updated = state
         .session_repo
         .start_session_with_draft(&session, draft_ref)

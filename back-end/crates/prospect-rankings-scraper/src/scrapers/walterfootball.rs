@@ -10,10 +10,7 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Fetch the Walter Football big board HTML
 pub async fn fetch_html(year: i32) -> Result<String> {
-    let url = format!(
-        "https://walterfootball.com/nfldraftbigboard{}.php",
-        year
-    );
+    let url = format!("https://walterfootball.com/nfldraftbigboard{}.php", year);
 
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
@@ -96,10 +93,7 @@ pub fn parse_html(html: &str, year: i32) -> Result<RankingData> {
         meta: RankingMeta {
             version: "1.0.0".to_string(),
             source: "Walter Football".to_string(),
-            source_url: format!(
-                "https://walterfootball.com/nfldraftbigboard{}.php",
-                year
-            ),
+            source_url: format!("https://walterfootball.com/nfldraftbigboard{}.php", year),
             draft_year: year,
             scraped_at: chrono::Utc::now().format("%Y-%m-%d").to_string(),
             total_prospects: total,
@@ -123,10 +117,7 @@ fn parse_rank_number(text: &str) -> Option<i32> {
 
 /// Try to parse a combined element like "<b>1. <a>Name</a>, Pos, School.</b>"
 /// or plain text "<b>1. Name, Pos, School.</b>"
-fn try_parse_combined_element(
-    element: &scraper::ElementRef,
-    rank: i32,
-) -> Option<RankingEntry> {
+fn try_parse_combined_element(element: &scraper::ElementRef, rank: i32) -> Option<RankingEntry> {
     // First, try with an <a> tag child
     let a_selector = Selector::parse("a").unwrap();
     if let Some(anchor) = element.select(&a_selector).next() {
@@ -159,10 +150,7 @@ fn try_parse_combined_element(
 
 /// Try to parse a prospect element like "<b><a>Name</a>, Pos, School.</b>"
 /// or plain text "<b> Name, Pos, School.</b>" (no link)
-fn try_parse_prospect_element(
-    element: &scraper::ElementRef,
-    rank: i32,
-) -> Option<RankingEntry> {
+fn try_parse_prospect_element(element: &scraper::ElementRef, rank: i32) -> Option<RankingEntry> {
     // First, try with an <a> tag child
     let a_selector = Selector::parse("a").unwrap();
     if let Some(anchor) = element.select(&a_selector).next() {
@@ -201,11 +189,7 @@ fn parse_position_school(text: &str, rank: i32, full_name: &str) -> Option<Ranki
     }
 
     let raw_position = parts[0].trim().to_string();
-    let school = parts[1]
-        .trim()
-        .trim_end_matches('.')
-        .trim()
-        .to_string();
+    let school = parts[1].trim().trim_end_matches('.').trim().to_string();
 
     if raw_position.is_empty() || school.is_empty() {
         return None;

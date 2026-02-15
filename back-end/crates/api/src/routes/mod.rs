@@ -173,10 +173,7 @@ pub fn create_router(state: AppState) -> Router {
             "/admin/seed-team-seasons",
             post(handlers::seed::seed_team_seasons),
         )
-        .route(
-            "/admin/seed-rankings",
-            post(handlers::seed::seed_rankings),
-        );
+        .route("/admin/seed-rankings", post(handlers::seed::seed_rankings));
 
     // Create stateful routes
     let stateful_router = Router::new()

@@ -355,13 +355,12 @@ pub async fn seed_rankings(
 
     for (label, json) in &ranking_files {
         // Parse the embedded ranking data
-        let data =
-            seed_data::scouting_report_loader::parse_ranking_json(json).map_err(|e| {
-                ApiError::InternalError(format!(
-                    "Failed to parse embedded {} ranking data: {}",
-                    label, e
-                ))
-            })?;
+        let data = seed_data::scouting_report_loader::parse_ranking_json(json).map_err(|e| {
+            ApiError::InternalError(format!(
+                "Failed to parse embedded {} ranking data: {}",
+                label, e
+            ))
+        })?;
 
         // Validate the data
         let validation = seed_data::rankings_validator::validate_ranking_data(&data);

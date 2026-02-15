@@ -267,9 +267,10 @@ async fn main() -> Result<()> {
 }
 
 fn run_merge(cli: &Cli) -> Result<()> {
-    let primary_path = cli.primary.as_deref().ok_or_else(|| {
-        anyhow::anyhow!("--merge requires --primary <file>")
-    })?;
+    let primary_path = cli
+        .primary
+        .as_deref()
+        .ok_or_else(|| anyhow::anyhow!("--merge requires --primary <file>"))?;
 
     if cli.secondary.is_empty() {
         anyhow::bail!("--merge requires at least one --secondary <file>");
@@ -283,12 +284,20 @@ fn run_merge(cli: &Cli) -> Result<()> {
     println!("Output: {}", cli.output);
 
     let primary = merge::load_ranking_file(primary_path)?;
-    println!("\nLoaded primary: {} prospects from {}", primary.rankings.len(), primary.meta.source);
+    println!(
+        "\nLoaded primary: {} prospects from {}",
+        primary.rankings.len(),
+        primary.meta.source
+    );
 
     let mut secondaries = Vec::new();
     for path in &cli.secondary {
         let data = merge::load_ranking_file(path)?;
-        println!("Loaded secondary: {} prospects from {}", data.rankings.len(), data.meta.source);
+        println!(
+            "Loaded secondary: {} prospects from {}",
+            data.rankings.len(),
+            data.meta.source
+        );
         secondaries.push(data);
     }
 

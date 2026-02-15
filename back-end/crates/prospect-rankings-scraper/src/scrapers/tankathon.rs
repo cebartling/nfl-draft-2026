@@ -72,20 +72,14 @@ pub fn parse_html(html: &str, year: i32) -> Result<RankingData> {
     // Strategy 2: Try embedded JSON extraction (__NEXT_DATA__, __NUXT__, inline JSON)
     let entries = extract_embedded_json(html);
     if !entries.is_empty() {
-        eprintln!(
-            "Parsed {} prospects from embedded JSON data",
-            entries.len()
-        );
+        eprintln!("Parsed {} prospects from embedded JSON data", entries.len());
         return Ok(build_ranking_data(entries, year));
     }
 
     // Strategy 3: Legacy CSS selectors with text-based parsing
     let entries = parse_legacy_rows(&document);
     if !entries.is_empty() {
-        eprintln!(
-            "Parsed {} prospects using legacy selectors",
-            entries.len()
-        );
+        eprintln!("Parsed {} prospects using legacy selectors", entries.len());
         return Ok(build_ranking_data(entries, year));
     }
 

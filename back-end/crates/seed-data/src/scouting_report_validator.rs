@@ -192,7 +192,10 @@ mod tests {
         assert!(result.valid);
         assert!(result.errors.is_empty());
         // Low count warning is expected for < 100 prospects
-        assert!(result.warnings.iter().any(|w| w.contains("Only 3 prospects")));
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("Only 3 prospects")));
     }
 
     #[test]

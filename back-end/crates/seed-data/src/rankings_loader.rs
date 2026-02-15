@@ -4,8 +4,8 @@ use anyhow::Result;
 use chrono::{DateTime, NaiveDate};
 use domain::models::{Player, ProspectRanking, RankingSource};
 use domain::repositories::{
-    PlayerRepository, ProspectRankingRepository, RankingSourceRepository,
-    ScoutingReportRepository, TeamRepository,
+    PlayerRepository, ProspectRankingRepository, RankingSourceRepository, ScoutingReportRepository,
+    TeamRepository,
 };
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -135,8 +135,10 @@ pub async fn load_rankings(
         .collect();
 
     // Parse scraped_at date
-    let scraped_at = chrono::NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d")
-        .map_err(|e| anyhow::anyhow!("Invalid scraped_at date '{}': {}", data.meta.scraped_at, e))?;
+    let scraped_at =
+        chrono::NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d").map_err(|e| {
+            anyhow::anyhow!("Invalid scraped_at date '{}': {}", data.meta.scraped_at, e)
+        })?;
 
     // Track newly created players for scouting report generation
     let mut new_player_entries: Vec<(Uuid, &RankingEntry)> = Vec::new();
@@ -218,8 +220,8 @@ pub async fn load_rankings(
         };
 
         // Collect the prospect ranking for batch insert
-        let ranking = ProspectRanking::new(source.id, player_id, entry.rank, scraped_at)
-            .map_err(|e| {
+        let ranking =
+            ProspectRanking::new(source.id, player_id, entry.rank, scraped_at).map_err(|e| {
                 anyhow::anyhow!(
                     "Failed to create ranking for {} {}: {}",
                     entry.first_name,
@@ -343,10 +345,7 @@ pub async fn load_rankings(
         "  Matched {} prospects to existing players",
         stats.prospects_matched
     );
-    println!(
-        "  Inserted {} prospect rankings",
-        stats.rankings_inserted
-    );
+    println!("  Inserted {} prospect rankings", stats.rankings_inserted);
 
     Ok(stats)
 }

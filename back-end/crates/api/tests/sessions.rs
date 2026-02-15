@@ -1066,10 +1066,13 @@ async fn test_start_session_transitions_draft_to_in_progress() {
     assert_eq!(session["status"], "InProgress");
 
     // Verify both session AND draft are now InProgress in the database
-    let db_session = sqlx::query!("SELECT status FROM draft_sessions WHERE id = $1", session_id)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+    let db_session = sqlx::query!(
+        "SELECT status FROM draft_sessions WHERE id = $1",
+        session_id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
     assert_eq!(db_session.status, "InProgress");
 
     let db_draft = sqlx::query!("SELECT status FROM drafts WHERE id = $1", draft_id)
