@@ -25,7 +25,7 @@ TIMESTAMP_FILE="$RANKINGS_DIR/.rankings_last_scraped"
 
 TANKATHON_FILE="$RANKINGS_DIR/tankathon_${YEAR}.json"
 WALTERFOOTBALL_FILE="$RANKINGS_DIR/walterfootball_${YEAR}.json"
-MERGED_FILE="$RANKINGS_DIR/template_${YEAR}.json"
+MERGED_FILE="$RANKINGS_DIR/rankings_${YEAR}.json"
 
 FORCE=false
 COMMIT=false
