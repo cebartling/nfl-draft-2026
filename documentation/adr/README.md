@@ -51,11 +51,19 @@ Each ADR follows this structure:
   - In-memory per-session mutex with `try_lock()` for immediate rejection
   - Prevents concurrent mutation of draft session state
 
+- [ADR-0014: Cargo Workspace with Layered Crate Architecture](./0014-cargo-workspace-layered-crate-architecture.md)
+  - Multi-crate workspace using `crates/` directory convention
+  - Compile-time enforcement of layer boundaries between api, domain, db, and websocket
+
 ### Frontend Decisions
 
 - [ADR-0004: SvelteKit with Svelte 5 Runes](./0004-sveltekit-with-svelte-5-runes.md)
   - Choice of SvelteKit and Svelte 5 runes for frontend
   - Prioritizes bundle size, performance, and developer experience
+
+- [ADR-0013: Client-Side Consensus Ranking Computation](./0013-client-side-consensus-ranking-computation.md)
+  - Compute consensus rankings client-side from per-source rankings
+  - Avoids backend aggregation complexity, enables instant re-sorting
 
 ### Cross-Cutting Concerns
 
