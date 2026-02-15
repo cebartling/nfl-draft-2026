@@ -398,6 +398,24 @@ cargo test -p api --tests -- --test-threads=1 --nocapture
 
 Always clean up test data after tests. Use `TEST_DATABASE_URL` for backend tests to avoid polluting development database.
 
+## Feature Demos
+
+Feature demos use Playwright MCP to visually walk through new or changed UI features and capture screenshots. Screenshots are saved to `documentation/demos/` using date-stamped folders:
+
+```
+documentation/demos/
+└── YYYY-MM-DD-feature-name/
+    ├── demo-01-description.png
+    ├── demo-02-description.png
+    └── ...
+```
+
+**Naming conventions:**
+- Folder: `YYYY-MM-DD-feature-name` (e.g., `2026-02-15-prospect-rankings`)
+- Files: `demo-NN-description.png` with sequential numbering and a short description of what the screenshot shows
+
+**When saving screenshots**, always use the `filename` parameter on `browser_take_screenshot` to save directly into the date-stamped folder. Do not save screenshots to the repo root.
+
 ## Reference Documentation
 
 Detailed implementation plan with database schema, API endpoints, and phase-by-phase development guide: `documentation/plans/nfl-draft-simulator-2026.md`

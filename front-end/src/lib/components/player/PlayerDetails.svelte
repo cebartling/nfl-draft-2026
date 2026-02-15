@@ -2,6 +2,7 @@
 	import { Badge, LoadingSpinner } from '$components/ui';
 	import { playersApi, rankingsApi } from '$api';
 	import { logger } from '$lib/utils/logger';
+	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
 	import type { AvailablePlayer, ScoutingReport, CombineResults, PlayerRanking, RankingSource } from '$types';
 
 	interface Props {
@@ -22,22 +23,6 @@
 
 	// Use embedded rankings from consolidated endpoint if available
 	let hasEmbeddedRankings = $derived(player.rankings && player.rankings.length > 0);
-
-	function formatHeight(inches?: number | null): string {
-		if (!inches) return 'N/A';
-		const feet = Math.floor(inches / 12);
-		const remainingInches = inches % 12;
-		return `${feet}'${remainingInches}"`;
-	}
-
-	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
-		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
-		const defensePositions = ['DE', 'DT', 'LB', 'CB', 'S'];
-
-		if (offensePositions.includes(position)) return 'primary';
-		if (defensePositions.includes(position)) return 'danger';
-		return 'info';
-	}
 
 	function getFitGradeColor(grade: string): 'success' | 'warning' | 'danger' | 'default' {
 		switch (grade) {

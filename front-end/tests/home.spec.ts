@@ -5,14 +5,14 @@ test.describe('Home Page', () => {
 		await page.goto('/');
 
 		// Wait for page to load
-		await expect(page).toHaveTitle(/NFL Draft Simulator/i);
+		await expect(page).toHaveTitle(/NFL Draft 2026/i);
 	});
 
 	test('should display welcome message', async ({ page }) => {
 		await page.goto('/');
 
 		// Check for welcome heading
-		await expect(page.locator('h1')).toContainText(/NFL Draft Simulator/i);
+		await expect(page.locator('h1')).toContainText(/NFL Draft Simulator 2026/i);
 	});
 
 	test('should display navigation links', async ({ page }) => {

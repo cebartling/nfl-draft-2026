@@ -3,6 +3,7 @@
 	import { teamsApi } from '$api';
 	import { toastState } from '$stores';
 	import { logger } from '$lib/utils/logger';
+	import { getPositionColor } from '$lib/utils/formatters';
 	import type { TeamNeed, Position } from '$types';
 	import { PositionSchema } from '$types';
 
@@ -73,15 +74,6 @@
 		if (priority >= 8) return 'bg-red-500';
 		if (priority >= 5) return 'bg-yellow-500';
 		return 'bg-green-500';
-	}
-
-	function getPositionColor(position: string): 'primary' | 'danger' | 'info' {
-		const offensePositions = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C'];
-		const defensePositions = ['DE', 'DT', 'LB', 'CB', 'S'];
-
-		if (offensePositions.includes(position)) return 'primary';
-		if (defensePositions.includes(position)) return 'danger';
-		return 'info';
 	}
 </script>
 
