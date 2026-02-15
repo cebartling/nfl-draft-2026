@@ -4,8 +4,8 @@
     "source": "Walter Football",
     "source_url": "https://walterfootball.com/nfldraftbigboard2026.php",
     "draft_year": 2026,
-    "scraped_at": "2026-02-11",
-    "total_prospects": 92
+    "scraped_at": "2026-02-15",
+    "total_prospects": 100
   },
   "rankings": [
     {
@@ -26,7 +26,7 @@
       "rank": 3,
       "first_name": "David",
       "last_name": "Bailey",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Texas Tech"
     },
     {
@@ -61,7 +61,7 @@
       "rank": 8,
       "first_name": "Keldric",
       "last_name": "Faulk",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Auburn"
     },
     {
@@ -103,7 +103,7 @@
       "rank": 14,
       "first_name": "Zion",
       "last_name": "Young",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Missouri"
     },
     {
@@ -124,8 +124,15 @@
       "rank": 17,
       "first_name": "Rueben",
       "last_name": "Bain Jr.",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Miami"
+    },
+    {
+      "rank": 18,
+      "first_name": "Kayden",
+      "last_name": "Proctor",
+      "position": "OT",
+      "school": "Alabama"
     },
     {
       "rank": 19,
@@ -184,10 +191,17 @@
       "school": "Florida"
     },
     {
+      "rank": 27,
+      "first_name": "Max",
+      "last_name": "Iheanschor",
+      "position": "OT",
+      "school": "Arizona State"
+    },
+    {
       "rank": 28,
       "first_name": "Cashius",
       "last_name": "Howell",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Texas A&M"
     },
     {
@@ -278,7 +292,7 @@
       "rank": 41,
       "first_name": "Gabe",
       "last_name": "Jacas",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Illinois"
     },
     {
@@ -317,6 +331,13 @@
       "school": "Alabama"
     },
     {
+      "rank": 47,
+      "first_name": "Drew",
+      "last_name": "Bowry",
+      "position": "OT",
+      "school": "Boston College"
+    },
+    {
       "rank": 48,
       "first_name": "Jaylon",
       "last_name": "Guilbeau",
@@ -327,7 +348,7 @@
       "rank": 49,
       "first_name": "Akheem",
       "last_name": "Mesidor",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Miami"
     },
     {
@@ -387,6 +408,13 @@
       "school": "Pittsburgh"
     },
     {
+      "rank": 58,
+      "first_name": "Kobi",
+      "last_name": "Lane",
+      "position": "WR",
+      "school": "USC"
+    },
+    {
       "rank": 59,
       "first_name": "Chris",
       "last_name": "Brazzell",
@@ -397,7 +425,7 @@
       "rank": 60,
       "first_name": "Derrick",
       "last_name": "Moore",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Michigan"
     },
     {
@@ -416,7 +444,7 @@
     },
     {
       "rank": 63,
-      "first_name": "D\u2019Angelo",
+      "first_name": "D’Angelo",
       "last_name": "Ponds",
       "position": "CB",
       "school": "Indiana"
@@ -450,10 +478,17 @@
       "school": "Stanford"
     },
     {
+      "rank": 68,
+      "first_name": "Nick",
+      "last_name": "Singleton",
+      "position": "RB",
+      "school": "Penn State"
+    },
+    {
       "rank": 69,
       "first_name": "Dani",
       "last_name": "Dennis-Sutton",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Penn State"
     },
     {
@@ -490,6 +525,13 @@
       "last_name": "Raridon",
       "position": "TE",
       "school": "Notre Dame"
+    },
+    {
+      "rank": 75,
+      "first_name": "Javon",
+      "last_name": "Kilgore",
+      "position": "CB",
+      "school": "South Carolina"
     },
     {
       "rank": 76,
@@ -544,8 +586,15 @@
       "rank": 83,
       "first_name": "T.J.",
       "last_name": "Parker",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Clemson"
+    },
+    {
+      "rank": 84,
+      "first_name": "Deonte",
+      "last_name": "Lawson",
+      "position": "LB",
+      "school": "Alabama"
     },
     {
       "rank": 85,
@@ -558,7 +607,7 @@
       "rank": 86,
       "first_name": "Keyron",
       "last_name": "Crawford",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Auburn"
     },
     {
@@ -586,7 +635,7 @@
       "rank": 90,
       "first_name": "Tyreak",
       "last_name": "Sapp",
-      "position": "EDGE",
+      "position": "DE",
       "school": "Florida"
     },
     {
@@ -630,6 +679,13 @@
       "last_name": "Michael Gyllenborg",
       "position": "TE",
       "school": "Wyoming"
+    },
+    {
+      "rank": 97,
+      "first_name": "Romello",
+      "last_name": "Heights",
+      "position": "DE",
+      "school": "Texas Tech"
     },
     {
       "rank": 98,
