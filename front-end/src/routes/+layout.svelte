@@ -50,6 +50,13 @@
 						Players
 					</a>
 					<a
+						href="/prospects"
+						data-sveltekit-reload
+						class="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+					>
+						Prospects
+					</a>
+					<a
 						href="/teams"
 						data-sveltekit-reload
 						class="text-gray-700 hover:text-blue-600 font-medium transition-colors"
@@ -107,6 +114,14 @@
 						class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
 					>
 						Players
+					</a>
+					<a
+						href="/prospects"
+						data-sveltekit-reload
+						onclick={() => (mobileMenuOpen = false)}
+						class="block px-3 py-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+					>
+						Prospects
 					</a>
 					<a
 						href="/teams"
