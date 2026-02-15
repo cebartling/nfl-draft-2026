@@ -1,5 +1,4 @@
 mod scraper;
-#[allow(dead_code)]
 mod team_name_mapper;
 
 use std::path::Path;
@@ -9,7 +8,7 @@ use clap::Parser;
 
 #[derive(Parser)]
 #[command(name = "draft-order-scraper")]
-#[command(about = "Generate NFL draft order JSON (template-based; Tankathon scraping is WIP)")]
+#[command(about = "Scrape NFL draft order from Tankathon and generate JSON")]
 struct Cli {
     /// Draft year to scrape
     #[arg(short, long, default_value = "2026")]
@@ -112,19 +111,19 @@ async fn main() -> Result<()> {
     };
 
     // Safety guard: refuse to overwrite curated data with template output
-    if is_template_data(&data) && !cli.template && !cli.allow_template_fallback {
-        if existing_file_has_real_data(&cli.output) {
-            eprintln!(
-                "\nERROR: Scraping failed and would fall back to template data, but '{}' \
-                 already contains curated (non-template) data.",
-                cli.output
-            );
-            eprintln!(
-                "Refusing to overwrite to protect your curated draft order."
-            );
-            eprintln!("To overwrite anyway, pass --allow-template-fallback");
-            std::process::exit(1);
-        }
+    if is_template_data(&data)
+        && !cli.template
+        && !cli.allow_template_fallback
+        && existing_file_has_real_data(&cli.output)
+    {
+        eprintln!(
+            "\nERROR: Scraping failed and would fall back to template data, but '{}' \
+             already contains curated (non-template) data.",
+            cli.output
+        );
+        eprintln!("Refusing to overwrite to protect your curated draft order.");
+        eprintln!("To overwrite anyway, pass --allow-template-fallback");
+        std::process::exit(1);
     }
 
     println!("\nDraft order summary:");

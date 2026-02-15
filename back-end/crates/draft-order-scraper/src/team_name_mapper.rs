@@ -1,7 +1,28 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
+/// Overrides for SVG abbreviations that don't match our canonical abbreviations.
+static SVG_ABBR_OVERRIDES: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
+    let entries: &[(&str, &str)] = &[("wsh", "WAS"), ("jac", "JAX")];
+    entries.iter().copied().collect()
+});
+
+/// Normalize a Tankathon SVG URL slug to a canonical NFL team abbreviation.
+///
+/// Tankathon logos use URL paths like `/nfl/lv.svg`. This function takes the slug
+/// portion (e.g. `"lv"`) and returns the canonical abbreviation (e.g. `"LV"`).
+/// Special cases like `"wsh"` → `"WAS"` are handled via an override map.
+pub fn normalize_svg_abbreviation(slug: &str) -> String {
+    let lower = slug.to_lowercase();
+    if let Some(&canonical) = SVG_ABBR_OVERRIDES.get(lower.as_str()) {
+        canonical.to_string()
+    } else {
+        slug.to_uppercase()
+    }
+}
+
 /// Lazily-initialized map from lowercased Tankathon display names to NFL team abbreviations.
+#[cfg_attr(not(test), allow(dead_code))]
 static TEAM_NAME_MAP: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
     let entries: &[(&str, &str)] = &[
         ("arizona", "ARI"),
@@ -47,6 +68,7 @@ static TEAM_NAME_MAP: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::
 
 /// Resolve a display name to an NFL abbreviation.
 /// Uses case-insensitive matching. Tries exact match first, then strips parentheticals.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn resolve_team_abbreviation(display_name: &str) -> Option<&'static str> {
     let normalized = display_name.trim().to_lowercase();
 
@@ -121,5 +143,28 @@ mod tests {
         for abbr in &expected {
             assert!(values.contains(&abbr), "Missing abbreviation: {}", abbr);
         }
+    }
+
+    #[test]
+    fn test_normalize_svg_simple() {
+        assert_eq!(normalize_svg_abbreviation("lv"), "LV");
+        assert_eq!(normalize_svg_abbreviation("nyj"), "NYJ");
+        assert_eq!(normalize_svg_abbreviation("sf"), "SF");
+        assert_eq!(normalize_svg_abbreviation("kc"), "KC");
+        assert_eq!(normalize_svg_abbreviation("lar"), "LAR");
+    }
+
+    #[test]
+    fn test_normalize_svg_overrides() {
+        assert_eq!(normalize_svg_abbreviation("wsh"), "WAS");
+        assert_eq!(normalize_svg_abbreviation("WSH"), "WAS");
+        assert_eq!(normalize_svg_abbreviation("jac"), "JAX");
+        assert_eq!(normalize_svg_abbreviation("JAC"), "JAX");
+    }
+
+    #[test]
+    fn test_normalize_svg_already_uppercase() {
+        assert_eq!(normalize_svg_abbreviation("DAL"), "DAL");
+        assert_eq!(normalize_svg_abbreviation("GB"), "GB");
     }
 }
