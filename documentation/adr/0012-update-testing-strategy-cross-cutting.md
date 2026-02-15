@@ -41,21 +41,20 @@ We update the testing strategy to define three distinct acceptance/E2E testing t
 
 ### How the tiers relate
 
-```
-Tier 3: Full-Stack Acceptance (acceptance-tests/)
-  Browser → nginx → API → PostgreSQL + DB assertions
-  ┌────────────────────────────────────────────────┐
-  │                                                │
-  │  Tier 2: Frontend E2E (front-end/)             │
-  │    Browser → Vite dev server                   │
-  │    ┌─────────────────────────────────┐         │
-  │    │                                 │         │
-  │    │  Tier 1: Backend Acceptance     │         │
-  │    │    HTTP → Axum → PostgreSQL     │         │
-  │    │                                 │         │
-  │    └─────────────────────────────────┘         │
-  │                                                │
-  └────────────────────────────────────────────────┘
+```mermaid
+block-beta
+    columns 1
+    block:tier3["Tier 3: Full-Stack Acceptance (acceptance-tests/)"]
+        columns 1
+        T3["Browser → nginx → API → PostgreSQL + DB assertions"]
+        block:tier2["Tier 2: Frontend E2E (front-end/)"]
+            columns 1
+            T2["Browser → Vite dev server"]
+            block:tier1["Tier 1: Backend Acceptance"]
+                T1["HTTP → Axum → PostgreSQL"]
+            end
+        end
+    end
 ```
 
 Each tier catches different categories of bugs:

@@ -62,30 +62,26 @@ back-end/
 
 ### Dependency Graph
 
-```
-                    ┌─────────────────────┐
-                    │        api          │
-                    │  (coordination)     │
-                    └──┬────┬────┬────┬───┘
-                       │    │    │    │
-            ┌──────────┘    │    │    └──────────┐
-            ▼               ▼    ▼               ▼
-     ┌────────────┐  ┌─────────┐  ┌───────────┐
-     │  seed-data │  │   db    │  │ websocket  │
-     │ (pipeline) │  │ (SQLx)  │  │ (realtime) │
-     └──┬────┬────┘  └────┬────┘  └─────┬──────┘
-        │    │             │             │
-        │    └─────┐       │       ┌─────┘
-        │          ▼       ▼       ▼
-        │       ┌─────────────────────┐
-        └──────►│      domain         │
-                │   (foundation)      │
-                └─────────────────────┘
+```mermaid
+graph TD
+    api["<strong>api</strong><br/>(coordination)"]
+    seed["<strong>seed-data</strong><br/>(pipeline)"]
+    db["<strong>db</strong><br/>(SQLx)"]
+    ws["<strong>websocket</strong><br/>(realtime)"]
+    domain["<strong>domain</strong><br/>(foundation)"]
+    scraper1["<strong>draft-order-scraper</strong><br/>(standalone)"]
+    scraper2["<strong>prospect-rankings-scraper</strong><br/>(standalone)"]
 
-  ┌──────────────────────┐  ┌─────────────────────────────┐
-  │ draft-order-scraper  │  │ prospect-rankings-scraper   │
-  │    (standalone)      │  │        (standalone)          │
-  └──────────────────────┘  └─────────────────────────────┘
+    api --> seed
+    api --> db
+    api --> ws
+    seed --> domain
+    seed --> db
+    db --> domain
+    ws --> domain
+
+    style scraper1 fill:#f0f0f0,stroke:#999
+    style scraper2 fill:#f0f0f0,stroke:#999
 ```
 
 The `domain` crate sits at the bottom with zero local dependencies. It defines models, service logic, and repository traits. The `db` and `websocket` crates depend only on `domain`. The `api` crate coordinates everything. Standalone scrapers are fully independent.
