@@ -229,17 +229,19 @@ async fn main() -> Result<()> {
     };
 
     // Safety guard: refuse to overwrite real data with template output
-    if is_template_data(&data) && !cli.template && !cli.allow_template_fallback {
-        if existing_file_has_real_data(&cli.output) {
-            eprintln!(
-                "\nERROR: Scraping failed and would fall back to template data, but '{}' \
-                 already contains real (non-template) data.",
-                cli.output
-            );
-            eprintln!("Refusing to overwrite to protect your curated rankings.");
-            eprintln!("To overwrite anyway, pass --allow-template-fallback");
-            std::process::exit(1);
-        }
+    if is_template_data(&data)
+        && !cli.template
+        && !cli.allow_template_fallback
+        && existing_file_has_real_data(&cli.output)
+    {
+        eprintln!(
+            "\nERROR: Scraping failed and would fall back to template data, but '{}' \
+             already contains real (non-template) data.",
+            cli.output
+        );
+        eprintln!("Refusing to overwrite to protect your curated rankings.");
+        eprintln!("To overwrite anyway, pass --allow-template-fallback");
+        std::process::exit(1);
     }
 
     println!("\nRankings summary:");

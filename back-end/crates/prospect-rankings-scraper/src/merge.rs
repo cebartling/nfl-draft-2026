@@ -11,8 +11,7 @@ use crate::models::{RankingData, RankingMeta};
 fn clean_name(name: &str) -> String {
     let cleaned = name
         .replace('.', "")
-        .replace('\u{2019}', "'") // right single quotation mark → ASCII apostrophe
-        .replace('\u{2018}', "'"); // left single quotation mark → ASCII apostrophe
+        .replace(['\u{2019}', '\u{2018}'], "'");
 
     cleaned
         .split_whitespace()
@@ -28,8 +27,7 @@ fn clean_name(name: &str) -> String {
 fn normalize_last_name(name: &str) -> String {
     let cleaned = name
         .replace('.', "")
-        .replace('\u{2019}', "'")
-        .replace('\u{2018}', "'");
+        .replace(['\u{2019}', '\u{2018}'], "'");
 
     let mut parts: Vec<&str> = cleaned.split_whitespace().collect();
 
