@@ -68,7 +68,7 @@ test.describe('Prospects Page', () => {
 
 		// Get the name of the first prospect to search for
 		const firstRowName = await page.locator('tbody tr').first().locator('td').nth(1).textContent();
-		const searchTerm = firstRowName?.trim().split(' ').pop() || '';
+		const searchTerm = firstRowName?.trim().split(/\s+/).pop() || '';
 
 		if (searchTerm) {
 			// Type into search
