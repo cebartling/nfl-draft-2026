@@ -285,6 +285,14 @@ pub fn parse_tankathon_html(html: &str, year: i32) -> Result<DraftOrderData> {
             "Successfully parsed {} picks from Tankathon HTML",
             entries.len()
         );
+        // A full 7-round NFL draft has ~224 base picks + compensatory picks.
+        // Warn if the count seems suspiciously low, which may indicate partial parsing.
+        if entries.len() < 200 {
+            eprintln!(
+                "WARNING: Only {} picks parsed (expected 220+). Some rounds may not have been extracted.",
+                entries.len()
+            );
+        }
     }
 
     let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
