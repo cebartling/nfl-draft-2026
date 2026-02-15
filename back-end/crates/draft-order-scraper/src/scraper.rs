@@ -139,7 +139,13 @@ fn parse_round_picks(round_element: &ElementRef) -> Vec<(i32, String, String, bo
             Some(img) => match img.value().attr("src") {
                 Some(src) => match extract_abbr_from_svg_url(src) {
                     Some(slug) => team_name_mapper::normalize_svg_abbreviation(slug),
-                    None => continue,
+                    None => {
+                        eprintln!(
+                            "WARNING: Could not extract team abbreviation from logo URL: {}",
+                            src
+                        );
+                        continue;
+                    }
                 },
                 None => continue,
             },
