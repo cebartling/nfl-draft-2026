@@ -76,7 +76,10 @@ fn existing_file_has_real_data(path: &str) -> bool {
         return false;
     };
     let Ok(data) = serde_json::from_str::<ExistingFile>(&contents) else {
-        // If we can't parse it, treat it as real data to be safe
+        eprintln!(
+            "WARNING: Could not parse '{}' as JSON; treating as real data to be safe.",
+            path
+        );
         return true;
     };
     data.meta.source.as_deref() != Some("template")
