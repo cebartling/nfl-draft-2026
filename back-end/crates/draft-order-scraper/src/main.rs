@@ -79,6 +79,14 @@ fn write_timestamp_file(output_path: &str) -> Result<()> {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
+    // Validate output path early, before doing network I/O
+    if let Some(parent) = Path::new(&cli.output).parent() {
+        if !parent.as_os_str().is_empty() && !parent.exists() {
+            std::fs::create_dir_all(parent)?;
+            println!("Created output directory: {}", parent.display());
+        }
+    }
+
     println!("NFL Draft Order Scraper");
     println!("Year: {}", cli.year);
     println!("Output: {}", cli.output);

@@ -112,6 +112,14 @@ async fn main() -> Result<()> {
         return run_merge(&cli);
     }
 
+    // Validate output path early, before doing network I/O
+    if let Some(parent) = std::path::Path::new(&cli.output).parent() {
+        if !parent.as_os_str().is_empty() && !parent.exists() {
+            std::fs::create_dir_all(parent)?;
+            println!("Created output directory: {}", parent.display());
+        }
+    }
+
     println!("NFL Prospect Rankings Scraper");
     println!("Source: {}", cli.source);
     println!("Year: {}", cli.year);
