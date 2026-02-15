@@ -36,7 +36,7 @@ Ensure the API server and the frontend server are both running. If it's not alre
 
 ```bash
 # Adapt to the project's actual start command
-./run-app.sh
+./scripts/run-app.sh
 ```
 
 - This Shell script will start the API server and the front end server in Docker Compose. It will rebuild the OCI-compliant images if it needs to.

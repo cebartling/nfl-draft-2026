@@ -6,8 +6,8 @@ YELLOW='\033[1;33m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
 echo -e "${YELLOW}${BOLD}Stopping all containers (including tools and seed profiles)...${NC}"
 docker compose --profile tools --profile seed down -v --remove-orphans --rmi local

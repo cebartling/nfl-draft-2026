@@ -10,8 +10,8 @@ MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
 TEST_DB_URL="postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test"
 
@@ -49,7 +49,7 @@ echo ""
 # ── Recreate test database ──────────────────────────────────────────
 
 echo -e "${YELLOW}${BOLD}Recreating test database...${NC}"
-cd back-end
+cd "$REPO_ROOT/back-end"
 sqlx database drop --database-url "$TEST_DB_URL" -y 2>/dev/null || true
 sqlx database create --database-url "$TEST_DB_URL"
 sqlx migrate run --database-url "$TEST_DB_URL"
@@ -76,13 +76,13 @@ if cargo test --workspace --test '*' -- --test-threads=1 2>&1; then
 else
     BACKEND_ACCEPTANCE_RESULT="${RED}FAIL${NC}"
 fi
-cd "$SCRIPT_DIR"
+cd "$REPO_ROOT"
 echo ""
 
 # ── Install frontend dependencies ─────────────────────────────────
 
 echo -e "${CYAN}${BOLD}Installing frontend dependencies...${NC}"
-cd front-end
+cd "$REPO_ROOT/front-end"
 npm ci
 echo -e "${GREEN}Frontend dependencies installed.${NC}"
 echo ""
@@ -107,14 +107,14 @@ if npm run test 2>&1; then
 else
     FRONTEND_UNIT_RESULT="${RED}FAIL${NC}"
 fi
-cd "$SCRIPT_DIR"
+cd "$REPO_ROOT"
 echo ""
 
 # ── E2E acceptance tests (containerized) ──────────────────────────
 
 echo -e "${MAGENTA}${BOLD}Running E2E acceptance tests...${NC}"
 # Let the E2E runner manage its own container cleanup via its EXIT trap
-if KEEP_CONTAINERS=false "$SCRIPT_DIR/acceptance-tests/run-tests.sh" 2>&1; then
+if KEEP_CONTAINERS=false "$REPO_ROOT/acceptance-tests/run-tests.sh" 2>&1; then
     E2E_ACCEPTANCE=1
     E2E_ACCEPTANCE_RESULT="${GREEN}PASS${NC}"
 else
