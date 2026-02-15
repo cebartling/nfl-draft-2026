@@ -75,7 +75,8 @@ jobs:
             echo "Only secondary source available; copying as merged output."
             cp "$SECONDARY" data/rankings/rankings_2026.json
           else
-            echo "No ranking files produced; skipping merge."
+            echo "ERROR: Both scrapers failed; no ranking files produced." >&2
+            exit 1
           fi
 
       - name: Check for changes
