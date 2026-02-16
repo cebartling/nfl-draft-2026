@@ -114,7 +114,7 @@ echo ""
 
 echo -e "${MAGENTA}${BOLD}Running E2E acceptance tests...${NC}"
 # Let the E2E runner manage its own container cleanup via its EXIT trap
-if KEEP_CONTAINERS=false "$REPO_ROOT/acceptance-tests/run-tests.sh" 2>&1; then
+if KEEP_CONTAINERS=false "$REPO_ROOT/acceptance-tests/run-tests.sh" --build 2>&1; then
     E2E_ACCEPTANCE=1
     E2E_ACCEPTANCE_RESULT="${GREEN}PASS${NC}"
 else
