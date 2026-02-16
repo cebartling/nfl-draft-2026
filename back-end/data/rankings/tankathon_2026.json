@@ -4,7 +4,7 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-02-15",
+    "scraped_at": "2026-02-16",
     "total_prospects": 177
   },
   "rankings": [
@@ -13,1239 +13,1593 @@
       "first_name": "Arvell",
       "last_name": "Reese",
       "position": "LB",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 2,
       "first_name": "Rueben",
       "last_name": "Bain Jr.",
       "position": "EDGE",
-      "school": "Miami"
+      "school": "Miami",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 3,
       "first_name": "Caleb",
       "last_name": "Downs",
       "position": "S",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 4,
       "first_name": "Fernando",
       "last_name": "Mendoza",
       "position": "QB",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 5,
       "first_name": "David",
       "last_name": "Bailey",
       "position": "EDGE",
-      "school": "Texas Tech"
+      "school": "Texas Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 6,
       "first_name": "Francis",
       "last_name": "Mauigoa",
       "position": "OT",
-      "school": "Miami"
+      "school": "Miami",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 7,
       "first_name": "Carnell",
       "last_name": "Tate",
       "position": "WR",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 8,
       "first_name": "Spencer",
       "last_name": "Fano",
       "position": "OT",
-      "school": "Utah"
+      "school": "Utah",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 9,
       "first_name": "Jeremiyah",
       "last_name": "Love",
       "position": "RB",
-      "school": "Notre Dame"
+      "school": "Notre Dame",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 10,
       "first_name": "Jordyn",
       "last_name": "Tyson",
       "position": "WR",
-      "school": "Arizona State"
+      "school": "Arizona State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 11,
       "first_name": "Mansoor",
       "last_name": "Delane",
       "position": "CB",
-      "school": "LSU"
+      "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 12,
       "first_name": "Makai",
       "last_name": "Lemon",
       "position": "WR",
-      "school": "USC"
+      "school": "USC",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 13,
       "first_name": "Sonny",
       "last_name": "Styles",
       "position": "LB",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 14,
       "first_name": "Jermod",
       "last_name": "McCoy",
       "position": "CB",
-      "school": "Tennessee"
+      "school": "Tennessee",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 15,
       "first_name": "Keldric",
       "last_name": "Faulk",
       "position": "EDGE",
-      "school": "Auburn"
+      "school": "Auburn",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 16,
       "first_name": "Peter",
       "last_name": "Woods",
       "position": "DL",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 17,
       "first_name": "Kenyon",
       "last_name": "Sadiq",
       "position": "TE",
-      "school": "Oregon"
+      "school": "Oregon",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 18,
       "first_name": "Vega",
       "last_name": "Ioane",
       "position": "IOL",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 19,
       "first_name": "Denzel",
       "last_name": "Boston",
       "position": "WR",
-      "school": "Washington"
+      "school": "Washington",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 20,
       "first_name": "Cashius",
       "last_name": "Howell",
       "position": "EDGE",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 21,
       "first_name": "Avieon",
       "last_name": "Terrell",
       "position": "CB",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 22,
       "first_name": "Kadyn",
       "last_name": "Proctor",
       "position": "OT",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 23,
       "first_name": "Caleb",
       "last_name": "Lomu",
       "position": "OT",
-      "school": "Utah"
+      "school": "Utah",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 24,
       "first_name": "CJ",
       "last_name": "Allen",
       "position": "LB",
-      "school": "Georgia"
+      "school": "Georgia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 25,
       "first_name": "Kayden",
       "last_name": "McDonald",
       "position": "DL",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 26,
       "first_name": "KC",
       "last_name": "Concepcion",
       "position": "WR",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 27,
       "first_name": "Ty",
       "last_name": "Simpson",
       "position": "QB",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 28,
       "first_name": "T.J.",
       "last_name": "Parker",
       "position": "EDGE",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 29,
       "first_name": "Caleb",
       "last_name": "Banks",
       "position": "DL",
-      "school": "Florida"
+      "school": "Florida",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 30,
       "first_name": "Brandon",
       "last_name": "Cisse",
       "position": "CB",
-      "school": "South Carolina"
+      "school": "South Carolina",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 31,
       "first_name": "Akheem",
       "last_name": "Mesidor",
       "position": "EDGE",
-      "school": "Miami"
+      "school": "Miami",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 32,
       "first_name": "Monroe",
       "last_name": "Freeling",
       "position": "OT",
-      "school": "Georgia"
+      "school": "Georgia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 33,
       "first_name": "Colton",
       "last_name": "Hood",
       "position": "CB",
-      "school": "Tennessee"
+      "school": "Tennessee",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 34,
       "first_name": "Emmanuel",
       "last_name": "McNeil-Warren",
       "position": "S",
-      "school": "Toledo"
+      "school": "Toledo",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 35,
       "first_name": "Anthony",
       "last_name": "Hill Jr.",
       "position": "LB",
-      "school": "Texas"
+      "school": "Texas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 36,
       "first_name": "Emmanuel",
       "last_name": "Pregnon",
       "position": "IOL",
-      "school": "Oregon"
+      "school": "Oregon",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 37,
       "first_name": "Lee",
       "last_name": "Hunter",
       "position": "DL",
-      "school": "Texas Tech"
+      "school": "Texas Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 38,
       "first_name": "Dillon",
       "last_name": "Thieneman",
       "position": "S",
-      "school": "Oregon"
+      "school": "Oregon",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 39,
       "first_name": "Blake",
       "last_name": "Miller",
       "position": "OT",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 40,
       "first_name": "R",
       "last_name": "Mason Thomas",
       "position": "EDGE",
-      "school": "Oklahoma"
+      "school": "Oklahoma",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 41,
       "first_name": "Chris",
       "last_name": "Bell",
       "position": "WR",
-      "school": "Louisville"
+      "school": "Louisville",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 42,
       "first_name": "Christen",
       "last_name": "Miller",
       "position": "DL",
-      "school": "Georgia"
+      "school": "Georgia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 43,
       "first_name": "Zion",
       "last_name": "Young",
       "position": "EDGE",
-      "school": "Missouri"
+      "school": "Missouri",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 44,
       "first_name": "Gennings",
       "last_name": "Dunker",
       "position": "OT",
-      "school": "Iowa"
+      "school": "Iowa",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 45,
       "first_name": "Chris",
       "last_name": "Johnson",
       "position": "CB",
-      "school": "San Diego State"
+      "school": "San Diego State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 46,
       "first_name": "Zachariah",
       "last_name": "Branch",
       "position": "WR",
-      "school": "Georgia"
+      "school": "Georgia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 47,
       "first_name": "Keith",
       "last_name": "Abney II",
       "position": "CB",
-      "school": "Arizona State"
+      "school": "Arizona State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 48,
       "first_name": "D'Angelo",
       "last_name": "Ponds",
       "position": "CB",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 49,
       "first_name": "Germie",
       "last_name": "Bernard",
       "position": "WR",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 50,
       "first_name": "Max",
       "last_name": "Iheanachor",
       "position": "OT",
-      "school": "Arizona State"
+      "school": "Arizona State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 51,
       "first_name": "A.J.",
       "last_name": "Haulcy",
       "position": "S",
-      "school": "LSU"
+      "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 52,
       "first_name": "Jake",
       "last_name": "Golday",
       "position": "LB",
-      "school": "Cincinnati"
+      "school": "Cincinnati",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 53,
       "first_name": "Chris",
       "last_name": "Brazzell II",
       "position": "WR",
-      "school": "Tennessee"
+      "school": "Tennessee",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 54,
       "first_name": "Caleb",
       "last_name": "Tiernan",
       "position": "OT",
-      "school": "Northwestern"
+      "school": "Northwestern",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 55,
       "first_name": "LT",
       "last_name": "Overton",
       "position": "EDGE",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 56,
       "first_name": "Keionte",
       "last_name": "Scott",
       "position": "CB",
-      "school": "Miami"
+      "school": "Miami",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 57,
       "first_name": "Jadarian",
       "last_name": "Price",
       "position": "RB",
-      "school": "Notre Dame"
+      "school": "Notre Dame",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 58,
       "first_name": "Kamari",
       "last_name": "Ramsey",
       "position": "S",
-      "school": "USC"
+      "school": "USC",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 59,
       "first_name": "Elijah",
       "last_name": "Sarratt",
       "position": "WR",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 60,
       "first_name": "Omar",
       "last_name": "Cooper Jr.",
       "position": "WR",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 61,
       "first_name": "Connor",
       "last_name": "Lew",
       "position": "IOL",
-      "school": "Auburn"
+      "school": "Auburn",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 62,
       "first_name": "Chase",
       "last_name": "Bisontis",
       "position": "IOL",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 63,
       "first_name": "Gabe",
       "last_name": "Jacas",
       "position": "EDGE",
-      "school": "Illinois"
+      "school": "Illinois",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 64,
       "first_name": "Max",
       "last_name": "Klare",
       "position": "TE",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 65,
       "first_name": "Deontae",
       "last_name": "Lawson",
       "position": "LB",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 66,
       "first_name": "Joshua",
       "last_name": "Josephs",
       "position": "EDGE",
-      "school": "Tennessee"
+      "school": "Tennessee",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 67,
       "first_name": "Malik",
       "last_name": "Muhammad",
       "position": "CB",
-      "school": "Texas"
+      "school": "Texas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 68,
       "first_name": "Isaiah",
       "last_name": "World",
       "position": "OT",
-      "school": "Oregon"
+      "school": "Oregon",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 69,
       "first_name": "Josiah",
       "last_name": "Trotter",
       "position": "LB",
-      "school": "Missouri"
+      "school": "Missouri",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 70,
       "first_name": "Domonique",
       "last_name": "Orange",
       "position": "DL",
-      "school": "Iowa State"
+      "school": "Iowa State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 71,
       "first_name": "Ja'Kobi",
       "last_name": "Lane",
       "position": "WR",
-      "school": "USC"
+      "school": "USC",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 72,
       "first_name": "Malachi",
       "last_name": "Fields",
       "position": "WR",
-      "school": "Notre Dame"
+      "school": "Notre Dame",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 73,
       "first_name": "Jacob",
       "last_name": "Rodriguez",
       "position": "LB",
-      "school": "Texas Tech"
+      "school": "Texas Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 74,
       "first_name": "Antonio",
       "last_name": "Williams",
       "position": "WR",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 75,
       "first_name": "Eli",
       "last_name": "Stowers",
       "position": "TE",
-      "school": "Vanderbilt"
+      "school": "Vanderbilt",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 76,
       "first_name": "Derrick",
       "last_name": "Moore",
       "position": "EDGE",
-      "school": "Michigan"
+      "school": "Michigan",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 77,
       "first_name": "Romello",
       "last_name": "Height",
       "position": "EDGE",
-      "school": "Texas Tech"
+      "school": "Texas Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 78,
       "first_name": "Trinidad",
       "last_name": "Chambliss",
       "position": "QB",
-      "school": "Ole Miss"
+      "school": "Ole Miss",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 79,
       "first_name": "Julian",
       "last_name": "Neal",
       "position": "CB",
-      "school": "Arkansas"
+      "school": "Arkansas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 80,
       "first_name": "Dani",
       "last_name": "Dennis-Sutton",
       "position": "EDGE",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 81,
       "first_name": "Darrell",
       "last_name": "Jackson Jr.",
       "position": "DL",
-      "school": "Florida State"
+      "school": "Florida State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 82,
       "first_name": "Jonah",
       "last_name": "Coleman",
       "position": "RB",
-      "school": "Washington"
+      "school": "Washington",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 83,
       "first_name": "Michael",
       "last_name": "Trigg",
       "position": "TE",
-      "school": "Baylor"
+      "school": "Baylor",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 84,
       "first_name": "Jake",
       "last_name": "Slaughter",
       "position": "IOL",
-      "school": "Florida"
+      "school": "Florida",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 85,
       "first_name": "Emmett",
       "last_name": "Johnson",
       "position": "RB",
-      "school": "Nebraska"
+      "school": "Nebraska",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 86,
       "first_name": "Davison",
       "last_name": "Igbinosun",
       "position": "CB",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 87,
       "first_name": "Anthony",
       "last_name": "Lucas",
       "position": "EDGE",
-      "school": "USC"
+      "school": "USC",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 88,
       "first_name": "Genesis",
       "last_name": "Smith",
       "position": "S",
-      "school": "Arizona"
+      "school": "Arizona",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 89,
       "first_name": "Chandler",
       "last_name": "Rivers",
       "position": "CB",
-      "school": "Duke"
+      "school": "Duke",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 90,
       "first_name": "Deion",
       "last_name": "Burks",
       "position": "WR",
-      "school": "Oklahoma"
+      "school": "Oklahoma",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 91,
       "first_name": "Austin",
       "last_name": "Barber",
       "position": "OT",
-      "school": "Florida"
+      "school": "Florida",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 92,
       "first_name": "Carson",
       "last_name": "Beck",
       "position": "QB",
-      "school": "Miami"
+      "school": "Miami",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 93,
       "first_name": "Will",
       "last_name": "Lee III",
       "position": "CB",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 94,
       "first_name": "Treydan",
       "last_name": "Stukes",
       "position": "CB",
-      "school": "Arizona"
+      "school": "Arizona",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 95,
       "first_name": "Devin",
       "last_name": "Moore",
       "position": "CB",
-      "school": "Florida"
+      "school": "Florida",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 96,
       "first_name": "Taurean",
       "last_name": "York",
       "position": "LB",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 97,
       "first_name": "Nicholas",
       "last_name": "Singleton",
       "position": "RB",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 98,
       "first_name": "Jack",
       "last_name": "Endries",
       "position": "TE",
-      "school": "Texas"
+      "school": "Texas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 99,
       "first_name": "Skyler",
       "last_name": "Bell",
       "position": "WR",
-      "school": "UConn"
+      "school": "UConn",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 100,
       "first_name": "Dontay",
       "last_name": "Corleone",
       "position": "DL",
-      "school": "Cincinnati"
+      "school": "Cincinnati",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 101,
       "first_name": "Harold",
       "last_name": "Perkins Jr.",
       "position": "LB",
-      "school": "LSU"
+      "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 102,
       "first_name": "Drew",
       "last_name": "Shelton",
       "position": "OT",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 103,
       "first_name": "Kaytron",
       "last_name": "Allen",
       "position": "RB",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 104,
       "first_name": "Zakee",
       "last_name": "Wheatley",
       "position": "S",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 105,
       "first_name": "Malachi",
       "last_name": "Lawrence",
       "position": "EDGE",
-      "school": "UCF"
+      "school": "UCF",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 106,
       "first_name": "Chris",
       "last_name": "McClellan",
       "position": "DL",
-      "school": "Missouri"
+      "school": "Missouri",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 107,
       "first_name": "Brian",
       "last_name": "Parker II",
       "position": "OT",
-      "school": "Duke"
+      "school": "Duke",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 108,
       "first_name": "Daylen",
       "last_name": "Everette",
       "position": "CB",
-      "school": "Georgia"
+      "school": "Georgia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 109,
       "first_name": "Ted",
       "last_name": "Hurst",
       "position": "WR",
-      "school": "Georgia State"
+      "school": "Georgia State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 110,
       "first_name": "Lander",
       "last_name": "Barton",
       "position": "LB",
-      "school": "Utah"
+      "school": "Utah",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 111,
       "first_name": "Garrett",
       "last_name": "Nussmeier",
       "position": "QB",
-      "school": "LSU"
+      "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 112,
       "first_name": "Jaishawn",
       "last_name": "Barham",
       "position": "LB",
-      "school": "Michigan"
+      "school": "Michigan",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 113,
       "first_name": "Jude",
       "last_name": "Bowry",
       "position": "OT",
-      "school": "Boston College"
+      "school": "Boston College",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 114,
       "first_name": "Gracen",
       "last_name": "Halton",
       "position": "DL",
-      "school": "Oklahoma"
+      "school": "Oklahoma",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 115,
       "first_name": "Caden",
       "last_name": "Curry",
       "position": "EDGE",
-      "school": "Ohio State"
+      "school": "Ohio State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 116,
       "first_name": "Jalon",
       "last_name": "Kilgore",
       "position": "S",
-      "school": "South Carolina"
+      "school": "South Carolina",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 117,
       "first_name": "Dametrious",
       "last_name": "Crownover",
       "position": "OT",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 118,
       "first_name": "Mikail",
       "last_name": "Kamara",
       "position": "EDGE",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 119,
       "first_name": "Bud",
       "last_name": "Clark",
       "position": "S",
-      "school": "TCU"
+      "school": "TCU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 120,
       "first_name": "CJ",
       "last_name": "Daniels",
       "position": "WR",
-      "school": "Miami"
+      "school": "Miami",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 121,
       "first_name": "Sam",
       "last_name": "Hecht",
       "position": "IOL",
-      "school": "Kansas State"
+      "school": "Kansas State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 122,
       "first_name": "Justin",
       "last_name": "Joly",
       "position": "TE",
-      "school": "NC State"
+      "school": "NC State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 123,
       "first_name": "Keylan",
       "last_name": "Rutledge",
       "position": "IOL",
-      "school": "Georgia Tech"
+      "school": "Georgia Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 124,
       "first_name": "Michael",
       "last_name": "Taaffe",
       "position": "S",
-      "school": "Texas"
+      "school": "Texas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 125,
       "first_name": "Ar'maj",
       "last_name": "Reed-Adams",
       "position": "IOL",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 126,
       "first_name": "Kyle",
       "last_name": "Louis",
       "position": "LB",
-      "school": "Pittsburgh"
+      "school": "Pittsburgh",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 127,
       "first_name": "Zane",
       "last_name": "Durant",
       "position": "DL",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 128,
       "first_name": "Tyreak",
       "last_name": "Sapp",
       "position": "EDGE",
-      "school": "Florida"
+      "school": "Florida",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 129,
       "first_name": "Eli",
       "last_name": "Raridon",
       "position": "TE",
-      "school": "Notre Dame"
+      "school": "Notre Dame",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 130,
       "first_name": "Demond",
       "last_name": "Claiborne",
       "position": "RB",
-      "school": "Wake Forest"
+      "school": "Wake Forest",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 131,
       "first_name": "Tim",
       "last_name": "Keenan III",
       "position": "DL",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 132,
       "first_name": "Drew",
       "last_name": "Allar",
       "position": "QB",
-      "school": "Penn State"
+      "school": "Penn State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 133,
       "first_name": "Sam",
       "last_name": "Roush",
       "position": "TE",
-      "school": "Stanford"
+      "school": "Stanford",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 134,
       "first_name": "Louis",
       "last_name": "Moore",
       "position": "S",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 135,
       "first_name": "Fernando",
       "last_name": "Carmona Jr.",
       "position": "OT",
-      "school": "Arkansas"
+      "school": "Arkansas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 136,
       "first_name": "Aamil",
       "last_name": "Wagner",
       "position": "OT",
-      "school": "Notre Dame"
+      "school": "Notre Dame",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 137,
       "first_name": "Oscar",
       "last_name": "Delp",
       "position": "TE",
-      "school": "Georgia"
+      "school": "Georgia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 138,
       "first_name": "Xavier",
       "last_name": "Scott",
       "position": "CB",
-      "school": "Illinois"
+      "school": "Illinois",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 139,
       "first_name": "Mike",
       "last_name": "Washington Jr.",
       "position": "RB",
-      "school": "Arkansas"
+      "school": "Arkansas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 140,
       "first_name": "Tacario",
       "last_name": "Davis",
       "position": "CB",
-      "school": "Washington"
+      "school": "Washington",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 141,
       "first_name": "Joe",
       "last_name": "Royer",
       "position": "TE",
-      "school": "Cincinnati"
+      "school": "Cincinnati",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 142,
       "first_name": "Skyler",
       "last_name": "Gill-Howard",
       "position": "DL",
-      "school": "Texas Tech"
+      "school": "Texas Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 143,
       "first_name": "Bryce",
       "last_name": "Lance",
       "position": "WR",
-      "school": "North Dakota State"
+      "school": "North Dakota State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 144,
       "first_name": "Parker",
       "last_name": "Brailsford",
       "position": "IOL",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 145,
       "first_name": "Logan",
       "last_name": "Jones",
       "position": "IOL",
-      "school": "Iowa"
+      "school": "Iowa",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 146,
       "first_name": "Cade",
       "last_name": "Klubnik",
       "position": "QB",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 147,
       "first_name": "Beau",
       "last_name": "Stephens",
       "position": "IOL",
-      "school": "Iowa"
+      "school": "Iowa",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 148,
       "first_name": "Brenen",
       "last_name": "Thompson",
       "position": "WR",
-      "school": "Mississippi State"
+      "school": "Mississippi State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 149,
       "first_name": "Albert",
       "last_name": "Regis",
       "position": "DL",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 150,
       "first_name": "Hezekiah",
       "last_name": "Masses",
       "position": "CB",
-      "school": "California"
+      "school": "California",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 151,
       "first_name": "J.C.",
       "last_name": "Davis",
       "position": "OT",
-      "school": "Illinois"
+      "school": "Illinois",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 152,
       "first_name": "Kevin",
       "last_name": "Coleman Jr.",
       "position": "WR",
-      "school": "Missouri"
+      "school": "Missouri",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 153,
       "first_name": "Domani",
       "last_name": "Jackson",
       "position": "CB",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 154,
       "first_name": "DJ",
       "last_name": "Campbell",
       "position": "IOL",
-      "school": "Texas"
+      "school": "Texas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 155,
       "first_name": "Rayshaun",
       "last_name": "Benny",
       "position": "DL",
-      "school": "Michigan"
+      "school": "Michigan",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 156,
       "first_name": "Dallen",
       "last_name": "Bentley",
       "position": "TE",
-      "school": "Utah"
+      "school": "Utah",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 157,
       "first_name": "Eric",
       "last_name": "Rivers",
       "position": "WR",
-      "school": "Georgia Tech"
+      "school": "Georgia Tech",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 158,
       "first_name": "Josh",
       "last_name": "Cameron",
       "position": "WR",
-      "school": "Baylor"
+      "school": "Baylor",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 159,
       "first_name": "Zxavian",
       "last_name": "Harris",
       "position": "DL",
-      "school": "Ole Miss"
+      "school": "Ole Miss",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 160,
       "first_name": "Jaeden",
       "last_name": "Roberts",
       "position": "IOL",
-      "school": "Alabama"
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 161,
       "first_name": "Kage",
       "last_name": "Casey",
       "position": "OT",
-      "school": "Boise State"
+      "school": "Boise State",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 162,
       "first_name": "Aaron",
       "last_name": "Anderson",
       "position": "WR",
-      "school": "LSU"
+      "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 163,
       "first_name": "Aiden",
       "last_name": "Fisher",
       "position": "LB",
-      "school": "Indiana"
+      "school": "Indiana",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 164,
       "first_name": "Eric",
       "last_name": "McAlister",
       "position": "WR",
-      "school": "TCU"
+      "school": "TCU",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 165,
       "first_name": "John",
       "last_name": "Michael Gyllenborg",
       "position": "TE",
-      "school": "Wyoming"
+      "school": "Wyoming",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 166,
       "first_name": "TJ",
       "last_name": "Hall",
       "position": "CB",
-      "school": "Iowa"
+      "school": "Iowa",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 167,
       "first_name": "J'Mari",
       "last_name": "Taylor",
       "position": "RB",
-      "school": "Virginia"
+      "school": "Virginia",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 168,
       "first_name": "DeMonte",
       "last_name": "Capehart",
       "position": "DL",
-      "school": "Clemson"
+      "school": "Clemson",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 169,
       "first_name": "Sawyer",
       "last_name": "Robertson",
       "position": "QB",
-      "school": "Baylor"
+      "school": "Baylor",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 170,
       "first_name": "Max",
       "last_name": "Llewellyn",
       "position": "EDGE",
-      "school": "Iowa"
+      "school": "Iowa",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 171,
       "first_name": "Thaddeus",
       "last_name": "Dixon",
       "position": "CB",
-      "school": "North Carolina"
+      "school": "North Carolina",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 172,
       "first_name": "Marlin",
       "last_name": "Klein",
       "position": "TE",
-      "school": "Michigan"
+      "school": "Michigan",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 173,
       "first_name": "Dae'Quan",
       "last_name": "Wright",
       "position": "TE",
-      "school": "Ole Miss"
+      "school": "Ole Miss",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 174,
       "first_name": "Bishop",
       "last_name": "Fitzgerald",
       "position": "S",
-      "school": "USC"
+      "school": "USC",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 175,
       "first_name": "Trey",
       "last_name": "Moore",
       "position": "EDGE/LB",
-      "school": "Texas"
+      "school": "Texas",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 176,
       "first_name": "Trey",
       "last_name": "Zuhn III",
       "position": "OT",
-      "school": "Texas A&M"
+      "school": "Texas A&M",
+      "height_inches": null,
+      "weight_pounds": null
     },
     {
       "rank": 177,
       "first_name": "Keyron",
       "last_name": "Crawford",
       "position": "EDGE",
-      "school": "Auburn"
+      "school": "Auburn",
+      "height_inches": null,
+      "weight_pounds": null
     }
   ]
 }
