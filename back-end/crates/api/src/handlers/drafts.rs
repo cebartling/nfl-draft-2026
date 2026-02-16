@@ -408,8 +408,7 @@ pub async fn get_available_players(
     let rankings_fut = state.prospect_ranking_repo.find_all_with_source();
     let sources_fut = state.ranking_source_repo.find_all();
 
-    let (all_players, all_rankings, sources, scouting_map) = if let Some(team_id) = params.team_id
-    {
+    let (all_players, all_rankings, sources, scouting_map) = if let Some(team_id) = params.team_id {
         let scouting_fut = state.scouting_report_repo.find_by_team_id(team_id);
         let (players_res, rankings_res, sources_res, scouting_res) =
             tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut);
@@ -421,12 +420,7 @@ pub async fn get_available_players(
     } else {
         let (players_res, rankings_res, sources_res) =
             tokio::join!(players_fut, rankings_fut, sources_fut);
-        (
-            players_res?,
-            rankings_res?,
-            sources_res?,
-            HashMap::new(),
-        )
+        (players_res?, rankings_res?, sources_res?, HashMap::new())
     };
 
     // 3. Filter out already-picked players

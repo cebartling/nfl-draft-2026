@@ -605,9 +605,7 @@ mod tests {
             .expect_find_by_draft_id()
             .with(eq(draft_id))
             .returning(|_| Ok(vec![])); // No existing picks
-        pick_repo
-            .expect_update()
-            .returning(|p| Ok(p.clone()));
+        pick_repo.expect_update().returning(|p| Ok(p.clone()));
 
         let mut draft_repo = MockDraftRepo::new();
         draft_repo

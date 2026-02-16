@@ -1,11 +1,9 @@
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use scraper::{Html, Selector};
+use scraper::{ElementRef, Html, Selector};
 use serde::{Deserialize, Serialize};
 
-// Used when parsing actual Tankathon HTML
-#[allow(unused_imports)]
 use crate::team_name_mapper;
 
 /// HTTP request timeout for scraping operations
@@ -73,75 +71,253 @@ pub async fn fetch_tankathon_html(year: i32) -> Result<String> {
         .with_context(|| "Failed to read response body")
 }
 
-/// Attempt to parse Tankathon HTML to extract draft order entries.
+/// Parse a round title like "1st Round", "2nd Round", "3rd Round", "4th Round" into a number.
+fn parse_round_number(text: &str) -> Option<i32> {
+    let trimmed = text.trim().to_lowercase();
+    // Extract leading digits from ordinal text like "1st", "2nd", "3rd", "4th"
+    let digits: String = trimmed.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
+}
+
+/// Extract the team abbreviation slug from a Tankathon SVG logo URL.
 ///
-/// NOTE: This parser is currently incomplete. Tankathon's HTML structure has not been
-/// reverse-engineered yet, so this function performs CSS selector diagnostics but always
-/// returns an empty draft order. The caller should fall back to `generate_template_draft_order()`
-/// when the result is empty.
-pub fn parse_tankathon_html(html: &str, year: i32) -> Result<DraftOrderData> {
-    let document = Html::parse_document(html);
-    let entries = Vec::new();
+/// Expected URL patterns:
+/// - `/img/nfl/lv.svg` → `"lv"`
+/// - `https://www.tankathon.com/img/nfl/atl.svg` → `"atl"`
+fn extract_abbr_from_svg_url(src: &str) -> Option<&str> {
+    // Find the last path segment and strip the .svg extension
+    let filename = src.rsplit('/').next()?;
+    filename.strip_suffix(".svg")
+}
 
-    // Tankathon uses div-based pick rows. Try multiple selector strategies.
-    let pick_selectors = [
-        "div.pick-row",
-        "tr.pick-row",
-        "div[class*='pick']",
-        "table.draft-board tr",
-    ];
+/// Parse all `<tr>` rows within a single round container element.
+///
+/// Returns a vec of `(pick_number, team_abbr, original_team_abbr, is_compensatory)`.
+fn parse_round_picks(round_element: &ElementRef) -> Vec<(i32, String, String, bool)> {
+    let row_sel = Selector::parse("table > tbody > tr").unwrap();
+    let pick_num_sel = Selector::parse("td.pick-number").unwrap();
+    let team_logo_sel = Selector::parse("td div.team-link img.logo-thumb").unwrap();
+    let trade_logo_sel = Selector::parse("td div.trade img.logo-thumb").unwrap();
 
-    let mut found_picks = false;
+    let mut picks = Vec::new();
 
-    for selector_str in &pick_selectors {
-        if let Ok(selector) = Selector::parse(selector_str) {
-            let elements: Vec<_> = document.select(&selector).collect();
-            if !elements.is_empty() {
-                eprintln!(
-                    "Found {} elements with selector '{}'",
-                    elements.len(),
-                    selector_str
-                );
-                found_picks = true;
-
-                for element in &elements {
-                    let text: String = element.text().collect::<Vec<_>>().join(" ");
-                    let text = text.trim().to_string();
-                    if !text.is_empty() {
-                        eprintln!("  Row text: {}", &text[..text.len().min(120)]);
+    for row in round_element.select(&row_sel) {
+        // Extract pick number (take only leading digits since comp picks have extra text)
+        let pick_number = match row.select(&pick_num_sel).next() {
+            Some(td) => {
+                let text: String = td.text().collect::<Vec<_>>().join("");
+                let trimmed = text.trim().to_string();
+                let digits: String = trimmed
+                    .chars()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect();
+                match digits.parse::<i32>() {
+                    Ok(n) if n > 0 => n,
+                    Ok(n) => {
+                        eprintln!(
+                            "WARNING: Invalid pick number {} in row text '{}'",
+                            n, trimmed
+                        );
+                        continue;
+                    }
+                    Err(_) => {
+                        eprintln!(
+                            "WARNING: Could not parse pick number from row text '{}'",
+                            trimmed
+                        );
+                        continue;
                     }
                 }
-                break;
             }
+            None => continue,
+        };
+
+        // Check if compensatory: span.primary with data-balloon containing "Compensatory"
+        let is_compensatory = row
+            .select(&pick_num_sel)
+            .next()
+            .map(|td| {
+                let comp_sel = Selector::parse("span.primary[data-balloon]").unwrap();
+                td.select(&comp_sel).any(|span| {
+                    span.value()
+                        .attr("data-balloon")
+                        .map(|v| v.to_lowercase().contains("compensatory"))
+                        .unwrap_or(false)
+                })
+            })
+            .unwrap_or(false);
+
+        // Extract team abbreviation from logo URL
+        let team_abbr = match row.select(&team_logo_sel).next() {
+            Some(img) => match img.value().attr("src") {
+                Some(src) => match extract_abbr_from_svg_url(src) {
+                    Some(slug) => team_name_mapper::normalize_svg_abbreviation(slug),
+                    None => {
+                        eprintln!(
+                            "WARNING: Could not extract team abbreviation from logo URL '{}' for pick {}",
+                            src, pick_number
+                        );
+                        continue;
+                    }
+                },
+                None => {
+                    eprintln!(
+                        "WARNING: Team logo missing src attribute for pick {}",
+                        pick_number
+                    );
+                    continue;
+                }
+            },
+            None => {
+                eprintln!(
+                    "WARNING: No team logo found for pick {}",
+                    pick_number
+                );
+                continue;
+            }
+        };
+
+        // Extract original team from trade div (if present), otherwise same as team
+        let original_team_abbr = row
+            .select(&trade_logo_sel)
+            .next()
+            .and_then(|img| img.value().attr("src"))
+            .and_then(extract_abbr_from_svg_url)
+            .map(team_name_mapper::normalize_svg_abbreviation)
+            .unwrap_or_else(|| team_abbr.clone());
+
+        picks.push((pick_number, team_abbr, original_team_abbr, is_compensatory));
+    }
+
+    picks
+}
+
+/// Parse all round containers from the Tankathon full draft page and build `DraftOrderEntry` items.
+fn parse_full_draft_rounds(document: &Html) -> Vec<DraftOrderEntry> {
+    let round_sel = Selector::parse("div.full-draft-round").unwrap();
+    let title_sel = Selector::parse("div.round-title").unwrap();
+
+    let mut entries = Vec::new();
+    let mut overall_pick = 1;
+
+    for round_div in document.select(&round_sel) {
+        // Extract round number from title
+        let round_number = match round_div.select(&title_sel).next() {
+            Some(title_el) => {
+                let text: String = title_el.text().collect();
+                match parse_round_number(&text) {
+                    Some(n) => n,
+                    None => {
+                        eprintln!("Could not parse round number from: {:?}", text.trim());
+                        continue;
+                    }
+                }
+            }
+            None => {
+                eprintln!("Round container missing round-title div");
+                continue;
+            }
+        };
+
+        let picks = parse_round_picks(&round_div);
+
+        for (pick_in_round_idx, (_pick_number, team_abbr, original_team_abbr, is_comp)) in
+            picks.into_iter().enumerate()
+        {
+            // Build notes
+            let is_traded = team_abbr != original_team_abbr;
+            let mut notes_parts = Vec::new();
+            if is_traded {
+                notes_parts.push(format!("From {}", original_team_abbr));
+            }
+            if is_comp {
+                notes_parts.push("Compensatory pick".to_string());
+            }
+            let notes = if notes_parts.is_empty() {
+                None
+            } else {
+                Some(notes_parts.join("; "))
+            };
+
+            entries.push(DraftOrderEntry {
+                round: round_number,
+                pick_in_round: (pick_in_round_idx + 1) as i32,
+                overall_pick,
+                team_abbreviation: team_abbr,
+                original_team_abbreviation: original_team_abbr,
+                is_compensatory: is_comp,
+                notes,
+            });
+            overall_pick += 1;
         }
     }
 
-    if !found_picks {
-        // Fallback: try to extract any useful data from the page
-        // Look for numbered pick patterns in the text
-        eprintln!(
-            "No pick rows found with standard selectors. Attempting text-based extraction..."
-        );
+    entries
+}
 
-        // Try to find all links or spans that look like team names
-        if let Ok(selector) = Selector::parse("a, span, td, div") {
-            let all_text: String = document
-                .select(&selector)
-                .flat_map(|el| el.text())
-                .collect::<Vec<_>>()
-                .join("\n");
+/// Log diagnostic info about the HTML structure when parsing fails.
+fn log_diagnostic_info(document: &Html) {
+    eprintln!("WARNING: Could not extract draft picks from Tankathon HTML.");
+    eprintln!("The site structure may have changed. Dumping diagnostic info...");
 
-            // Log a sample for debugging
-            let sample = &all_text[..all_text.len().min(2000)];
-            eprintln!("Page text sample:\n{}", sample);
+    let diagnostic_selectors = [
+        ("div.full-draft-round", "round containers"),
+        ("div.round-title", "round titles"),
+        ("td.pick-number", "pick number cells"),
+        ("img.logo-thumb", "team logos"),
+        ("div.trade", "trade indicators"),
+    ];
+
+    for (sel_str, label) in &diagnostic_selectors {
+        if let Ok(sel) = Selector::parse(sel_str) {
+            let count = document.select(&sel).count();
+            eprintln!("  {}: {} found", label, count);
         }
     }
 
-    // If scraping didn't produce results, return empty data with a note
+    // Dump a text sample for debugging
+    if let Ok(sel) = Selector::parse("body") {
+        if let Some(body) = document.select(&sel).next() {
+            let text: String = body.text().collect::<Vec<_>>().join(" ");
+            let sample = &text[..text.len().min(1000)];
+            eprintln!("  Body text sample: {}", sample);
+        }
+    }
+
+    eprintln!("Consider using the generated template and editing it manually.");
+}
+
+/// Parse Tankathon HTML to extract draft order entries.
+///
+/// Parses the full draft page structure:
+/// - `div.full-draft-round` containers (one per round)
+/// - `div.round-title` for round numbers
+/// - `table > tbody > tr` rows for individual picks
+/// - Team abbreviations extracted from SVG logo URLs
+/// - Trade info from `div.trade` elements
+/// - Compensatory picks from `span.primary[data-balloon]` attributes
+///
+/// Returns empty draft_order if the HTML structure doesn't match, allowing the
+/// caller to fall back to `generate_template_draft_order()`.
+pub fn parse_tankathon_html(html: &str, year: i32) -> Result<DraftOrderData> {
+    let document = Html::parse_document(html);
+    let entries = parse_full_draft_rounds(&document);
+
     if entries.is_empty() {
-        eprintln!("WARNING: Could not extract draft picks from Tankathon HTML.");
-        eprintln!("The site structure may have changed. The output file will need manual editing.");
-        eprintln!("Consider using the generated template and editing it manually.");
+        log_diagnostic_info(&document);
+    } else {
+        eprintln!(
+            "Successfully parsed {} picks from Tankathon HTML",
+            entries.len()
+        );
+        // A full 7-round NFL draft has ~224 base picks + compensatory picks.
+        // Warn if the count seems suspiciously low, which may indicate partial parsing.
+        if entries.len() < 200 {
+            eprintln!(
+                "WARNING: Only {} picks parsed (expected 220+). Some rounds may not have been extracted.",
+                entries.len()
+            );
+        }
     }
 
     let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
@@ -151,12 +327,18 @@ pub fn parse_tankathon_html(html: &str, year: i32) -> Result<DraftOrderData> {
         .max()
         .unwrap_or(7);
 
+    let source = if entries.is_empty() {
+        "template"
+    } else {
+        "tankathon"
+    };
+
     let data = DraftOrderData {
         meta: DraftOrderMeta {
             version: "1.0.0".to_string(),
             last_updated: today,
             sources: vec!["Tankathon.com".to_string()],
-            source: "tankathon".to_string(),
+            source: source.to_string(),
             draft_year: year,
             total_rounds: max_round,
             total_picks: entries.len(),
@@ -354,5 +536,241 @@ mod tests {
                 entry.original_team_abbreviation
             );
         }
+    }
+
+    // --- Helper function tests ---
+
+    #[test]
+    fn test_parse_round_number() {
+        assert_eq!(parse_round_number("1st Round"), Some(1));
+        assert_eq!(parse_round_number("2nd Round"), Some(2));
+        assert_eq!(parse_round_number("3rd Round"), Some(3));
+        assert_eq!(parse_round_number("4th Round"), Some(4));
+        assert_eq!(parse_round_number("7th Round"), Some(7));
+        assert_eq!(parse_round_number("  1st Round  "), Some(1));
+        assert_eq!(parse_round_number("No number here"), None);
+        assert_eq!(parse_round_number(""), None);
+    }
+
+    #[test]
+    fn test_extract_abbr_from_svg_url() {
+        assert_eq!(extract_abbr_from_svg_url("/img/nfl/lv.svg"), Some("lv"));
+        assert_eq!(
+            extract_abbr_from_svg_url("https://www.tankathon.com/img/nfl/atl.svg"),
+            Some("atl")
+        );
+        assert_eq!(extract_abbr_from_svg_url("/img/nfl/nyj.svg"), Some("nyj"));
+        assert_eq!(extract_abbr_from_svg_url("/img/nfl/logo.png"), None);
+        assert_eq!(extract_abbr_from_svg_url(""), None);
+    }
+
+    // --- HTML parsing tests ---
+
+    fn make_round_html(round_title: &str, rows: &str) -> String {
+        format!(
+            r#"<div class="full-draft-round full-draft-round-nfl">
+                <div class="round-title">{}</div>
+                <table><tbody>{}</tbody></table>
+            </div>"#,
+            round_title, rows
+        )
+    }
+
+    fn make_pick_row(pick_num: i32, team_slug: &str) -> String {
+        format!(
+            r#"<tr>
+                <td class="pick-number">{}</td>
+                <td>
+                    <div class="team-link"><a href=""><img class="logo-thumb" src="/img/nfl/{}.svg"></a></div>
+                </td>
+            </tr>"#,
+            pick_num, team_slug
+        )
+    }
+
+    fn make_traded_pick_row(pick_num: i32, team_slug: &str, original_slug: &str) -> String {
+        format!(
+            r#"<tr>
+                <td class="pick-number">{}</td>
+                <td>
+                    <div class="team-link"><a href=""><img class="logo-thumb" src="/img/nfl/{}.svg"></a></div>
+                    <div class="trade"><a href=""><img class="logo-thumb" src="/img/nfl/{}.svg"></a></div>
+                </td>
+            </tr>"#,
+            pick_num, team_slug, original_slug
+        )
+    }
+
+    fn make_comp_pick_row(pick_num: i32, team_slug: &str) -> String {
+        format!(
+            r#"<tr>
+                <td class="pick-number">{}
+                    <span class="primary" data-balloon="Compensatory pick">C</span>
+                </td>
+                <td>
+                    <div class="team-link"><a href=""><img class="logo-thumb" src="/img/nfl/{}.svg"></a></div>
+                </td>
+            </tr>"#,
+            pick_num, team_slug
+        )
+    }
+
+    #[test]
+    fn test_parse_basic_round() {
+        let rows = [
+            make_pick_row(1, "ten"),
+            make_pick_row(2, "cle"),
+            make_pick_row(3, "nyg"),
+        ]
+        .join("\n");
+        let html = format!(
+            "<html><body>{}</body></html>",
+            make_round_html("1st Round", &rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order.len(), 3);
+        assert_eq!(data.meta.source, "tankathon");
+        assert_eq!(data.meta.total_picks, 3);
+
+        assert_eq!(data.draft_order[0].round, 1);
+        assert_eq!(data.draft_order[0].pick_in_round, 1);
+        assert_eq!(data.draft_order[0].overall_pick, 1);
+        assert_eq!(data.draft_order[0].team_abbreviation, "TEN");
+        assert_eq!(data.draft_order[0].original_team_abbreviation, "TEN");
+        assert!(!data.draft_order[0].is_compensatory);
+        assert!(data.draft_order[0].notes.is_none());
+
+        assert_eq!(data.draft_order[2].team_abbreviation, "NYG");
+        assert_eq!(data.draft_order[2].overall_pick, 3);
+    }
+
+    #[test]
+    fn test_parse_traded_pick() {
+        let rows = make_traded_pick_row(5, "lv", "atl");
+        let html = format!(
+            "<html><body>{}</body></html>",
+            make_round_html("1st Round", &rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order.len(), 1);
+
+        let entry = &data.draft_order[0];
+        assert_eq!(entry.team_abbreviation, "LV");
+        assert_eq!(entry.original_team_abbreviation, "ATL");
+        assert!(!entry.is_compensatory);
+        assert_eq!(entry.notes.as_deref(), Some("From ATL"));
+    }
+
+    #[test]
+    fn test_parse_compensatory_pick() {
+        let rows = make_comp_pick_row(33, "ne");
+        let html = format!(
+            "<html><body>{}</body></html>",
+            make_round_html("3rd Round", &rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order.len(), 1);
+
+        let entry = &data.draft_order[0];
+        assert_eq!(entry.team_abbreviation, "NE");
+        assert_eq!(entry.original_team_abbreviation, "NE");
+        assert!(entry.is_compensatory);
+        assert_eq!(entry.notes.as_deref(), Some("Compensatory pick"));
+    }
+
+    #[test]
+    fn test_parse_traded_compensatory_pick() {
+        let rows = format!(
+            r#"<tr>
+                <td class="pick-number">35
+                    <span class="primary" data-balloon="Compensatory pick">C</span>
+                </td>
+                <td>
+                    <div class="team-link"><a href=""><img class="logo-thumb" src="/img/nfl/dal.svg"></a></div>
+                    <div class="trade"><a href=""><img class="logo-thumb" src="/img/nfl/sf.svg"></a></div>
+                </td>
+            </tr>"#
+        );
+        let html = format!(
+            "<html><body>{}</body></html>",
+            make_round_html("3rd Round", &rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order.len(), 1);
+
+        let entry = &data.draft_order[0];
+        assert_eq!(entry.team_abbreviation, "DAL");
+        assert_eq!(entry.original_team_abbreviation, "SF");
+        assert!(entry.is_compensatory);
+        assert_eq!(entry.notes.as_deref(), Some("From SF; Compensatory pick"));
+    }
+
+    #[test]
+    fn test_parse_multiple_rounds() {
+        let round1_rows = [make_pick_row(1, "ten"), make_pick_row(2, "cle")].join("\n");
+        // Use realistic overall pick numbers (33, 34) like Tankathon does
+        let round2_rows = [make_pick_row(33, "cle"), make_pick_row(34, "ten")].join("\n");
+        let html = format!(
+            "<html><body>{}{}</body></html>",
+            make_round_html("1st Round", &round1_rows),
+            make_round_html("2nd Round", &round2_rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order.len(), 4);
+        assert_eq!(data.meta.total_rounds, 2);
+
+        // Round 1
+        assert_eq!(data.draft_order[0].round, 1);
+        assert_eq!(data.draft_order[0].overall_pick, 1);
+        assert_eq!(data.draft_order[0].pick_in_round, 1);
+        assert_eq!(data.draft_order[1].round, 1);
+        assert_eq!(data.draft_order[1].overall_pick, 2);
+        assert_eq!(data.draft_order[1].pick_in_round, 2);
+
+        // Round 2: pick_in_round must be 1-based per round, NOT overall numbers
+        assert_eq!(data.draft_order[2].round, 2);
+        assert_eq!(data.draft_order[2].overall_pick, 3);
+        assert_eq!(data.draft_order[2].pick_in_round, 1);
+        assert_eq!(data.draft_order[3].round, 2);
+        assert_eq!(data.draft_order[3].overall_pick, 4);
+        assert_eq!(data.draft_order[3].pick_in_round, 2);
+    }
+
+    #[test]
+    fn test_parse_empty_html() {
+        let html = "<html><body><p>Nothing here</p></body></html>";
+        let data = parse_tankathon_html(html, 2026).unwrap();
+        assert!(data.draft_order.is_empty());
+        assert_eq!(data.meta.source, "template");
+        assert_eq!(data.meta.total_picks, 0);
+    }
+
+    #[test]
+    fn test_parse_wsh_normalization() {
+        let rows = make_pick_row(28, "wsh");
+        let html = format!(
+            "<html><body>{}</body></html>",
+            make_round_html("1st Round", &rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order[0].team_abbreviation, "WAS");
+    }
+
+    #[test]
+    fn test_parse_jac_normalization() {
+        let rows = make_pick_row(5, "jac");
+        let html = format!(
+            "<html><body>{}</body></html>",
+            make_round_html("1st Round", &rows)
+        );
+
+        let data = parse_tankathon_html(&html, 2026).unwrap();
+        assert_eq!(data.draft_order[0].team_abbreviation, "JAX");
     }
 }

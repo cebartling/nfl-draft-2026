@@ -33,6 +33,10 @@ pub struct RankingEntry {
     pub last_name: String,
     pub position: String,
     pub school: String,
+    #[serde(default)]
+    pub height_inches: Option<i32>,
+    #[serde(default)]
+    pub weight_pounds: Option<i32>,
 }
 
 #[derive(Debug, Default)]

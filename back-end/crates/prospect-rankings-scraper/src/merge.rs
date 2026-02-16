@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 
@@ -11,8 +11,7 @@ use crate::models::{RankingData, RankingMeta};
 fn clean_name(name: &str) -> String {
     let cleaned = name
         .replace('.', "")
-        .replace('\u{2019}', "'") // right single quotation mark → ASCII apostrophe
-        .replace('\u{2018}', "'"); // left single quotation mark → ASCII apostrophe
+        .replace(['\u{2019}', '\u{2018}'], "'");
 
     cleaned
         .split_whitespace()
@@ -28,8 +27,7 @@ fn clean_name(name: &str) -> String {
 fn normalize_last_name(name: &str) -> String {
     let cleaned = name
         .replace('.', "")
-        .replace('\u{2019}', "'")
-        .replace('\u{2018}', "'");
+        .replace(['\u{2019}', '\u{2018}'], "'");
 
     let mut parts: Vec<&str> = cleaned.split_whitespace().collect();
 
@@ -65,25 +63,39 @@ pub fn merge_rankings(primary: RankingData, secondaries: Vec<RankingData>) -> Re
     let draft_year = primary.meta.draft_year;
 
     let mut seen: HashSet<String> = HashSet::new();
+    // Map name keys to their index in merged vec for O(1) backfill lookups
+    let mut key_to_index: HashMap<String, usize> = HashMap::new();
     let mut merged = Vec::new();
 
     // Add all primary entries
     for entry in primary.rankings {
         let key = name_key(&entry.first_name, &entry.last_name);
-        seen.insert(key);
+        seen.insert(key.clone());
+        key_to_index.insert(key, merged.len());
         merged.push(entry);
     }
 
     let mut next_rank = merged.len() as i32 + 1;
 
-    // Append unique entries from each secondary file
+    // Append unique entries from each secondary file, backfilling height/weight
     for secondary in secondaries {
-        for mut entry in secondary.rankings {
+        for entry in secondary.rankings {
             let key = name_key(&entry.first_name, &entry.last_name);
-            if seen.insert(key) {
+            if seen.insert(key.clone()) {
+                let mut entry = entry;
                 entry.rank = next_rank;
                 next_rank += 1;
+                key_to_index.insert(key, merged.len());
                 merged.push(entry);
+            } else if let Some(&idx) = key_to_index.get(&key) {
+                // Duplicate: backfill height/weight if existing entry is missing them
+                let existing = &mut merged[idx];
+                if existing.height_inches.is_none() && entry.height_inches.is_some() {
+                    existing.height_inches = entry.height_inches;
+                }
+                if existing.weight_pounds.is_none() && entry.weight_pounds.is_some() {
+                    existing.weight_pounds = entry.weight_pounds;
+                }
             }
         }
     }
@@ -133,6 +145,28 @@ mod tests {
             last_name: last.to_string(),
             position: pos.to_string(),
             school: school.to_string(),
+            height_inches: None,
+            weight_pounds: None,
+        }
+    }
+
+    fn make_entry_with_size(
+        rank: i32,
+        first: &str,
+        last: &str,
+        pos: &str,
+        school: &str,
+        height: Option<i32>,
+        weight: Option<i32>,
+    ) -> RankingEntry {
+        RankingEntry {
+            rank,
+            first_name: first.to_string(),
+            last_name: last.to_string(),
+            position: pos.to_string(),
+            school: school.to_string(),
+            height_inches: height,
+            weight_pounds: weight,
         }
     }
 
@@ -341,5 +375,76 @@ mod tests {
 
         let result = merge_rankings(primary, vec![secondary]).unwrap();
         assert_eq!(result.rankings.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_backfills_height_weight_from_secondary() {
+        let primary = RankingData {
+            meta: make_meta("primary", 2026, 2),
+            rankings: vec![
+                make_entry(1, "John", "Smith", "QB", "Alabama"),
+                make_entry_with_size(2, "Jane", "Doe", "WR", "Ohio State", Some(67), None),
+            ],
+        };
+
+        let secondary = RankingData {
+            meta: make_meta("secondary", 2026, 2),
+            rankings: vec![
+                make_entry_with_size(1, "John", "Smith", "QB", "Alabama", Some(75), Some(215)),
+                make_entry_with_size(2, "Jane", "Doe", "WR", "Ohio State", Some(68), Some(175)),
+            ],
+        };
+
+        let result = merge_rankings(primary, vec![secondary]).unwrap();
+        assert_eq!(result.rankings.len(), 2);
+        // John had no height/weight, should be backfilled from secondary
+        assert_eq!(result.rankings[0].height_inches, Some(75));
+        assert_eq!(result.rankings[0].weight_pounds, Some(215));
+        // Jane had height=67 already, should NOT be overwritten; weight was None, should be backfilled
+        assert_eq!(result.rankings[1].height_inches, Some(67));
+        assert_eq!(result.rankings[1].weight_pounds, Some(175));
+    }
+
+    #[test]
+    fn test_merge_cross_fills_from_multiple_secondaries() {
+        // Primary has no physical stats
+        let primary = RankingData {
+            meta: make_meta("primary", 2026, 1),
+            rankings: vec![make_entry(1, "John", "Smith", "QB", "Alabama")],
+        };
+
+        // First secondary has only height
+        let sec1 = RankingData {
+            meta: make_meta("sec1", 2026, 1),
+            rankings: vec![make_entry_with_size(
+                1,
+                "John",
+                "Smith",
+                "QB",
+                "Alabama",
+                Some(75),
+                None,
+            )],
+        };
+
+        // Second secondary has only weight
+        let sec2 = RankingData {
+            meta: make_meta("sec2", 2026, 1),
+            rankings: vec![make_entry_with_size(
+                1,
+                "John",
+                "Smith",
+                "QB",
+                "Alabama",
+                None,
+                Some(215),
+            )],
+        };
+
+        let result = merge_rankings(primary, vec![sec1, sec2]).unwrap();
+        assert_eq!(result.rankings.len(), 1);
+        // Height from sec1, weight from sec2
+        assert_eq!(result.rankings[0].height_inches, Some(75));
+        assert_eq!(result.rankings[0].weight_pounds, Some(215));
     }
 }

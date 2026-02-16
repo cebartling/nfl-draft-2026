@@ -74,3 +74,9 @@ acceptance-tests/test-results/
 
 # Test results
 test-results/
+
+# Draft order scraper local state
+back-end/data/.draft_order_last_scraped
+
+# Prospect rankings scraper local state
+back-end/data/rankings/.rankings_last_scraped

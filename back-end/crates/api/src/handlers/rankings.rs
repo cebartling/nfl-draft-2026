@@ -99,8 +99,10 @@ pub async fn list_ranking_sources(
     State(state): State<AppState>,
 ) -> ApiResult<Json<Vec<RankingSourceResponse>>> {
     let sources = state.ranking_source_repo.find_all().await?;
-    let response: Vec<RankingSourceResponse> =
-        sources.into_iter().map(RankingSourceResponse::from).collect();
+    let response: Vec<RankingSourceResponse> = sources
+        .into_iter()
+        .map(RankingSourceResponse::from)
+        .collect();
     Ok(Json(response))
 }
 
@@ -150,7 +152,10 @@ pub async fn get_source_rankings(
     State(state): State<AppState>,
     Path(source_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<SourceRankingResponse>>> {
-    let rankings = state.prospect_ranking_repo.find_by_source(source_id).await?;
+    let rankings = state
+        .prospect_ranking_repo
+        .find_by_source(source_id)
+        .await?;
 
     // If no rankings found, check whether the source exists at all
     if rankings.is_empty() {
@@ -185,8 +190,7 @@ pub async fn get_all_rankings(
 ) -> ApiResult<Json<Vec<AllRankingEntry>>> {
     let rankings = state.prospect_ranking_repo.find_all_with_source().await?;
 
-    let response: Vec<AllRankingEntry> =
-        rankings.into_iter().map(AllRankingEntry::from).collect();
+    let response: Vec<AllRankingEntry> = rankings.into_iter().map(AllRankingEntry::from).collect();
 
     Ok(Json(response))
 }

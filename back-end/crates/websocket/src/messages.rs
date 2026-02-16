@@ -421,12 +421,8 @@ mod tests {
         let pick1 = Uuid::new_v4();
         let pick2 = Uuid::new_v4();
 
-        let msg = ClientMessage::propose_trade(
-            session_id,
-            from_team_id,
-            to_team_id,
-            vec![pick1, pick2],
-        );
+        let msg =
+            ClientMessage::propose_trade(session_id, from_team_id, to_team_id, vec![pick1, pick2]);
 
         let json = msg.to_json().unwrap();
         let parsed = ClientMessage::from_json(&json).unwrap();

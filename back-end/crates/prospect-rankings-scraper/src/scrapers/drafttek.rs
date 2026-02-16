@@ -155,6 +155,32 @@ fn parse_page_html(html: &str, rank_offset: usize) -> Vec<RankingEntry> {
     entries
 }
 
+/// Parse a height string like "6-3", "6'3", or "6-03" into total inches.
+fn parse_height(s: &str) -> Option<i32> {
+    let s = s.trim();
+    // Try splitting on '-' or '\''
+    let parts: Vec<&str> = if s.contains('-') {
+        s.splitn(2, '-').collect()
+    } else if s.contains('\'') {
+        s.splitn(2, '\'').collect()
+    } else {
+        return None;
+    };
+
+    if parts.len() != 2 {
+        return None;
+    }
+
+    let feet = parts[0].trim().parse::<i32>().ok()?;
+    let inches = parts[1].trim().trim_end_matches('"').parse::<i32>().ok()?;
+
+    if !(4..=7).contains(&feet) || !(0..=11).contains(&inches) {
+        return None;
+    }
+
+    Some(feet * 12 + inches)
+}
+
 /// Parse a DraftTek table row into a RankingEntry.
 /// DraftTek columns typically: Rank | Player Name | College | Position | Height | Weight | Class
 fn parse_drafttek_row(cells: &[String], fallback_rank: usize) -> Option<RankingEntry> {
@@ -208,18 +234,41 @@ fn parse_drafttek_row(cells: &[String], fallback_rank: usize) -> Option<RankingE
         return None;
     }
 
+    // Height (fifth column, e.g. "6-3") and Weight (sixth column, e.g. "215")
+    let height_inches = cells.get(4).and_then(|h| parse_height(h));
+    let weight_pounds = cells
+        .get(5)
+        .and_then(|w| w.trim().parse::<i32>().ok())
+        .filter(|w| (150..=400).contains(w));
+
     Some(RankingEntry {
         rank,
         first_name,
         last_name,
         position,
         school,
+        height_inches,
+        weight_pounds,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_parse_height() {
+        assert_eq!(parse_height("6-3"), Some(75));
+        assert_eq!(parse_height("6-0"), Some(72));
+        assert_eq!(parse_height("5-11"), Some(71));
+        assert_eq!(parse_height("6'3"), Some(75));
+        assert_eq!(parse_height("6'3\""), Some(75));
+        assert_eq!(parse_height("abc"), None);
+        assert_eq!(parse_height(""), None);
+        // Out of range
+        assert_eq!(parse_height("3-0"), None);
+        assert_eq!(parse_height("6-12"), None);
+    }
 
     #[test]
     fn test_parse_drafttek_row_standard() {
@@ -237,6 +286,8 @@ mod tests {
         assert_eq!(entry.last_name, "Mendoza");
         assert_eq!(entry.position, "QB");
         assert_eq!(entry.school, "Indiana");
+        assert_eq!(entry.height_inches, Some(75));
+        assert_eq!(entry.weight_pounds, Some(215));
     }
 
     #[test]
@@ -250,6 +301,8 @@ mod tests {
         let entry = parse_drafttek_row(&cells, 4).unwrap();
         assert_eq!(entry.rank, 5);
         assert_eq!(entry.position, "CB");
+        assert_eq!(entry.height_inches, None);
+        assert_eq!(entry.weight_pounds, None);
     }
 
     #[test]

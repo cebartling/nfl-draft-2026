@@ -6,7 +6,7 @@ export const RankingSourceSchema = z.object({
 	id: UUIDSchema,
 	name: z.string(),
 	abbreviation: z.string(),
-	url: z.string().url().nullable().optional(),
+	url: z.string().nullable().optional(),
 	description: z.string().nullable().optional(),
 });
 export type RankingSource = z.infer<typeof RankingSourceSchema>;

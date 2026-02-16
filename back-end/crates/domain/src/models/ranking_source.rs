@@ -106,10 +106,7 @@ mod tests {
         let source = RankingSource::new("Tankathon".to_string())
             .unwrap()
             .with_description("Big board rankings".to_string());
-        assert_eq!(
-            source.description,
-            Some("Big board rankings".to_string())
-        );
+        assert_eq!(source.description, Some("Big board rankings".to_string()));
     }
 
     #[test]

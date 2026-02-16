@@ -646,7 +646,9 @@ mod tests {
 
         assert!(result.is_err());
         match result.unwrap_err() {
-            DomainError::ValidationError(msg) => assert!(msg.contains("already in an active trade")),
+            DomainError::ValidationError(msg) => {
+                assert!(msg.contains("already in an active trade"))
+            }
             e => panic!("Expected ValidationError, got {:?}", e),
         }
     }
@@ -655,8 +657,8 @@ mod tests {
     async fn test_propose_trade_unfair_rejected() {
         let team_a = make_team("Team A", "TMA");
         let team_b = make_team("Team B", "TMB");
-        let pick_a = make_pick(team_a.id, 1);   // Pick 1 = 3000 pts (Jimmy Johnson)
-        let pick_b = make_pick(team_b.id, 32);  // Pick 32 = 590 pts — huge gap
+        let pick_a = make_pick(team_a.id, 1); // Pick 1 = 3000 pts (Jimmy Johnson)
+        let pick_b = make_pick(team_b.id, 32); // Pick 32 = 590 pts — huge gap
 
         let team_a_id = team_a.id;
         let team_b_id = team_b.id;
@@ -1037,8 +1039,7 @@ mod tests {
         let team_a = make_team("Team A", "TMA");
         let team_b = make_team("Team B", "TMB");
 
-        let trade =
-            PickTrade::new(Uuid::new_v4(), team_a.id, team_b.id, 3000, 2600).unwrap();
+        let trade = PickTrade::new(Uuid::new_v4(), team_a.id, team_b.id, 3000, 2600).unwrap();
         let trade_id = trade.id;
         let team_b_id = team_b.id;
 
@@ -1066,8 +1067,7 @@ mod tests {
         let team_b = make_team("Team B", "TMB");
         let wrong_team_id = Uuid::new_v4();
 
-        let trade =
-            PickTrade::new(Uuid::new_v4(), team_a.id, team_b.id, 3000, 2600).unwrap();
+        let trade = PickTrade::new(Uuid::new_v4(), team_a.id, team_b.id, 3000, 2600).unwrap();
         let trade_id = trade.id;
 
         let mut trade_repo = MockTradeRepo::new();

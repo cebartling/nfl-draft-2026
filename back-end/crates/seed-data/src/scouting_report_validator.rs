@@ -174,6 +174,8 @@ mod tests {
             last_name: last.to_string(),
             position: pos.to_string(),
             school: "Test University".to_string(),
+            height_inches: None,
+            weight_pounds: None,
         }
     }
 
@@ -192,7 +194,10 @@ mod tests {
         assert!(result.valid);
         assert!(result.errors.is_empty());
         // Low count warning is expected for < 100 prospects
-        assert!(result.warnings.iter().any(|w| w.contains("Only 3 prospects")));
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("Only 3 prospects")));
     }
 
     #[test]

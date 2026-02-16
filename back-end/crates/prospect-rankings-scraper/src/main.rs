@@ -3,6 +3,8 @@ mod models;
 mod scrapers;
 mod template;
 
+use std::path::Path;
+
 use anyhow::Result;
 use clap::Parser;
 
@@ -48,6 +50,63 @@ struct Cli {
     /// Secondary ranking file(s) for merge (unique prospects appended)
     #[arg(long)]
     secondary: Vec<String>,
+
+    /// Allow template fallback to overwrite existing non-template data
+    #[arg(long)]
+    allow_template_fallback: bool,
+}
+
+// NOTE: The safety-guard helpers below (ExistingFile, existing_file_has_real_data,
+// is_template_data, write_timestamp_file) are duplicated in draft-order-scraper.
+// If a third scraper is added, extract these into a shared crate.
+
+/// Minimal struct for reading just the meta.source field from an existing file.
+/// Uses Option<String> so it works even if the field is absent (older files).
+#[derive(serde::Deserialize)]
+struct ExistingMeta {
+    source: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct ExistingFile {
+    meta: ExistingMeta,
+}
+
+/// Check if the existing output file contains non-template (curated/scraped) data.
+/// Returns true if the file exists and its meta.source is NOT "template"
+/// (or if the source field is absent, which implies real data).
+fn existing_file_has_real_data(path: &str) -> bool {
+    let Ok(contents) = std::fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(data) = serde_json::from_str::<ExistingFile>(&contents) else {
+        eprintln!(
+            "WARNING: Could not parse '{}' as JSON; treating as real data to be safe.",
+            path
+        );
+        return true;
+    };
+    data.meta.source.as_deref() != Some("template")
+}
+
+/// Check if the generated data is template-based (either explicitly requested
+/// or produced by a scraping fallback).
+fn is_template_data(data: &models::RankingData) -> bool {
+    data.meta.source == "template"
+}
+
+/// Write an RFC 3339 UTC timestamp file alongside the output to track when
+/// rankings were last successfully scraped/generated.
+/// Timestamps are always in UTC (e.g. "2026-02-15T07:00:00Z").
+fn write_timestamp_file(output_path: &str) -> Result<()> {
+    let parent = Path::new(output_path)
+        .parent()
+        .unwrap_or_else(|| Path::new("."));
+    let timestamp_path = parent.join(".rankings_last_scraped");
+    let now = chrono::Utc::now().to_rfc3339();
+    std::fs::write(&timestamp_path, &now)?;
+    println!("Wrote timestamp to: {}", timestamp_path.display());
+    Ok(())
 }
 
 #[tokio::main]
@@ -58,10 +117,22 @@ async fn main() -> Result<()> {
         return run_merge(&cli);
     }
 
+    // Validate output path early, before doing network I/O
+    if let Some(parent) = std::path::Path::new(&cli.output).parent() {
+        if !parent.as_os_str().is_empty() && !parent.exists() {
+            std::fs::create_dir_all(parent)?;
+            println!("Created output directory: {}", parent.display());
+        }
+    }
+
     println!("NFL Prospect Rankings Scraper");
     println!("Source: {}", cli.source);
     println!("Year: {}", cli.year);
     println!("Output: {}", cli.output);
+
+    // Safety guard: check early whether existing file has curated data, so we
+    // can refuse to overwrite it with template output without waiting for I/O.
+    let has_real_data = existing_file_has_real_data(&cli.output);
 
     let data = if cli.template {
         println!("\nGenerating template rankings...");
@@ -166,6 +237,22 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Safety guard: refuse to overwrite real data with template output
+    if is_template_data(&data)
+        && !cli.template
+        && !cli.allow_template_fallback
+        && has_real_data
+    {
+        eprintln!(
+            "\nERROR: Scraping failed and would fall back to template data, but '{}' \
+             already contains real (non-template) data.",
+            cli.output
+        );
+        eprintln!("Refusing to overwrite to protect your curated rankings.");
+        eprintln!("To overwrite anyway, pass --allow-template-fallback");
+        std::process::exit(1);
+    }
+
     println!("\nRankings summary:");
     println!("  Source: {}", data.meta.source);
     println!("  Year: {}", data.meta.draft_year);
@@ -195,13 +282,17 @@ async fn main() -> Result<()> {
         println!("\nRankings written by browser scraper to: {}", cli.output);
     }
 
+    // Write timestamp file for staleness tracking
+    write_timestamp_file(&cli.output)?;
+
     Ok(())
 }
 
 fn run_merge(cli: &Cli) -> Result<()> {
-    let primary_path = cli.primary.as_deref().ok_or_else(|| {
-        anyhow::anyhow!("--merge requires --primary <file>")
-    })?;
+    let primary_path = cli
+        .primary
+        .as_deref()
+        .ok_or_else(|| anyhow::anyhow!("--merge requires --primary <file>"))?;
 
     if cli.secondary.is_empty() {
         anyhow::bail!("--merge requires at least one --secondary <file>");
@@ -215,12 +306,20 @@ fn run_merge(cli: &Cli) -> Result<()> {
     println!("Output: {}", cli.output);
 
     let primary = merge::load_ranking_file(primary_path)?;
-    println!("\nLoaded primary: {} prospects from {}", primary.rankings.len(), primary.meta.source);
+    println!(
+        "\nLoaded primary: {} prospects from {}",
+        primary.rankings.len(),
+        primary.meta.source
+    );
 
     let mut secondaries = Vec::new();
     for path in &cli.secondary {
         let data = merge::load_ranking_file(path)?;
-        println!("Loaded secondary: {} prospects from {}", data.rankings.len(), data.meta.source);
+        println!(
+            "Loaded secondary: {} prospects from {}",
+            data.rankings.len(),
+            data.meta.source
+        );
         secondaries.push(data);
     }
 
@@ -247,6 +346,9 @@ fn run_merge(cli: &Cli) -> Result<()> {
     let json = serde_json::to_string_pretty(&merged)?;
     std::fs::write(&cli.output, &json)?;
     println!("\nWrote merged rankings to: {}", cli.output);
+
+    // Write timestamp file for staleness tracking
+    write_timestamp_file(&cli.output)?;
 
     Ok(())
 }

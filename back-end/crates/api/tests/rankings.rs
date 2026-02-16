@@ -48,11 +48,7 @@ async fn create_player2(client: &reqwest::Client, base_url: &str) -> String {
 }
 
 /// Helper: insert a ranking source directly into the database
-async fn insert_ranking_source(
-    pool: &sqlx::PgPool,
-    name: &str,
-    url: Option<&str>,
-) -> uuid::Uuid {
+async fn insert_ranking_source(pool: &sqlx::PgPool, name: &str, url: Option<&str>) -> uuid::Uuid {
     let id = uuid::Uuid::new_v4();
     sqlx::query!(
         "INSERT INTO ranking_sources (id, name, url) VALUES ($1, $2, $3)",
@@ -309,8 +305,7 @@ async fn test_ranking_sources_database_consistency() {
     let (base_url, pool) = common::spawn_app().await;
     let client = common::create_client();
 
-    let source_id =
-        insert_ranking_source(&pool, "Test Source", Some("https://example.com")).await;
+    let source_id = insert_ranking_source(&pool, "Test Source", Some("https://example.com")).await;
 
     // Verify via API
     let resp = client

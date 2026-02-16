@@ -78,11 +78,7 @@ pub fn validate_ranking_data(data: &RankingData) -> RankingsValidationResult {
 
         // Check for duplicate ranks
         if !seen_ranks.insert(entry.rank) {
-            warnings.push(format!(
-                "Entry {}: duplicate rank {}",
-                i + 1,
-                entry.rank
-            ));
+            warnings.push(format!("Entry {}: duplicate rank {}", i + 1, entry.rank));
         }
 
         // Names must not be empty
@@ -159,15 +155,15 @@ mod tests {
 
     #[test]
     fn test_valid_data() {
-        let data = make_data(vec![
-            RankingEntry {
-                rank: 1,
-                first_name: "Test".to_string(),
-                last_name: "Player".to_string(),
-                position: "QB".to_string(),
-                school: "Alabama".to_string(),
-            },
-        ]);
+        let data = make_data(vec![RankingEntry {
+            rank: 1,
+            first_name: "Test".to_string(),
+            last_name: "Player".to_string(),
+            position: "QB".to_string(),
+            school: "Alabama".to_string(),
+            height_inches: None,
+            weight_pounds: None,
+        }]);
 
         let result = validate_ranking_data(&data);
         assert!(result.valid);
@@ -183,15 +179,15 @@ mod tests {
 
     #[test]
     fn test_negative_rank() {
-        let data = make_data(vec![
-            RankingEntry {
-                rank: -1,
-                first_name: "Test".to_string(),
-                last_name: "Player".to_string(),
-                position: "QB".to_string(),
-                school: "Alabama".to_string(),
-            },
-        ]);
+        let data = make_data(vec![RankingEntry {
+            rank: -1,
+            first_name: "Test".to_string(),
+            last_name: "Player".to_string(),
+            position: "QB".to_string(),
+            school: "Alabama".to_string(),
+            height_inches: None,
+            weight_pounds: None,
+        }]);
 
         let result = validate_ranking_data(&data);
         assert!(!result.valid);
@@ -199,15 +195,15 @@ mod tests {
 
     #[test]
     fn test_empty_name() {
-        let data = make_data(vec![
-            RankingEntry {
-                rank: 1,
-                first_name: "".to_string(),
-                last_name: "Player".to_string(),
-                position: "QB".to_string(),
-                school: "Alabama".to_string(),
-            },
-        ]);
+        let data = make_data(vec![RankingEntry {
+            rank: 1,
+            first_name: "".to_string(),
+            last_name: "Player".to_string(),
+            position: "QB".to_string(),
+            school: "Alabama".to_string(),
+            height_inches: None,
+            weight_pounds: None,
+        }]);
 
         let result = validate_ranking_data(&data);
         assert!(!result.valid);

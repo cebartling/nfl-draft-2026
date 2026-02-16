@@ -1,10 +1,11 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-02-11",
+    "last_updated": "2026-02-16",
     "sources": [
       "Tankathon.com"
     ],
+    "source": "tankathon",
     "draft_year": 2026,
     "total_rounds": 7,
     "total_picks": 257
