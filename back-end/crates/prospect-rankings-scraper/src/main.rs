@@ -56,6 +56,10 @@ struct Cli {
     allow_template_fallback: bool,
 }
 
+// NOTE: The safety-guard helpers below (ExistingFile, existing_file_has_real_data,
+// is_template_data, write_timestamp_file) are duplicated in draft-order-scraper.
+// If a third scraper is added, extract these into a shared crate.
+
 /// Minimal struct for reading just the meta.source field from an existing file.
 /// Uses Option<String> so it works even if the field is absent (older files).
 #[derive(serde::Deserialize)]
