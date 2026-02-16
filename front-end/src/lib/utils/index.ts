@@ -3,4 +3,5 @@ export * from './formatters';
 export * from './logger';
 export * from './logo';
 export * from './player-sort';
+export * from './prospect-filter';
 export * from './prospect-ranking';

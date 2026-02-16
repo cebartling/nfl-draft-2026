@@ -25,6 +25,14 @@ export const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG'
 export const DEFENSE_POSITIONS: Position[] = ['DE', 'DT', 'LB', 'CB', 'S'];
 export const SPECIAL_POSITIONS: Position[] = ['K', 'P'];
 
+export type PositionGroup = 'offense' | 'defense' | 'special_teams';
+
+export const POSITION_GROUPS: Record<PositionGroup, Position[]> = {
+	offense: OFFENSE_POSITIONS,
+	defense: DEFENSE_POSITIONS,
+	special_teams: SPECIAL_POSITIONS,
+};
+
 // Player schema and type — matches backend PlayerResponse
 export const PlayerSchema = z.object({
 	id: UUIDSchema,
