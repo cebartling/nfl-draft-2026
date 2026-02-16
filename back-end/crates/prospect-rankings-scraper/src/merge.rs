@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 
@@ -63,12 +63,15 @@ pub fn merge_rankings(primary: RankingData, secondaries: Vec<RankingData>) -> Re
     let draft_year = primary.meta.draft_year;
 
     let mut seen: HashSet<String> = HashSet::new();
+    // Map name keys to their index in merged vec for O(1) backfill lookups
+    let mut key_to_index: HashMap<String, usize> = HashMap::new();
     let mut merged = Vec::new();
 
     // Add all primary entries
     for entry in primary.rankings {
         let key = name_key(&entry.first_name, &entry.last_name);
-        seen.insert(key);
+        seen.insert(key.clone());
+        key_to_index.insert(key, merged.len());
         merged.push(entry);
     }
 
@@ -82,18 +85,16 @@ pub fn merge_rankings(primary: RankingData, secondaries: Vec<RankingData>) -> Re
                 let mut entry = entry;
                 entry.rank = next_rank;
                 next_rank += 1;
+                key_to_index.insert(key, merged.len());
                 merged.push(entry);
-            } else {
-                // Duplicate: backfill height/weight if primary is missing them
-                if let Some(existing) = merged.iter_mut().find(|e| {
-                    name_key(&e.first_name, &e.last_name) == key
-                }) {
-                    if existing.height_inches.is_none() && entry.height_inches.is_some() {
-                        existing.height_inches = entry.height_inches;
-                    }
-                    if existing.weight_pounds.is_none() && entry.weight_pounds.is_some() {
-                        existing.weight_pounds = entry.weight_pounds;
-                    }
+            } else if let Some(&idx) = key_to_index.get(&key) {
+                // Duplicate: backfill height/weight if existing entry is missing them
+                let existing = &mut merged[idx];
+                if existing.height_inches.is_none() && entry.height_inches.is_some() {
+                    existing.height_inches = entry.height_inches;
+                }
+                if existing.weight_pounds.is_none() && entry.weight_pounds.is_some() {
+                    existing.weight_pounds = entry.weight_pounds;
                 }
             }
         }
