@@ -66,8 +66,9 @@ fn is_template_data(data: &scraper::DraftOrderData) -> bool {
     data.meta.source == "template"
 }
 
-/// Write an RFC 3339 timestamp file alongside the output to track when
+/// Write an RFC 3339 UTC timestamp file alongside the output to track when
 /// the draft order was last successfully scraped/generated.
+/// Timestamps are always in UTC (e.g. "2026-02-15T06:00:00Z").
 fn write_timestamp_file(output_path: &str) -> Result<()> {
     let parent = Path::new(output_path)
         .parent()
