@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: scraper-push
+  group: scraper-draft-order
   cancel-in-progress: false
 
 jobs:
