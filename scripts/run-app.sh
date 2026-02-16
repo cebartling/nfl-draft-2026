@@ -13,10 +13,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 echo -e "${RED}${BOLD}Stopping containers and removing volumes...${NC}"
-docker compose down -v --remove-orphans --rmi local
+docker compose --profile seed down -v --remove-orphans --rmi local
 
 echo -e "${YELLOW}${BOLD}Rebuilding all images from scratch...${NC}"
-docker compose build --no-cache
+docker compose --profile seed build --no-cache
 
 echo -e "${YELLOW}${BOLD}Starting containers...${NC}"
 docker compose up -d
