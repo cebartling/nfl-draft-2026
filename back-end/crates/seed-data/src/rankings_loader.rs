@@ -183,6 +183,15 @@ pub async fn load_rankings(
                     p.with_college(entry.school.clone())
                 }
             })
+            .and_then(|p| {
+                if let (Some(height), Some(weight)) =
+                    (entry.height_inches, entry.weight_pounds)
+                {
+                    p.with_physical_stats(height, weight)
+                } else {
+                    Ok(p)
+                }
+            })
             .map_err(|e| {
                 anyhow::anyhow!(
                     "Failed to create player {} {}: {}",

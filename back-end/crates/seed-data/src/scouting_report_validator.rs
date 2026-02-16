@@ -174,6 +174,8 @@ mod tests {
             last_name: last.to_string(),
             position: pos.to_string(),
             school: "Test University".to_string(),
+            height_inches: None,
+            weight_pounds: None,
         }
     }
 

@@ -207,6 +207,8 @@ pub fn generate_template(year: i32) -> RankingData {
             last_name: last.to_string(),
             position: pos.to_string(),
             school: school.to_string(),
+            height_inches: None,
+            weight_pounds: None,
         })
         .collect();
 

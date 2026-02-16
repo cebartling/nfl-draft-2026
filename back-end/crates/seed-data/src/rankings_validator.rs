@@ -161,6 +161,8 @@ mod tests {
             last_name: "Player".to_string(),
             position: "QB".to_string(),
             school: "Alabama".to_string(),
+            height_inches: None,
+            weight_pounds: None,
         }]);
 
         let result = validate_ranking_data(&data);
@@ -183,6 +185,8 @@ mod tests {
             last_name: "Player".to_string(),
             position: "QB".to_string(),
             school: "Alabama".to_string(),
+            height_inches: None,
+            weight_pounds: None,
         }]);
 
         let result = validate_ranking_data(&data);
@@ -197,6 +201,8 @@ mod tests {
             last_name: "Player".to_string(),
             position: "QB".to_string(),
             school: "Alabama".to_string(),
+            height_inches: None,
+            weight_pounds: None,
         }]);
 
         let result = validate_ranking_data(&data);

@@ -205,6 +205,8 @@ fn parse_position_school(text: &str, rank: i32, full_name: &str) -> Option<Ranki
         last_name,
         position,
         school,
+        height_inches: None,
+        weight_pounds: None,
     })
 }
 

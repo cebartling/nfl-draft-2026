@@ -155,6 +155,8 @@ fn parse_mock_rows(document: &Html) -> Vec<RankingEntry> {
             last_name,
             position,
             school,
+            height_inches: None,
+            weight_pounds: None,
         });
     }
 
@@ -318,12 +320,26 @@ fn try_parse_prospect_json(value: &serde_json::Value, fallback_rank: i32) -> Opt
     let first_name = name_parts[0].to_string();
     let last_name = name_parts[1..].join(" ");
 
+    let height_inches = obj
+        .get("height")
+        .or_else(|| obj.get("height_inches"))
+        .and_then(|v| v.as_i64())
+        .map(|h| h as i32);
+
+    let weight_pounds = obj
+        .get("weight")
+        .or_else(|| obj.get("weight_pounds"))
+        .and_then(|v| v.as_i64())
+        .map(|w| w as i32);
+
     Some(RankingEntry {
         rank,
         first_name,
         last_name,
         position: position.to_uppercase(),
         school: school.to_string(),
+        height_inches,
+        weight_pounds,
     })
 }
 
@@ -429,6 +445,8 @@ fn parse_prospect_text(text: &str, fallback_rank: i32) -> Option<RankingEntry> {
         last_name,
         position,
         school,
+        height_inches: None,
+        weight_pounds: None,
     })
 }
 
@@ -632,6 +650,8 @@ mod tests {
             last_name: "Player".to_string(),
             position: "QB".to_string(),
             school: "Test U".to_string(),
+            height_inches: None,
+            weight_pounds: None,
         }];
         let data = build_ranking_data(entries, 2026);
         assert_eq!(data.meta.source, "tankathon");

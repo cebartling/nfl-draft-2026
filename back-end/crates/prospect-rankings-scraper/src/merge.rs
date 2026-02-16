@@ -74,14 +74,27 @@ pub fn merge_rankings(primary: RankingData, secondaries: Vec<RankingData>) -> Re
 
     let mut next_rank = merged.len() as i32 + 1;
 
-    // Append unique entries from each secondary file
+    // Append unique entries from each secondary file, backfilling height/weight
     for secondary in secondaries {
-        for mut entry in secondary.rankings {
+        for entry in secondary.rankings {
             let key = name_key(&entry.first_name, &entry.last_name);
-            if seen.insert(key) {
+            if seen.insert(key.clone()) {
+                let mut entry = entry;
                 entry.rank = next_rank;
                 next_rank += 1;
                 merged.push(entry);
+            } else {
+                // Duplicate: backfill height/weight if primary is missing them
+                if let Some(existing) = merged.iter_mut().find(|e| {
+                    name_key(&e.first_name, &e.last_name) == key
+                }) {
+                    if existing.height_inches.is_none() && entry.height_inches.is_some() {
+                        existing.height_inches = entry.height_inches;
+                    }
+                    if existing.weight_pounds.is_none() && entry.weight_pounds.is_some() {
+                        existing.weight_pounds = entry.weight_pounds;
+                    }
+                }
             }
         }
     }
@@ -131,6 +144,28 @@ mod tests {
             last_name: last.to_string(),
             position: pos.to_string(),
             school: school.to_string(),
+            height_inches: None,
+            weight_pounds: None,
+        }
+    }
+
+    fn make_entry_with_size(
+        rank: i32,
+        first: &str,
+        last: &str,
+        pos: &str,
+        school: &str,
+        height: Option<i32>,
+        weight: Option<i32>,
+    ) -> RankingEntry {
+        RankingEntry {
+            rank,
+            first_name: first.to_string(),
+            last_name: last.to_string(),
+            position: pos.to_string(),
+            school: school.to_string(),
+            height_inches: height,
+            weight_pounds: weight,
         }
     }
 
@@ -339,5 +374,33 @@ mod tests {
 
         let result = merge_rankings(primary, vec![secondary]).unwrap();
         assert_eq!(result.rankings.len(), 2);
+    }
+
+    #[test]
+    fn test_merge_backfills_height_weight_from_secondary() {
+        let primary = RankingData {
+            meta: make_meta("primary", 2026, 2),
+            rankings: vec![
+                make_entry(1, "John", "Smith", "QB", "Alabama"),
+                make_entry_with_size(2, "Jane", "Doe", "WR", "Ohio State", Some(67), None),
+            ],
+        };
+
+        let secondary = RankingData {
+            meta: make_meta("secondary", 2026, 2),
+            rankings: vec![
+                make_entry_with_size(1, "John", "Smith", "QB", "Alabama", Some(75), Some(215)),
+                make_entry_with_size(2, "Jane", "Doe", "WR", "Ohio State", Some(68), Some(175)),
+            ],
+        };
+
+        let result = merge_rankings(primary, vec![secondary]).unwrap();
+        assert_eq!(result.rankings.len(), 2);
+        // John had no height/weight, should be backfilled from secondary
+        assert_eq!(result.rankings[0].height_inches, Some(75));
+        assert_eq!(result.rankings[0].weight_pounds, Some(215));
+        // Jane had height=67 already, should NOT be overwritten; weight was None, should be backfilled
+        assert_eq!(result.rankings[1].height_inches, Some(67));
+        assert_eq!(result.rankings[1].weight_pounds, Some(175));
     }
 }
