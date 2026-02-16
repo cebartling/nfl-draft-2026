@@ -125,6 +125,10 @@ async fn main() -> Result<()> {
     println!("Year: {}", cli.year);
     println!("Output: {}", cli.output);
 
+    // Safety guard: check early whether existing file has curated data, so we
+    // can refuse to overwrite it with template output without waiting for I/O.
+    let has_real_data = existing_file_has_real_data(&cli.output);
+
     let data = if cli.template {
         println!("\nGenerating template rankings...");
         template::generate_template(cli.year)
@@ -232,7 +236,7 @@ async fn main() -> Result<()> {
     if is_template_data(&data)
         && !cli.template
         && !cli.allow_template_fallback
-        && existing_file_has_real_data(&cli.output)
+        && has_real_data
     {
         eprintln!(
             "\nERROR: Scraping failed and would fall back to template data, but '{}' \
