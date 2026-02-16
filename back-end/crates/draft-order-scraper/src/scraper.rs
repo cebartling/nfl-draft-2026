@@ -154,15 +154,27 @@ fn parse_round_picks(round_element: &ElementRef) -> Vec<(i32, String, String, bo
                     Some(slug) => team_name_mapper::normalize_svg_abbreviation(slug),
                     None => {
                         eprintln!(
-                            "WARNING: Could not extract team abbreviation from logo URL: {}",
-                            src
+                            "WARNING: Could not extract team abbreviation from logo URL '{}' for pick {}",
+                            src, pick_number
                         );
                         continue;
                     }
                 },
-                None => continue,
+                None => {
+                    eprintln!(
+                        "WARNING: Team logo missing src attribute for pick {}",
+                        pick_number
+                    );
+                    continue;
+                }
             },
-            None => continue,
+            None => {
+                eprintln!(
+                    "WARNING: No team logo found for pick {}",
+                    pick_number
+                );
+                continue;
+            }
         };
 
         // Extract original team from trade div (if present), otherwise same as team
