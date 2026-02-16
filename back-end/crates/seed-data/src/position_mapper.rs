@@ -19,12 +19,15 @@ pub fn map_position(source: &str) -> Result<Position> {
         "T" => (Position::OT, "OT"),
         "OG" => (Position::OG, "OG"),
         "G" => (Position::OG, "OG"),
+        // IOL (Interior Offensive Line) → OG: most IOL prospects play guard
         "IOL" => (Position::OG, "OG"),
         "C" => (Position::C, "C"),
         "DE" => (Position::DE, "DE"),
         "EDGE" => (Position::DE, "DE"),
+        // EDGE/LB hybrid → DE: prioritize pass-rush role over coverage
         "EDGE/LB" => (Position::DE, "DE"),
         "DT" => (Position::DT, "DT"),
+        // DL (generic defensive line) → DT: most generic DL prospects are interior
         "DL" => (Position::DT, "DT"),
         "NT" => (Position::DT, "DT"),
         "LB" => (Position::LB, "LB"),
