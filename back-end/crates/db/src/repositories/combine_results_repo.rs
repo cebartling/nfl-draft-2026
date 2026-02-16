@@ -29,21 +29,31 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
             CombineResultsDb,
             r#"
             INSERT INTO combine_results
-            (id, player_id, year, forty_yard_dash, bench_press, vertical_jump,
-             broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, player_id, year, forty_yard_dash, bench_press, vertical_jump,
-                      broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at
+            (id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+             broad_jump, three_cone_drill, twenty_yard_shuttle,
+             arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+             created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            RETURNING id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                      broad_jump, three_cone_drill, twenty_yard_shuttle,
+                      arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                      created_at, updated_at
             "#,
             results_db.id,
             results_db.player_id,
             results_db.year,
+            results_db.source,
             results_db.forty_yard_dash,
             results_db.bench_press,
             results_db.vertical_jump,
             results_db.broad_jump,
             results_db.three_cone_drill,
             results_db.twenty_yard_shuttle,
+            results_db.arm_length,
+            results_db.hand_size,
+            results_db.wingspan,
+            results_db.ten_yard_split,
+            results_db.twenty_yard_split,
             results_db.created_at,
             results_db.updated_at
         )
@@ -53,8 +63,8 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
             if let sqlx::Error::Database(db_err) = &e {
                 if db_err.is_unique_violation() {
                     return DbError::DuplicateEntry(format!(
-                        "Combine results for player {} in year {} already exist",
-                        results.player_id, results.year
+                        "Combine results for player {} in year {} with source '{}' already exist",
+                        results.player_id, results.year, results.source
                     ));
                 }
                 if db_err.is_foreign_key_violation() {
@@ -74,8 +84,10 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
         let result = sqlx::query_as!(
             CombineResultsDb,
             r#"
-            SELECT id, player_id, year, forty_yard_dash, bench_press, vertical_jump,
-                   broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at
+            SELECT id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                   broad_jump, three_cone_drill, twenty_yard_shuttle,
+                   arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                   created_at, updated_at
             FROM combine_results
             WHERE id = $1
             "#,
@@ -95,11 +107,13 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
         let results = sqlx::query_as!(
             CombineResultsDb,
             r#"
-            SELECT id, player_id, year, forty_yard_dash, bench_press, vertical_jump,
-                   broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at
+            SELECT id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                   broad_jump, three_cone_drill, twenty_yard_shuttle,
+                   arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                   created_at, updated_at
             FROM combine_results
             WHERE player_id = $1
-            ORDER BY year DESC
+            ORDER BY year DESC, source ASC
             "#,
             player_id
         )
@@ -121,13 +135,47 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
         let result = sqlx::query_as!(
             CombineResultsDb,
             r#"
-            SELECT id, player_id, year, forty_yard_dash, bench_press, vertical_jump,
-                   broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at
+            SELECT id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                   broad_jump, three_cone_drill, twenty_yard_shuttle,
+                   arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                   created_at, updated_at
             FROM combine_results
             WHERE player_id = $1 AND year = $2
+            ORDER BY source ASC
+            LIMIT 1
             "#,
             player_id,
             year
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        match result {
+            Some(results_db) => Ok(Some(results_db.to_domain()?)),
+            None => Ok(None),
+        }
+    }
+
+    async fn find_by_player_year_source(
+        &self,
+        player_id: Uuid,
+        year: i32,
+        source: &str,
+    ) -> DomainResult<Option<CombineResults>> {
+        let result = sqlx::query_as!(
+            CombineResultsDb,
+            r#"
+            SELECT id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                   broad_jump, three_cone_drill, twenty_yard_shuttle,
+                   arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                   created_at, updated_at
+            FROM combine_results
+            WHERE player_id = $1 AND year = $2 AND source = $3
+            "#,
+            player_id,
+            year,
+            source
         )
         .fetch_optional(&self.pool)
         .await
@@ -152,10 +200,17 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
                 broad_jump = $5,
                 three_cone_drill = $6,
                 twenty_yard_shuttle = $7,
-                updated_at = $8
+                arm_length = $8,
+                hand_size = $9,
+                wingspan = $10,
+                ten_yard_split = $11,
+                twenty_yard_split = $12,
+                updated_at = $13
             WHERE id = $1
-            RETURNING id, player_id, year, forty_yard_dash, bench_press, vertical_jump,
-                   broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at
+            RETURNING id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                   broad_jump, three_cone_drill, twenty_yard_shuttle,
+                   arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                   created_at, updated_at
             "#,
             results_db.id,
             results_db.forty_yard_dash,
@@ -164,6 +219,11 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
             results_db.broad_jump,
             results_db.three_cone_drill,
             results_db.twenty_yard_shuttle,
+            results_db.arm_length,
+            results_db.hand_size,
+            results_db.wingspan,
+            results_db.ten_yard_split,
+            results_db.twenty_yard_split,
             results_db.updated_at
         )
         .fetch_one(&self.pool)
@@ -193,7 +253,7 @@ mod tests {
     use super::*;
     use crate::create_pool;
     use crate::repositories::SqlxPlayerRepository;
-    use domain::models::Player;
+    use domain::models::{CombineSource, Player};
     use domain::repositories::PlayerRepository;
 
     async fn setup_test_pool() -> PgPool {
@@ -252,8 +312,94 @@ mod tests {
 
         assert_eq!(created.player_id, player.id);
         assert_eq!(created.year, 2026);
+        assert_eq!(created.source, CombineSource::Combine);
         assert_eq!(created.forty_yard_dash, Some(4.52));
         assert_eq!(created.bench_press, Some(20));
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_create_with_source() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_source(CombineSource::ProDay)
+            .with_forty_yard_dash(4.55)
+            .unwrap();
+
+        let created = repo.create(&results).await.unwrap();
+        assert_eq!(created.source, CombineSource::ProDay);
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_combine_and_pro_day_same_player_year() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        // Create combine results
+        let combine = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.52)
+            .unwrap();
+        repo.create(&combine).await.unwrap();
+
+        // Create pro day results for same player/year — should succeed
+        let pro_day = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_source(CombineSource::ProDay)
+            .with_forty_yard_dash(4.48)
+            .unwrap();
+        let created = repo.create(&pro_day).await.unwrap();
+        assert_eq!(created.source, CombineSource::ProDay);
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_create_with_new_measurables() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let results = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_arm_length(33.5)
+            .unwrap()
+            .with_hand_size(9.75)
+            .unwrap()
+            .with_wingspan(78.5)
+            .unwrap()
+            .with_ten_yard_split(1.55)
+            .unwrap()
+            .with_twenty_yard_split(2.65)
+            .unwrap();
+
+        let created = repo.create(&results).await.unwrap();
+
+        assert_eq!(created.arm_length, Some(33.5));
+        assert_eq!(created.hand_size, Some(9.75));
+        assert_eq!(created.wingspan, Some(78.5));
+        assert_eq!(created.ten_yard_split, Some(1.55));
+        assert_eq!(created.twenty_yard_split, Some(2.65));
 
         cleanup_combine_results(&pool).await;
         cleanup_players(&pool).await;
@@ -334,6 +480,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_find_by_player_year_source() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        let combine = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.52)
+            .unwrap();
+        repo.create(&combine).await.unwrap();
+
+        let pro_day = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_source(CombineSource::ProDay)
+            .with_forty_yard_dash(4.48)
+            .unwrap();
+        repo.create(&pro_day).await.unwrap();
+
+        let found = repo
+            .find_by_player_year_source(player.id, 2026, "pro_day")
+            .await
+            .unwrap();
+
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!(found.source, CombineSource::ProDay);
+        assert_eq!(found.forty_yard_dash, Some(4.48));
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
     async fn test_update_combine_results() {
         let pool = setup_test_pool().await;
         cleanup_combine_results(&pool).await;
@@ -348,6 +530,7 @@ mod tests {
         let updated = CombineResults {
             forty_yard_dash: Some(4.52),
             bench_press: Some(20),
+            arm_length: Some(33.5),
             ..created
         };
 
@@ -355,6 +538,7 @@ mod tests {
 
         assert_eq!(result.forty_yard_dash, Some(4.52));
         assert_eq!(result.bench_press, Some(20));
+        assert_eq!(result.arm_length, Some(33.5));
 
         cleanup_combine_results(&pool).await;
         cleanup_players(&pool).await;
@@ -382,7 +566,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_duplicate_player_year() {
+    async fn test_duplicate_player_year_source() {
         let pool = setup_test_pool().await;
         cleanup_combine_results(&pool).await;
         cleanup_players(&pool).await;

@@ -1,4 +1,5 @@
 pub mod chart_type;
+pub mod combine_percentile;
 pub mod combine_results;
 pub mod draft;
 pub mod draft_event;
@@ -6,6 +7,7 @@ pub mod draft_session;
 pub mod draft_strategy;
 pub mod player;
 pub mod prospect_ranking;
+pub mod ras_score;
 pub mod ranking_source;
 pub mod scouting_report;
 pub mod team;
@@ -14,7 +16,9 @@ pub mod team_season;
 pub mod trade;
 
 pub use chart_type::ChartType;
-pub use combine_results::CombineResults;
+pub use combine_percentile::{CombinePercentile, Measurement};
+pub use combine_results::{CombineResults, CombineSource};
+pub use ras_score::{MeasurementScore, RasScore};
 pub use draft::{Draft, DraftPick, DraftStatus};
 pub use draft_event::{DraftEvent, EventType};
 pub use draft_session::{DraftSession, SessionStatus};

@@ -4,9 +4,11 @@ import {
 	PlayerSchema,
 	ScoutingReportSchema,
 	CombineResultsSchema,
+	RasScoreSchema,
 	type Player,
 	type ScoutingReport,
 	type CombineResults,
+	type RasScore,
 	type Position,
 } from '$lib/types';
 
@@ -77,6 +79,20 @@ export const playersApi = {
 			return await apiClient.get(`/players/${playerId}/combine-results`, CombineResultsSchema);
 		} catch (error) {
 			// Return null if no combine results found (404)
+			if (hasStatus(error) && error.status === 404) {
+				return null;
+			}
+			throw error;
+		}
+	},
+
+	/**
+	 * Get RAS (Relative Athletic Score) for a player
+	 */
+	async getRasScore(playerId: string): Promise<RasScore | null> {
+		try {
+			return await apiClient.get(`/players/${playerId}/ras`, RasScoreSchema);
+		} catch (error) {
 			if (hasStatus(error) && error.status === 404) {
 				return null;
 			}

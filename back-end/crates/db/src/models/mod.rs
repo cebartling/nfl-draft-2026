@@ -1,3 +1,4 @@
+pub mod combine_percentile;
 pub mod combine_results;
 pub mod draft;
 pub mod draft_strategy;
@@ -10,6 +11,7 @@ pub mod team_need;
 pub mod team_season;
 pub mod trade;
 
+pub use combine_percentile::CombinePercentileDb;
 pub use combine_results::CombineResultsDb;
 pub use draft::{DraftDb, DraftPickDb};
 pub use draft_strategy::DraftStrategyDb;

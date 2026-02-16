@@ -1,4 +1,4 @@
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -52,6 +52,10 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/players/{player_id}/rankings",
             get(handlers::rankings::get_player_rankings),
+        )
+        .route(
+            "/players/{player_id}/ras",
+            get(handlers::ras::get_player_ras),
         )
         // Drafts
         .route(
@@ -166,6 +170,11 @@ pub fn create_router(state: AppState) -> Router {
             "/ranking-sources/{source_id}/rankings",
             get(handlers::rankings::get_source_rankings),
         )
+        // Combine Percentiles
+        .route(
+            "/combine-percentiles",
+            get(handlers::combine_percentiles::get_combine_percentiles),
+        )
         // Admin
         .route("/admin/seed-players", post(handlers::seed::seed_players))
         .route("/admin/seed-teams", post(handlers::seed::seed_teams))
@@ -173,7 +182,23 @@ pub fn create_router(state: AppState) -> Router {
             "/admin/seed-team-seasons",
             post(handlers::seed::seed_team_seasons),
         )
-        .route("/admin/seed-rankings", post(handlers::seed::seed_rankings));
+        .route("/admin/seed-rankings", post(handlers::seed::seed_rankings))
+        .route(
+            "/admin/seed-combine-percentiles",
+            post(handlers::seed::seed_combine_percentiles),
+        )
+        .route(
+            "/admin/seed-combine-data",
+            post(handlers::seed::seed_combine_data),
+        )
+        .route(
+            "/admin/seed-percentiles",
+            post(handlers::combine_percentiles::seed_percentiles),
+        )
+        .route(
+            "/admin/percentiles",
+            delete(handlers::combine_percentiles::delete_all_percentiles),
+        );
 
     // Create stateful routes
     let stateful_router = Router::new()

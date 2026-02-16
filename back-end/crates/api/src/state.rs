@@ -5,19 +5,21 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use db::repositories::{
-    EventRepo, SessionRepo, SqlxCombineResultsRepository, SqlxDraftPickRepository,
-    SqlxDraftRepository, SqlxDraftStrategyRepository, SqlxPlayerRepository,
-    SqlxProspectRankingRepository, SqlxRankingSourceRepository, SqlxScoutingReportRepository,
-    SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository, SqlxTradeRepository,
+    EventRepo, SessionRepo, SqlxCombinePercentileRepository, SqlxCombineResultsRepository,
+    SqlxDraftPickRepository, SqlxDraftRepository, SqlxDraftStrategyRepository,
+    SqlxPlayerRepository, SqlxProspectRankingRepository, SqlxRankingSourceRepository,
+    SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
+    SqlxTeamSeasonRepository, SqlxTradeRepository,
 };
 use domain::repositories::{
-    CombineResultsRepository, DraftPickRepository, DraftRepository, DraftStrategyRepository,
-    EventRepository, PlayerRepository, ProspectRankingRepository, RankingSourceRepository,
-    ScoutingReportRepository, SessionRepository, TeamNeedRepository, TeamRepository,
-    TeamSeasonRepository, TradeRepository,
+    CombinePercentileRepository, CombineResultsRepository, DraftPickRepository, DraftRepository,
+    DraftStrategyRepository, EventRepository, PlayerRepository, ProspectRankingRepository,
+    RankingSourceRepository, ScoutingReportRepository, SessionRepository, TeamNeedRepository,
+    TeamRepository, TeamSeasonRepository, TradeRepository,
 };
 use domain::services::{
-    AutoPickService, DraftEngine, DraftStrategyService, PlayerEvaluationService, TradeEngine,
+    AutoPickService, DraftEngine, DraftStrategyService, PlayerEvaluationService, RasScoringService,
+    TradeEngine,
 };
 use websocket::ConnectionManager;
 
@@ -30,6 +32,7 @@ pub struct AppState {
     pub draft_repo: Arc<dyn DraftRepository>,
     pub draft_pick_repo: Arc<dyn DraftPickRepository>,
     pub combine_results_repo: Arc<dyn CombineResultsRepository>,
+    pub combine_percentile_repo: Arc<dyn CombinePercentileRepository>,
     pub scouting_report_repo: Arc<dyn ScoutingReportRepository>,
     pub team_need_repo: Arc<dyn TeamNeedRepository>,
     pub team_season_repo: Arc<dyn TeamSeasonRepository>,
@@ -38,6 +41,7 @@ pub struct AppState {
     pub trade_repo: Arc<dyn TradeRepository>,
     pub ranking_source_repo: Arc<dyn RankingSourceRepository>,
     pub prospect_ranking_repo: Arc<dyn ProspectRankingRepository>,
+    pub ras_service: Arc<RasScoringService>,
     pub draft_engine: Arc<DraftEngine>,
     pub trade_engine: Arc<TradeEngine>,
     pub ws_manager: ConnectionManager,
@@ -62,6 +66,8 @@ impl AppState {
             Arc::new(SqlxDraftPickRepository::new(pool.clone()));
         let combine_results_repo: Arc<dyn CombineResultsRepository> =
             Arc::new(SqlxCombineResultsRepository::new(pool.clone()));
+        let combine_percentile_repo: Arc<dyn CombinePercentileRepository> =
+            Arc::new(SqlxCombinePercentileRepository::new(pool.clone()));
         let scouting_report_repo: Arc<dyn ScoutingReportRepository> =
             Arc::new(SqlxScoutingReportRepository::new(pool.clone()));
         let team_need_repo: Arc<dyn TeamNeedRepository> =
@@ -78,10 +84,15 @@ impl AppState {
         let draft_strategy_repo: Arc<dyn DraftStrategyRepository> =
             Arc::new(SqlxDraftStrategyRepository::new(pool.clone()));
 
-        let player_eval_service = Arc::new(PlayerEvaluationService::new(
-            scouting_report_repo.clone(),
-            combine_results_repo.clone(),
-        ));
+        let ras_service = Arc::new(RasScoringService::new(combine_percentile_repo.clone()));
+
+        let player_eval_service = Arc::new(
+            PlayerEvaluationService::new(
+                scouting_report_repo.clone(),
+                combine_results_repo.clone(),
+            )
+            .with_ras_service(ras_service.clone()),
+        );
 
         let strategy_service = Arc::new(DraftStrategyService::new(
             draft_strategy_repo,
@@ -118,6 +129,7 @@ impl AppState {
             draft_repo,
             draft_pick_repo,
             combine_results_repo,
+            combine_percentile_repo,
             scouting_report_repo,
             team_need_repo,
             team_season_repo,
@@ -126,6 +138,7 @@ impl AppState {
             trade_repo,
             ranking_source_repo,
             prospect_ranking_repo,
+            ras_service,
             draft_engine,
             trade_engine,
             ws_manager,

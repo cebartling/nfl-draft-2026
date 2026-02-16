@@ -99,6 +99,10 @@ pub async fn cleanup_database(pool: &sqlx::PgPool) {
         .execute(pool)
         .await
         .expect("Failed to cleanup combine_results");
+    sqlx::query!("DELETE FROM combine_percentiles")
+        .execute(pool)
+        .await
+        .expect("Failed to cleanup combine_percentiles");
     sqlx::query!("DELETE FROM team_needs")
         .execute(pool)
         .await

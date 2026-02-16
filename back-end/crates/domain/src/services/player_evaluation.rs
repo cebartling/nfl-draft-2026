@@ -4,11 +4,13 @@ use uuid::Uuid;
 use crate::errors::{DomainError, DomainResult};
 use crate::models::{CombineResults, Player, Position, ScoutingReport};
 use crate::repositories::{CombineResultsRepository, ScoutingReportRepository};
+use crate::services::RasScoringService;
 
 /// Service for evaluating players and calculating BPA (Best Player Available) scores
 pub struct PlayerEvaluationService {
     scouting_repo: Arc<dyn ScoutingReportRepository>,
     combine_repo: Arc<dyn CombineResultsRepository>,
+    ras_service: Option<Arc<RasScoringService>>,
 }
 
 impl PlayerEvaluationService {
@@ -19,7 +21,14 @@ impl PlayerEvaluationService {
         Self {
             scouting_repo,
             combine_repo,
+            ras_service: None,
         }
+    }
+
+    /// Add RAS scoring service for percentile-based combine evaluation
+    pub fn with_ras_service(mut self, ras_service: Arc<RasScoringService>) -> Self {
+        self.ras_service = Some(ras_service);
+        self
     }
 
     /// Calculate BPA score for a player from a specific team's perspective
@@ -41,12 +50,22 @@ impl PlayerEvaluationService {
         let combine_results_list = self.combine_repo.find_by_player_id(player.id).await?;
         let combine_results = combine_results_list.first();
 
-        // Calculate components
-        let scouting_component = Self::normalize_scouting_grade(scouting_report.grade) * 0.60;
-        let combine_component = combine_results
-            .map(|c| self.calculate_combine_score(c, &player.position))
+        // Calculate combine component: prefer RAS if available, fall back to hardcoded normalization
+        let combine_score = match (&self.ras_service, combine_results) {
+            (Some(ras), Some(combine)) => {
+                let ras_score = ras.calculate_ras(player, combine).await;
+                // RAS overall_score is 0-10; convert to 0-100 scale
+                ras_score.overall_score.map(|s| s * 10.0)
+            }
+            _ => None,
+        };
+        let combine_component = combine_score
+            .or_else(|| combine_results.map(|c| self.calculate_combine_score(c, &player.position)))
             .unwrap_or(50.0)
             * 0.20;
+
+        // Calculate components
+        let scouting_component = Self::normalize_scouting_grade(scouting_report.grade) * 0.60;
         let fit_component = Self::calculate_fit_score(&scouting_report) * 0.15;
         let concern_penalty = Self::calculate_concern_penalty(&scouting_report);
 
@@ -320,6 +339,7 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<CombineResults>>;
             async fn find_by_player_id(&self, player_id: Uuid) -> DomainResult<Vec<CombineResults>>;
             async fn find_by_player_and_year(&self, player_id: Uuid, year: i32) -> DomainResult<Option<CombineResults>>;
+            async fn find_by_player_year_source(&self, player_id: Uuid, year: i32, source: &str) -> DomainResult<Option<CombineResults>>;
             async fn update(&self, results: &CombineResults) -> DomainResult<CombineResults>;
             async fn delete(&self, id: Uuid) -> DomainResult<()>;
         }

@@ -201,6 +201,7 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<CombineResults>>;
             async fn find_by_player_id(&self, player_id: Uuid) -> DomainResult<Vec<CombineResults>>;
             async fn find_by_player_and_year(&self, player_id: Uuid, year: i32) -> DomainResult<Option<CombineResults>>;
+            async fn find_by_player_year_source(&self, player_id: Uuid, year: i32, source: &str) -> DomainResult<Option<CombineResults>>;
             async fn update(&self, results: &CombineResults) -> DomainResult<CombineResults>;
             async fn delete(&self, id: Uuid) -> DomainResult<()>;
         }

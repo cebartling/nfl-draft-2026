@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use domain::models::CombineResults;
+use domain::models::{CombineResults, CombineSource};
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -14,12 +14,19 @@ use crate::state::AppState;
 pub struct CreateCombineResultsRequest {
     pub player_id: Uuid,
     pub year: i32,
+    #[serde(default)]
+    pub source: Option<String>,
     pub forty_yard_dash: Option<f64>,
     pub bench_press: Option<i32>,
     pub vertical_jump: Option<f64>,
     pub broad_jump: Option<i32>,
     pub three_cone_drill: Option<f64>,
     pub twenty_yard_shuttle: Option<f64>,
+    pub arm_length: Option<f64>,
+    pub hand_size: Option<f64>,
+    pub wingspan: Option<f64>,
+    pub ten_yard_split: Option<f64>,
+    pub twenty_yard_split: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -30,6 +37,11 @@ pub struct UpdateCombineResultsRequest {
     pub broad_jump: Option<i32>,
     pub three_cone_drill: Option<f64>,
     pub twenty_yard_shuttle: Option<f64>,
+    pub arm_length: Option<f64>,
+    pub hand_size: Option<f64>,
+    pub wingspan: Option<f64>,
+    pub ten_yard_split: Option<f64>,
+    pub twenty_yard_split: Option<f64>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -37,12 +49,18 @@ pub struct CombineResultsResponse {
     pub id: Uuid,
     pub player_id: Uuid,
     pub year: i32,
+    pub source: String,
     pub forty_yard_dash: Option<f64>,
     pub bench_press: Option<i32>,
     pub vertical_jump: Option<f64>,
     pub broad_jump: Option<i32>,
     pub three_cone_drill: Option<f64>,
     pub twenty_yard_shuttle: Option<f64>,
+    pub arm_length: Option<f64>,
+    pub hand_size: Option<f64>,
+    pub wingspan: Option<f64>,
+    pub ten_yard_split: Option<f64>,
+    pub twenty_yard_split: Option<f64>,
 }
 
 impl From<CombineResults> for CombineResultsResponse {
@@ -51,12 +69,18 @@ impl From<CombineResults> for CombineResultsResponse {
             id: results.id,
             player_id: results.player_id,
             year: results.year,
+            source: results.source.to_string(),
             forty_yard_dash: results.forty_yard_dash,
             bench_press: results.bench_press,
             vertical_jump: results.vertical_jump,
             broad_jump: results.broad_jump,
             three_cone_drill: results.three_cone_drill,
             twenty_yard_shuttle: results.twenty_yard_shuttle,
+            arm_length: results.arm_length,
+            hand_size: results.hand_size,
+            wingspan: results.wingspan,
+            ten_yard_split: results.ten_yard_split,
+            twenty_yard_split: results.twenty_yard_split,
         }
     }
 }
@@ -77,7 +101,15 @@ pub async fn create_combine_results(
     State(state): State<AppState>,
     Json(req): Json<CreateCombineResultsRequest>,
 ) -> ApiResult<(StatusCode, Json<CombineResultsResponse>)> {
-    let mut results = CombineResults::new(req.player_id, req.year)?;
+    let source = match &req.source {
+        Some(s) => s.parse::<CombineSource>().map_err(|e| {
+            ApiError::BadRequest(format!("Invalid source: {}", e))
+        })?,
+        None => CombineSource::Combine,
+    };
+
+    let mut results = CombineResults::new(req.player_id, req.year)?
+        .with_source(source);
 
     if let Some(time) = req.forty_yard_dash {
         results = results.with_forty_yard_dash(time)?;
@@ -96,6 +128,21 @@ pub async fn create_combine_results(
     }
     if let Some(time) = req.twenty_yard_shuttle {
         results = results.with_twenty_yard_shuttle(time)?;
+    }
+    if let Some(inches) = req.arm_length {
+        results = results.with_arm_length(inches)?;
+    }
+    if let Some(inches) = req.hand_size {
+        results = results.with_hand_size(inches)?;
+    }
+    if let Some(inches) = req.wingspan {
+        results = results.with_wingspan(inches)?;
+    }
+    if let Some(time) = req.ten_yard_split {
+        results = results.with_ten_yard_split(time)?;
+    }
+    if let Some(time) = req.twenty_yard_split {
+        results = results.with_twenty_yard_split(time)?;
     }
 
     let created = state.combine_results_repo.create(&results).await?;
@@ -192,6 +239,11 @@ pub async fn update_combine_results(
     results.update_broad_jump(req.broad_jump)?;
     results.update_three_cone_drill(req.three_cone_drill)?;
     results.update_twenty_yard_shuttle(req.twenty_yard_shuttle)?;
+    results.update_arm_length(req.arm_length)?;
+    results.update_hand_size(req.hand_size)?;
+    results.update_wingspan(req.wingspan)?;
+    results.update_ten_yard_split(req.ten_yard_split)?;
+    results.update_twenty_yard_split_time(req.twenty_yard_split)?;
 
     let updated = state.combine_results_repo.update(&results).await?;
 
@@ -279,12 +331,18 @@ mod tests {
         let request = CreateCombineResultsRequest {
             player_id: player.id,
             year: 2026,
+            source: None,
             forty_yard_dash: Some(4.52),
             bench_press: Some(20),
             vertical_jump: Some(35.5),
             broad_jump: None,
             three_cone_drill: None,
             twenty_yard_shuttle: None,
+            arm_length: None,
+            hand_size: None,
+            wingspan: None,
+            ten_yard_split: None,
+            twenty_yard_split: None,
         };
 
         let result = create_combine_results(State(state.clone()), Json(request)).await;
@@ -294,7 +352,39 @@ mod tests {
         assert_eq!(status, StatusCode::CREATED);
         assert_eq!(response.player_id, player.id);
         assert_eq!(response.year, 2026);
+        assert_eq!(response.source, "combine");
         assert_eq!(response.forty_yard_dash, Some(4.52));
+    }
+
+    #[tokio::test]
+    async fn test_create_combine_results_with_source() {
+        let (state, _pool) = setup_test_state().await;
+
+        let player = create_test_player(&state).await;
+
+        let request = CreateCombineResultsRequest {
+            player_id: player.id,
+            year: 2026,
+            source: Some("pro_day".to_string()),
+            forty_yard_dash: Some(4.48),
+            bench_press: None,
+            vertical_jump: None,
+            broad_jump: None,
+            three_cone_drill: None,
+            twenty_yard_shuttle: None,
+            arm_length: None,
+            hand_size: None,
+            wingspan: None,
+            ten_yard_split: None,
+            twenty_yard_split: None,
+        };
+
+        let result = create_combine_results(State(state.clone()), Json(request)).await;
+        assert!(result.is_ok());
+
+        let (status, response) = result.unwrap();
+        assert_eq!(status, StatusCode::CREATED);
+        assert_eq!(response.source, "pro_day");
     }
 
     #[tokio::test]
@@ -306,12 +396,18 @@ mod tests {
         let request = CreateCombineResultsRequest {
             player_id: player.id,
             year: 2026,
+            source: None,
             forty_yard_dash: Some(4.52),
             bench_press: None,
             vertical_jump: None,
             broad_jump: None,
             three_cone_drill: None,
             twenty_yard_shuttle: None,
+            arm_length: None,
+            hand_size: None,
+            wingspan: None,
+            ten_yard_split: None,
+            twenty_yard_split: None,
         };
 
         let (_, created_response) = create_combine_results(State(state.clone()), Json(request))
@@ -334,23 +430,35 @@ mod tests {
         let request1 = CreateCombineResultsRequest {
             player_id: player.id,
             year: 2025,
+            source: None,
             forty_yard_dash: Some(4.60),
             bench_press: None,
             vertical_jump: None,
             broad_jump: None,
             three_cone_drill: None,
             twenty_yard_shuttle: None,
+            arm_length: None,
+            hand_size: None,
+            wingspan: None,
+            ten_yard_split: None,
+            twenty_yard_split: None,
         };
 
         let request2 = CreateCombineResultsRequest {
             player_id: player.id,
             year: 2026,
+            source: None,
             forty_yard_dash: Some(4.52),
             bench_press: None,
             vertical_jump: None,
             broad_jump: None,
             three_cone_drill: None,
             twenty_yard_shuttle: None,
+            arm_length: None,
+            hand_size: None,
+            wingspan: None,
+            ten_yard_split: None,
+            twenty_yard_split: None,
         };
 
         let _ = create_combine_results(State(state.clone()), Json(request1))

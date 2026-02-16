@@ -1,3 +1,4 @@
+pub mod combine_percentile;
 pub mod combine_results;
 pub mod draft;
 pub mod draft_strategy;
@@ -12,6 +13,7 @@ pub mod team_need;
 pub mod team_season;
 pub mod trade;
 
+pub use combine_percentile::CombinePercentileRepository;
 pub use combine_results::CombineResultsRepository;
 pub use draft::{DraftPickRepository, DraftRepository};
 pub use draft_strategy::DraftStrategyRepository;

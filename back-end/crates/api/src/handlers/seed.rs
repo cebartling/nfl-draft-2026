@@ -31,6 +31,8 @@ const TEAM_SEASONS_2025_JSON: &str = include_str!("../../../../data/team_seasons
 const RANKINGS_TANKATHON_JSON: &str = include_str!("../../../../data/rankings/tankathon_2026.json");
 const RANKINGS_WALTERFOOTBALL_JSON: &str =
     include_str!("../../../../data/rankings/walterfootball_2026.json");
+const COMBINE_PERCENTILES_JSON: &str = include_str!("../../../../data/combine_percentiles.json");
+const COMBINE_2026_MOCK_JSON: &str = include_str!("../../../../data/combine_2026_mock.json");
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SeedResponse {
@@ -421,5 +423,135 @@ pub async fn seed_rankings(
         error_count: all_errors.len(),
         errors: all_errors,
         validation_warnings: all_warnings,
+    }))
+}
+
+/// Seed the database with embedded combine percentile data
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/seed-combine-percentiles",
+    tag = "admin",
+    responses(
+        (status = 200, description = "Combine percentiles seeded successfully", body = SeedResponse),
+        (status = 401, description = "Unauthorized - invalid or missing API key"),
+        (status = 404, description = "Not found - endpoint not enabled"),
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+pub async fn seed_combine_percentiles(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> ApiResult<Json<SeedResponse>> {
+    let expected_key = match &state.seed_api_key {
+        Some(key) => key,
+        None => {
+            return Err(ApiError::NotFound("Not found".to_string()));
+        }
+    };
+
+    let provided_key = headers
+        .get("X-Seed-Api-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !verify_api_key(provided_key, expected_key) {
+        return Err(ApiError::Unauthorized(
+            "Invalid or missing API key".to_string(),
+        ));
+    }
+
+    let data = seed_data::percentile_loader::parse_percentile_json(COMBINE_PERCENTILES_JSON)
+        .map_err(|e| {
+            ApiError::InternalError(format!("Failed to parse percentile data: {}", e))
+        })?;
+
+    let stats = seed_data::percentile_loader::load_percentiles(
+        &data,
+        state.combine_percentile_repo.as_ref(),
+    )
+    .await
+    .map_err(|e| ApiError::InternalError(format!("Failed to load percentiles: {}", e)))?;
+
+    let message = format!(
+        "Percentile seeding complete: {} upserted, {} errors",
+        stats.upserted,
+        stats.errors.len()
+    );
+
+    Ok(Json(SeedResponse {
+        message,
+        success_count: stats.upserted,
+        skipped_count: 0,
+        error_count: stats.errors.len(),
+        errors: stats.errors,
+        validation_warnings: vec![],
+    }))
+}
+
+/// Seed the database with embedded mock combine data for 2026 prospects
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/seed-combine-data",
+    tag = "admin",
+    responses(
+        (status = 200, description = "Combine data seeded successfully", body = SeedResponse),
+        (status = 401, description = "Unauthorized - invalid or missing API key"),
+        (status = 404, description = "Not found - endpoint not enabled"),
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+pub async fn seed_combine_data(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> ApiResult<Json<SeedResponse>> {
+    let expected_key = match &state.seed_api_key {
+        Some(key) => key,
+        None => {
+            return Err(ApiError::NotFound("Not found".to_string()));
+        }
+    };
+
+    let provided_key = headers
+        .get("X-Seed-Api-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !verify_api_key(provided_key, expected_key) {
+        return Err(ApiError::Unauthorized(
+            "Invalid or missing API key".to_string(),
+        ));
+    }
+
+    let data = seed_data::combine_loader::parse_combine_json(COMBINE_2026_MOCK_JSON).map_err(
+        |e| ApiError::InternalError(format!("Failed to parse combine data: {}", e)),
+    )?;
+
+    let stats = seed_data::combine_loader::load_combine_data(
+        &data,
+        state.player_repo.as_ref(),
+        state.combine_results_repo.as_ref(),
+    )
+    .await
+    .map_err(|e| ApiError::InternalError(format!("Failed to load combine data: {}", e)))?;
+
+    let message = format!(
+        "Combine data seeding complete: {} loaded, {} skipped, {} not found, {} errors",
+        stats.loaded,
+        stats.skipped,
+        stats.player_not_found,
+        stats.errors.len()
+    );
+
+    Ok(Json(SeedResponse {
+        message,
+        success_count: stats.loaded,
+        skipped_count: stats.skipped + stats.player_not_found,
+        error_count: stats.errors.len(),
+        errors: stats.errors,
+        validation_warnings: vec![],
     }))
 }

@@ -1,3 +1,4 @@
+pub mod combine_percentile_repo;
 pub mod combine_results_repo;
 pub mod draft;
 pub mod draft_strategy_repo;
@@ -12,6 +13,7 @@ pub mod team_need_repo;
 pub mod team_season_repo;
 pub mod trade_repo;
 
+pub use combine_percentile_repo::SqlxCombinePercentileRepository;
 pub use combine_results_repo::SqlxCombineResultsRepository;
 pub use draft::{SqlxDraftPickRepository, SqlxDraftRepository};
 pub use draft_strategy_repo::SqlxDraftStrategyRepository;

@@ -8,6 +8,7 @@ members = [
     "crates/seed-data",
     "crates/draft-order-scraper",
     "crates/prospect-rankings-scraper",
+    "crates/combine-data-scraper",
 ]
 
 [workspace.package]
@@ -64,6 +65,9 @@ async-trait = "0.1"
 
 # HTML scraping
 scraper = "0.22"
+
+# Random number generation
+rand = "0.9"
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["axum_extras", "chrono", "uuid"] }
