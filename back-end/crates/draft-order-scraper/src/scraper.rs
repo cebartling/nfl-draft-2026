@@ -106,14 +106,27 @@ fn parse_round_picks(round_element: &ElementRef) -> Vec<(i32, String, String, bo
         let pick_number = match row.select(&pick_num_sel).next() {
             Some(td) => {
                 let text: String = td.text().collect::<Vec<_>>().join("");
-                let digits: String = text
-                    .trim()
+                let trimmed = text.trim().to_string();
+                let digits: String = trimmed
                     .chars()
                     .take_while(|c| c.is_ascii_digit())
                     .collect();
                 match digits.parse::<i32>() {
-                    Ok(n) => n,
-                    Err(_) => continue,
+                    Ok(n) if n > 0 => n,
+                    Ok(n) => {
+                        eprintln!(
+                            "WARNING: Invalid pick number {} in row text '{}'",
+                            n, trimmed
+                        );
+                        continue;
+                    }
+                    Err(_) => {
+                        eprintln!(
+                            "WARNING: Could not parse pick number from row text '{}'",
+                            trimmed
+                        );
+                        continue;
+                    }
                 }
             }
             None => continue,
