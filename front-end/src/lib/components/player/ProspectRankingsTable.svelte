@@ -92,9 +92,6 @@
 				>
 					<td class="px-4 py-3 whitespace-nowrap">
 						<div class="text-sm font-bold text-gray-900">{index + 1}</div>
-						{#if ranking}
-							<div class="text-xs text-gray-500">avg {ranking.consensusRank.toFixed(1)}</div>
-						{/if}
 					</td>
 					<td class="px-4 py-3 whitespace-nowrap">
 						<div class="text-sm font-semibold text-gray-900">
