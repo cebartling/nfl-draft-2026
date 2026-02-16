@@ -22,10 +22,13 @@ KEEP_CONTAINERS="${KEEP_CONTAINERS:-false}"
 
 cleanup() {
     if [ "$KEEP_CONTAINERS" != "true" ]; then
-        echo -e "${YELLOW}${BOLD}Cleaning up E2E containers (api, frontend)...${NC}"
+        echo -e "${YELLOW}${BOLD}Cleaning up E2E containers (api, frontend, seed)...${NC}"
         cd "$REPO_ROOT"
         docker compose stop api frontend 2>/dev/null || true
         docker compose rm -f api frontend 2>/dev/null || true
+        docker compose --profile seed stop seed 2>/dev/null || true
+        docker compose --profile seed rm -f seed 2>/dev/null || true
+        docker image rm nfl-draft-2026-seed 2>/dev/null || true
         echo -e "${GREEN}E2E containers stopped.${NC}"
     fi
 }
