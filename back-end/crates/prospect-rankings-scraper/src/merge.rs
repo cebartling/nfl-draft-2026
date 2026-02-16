@@ -404,4 +404,47 @@ mod tests {
         assert_eq!(result.rankings[1].height_inches, Some(67));
         assert_eq!(result.rankings[1].weight_pounds, Some(175));
     }
+
+    #[test]
+    fn test_merge_cross_fills_from_multiple_secondaries() {
+        // Primary has no physical stats
+        let primary = RankingData {
+            meta: make_meta("primary", 2026, 1),
+            rankings: vec![make_entry(1, "John", "Smith", "QB", "Alabama")],
+        };
+
+        // First secondary has only height
+        let sec1 = RankingData {
+            meta: make_meta("sec1", 2026, 1),
+            rankings: vec![make_entry_with_size(
+                1,
+                "John",
+                "Smith",
+                "QB",
+                "Alabama",
+                Some(75),
+                None,
+            )],
+        };
+
+        // Second secondary has only weight
+        let sec2 = RankingData {
+            meta: make_meta("sec2", 2026, 1),
+            rankings: vec![make_entry_with_size(
+                1,
+                "John",
+                "Smith",
+                "QB",
+                "Alabama",
+                None,
+                Some(215),
+            )],
+        };
+
+        let result = merge_rankings(primary, vec![sec1, sec2]).unwrap();
+        assert_eq!(result.rankings.len(), 1);
+        // Height from sec1, weight from sec2
+        assert_eq!(result.rankings[0].height_inches, Some(75));
+        assert_eq!(result.rankings[0].weight_pounds, Some(215));
+    }
 }
