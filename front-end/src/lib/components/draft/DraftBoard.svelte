@@ -5,6 +5,7 @@
 	import { teamsApi, playersApi } from '$api';
 	import { draftState } from '$stores';
 	import { logger } from '$lib/utils/logger';
+	import { tick } from 'svelte';
 
 	interface Props {
 		picks: DraftPick[];
@@ -17,6 +18,7 @@
 	let isLoading = $state(false);
 	let collapsedRounds = $state<Set<number>>(new Set());
 	let initializedCollapse = $state(false);
+	let scrollContainer = $state<HTMLDivElement>();
 
 	function toggleRound(round: number) {
 		const next = new Set(collapsedRounds);
@@ -54,6 +56,29 @@
 			collapsedRounds = new Set(rounds.filter((r) => r !== 1));
 			initializedCollapse = true;
 		}
+	});
+
+	// Auto-scroll to the current pick and expand its round if collapsed
+	$effect(() => {
+		const currentPick = draftState.currentPickNumber;
+		if (!currentPick || !scrollContainer) return;
+
+		// Find which round contains the current pick
+		const targetRound = picks.find((p) => p.overall_pick === currentPick)?.round;
+		if (!targetRound) return;
+
+		// Expand the round if it's collapsed
+		if (collapsedRounds.has(targetRound)) {
+			const next = new Set(collapsedRounds);
+			next.delete(targetRound);
+			collapsedRounds = next;
+		}
+
+		// Wait for DOM update then scroll to the pick
+		tick().then(() => {
+			const el = scrollContainer?.querySelector(`[data-pick="${currentPick}"]`);
+			el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		});
 	});
 
 	// Load teams and players when picks change
@@ -100,7 +125,7 @@
 {:else if picks.length === 0}
 	<p class="text-center text-gray-500 py-12">No picks available</p>
 {:else}
-	<div class="space-y-8 max-h-[800px] overflow-y-auto p-1">
+	<div bind:this={scrollContainer} class="space-y-8 max-h-[800px] overflow-y-auto p-1">
 		{#each rounds as round (round)}
 			<div>
 				<button

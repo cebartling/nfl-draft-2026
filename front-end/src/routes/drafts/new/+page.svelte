@@ -102,7 +102,7 @@
 					class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
 				/>
 				<div class="flex justify-between text-xs text-gray-400 mt-1 px-0.5">
-					{#each [1, 2, 3, 4, 5, 6, 7] as n}
+					{#each [1, 2, 3, 4, 5, 6, 7] as n (n)}
 						<span>{n}</span>
 					{/each}
 				</div>

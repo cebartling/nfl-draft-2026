@@ -48,7 +48,7 @@ async fn test_create_realistic_draft() {
 }
 
 #[tokio::test]
-async fn test_initialize_picks_for_realistic_draft() {
+async fn test_initialize_picks_for_custom_draft_with_two_teams() {
     let (base_url, pool) = common::spawn_app().await;
     let client = common::create_client();
 
@@ -70,13 +70,14 @@ async fn test_initialize_picks_for_realistic_draft() {
         assert_eq!(resp.status(), 201);
     }
 
-    // Create realistic draft
+    // Create custom draft with 2 picks per round
     let draft_response = client
         .post(&format!("{}/api/v1/drafts", base_url))
         .json(&json!({
-            "name": "Realistic Draft",
+            "name": "Custom Draft",
             "year": 2026,
-            "rounds": 7
+            "rounds": 7,
+            "picks_per_round": 2
         }))
         .timeout(Duration::from_secs(5))
         .send()
