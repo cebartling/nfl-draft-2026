@@ -33,7 +33,7 @@ const { mockWsClient, mockDraftState, WebSocketState } = vi.hoisted(() => {
 
 // Capture handlers registered during construction
 let capturedMessageHandler: ((msg: ServerMessage) => void) | null = null;
-let capturedStateHandler: ((state: string) => void) | null = null;
+let _capturedStateHandler: ((state: string) => void) | null = null;
 
 // Override on/onStateChange to capture handlers
 mockWsClient.on.mockImplementation((handler: any) => {
@@ -42,7 +42,7 @@ mockWsClient.on.mockImplementation((handler: any) => {
 });
 
 mockWsClient.onStateChange.mockImplementation((handler: any) => {
-	capturedStateHandler = handler;
+	_capturedStateHandler = handler;
 	return vi.fn();
 });
 
@@ -74,7 +74,7 @@ describe('WebSocketStateManager', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		capturedMessageHandler = null;
-		capturedStateHandler = null;
+		_capturedStateHandler = null;
 		mockDraftState.session = null;
 		mockDraftState.draft = null;
 		mockDraftState.isAutoPickRunning = false;
@@ -85,7 +85,7 @@ describe('WebSocketStateManager', () => {
 			return vi.fn();
 		});
 		mockWsClient.onStateChange.mockImplementation((handler: any) => {
-			capturedStateHandler = handler;
+			_capturedStateHandler = handler;
 			return vi.fn();
 		});
 
