@@ -1,6 +1,8 @@
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
+use axum::http::{HeaderValue, Method};
 use axum::routing::{delete, get, post};
 use axum::Router;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -10,10 +12,40 @@ use crate::openapi::ApiDoc;
 use crate::state::AppState;
 
 pub fn create_router(state: AppState) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    create_router_with_cors(state, &[])
+}
+
+pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Router {
+    let seed_api_key_header = "X-Seed-Api-Key".parse().unwrap();
+    let allowed_methods = [Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS];
+    let allowed_headers = [CONTENT_TYPE, AUTHORIZATION, seed_api_key_header];
+
+    let cors = if cors_origins.is_empty() {
+        // Default development origins
+        let origins: Vec<HeaderValue> = [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:8080",
+        ]
+        .iter()
+        .map(|o| o.parse().unwrap())
+        .collect();
+
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(origins))
+            .allow_methods(allowed_methods)
+            .allow_headers(allowed_headers)
+    } else {
+        let origins: Vec<HeaderValue> = cors_origins
+            .iter()
+            .filter_map(|o| o.parse().ok())
+            .collect();
+
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(origins))
+            .allow_methods(allowed_methods)
+            .allow_headers(allowed_headers)
+    };
 
     // API v1 routes
     let api_routes = Router::new()

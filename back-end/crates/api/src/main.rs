@@ -25,8 +25,8 @@ async fn main() -> anyhow::Result<()> {
     // Create application state
     let state = AppState::new(pool, config.seed_api_key.clone());
 
-    // Create router
-    let app = api::routes::create_router(state);
+    // Create router with configured CORS origins
+    let app = api::routes::create_router_with_cors(state, &config.cors_origins);
 
     // Create TCP listener
     let listener = tokio::net::TcpListener::bind(&config.server_address()).await?;
