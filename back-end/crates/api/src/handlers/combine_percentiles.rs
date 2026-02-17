@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use crate::auth::verify_api_key;
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
@@ -149,9 +150,9 @@ pub async fn seed_percentiles(
     headers: axum::http::HeaderMap,
     Json(req): Json<BulkUpsertPercentilesRequest>,
 ) -> ApiResult<Json<BulkUpsertResponse>> {
-    // Validate seed API key
+    // Validate seed API key using constant-time comparison
     let expected_key = match &state.seed_api_key {
-        Some(key) => key.clone(),
+        Some(key) => key,
         None => {
             return Err(ApiError::NotFound("Not found".to_string()));
         }
@@ -162,7 +163,7 @@ pub async fn seed_percentiles(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
 
-    if provided_key != expected_key {
+    if !verify_api_key(provided_key, expected_key) {
         return Err(ApiError::Unauthorized(
             "Invalid or missing API key".to_string(),
         ));
@@ -263,8 +264,9 @@ pub async fn delete_all_percentiles(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
 ) -> ApiResult<Json<BulkUpsertResponse>> {
+    // Validate seed API key using constant-time comparison
     let expected_key = match &state.seed_api_key {
-        Some(key) => key.clone(),
+        Some(key) => key,
         None => {
             return Err(ApiError::NotFound("Not found".to_string()));
         }
@@ -275,7 +277,7 @@ pub async fn delete_all_percentiles(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
 
-    if provided_key != expected_key {
+    if !verify_api_key(provided_key, expected_key) {
         return Err(ApiError::Unauthorized(
             "Invalid or missing API key".to_string(),
         ));
