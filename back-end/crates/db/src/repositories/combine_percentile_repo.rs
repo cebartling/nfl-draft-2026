@@ -2,10 +2,11 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use domain::errors::{DomainError, DomainResult};
+use domain::errors::DomainResult;
 use domain::models::CombinePercentile;
 use domain::repositories::CombinePercentileRepository;
 
+use crate::errors::DbError;
 use crate::models::CombinePercentileDb;
 
 pub struct SqlxCombinePercentileRepository {
@@ -33,13 +34,10 @@ impl CombinePercentileRepository for SqlxCombinePercentileRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+        .map_err(DbError::DatabaseError)?;
 
         rows.into_iter()
-            .map(|r| {
-                r.to_domain()
-                    .map_err(|e| DomainError::InternalError(e.to_string()))
-            })
+            .map(|r| r.to_domain().map_err(Into::into))
             .collect()
     }
 
@@ -58,13 +56,10 @@ impl CombinePercentileRepository for SqlxCombinePercentileRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+        .map_err(DbError::DatabaseError)?;
 
         rows.into_iter()
-            .map(|r| {
-                r.to_domain()
-                    .map_err(|e| DomainError::InternalError(e.to_string()))
-            })
+            .map(|r| r.to_domain().map_err(Into::into))
             .collect()
     }
 
@@ -87,13 +82,10 @@ impl CombinePercentileRepository for SqlxCombinePercentileRepository {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+        .map_err(DbError::DatabaseError)?;
 
         match row {
-            Some(r) => Ok(Some(
-                r.to_domain()
-                    .map_err(|e| DomainError::InternalError(e.to_string()))?,
-            )),
+            Some(r) => Ok(Some(r.to_domain()?)),
             None => Ok(None),
         }
     }
@@ -150,17 +142,16 @@ impl CombinePercentileRepository for SqlxCombinePercentileRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+        .map_err(DbError::DatabaseError)?;
 
-        row.to_domain()
-            .map_err(|e| DomainError::InternalError(e.to_string()))
+        row.to_domain().map_err(Into::into)
     }
 
     async fn delete_all(&self) -> DomainResult<u64> {
         let result = sqlx::query!("DELETE FROM combine_percentiles")
             .execute(&self.pool)
             .await
-            .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+            .map_err(DbError::DatabaseError)?;
 
         Ok(result.rows_affected())
     }
@@ -169,13 +160,14 @@ impl CombinePercentileRepository for SqlxCombinePercentileRepository {
         let result = sqlx::query!("DELETE FROM combine_percentiles WHERE id = $1", id)
             .execute(&self.pool)
             .await
-            .map_err(|e| DomainError::DatabaseError(e.to_string()))?;
+            .map_err(DbError::DatabaseError)?;
 
         if result.rows_affected() == 0 {
-            return Err(DomainError::NotFound(format!(
+            return Err(DbError::NotFound(format!(
                 "Combine percentile with id {} not found",
                 id
-            )));
+            ))
+            .into());
         }
 
         Ok(())
