@@ -624,4 +624,164 @@ mod tests {
         );
     }
 
+    // --- Async unit tests for RasScoringService.calculate_ras (Fix M6) ---
+
+    use crate::errors::DomainResult;
+    use crate::models::CombineResults;
+    use crate::repositories::CombinePercentileRepository;
+    use mockall::mock;
+
+    mock! {
+        CombinePercentileRepo {}
+
+        #[async_trait::async_trait]
+        impl CombinePercentileRepository for CombinePercentileRepo {
+            async fn find_all(&self) -> DomainResult<Vec<CombinePercentile>>;
+            async fn find_by_position(&self, position: &str) -> DomainResult<Vec<CombinePercentile>>;
+            async fn find_by_position_and_measurement(
+                &self,
+                position: &str,
+                measurement: &str,
+            ) -> DomainResult<Option<CombinePercentile>>;
+            async fn upsert(&self, percentile: &CombinePercentile) -> DomainResult<CombinePercentile>;
+            async fn delete_all(&self) -> DomainResult<u64>;
+            async fn delete(&self, id: uuid::Uuid) -> DomainResult<()>;
+        }
+    }
+
+    #[tokio::test]
+    async fn test_calculate_ras_full_measurements() {
+        let mut mock_repo = MockCombinePercentileRepo::new();
+
+        // Mock returns percentile data for every measurement
+        mock_repo
+            .expect_find_by_position_and_measurement()
+            .returning(|position, measurement| {
+                let percentile = match measurement {
+                    "height" => Some(make_percentile(position, "height", 70.0, 73.0, 76.0)),
+                    "weight" => Some(make_percentile(position, "weight", 185.0, 210.0, 235.0)),
+                    "forty_yard_dash" => Some(make_percentile(position, "forty_yard_dash", 4.35, 4.48, 4.62)),
+                    "vertical_jump" => Some(make_percentile(position, "vertical_jump", 28.0, 36.0, 41.0)),
+                    "broad_jump" => Some(make_percentile(position, "broad_jump", 110.0, 120.0, 130.0)),
+                    "three_cone_drill" => Some(make_percentile(position, "three_cone_drill", 6.7, 7.0, 7.3)),
+                    "twenty_yard_shuttle" => Some(make_percentile(position, "twenty_yard_shuttle", 4.1, 4.3, 4.5)),
+                    "bench_press" => Some(make_percentile(position, "bench_press", 10.0, 16.0, 22.0)),
+                    "ten_yard_split" => Some(make_percentile(position, "ten_yard_split", 1.48, 1.55, 1.62)),
+                    "twenty_yard_split" => Some(make_percentile(position, "twenty_yard_split", 2.5, 2.6, 2.7)),
+                    _ => None,
+                };
+                Ok(percentile)
+            });
+
+        let service = RasScoringService::new(Arc::new(mock_repo));
+
+        let player = crate::models::Player::new(
+            "Test".to_string(),
+            "Player".to_string(),
+            Position::WR,
+            2026,
+        )
+        .unwrap()
+        .with_physical_stats(73, 210)
+        .unwrap();
+
+        let combine = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.45)
+            .unwrap()
+            .with_vertical_jump(36.0)
+            .unwrap()
+            .with_broad_jump(120)
+            .unwrap()
+            .with_three_cone_drill(7.0)
+            .unwrap()
+            .with_twenty_yard_shuttle(4.3)
+            .unwrap()
+            .with_bench_press(16)
+            .unwrap()
+            .with_ten_yard_split(1.55)
+            .unwrap()
+            .with_twenty_yard_split(2.6)
+            .unwrap();
+
+        let ras = service.calculate_ras(&player, &combine).await;
+
+        // With 10 measurements (height, weight + 8 combine), should have an overall score
+        assert!(
+            ras.overall_score.is_some(),
+            "Full measurements should produce an overall score, got explanation: {:?}",
+            ras.explanation
+        );
+        let overall = ras.overall_score.unwrap();
+        assert!(
+            overall >= 0.0 && overall <= 10.0,
+            "Overall score should be between 0 and 10, got {}",
+            overall
+        );
+        assert!(
+            ras.measurements_used >= RasScore::MIN_MEASUREMENTS,
+            "Should have at least {} measurements, got {}",
+            RasScore::MIN_MEASUREMENTS,
+            ras.measurements_used
+        );
+        assert!(ras.explanation.is_none(), "No explanation needed when score is produced");
+    }
+
+    #[tokio::test]
+    async fn test_calculate_ras_insufficient_measurements() {
+        let mut mock_repo = MockCombinePercentileRepo::new();
+
+        // Mock returns percentile data for only one measurement
+        mock_repo
+            .expect_find_by_position_and_measurement()
+            .returning(|position, measurement| {
+                if measurement == "forty_yard_dash" {
+                    Ok(Some(make_percentile(
+                        position,
+                        "forty_yard_dash",
+                        4.35,
+                        4.48,
+                        4.62,
+                    )))
+                } else {
+                    Ok(None)
+                }
+            });
+
+        let service = RasScoringService::new(Arc::new(mock_repo));
+
+        // Player without height/weight so those won't score either
+        let player = crate::models::Player::new(
+            "Minimal".to_string(),
+            "Data".to_string(),
+            Position::WR,
+            2026,
+        )
+        .unwrap();
+
+        // Only provide forty_yard_dash
+        let combine = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.5)
+            .unwrap();
+
+        let ras = service.calculate_ras(&player, &combine).await;
+
+        assert!(
+            ras.overall_score.is_none(),
+            "Insufficient measurements should yield no overall score"
+        );
+        assert!(
+            ras.measurements_used < RasScore::MIN_MEASUREMENTS,
+            "Should have fewer than {} measurements, got {}",
+            RasScore::MIN_MEASUREMENTS,
+            ras.measurements_used
+        );
+        let explanation = ras.explanation.as_ref().expect("Should have an explanation");
+        assert!(
+            explanation.contains("Insufficient measurements"),
+            "Explanation should mention insufficient measurements, got: {}",
+            explanation
+        );
+    }
 }
