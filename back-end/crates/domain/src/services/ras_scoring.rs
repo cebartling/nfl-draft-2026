@@ -500,4 +500,128 @@ mod tests {
         assert_eq!(map_position_for_percentile(&Position::DE), "EDGE");
         assert_eq!(map_position_for_percentile(&Position::DT), "DL");
     }
+
+    // --- Edge case tests for calculate_percentile (Fix H5) ---
+
+    #[test]
+    fn test_calculate_percentile_value_below_min() {
+        // Higher-is-better measurement (vertical_jump)
+        let data = make_percentile("WR", "vertical_jump", 28.0, 36.0, 41.0);
+        // Value well below min_value should yield raw percentile 0
+        let min_val = data.min_value;
+        let pct = calculate_percentile(&data, min_val - 5.0, "vertical_jump");
+        assert!(
+            (pct - 0.0).abs() < f64::EPSILON,
+            "Value below min (higher-is-better) should return 0, got {}",
+            pct
+        );
+
+        // Lower-is-better measurement (forty_yard_dash): below min means very fast, so inverted = 100
+        let data_dash = make_percentile("WR", "forty_yard_dash", 4.35, 4.48, 4.62);
+        let min_dash = data_dash.min_value;
+        let pct_dash = calculate_percentile(&data_dash, min_dash - 0.5, "forty_yard_dash");
+        assert!(
+            (pct_dash - 100.0).abs() < f64::EPSILON,
+            "Value below min (lower-is-better) should return 100, got {}",
+            pct_dash
+        );
+    }
+
+    #[test]
+    fn test_calculate_percentile_value_above_max() {
+        // Higher-is-better measurement (vertical_jump): above max should yield raw percentile 100
+        let data = make_percentile("WR", "vertical_jump", 28.0, 36.0, 41.0);
+        let max_val = data.max_value;
+        let pct = calculate_percentile(&data, max_val + 5.0, "vertical_jump");
+        assert!(
+            (pct - 100.0).abs() < f64::EPSILON,
+            "Value above max (higher-is-better) should return 100, got {}",
+            pct
+        );
+
+        // Lower-is-better measurement (forty_yard_dash): above max means very slow, inverted = 0
+        let data_dash = make_percentile("WR", "forty_yard_dash", 4.35, 4.48, 4.62);
+        let max_dash = data_dash.max_value;
+        let pct_dash = calculate_percentile(&data_dash, max_dash + 0.5, "forty_yard_dash");
+        assert!(
+            (pct_dash - 0.0).abs() < f64::EPSILON,
+            "Value above max (lower-is-better) should return 0, got {}",
+            pct_dash
+        );
+    }
+
+    #[test]
+    fn test_calculate_percentile_equal_breakpoints() {
+        // Create percentile data where all breakpoints are the same value (flat segment)
+        // This tests that the function does not divide by zero
+        let m: Measurement = "bench_press".parse().unwrap();
+        let data = CombinePercentile::new("WR".to_string(), m)
+            .unwrap()
+            .with_percentiles(
+                50,
+                20.0, // min
+                20.0, // p10
+                20.0, // p20
+                20.0, // p30
+                20.0, // p40
+                20.0, // p50
+                20.0, // p60
+                20.0, // p70
+                20.0, // p80
+                20.0, // p90
+                20.0, // max
+            )
+            .unwrap();
+
+        // Value equal to all breakpoints should not panic (no division by zero)
+        let pct = calculate_percentile(&data, 20.0, "bench_press");
+        assert!(
+            pct.is_finite(),
+            "Percentile with equal breakpoints should be finite, got {}",
+            pct
+        );
+
+        // Value above the flat breakpoints
+        let pct_above = calculate_percentile(&data, 25.0, "bench_press");
+        assert!(
+            pct_above.is_finite(),
+            "Percentile above flat breakpoints should be finite, got {}",
+            pct_above
+        );
+
+        // Value below the flat breakpoints
+        let pct_below = calculate_percentile(&data, 15.0, "bench_press");
+        assert!(
+            pct_below.is_finite(),
+            "Percentile below flat breakpoints should be finite, got {}",
+            pct_below
+        );
+    }
+
+    #[test]
+    fn test_category_average_empty_returns_none() {
+        let empty_scores: Vec<MeasurementScore> = vec![];
+
+        assert!(
+            category_average(&empty_scores, SIZE_MEASUREMENTS).is_none(),
+            "Empty scores should return None for size"
+        );
+        assert!(
+            category_average(&empty_scores, SPEED_MEASUREMENTS).is_none(),
+            "Empty scores should return None for speed"
+        );
+        assert!(
+            category_average(&empty_scores, STRENGTH_MEASUREMENTS).is_none(),
+            "Empty scores should return None for strength"
+        );
+        assert!(
+            category_average(&empty_scores, EXPLOSION_MEASUREMENTS).is_none(),
+            "Empty scores should return None for explosion"
+        );
+        assert!(
+            category_average(&empty_scores, AGILITY_MEASUREMENTS).is_none(),
+            "Empty scores should return None for agility"
+        );
+    }
+
 }
