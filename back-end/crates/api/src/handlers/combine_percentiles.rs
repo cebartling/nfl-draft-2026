@@ -169,6 +169,13 @@ pub async fn seed_percentiles(
         ));
     }
 
+    if req.percentiles.len() > 1000 {
+        return Err(ApiError::BadRequest(format!(
+            "Bulk upsert request exceeds maximum size of 1000 percentiles (received {})",
+            req.percentiles.len()
+        )));
+    }
+
     let mut upserted_count = 0;
     let mut errors: Vec<String> = Vec::new();
 
