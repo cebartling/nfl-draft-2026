@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM combine_percentiles",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "9bcf2bb2de1c5a4231725b4f094fde4a7a3286ea9180965472c2406d2d7998b4"
+}

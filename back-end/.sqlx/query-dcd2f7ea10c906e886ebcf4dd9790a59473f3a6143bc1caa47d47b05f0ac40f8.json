@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, player_id, year, forty_yard_dash, bench_press, vertical_jump,\n                   broad_jump, three_cone_drill, twenty_yard_shuttle, created_at, updated_at\n            FROM combine_results\n            WHERE id = $1\n            ",
+  "query": "\n        SELECT id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,\n               broad_jump, three_cone_drill, twenty_yard_shuttle\n        FROM combine_results\n        WHERE id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -20,43 +20,38 @@
       },
       {
         "ordinal": 3,
+        "name": "source",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
         "name": "forty_yard_dash",
         "type_info": "Float8"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "bench_press",
         "type_info": "Int4"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "vertical_jump",
         "type_info": "Float8"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "broad_jump",
         "type_info": "Int4"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "three_cone_drill",
         "type_info": "Float8"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "twenty_yard_shuttle",
         "type_info": "Float8"
-      },
-      {
-        "ordinal": 9,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 10,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -68,15 +63,14 @@
       false,
       false,
       false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
       false,
-      false
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
     ]
   },
-  "hash": "52da812f0b1a689c5abd4321d7c728bb5d8ab2dca9a0cb99a29819b1a6305020"
+  "hash": "dcd2f7ea10c906e886ebcf4dd9790a59473f3a6143bc1caa47d47b05f0ac40f8"
 }

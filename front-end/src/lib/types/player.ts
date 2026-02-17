@@ -25,6 +25,14 @@ export const OFFENSE_POSITIONS: Position[] = ['QB', 'RB', 'WR', 'TE', 'OT', 'OG'
 export const DEFENSE_POSITIONS: Position[] = ['DE', 'DT', 'LB', 'CB', 'S'];
 export const SPECIAL_POSITIONS: Position[] = ['K', 'P'];
 
+export type PositionGroup = 'offense' | 'defense' | 'special_teams';
+
+export const POSITION_GROUPS: Record<PositionGroup, Position[]> = {
+	offense: OFFENSE_POSITIONS,
+	defense: DEFENSE_POSITIONS,
+	special_teams: SPECIAL_POSITIONS,
+};
+
 // Player schema and type — matches backend PlayerResponse
 export const PlayerSchema = z.object({
 	id: UUIDSchema,
@@ -103,11 +111,42 @@ export const CombineResultsSchema = z.object({
 	id: UUIDSchema,
 	player_id: UUIDSchema,
 	year: z.number(),
-	forty_yard_dash: z.number().optional(),
-	bench_press: z.number().optional(),
-	vertical_jump: z.number().optional(),
-	broad_jump: z.number().optional(),
-	three_cone_drill: z.number().optional(),
-	twenty_yard_shuttle: z.number().optional(),
+	source: z.string().optional(),
+	forty_yard_dash: z.number().nullable().optional(),
+	bench_press: z.number().nullable().optional(),
+	vertical_jump: z.number().nullable().optional(),
+	broad_jump: z.number().nullable().optional(),
+	three_cone_drill: z.number().nullable().optional(),
+	twenty_yard_shuttle: z.number().nullable().optional(),
+	arm_length: z.number().nullable().optional(),
+	hand_size: z.number().nullable().optional(),
+	wingspan: z.number().nullable().optional(),
+	ten_yard_split: z.number().nullable().optional(),
+	twenty_yard_split: z.number().nullable().optional(),
 });
 export type CombineResults = z.infer<typeof CombineResultsSchema>;
+
+// Individual measurement score within RAS
+export const MeasurementScoreSchema = z.object({
+	measurement: z.string(),
+	raw_value: z.number(),
+	percentile: z.number(),
+	score: z.number(),
+});
+export type MeasurementScore = z.infer<typeof MeasurementScoreSchema>;
+
+// RAS (Relative Athletic Score) — matches backend RasScoreResponse
+export const RasScoreSchema = z.object({
+	player_id: UUIDSchema,
+	overall_score: z.number().nullable(),
+	size_score: z.number().nullable(),
+	speed_score: z.number().nullable(),
+	strength_score: z.number().nullable(),
+	explosion_score: z.number().nullable(),
+	agility_score: z.number().nullable(),
+	measurements_used: z.number(),
+	measurements_total: z.number(),
+	individual_scores: z.array(MeasurementScoreSchema),
+	explanation: z.string().nullable().optional(),
+});
+export type RasScore = z.infer<typeof RasScoreSchema>;

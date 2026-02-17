@@ -3,6 +3,7 @@ import { Navigate } from '../src/screenplay/tasks/navigate.js';
 import { PageHeading, CurrentUrl } from '../src/screenplay/questions/web-questions.js';
 import { TeamCount, TeamDetails } from '../src/screenplay/questions/team-questions.js';
 import { BrowseTheWeb } from '../src/screenplay/abilities/browse-the-web.js';
+import { ExpandDivision, ToggleTeamGrouping } from '../src/screenplay/tasks/team-page-tasks.js';
 
 test.describe('Teams Browsing', () => {
   test('displays all 32 teams and count matches database', async ({ actor }) => {
@@ -57,5 +58,44 @@ test.describe('Teams Browsing', () => {
 
     const url = await actor.asks(CurrentUrl.value());
     expect(url).toContain(dbTeam!.id);
+  });
+
+  test('expanding division reveals team cards with names', async ({ actor }) => {
+    await actor.attemptsTo(Navigate.toTeams());
+
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    await page.waitForLoadState('networkidle');
+
+    await actor.attemptsTo(ExpandDivision.named('AFC East'));
+
+    const expandedGrid = page.locator('.grid');
+    await expect(expandedGrid.first()).toBeVisible({ timeout: 5000 });
+
+    const teamNames = expandedGrid.locator('h3');
+    await expect(teamNames.first()).toBeVisible();
+  });
+
+  test('switch between Conference and Division grouping', async ({ actor }) => {
+    await actor.attemptsTo(Navigate.toTeams());
+
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('button', { hasText: 'Conference' })).toBeVisible();
+    await expect(page.locator('button', { hasText: 'Division' })).toBeVisible();
+
+    await actor.attemptsTo(ToggleTeamGrouping.to('Division'));
+
+    await expect(page.locator('h2').first()).toBeVisible();
+  });
+
+  test('conference badges AFC and NFC are visible', async ({ actor }) => {
+    await actor.attemptsTo(Navigate.toTeams());
+
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    await page.waitForLoadState('networkidle');
+
+    const conferenceText = page.locator('text=/AFC|NFC/');
+    await expect(conferenceText.first()).toBeVisible({ timeout: 10000 });
   });
 });

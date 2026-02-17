@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { Badge, LoadingSpinner } from '$components/ui';
+	import RasScoreCard from './RasScoreCard.svelte';
 	import { playersApi, rankingsApi } from '$api';
 	import { logger } from '$lib/utils/logger';
 	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
-	import type { AvailablePlayer, ScoutingReport, CombineResults, PlayerRanking, RankingSource } from '$types';
+	import type { AvailablePlayer, ScoutingReport, CombineResults, RasScore, PlayerRanking, RankingSource } from '$types';
 
 	interface Props {
 		player: AvailablePlayer;
@@ -11,15 +12,18 @@
 
 	let { player }: Props = $props();
 
-	let activeTab = $state<'overview' | 'scouting' | 'combine' | 'rankings'>('overview');
+	let activeTab = $state<'overview' | 'scouting' | 'combine' | 'ras' | 'rankings'>('overview');
 	let scoutingReports = $state<ScoutingReport[]>([]);
 	let combineResults = $state<CombineResults | null>(null);
+	let rasScore = $state<RasScore | null>(null);
 	let playerRankings = $state<PlayerRanking[]>([]);
 	let rankingSources = $state<RankingSource[]>([]);
 	let isLoadingScouting = $state(false);
 	let isLoadingCombine = $state(false);
+	let isLoadingRas = $state(false);
 	let isLoadingRankings = $state(false);
 	let rankingsLoaded = $state(false);
+	let rasLoaded = $state(false);
 
 	// Use embedded rankings from consolidated endpoint if available
 	let hasEmbeddedRankings = $derived(player.rankings && player.rankings.length > 0);
@@ -44,6 +48,16 @@
 	function getSourceAbbreviation(sourceName: string): string {
 		const source = rankingSources.find((s) => s.name === sourceName);
 		return source?.abbreviation ?? sourceName.slice(0, 2).toUpperCase();
+	}
+
+	function getSourceBadgeVariant(source: string | undefined): 'info' | 'warning' {
+		if (source === 'pro_day') return 'warning';
+		return 'info';
+	}
+
+	function getSourceLabel(source: string | undefined): string {
+		if (source === 'pro_day') return 'PRO DAY';
+		return 'COMBINE';
 	}
 
 	// Load scouting reports when switching to scouting tab
@@ -78,6 +92,26 @@
 				})
 				.finally(() => {
 					isLoadingCombine = false;
+				});
+		}
+	});
+
+	// Load RAS score when switching to RAS tab
+	$effect(() => {
+		if (activeTab === 'ras' && !rasLoaded && !isLoadingRas) {
+			isLoadingRas = true;
+			playersApi
+				.getRasScore(player.id)
+				.then((score) => {
+					rasScore = score;
+					rasLoaded = true;
+				})
+				.catch((err) => {
+					logger.error('Failed to load RAS score:', err);
+					rasLoaded = true;
+				})
+				.finally(() => {
+					isLoadingRas = false;
 				});
 		}
 	});
@@ -160,6 +194,15 @@
 				onclick={() => (activeTab = 'combine')}
 			>
 				Combine Results
+			</button>
+			<button
+				type="button"
+				class="px-6 py-4 text-sm font-medium border-b-2 transition-colors {activeTab === 'ras'
+					? 'border-blue-600 text-blue-600'
+					: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+				onclick={() => (activeTab = 'ras')}
+			>
+				RAS
 			</button>
 		</nav>
 	</div>
@@ -324,56 +367,114 @@
 			{:else if !combineResults}
 				<p class="text-center text-gray-500 py-12">No combine results available</p>
 			{:else}
-				<div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-					{#if combineResults.forty_yard_dash}
-						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">40-Yard Dash</p>
-							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.forty_yard_dash.toFixed(2)}s
-							</p>
+				<div class="space-y-4">
+					<!-- Source badge -->
+					<div class="flex items-center gap-2">
+						<Badge variant={getSourceBadgeVariant(combineResults.source)} size="sm">
+							{getSourceLabel(combineResults.source)}
+						</Badge>
+						<span class="text-sm text-gray-500">{combineResults.year}</span>
+					</div>
+
+					<!-- Speed & Agility -->
+					<div>
+						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Speed & Agility</h4>
+						<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+							{#if combineResults.forty_yard_dash}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">40-Yard Dash</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.forty_yard_dash.toFixed(2)}s</p>
+								</div>
+							{/if}
+							{#if combineResults.ten_yard_split}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">10-Yard Split</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.ten_yard_split.toFixed(2)}s</p>
+								</div>
+							{/if}
+							{#if combineResults.twenty_yard_split}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">20-Yard Split</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.twenty_yard_split.toFixed(2)}s</p>
+								</div>
+							{/if}
+							{#if combineResults.three_cone_drill}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">3-Cone Drill</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.three_cone_drill.toFixed(2)}s</p>
+								</div>
+							{/if}
+							{#if combineResults.twenty_yard_shuttle}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">20-Yard Shuttle</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.twenty_yard_shuttle.toFixed(2)}s</p>
+								</div>
+							{/if}
 						</div>
-					{/if}
-					{#if combineResults.bench_press}
-						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">Bench Press</p>
-							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.bench_press} reps
-							</p>
+					</div>
+
+					<!-- Strength & Explosion -->
+					<div>
+						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Strength & Explosion</h4>
+						<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+							{#if combineResults.bench_press}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">Bench Press</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.bench_press} reps</p>
+								</div>
+							{/if}
+							{#if combineResults.vertical_jump}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">Vertical Jump</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.vertical_jump}"</p>
+								</div>
+							{/if}
+							{#if combineResults.broad_jump}
+								<div class="bg-gray-50 rounded-lg p-3">
+									<p class="text-xs font-medium text-gray-500">Broad Jump</p>
+									<p class="text-lg font-bold text-gray-900">{combineResults.broad_jump}"</p>
+								</div>
+							{/if}
 						</div>
-					{/if}
-					{#if combineResults.vertical_jump}
+					</div>
+
+					<!-- Measurables -->
+					{#if combineResults.arm_length || combineResults.hand_size || combineResults.wingspan}
 						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">Vertical Jump</p>
-							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.vertical_jump}"
-							</p>
-						</div>
-					{/if}
-					{#if combineResults.broad_jump}
-						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">Broad Jump</p>
-							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.broad_jump}"
-							</p>
-						</div>
-					{/if}
-					{#if combineResults.three_cone_drill}
-						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">3-Cone Drill</p>
-							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.three_cone_drill.toFixed(2)}s
-							</p>
-						</div>
-					{/if}
-					{#if combineResults.twenty_yard_shuttle}
-						<div>
-							<p class="text-sm font-medium text-gray-600 mb-1">20-Yard Shuttle</p>
-							<p class="text-lg font-semibold text-gray-900">
-								{combineResults.twenty_yard_shuttle.toFixed(2)}s
-							</p>
+							<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Measurables</h4>
+							<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+								{#if combineResults.arm_length}
+									<div class="bg-gray-50 rounded-lg p-3">
+										<p class="text-xs font-medium text-gray-500">Arm Length</p>
+										<p class="text-lg font-bold text-gray-900">{combineResults.arm_length}"</p>
+									</div>
+								{/if}
+								{#if combineResults.hand_size}
+									<div class="bg-gray-50 rounded-lg p-3">
+										<p class="text-xs font-medium text-gray-500">Hand Size</p>
+										<p class="text-lg font-bold text-gray-900">{combineResults.hand_size}"</p>
+									</div>
+								{/if}
+								{#if combineResults.wingspan}
+									<div class="bg-gray-50 rounded-lg p-3">
+										<p class="text-xs font-medium text-gray-500">Wingspan</p>
+										<p class="text-lg font-bold text-gray-900">{combineResults.wingspan}"</p>
+									</div>
+								{/if}
+							</div>
 						</div>
 					{/if}
 				</div>
+			{/if}
+		{:else if activeTab === 'ras'}
+			{#if isLoadingRas}
+				<div class="flex justify-center py-12">
+					<LoadingSpinner size="lg" />
+				</div>
+			{:else if !rasScore}
+				<p class="text-center text-gray-500 py-12">No RAS data available (requires combine results and percentile baselines)</p>
+			{:else}
+				<RasScoreCard {rasScore} />
 			{/if}
 		{/if}
 	</div>

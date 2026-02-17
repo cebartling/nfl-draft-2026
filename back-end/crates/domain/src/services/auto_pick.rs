@@ -1,9 +1,10 @@
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
 use crate::models::Player;
-use crate::services::{DraftStrategyService, PlayerEvaluationService};
+use crate::services::{DraftStrategyService, PlayerEvaluationService, RasScoringService};
 
 /// Result of player scoring with detailed breakdown
 #[derive(Debug, Clone)]
@@ -77,39 +78,90 @@ impl AutoPickService {
         Ok((selected.player_id, scored_players))
     }
 
-    /// Score all players and return sorted by final score (descending)
+    /// Score all players and return sorted by final score (descending).
+    /// Pre-fetches team needs, scouting reports, combine results, and percentile data
+    /// to avoid N+1 query patterns.
     async fn score_all_players(
         &self,
         team_id: Uuid,
         players: &[Player],
         strategy: &crate::models::DraftStrategy,
     ) -> DomainResult<Vec<PlayerScore>> {
+        // Pre-fetch team needs (1 query instead of N)
+        let team_needs = self.strategy_service.fetch_team_needs(team_id).await?;
+
+        // Pre-fetch scouting reports for this team (1 query instead of N)
+        let scouting_reports = self
+            .player_eval_service
+            .fetch_team_scouting_reports(team_id)
+            .await?;
+        let scouting_by_player: HashMap<Uuid, _> = scouting_reports
+            .into_iter()
+            .map(|r| (r.player_id, r))
+            .collect();
+
+        // Pre-fetch combine results for all players (N queries, but eliminates 10N RAS sub-queries)
+        let mut combine_by_player: HashMap<Uuid, crate::models::CombineResults> = HashMap::new();
+        for player in players {
+            if let Ok(results) = self
+                .player_eval_service
+                .fetch_player_combine_results(player.id)
+                .await
+            {
+                if let Some(first) = results.into_iter().next() {
+                    combine_by_player.insert(player.id, first);
+                }
+            }
+        }
+
+        // Pre-fetch percentiles for all relevant position groups (~13 queries instead of 10*N)
+        let position_groups: HashSet<String> = players
+            .iter()
+            .map(|p| RasScoringService::map_position(&p.position))
+            .collect();
+        let mut percentiles_by_position: HashMap<String, Vec<crate::models::CombinePercentile>> =
+            HashMap::new();
+        if let Some(ras) = self.player_eval_service.ras_service() {
+            for pos in &position_groups {
+                let percentiles = ras.fetch_percentiles_for_position(pos).await;
+                percentiles_by_position.insert(pos.clone(), percentiles);
+            }
+        }
+
         let mut scores = Vec::new();
 
         for player in players {
-            // Calculate BPA score
-            let bpa_score = match self
-                .player_eval_service
-                .calculate_bpa_score(player, team_id)
-                .await
-            {
-                Ok(score) => score,
-                Err(_) => continue, // Skip players without scouting reports
+            // Look up pre-fetched scouting report
+            let scouting_report = match scouting_by_player.get(&player.id) {
+                Some(report) => report,
+                None => continue, // Skip players without scouting reports
             };
 
-            // Calculate need score
-            let need_score = self
-                .strategy_service
-                .calculate_need_score(player, team_id)
-                .await?;
+            let combine = combine_by_player.get(&player.id);
+            let position_key = RasScoringService::map_position(&player.position);
+            let percentiles = percentiles_by_position
+                .get(&position_key)
+                .map(|v| v.as_slice())
+                .unwrap_or(&[]);
 
-            // Get position value multiplier
+            // Calculate BPA score with pre-loaded data (0 additional queries)
+            let bpa_score = self.player_eval_service.calculate_bpa_score_preloaded(
+                player,
+                scouting_report,
+                combine,
+                percentiles,
+            );
+
+            // Calculate need score from pre-fetched needs (0 additional queries)
+            let need_score =
+                DraftStrategyService::calculate_need_score_from_needs(player, &team_needs);
+
+            // Get position value multiplier (pure computation)
             let position_value = self
                 .strategy_service
                 .get_position_value(strategy, player.position);
 
             // Calculate final score
-            // Final Score = (BPA × bpa_weight/100 + Need × need_weight/100) × position_value
             let weighted_bpa = bpa_score * (strategy.bpa_weight as f64 / 100.0);
             let weighted_need = need_score * (strategy.need_weight as f64 / 100.0);
             let final_score = (weighted_bpa + weighted_need) * position_value;
@@ -201,6 +253,7 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<CombineResults>>;
             async fn find_by_player_id(&self, player_id: Uuid) -> DomainResult<Vec<CombineResults>>;
             async fn find_by_player_and_year(&self, player_id: Uuid, year: i32) -> DomainResult<Option<CombineResults>>;
+            async fn find_by_player_year_source(&self, player_id: Uuid, year: i32, source: &str) -> DomainResult<Option<CombineResults>>;
             async fn update(&self, results: &CombineResults) -> DomainResult<CombineResults>;
             async fn delete(&self, id: Uuid) -> DomainResult<()>;
         }
@@ -274,26 +327,19 @@ mod tests {
             .expect_find_by_team_and_draft()
             .returning(move |_, _| Ok(Some(strategy.clone())));
 
-        // QB has high grade
+        // Scouting reports: now fetched by team (batch), not per-player
         let qb_report = ScoutingReport::new(qb_id, team_id, 9.5).unwrap();
-        scouting_mock
-            .expect_find_by_team_and_player()
-            .with(eq(team_id), eq(qb_id))
-            .returning(move |_, _| Ok(Some(qb_report.clone())));
-
-        // RB has lower grade
         let rb_report = ScoutingReport::new(rb_id, team_id, 7.0).unwrap();
         scouting_mock
-            .expect_find_by_team_and_player()
-            .with(eq(team_id), eq(rb_id))
-            .returning(move |_, _| Ok(Some(rb_report.clone())));
+            .expect_find_by_team_id()
+            .returning(move |_| Ok(vec![qb_report.clone(), rb_report.clone()]));
 
-        // No combine results
+        // Combine results: fetched per player
         combine_mock
             .expect_find_by_player_id()
             .returning(|_| Ok(vec![]));
 
-        // Team needs RB (priority 1), doesn't need QB
+        // Team needs: fetched once
         let rb_need = TeamNeed::new(team_id, Position::RB, 1).unwrap();
         need_mock
             .expect_find_by_team_id()
@@ -353,26 +399,19 @@ mod tests {
             .expect_find_by_team_and_draft()
             .returning(move |_, _| Ok(Some(strategy.clone())));
 
-        // QB has high grade
+        // Scouting reports: batch fetched by team
         let qb_report = ScoutingReport::new(qb_id, team_id, 9.5).unwrap();
-        scouting_mock
-            .expect_find_by_team_and_player()
-            .with(eq(team_id), eq(qb_id))
-            .returning(move |_, _| Ok(Some(qb_report.clone())));
-
-        // RB has lower grade
         let rb_report = ScoutingReport::new(rb_id, team_id, 7.0).unwrap();
         scouting_mock
-            .expect_find_by_team_and_player()
-            .with(eq(team_id), eq(rb_id))
-            .returning(move |_, _| Ok(Some(rb_report.clone())));
+            .expect_find_by_team_id()
+            .returning(move |_| Ok(vec![qb_report.clone(), rb_report.clone()]));
 
-        // No combine results
+        // Combine results: per player
         combine_mock
             .expect_find_by_player_id()
             .returning(|_| Ok(vec![]));
 
-        // Team needs RB (priority 1), doesn't need QB
+        // Team needs: fetched once
         let rb_need = TeamNeed::new(team_id, Position::RB, 1).unwrap();
         need_mock
             .expect_find_by_team_id()
@@ -429,20 +468,14 @@ mod tests {
             .expect_find_by_team_and_draft()
             .returning(move |_, _| Ok(Some(strategy.clone())));
 
-        // Both have same grade
+        // Scouting reports: batch fetched by team
         let qb_report = ScoutingReport::new(qb_id, team_id, 8.0).unwrap();
-        scouting_mock
-            .expect_find_by_team_and_player()
-            .with(eq(team_id), eq(qb_id))
-            .returning(move |_, _| Ok(Some(qb_report.clone())));
-
         let rb_report = ScoutingReport::new(rb_id, team_id, 8.0).unwrap();
         scouting_mock
-            .expect_find_by_team_and_player()
-            .with(eq(team_id), eq(rb_id))
-            .returning(move |_, _| Ok(Some(rb_report.clone())));
+            .expect_find_by_team_id()
+            .returning(move |_| Ok(vec![qb_report.clone(), rb_report.clone()]));
 
-        // No combine results
+        // Combine results: per player
         combine_mock
             .expect_find_by_player_id()
             .returning(|_| Ok(vec![]));

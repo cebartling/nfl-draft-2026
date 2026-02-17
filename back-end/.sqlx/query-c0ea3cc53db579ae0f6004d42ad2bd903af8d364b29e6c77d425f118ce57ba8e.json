@@ -1,0 +1,130 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, position, measurement, sample_size, min_value,\n                   p10, p20, p30, p40, p50, p60, p70, p80, p90,\n                   max_value, years_start, years_end, created_at, updated_at\n            FROM combine_percentiles\n            WHERE position = $1\n            ORDER BY measurement\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "position",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "measurement",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "sample_size",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "min_value",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "p10",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "p20",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "p30",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "p40",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "p50",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 10,
+        "name": "p60",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 11,
+        "name": "p70",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 12,
+        "name": "p80",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 13,
+        "name": "p90",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 14,
+        "name": "max_value",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 15,
+        "name": "years_start",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
+        "name": "years_end",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 17,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c0ea3cc53db579ae0f6004d42ad2bd903af8d364b29e6c77d425f118ce57ba8e"
+}

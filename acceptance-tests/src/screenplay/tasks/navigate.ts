@@ -26,4 +26,7 @@ export const Navigate = {
   toDrafts(): Task {
     return new NavigateTo('/drafts');
   },
+  toProspects(): Task {
+    return new NavigateTo('/prospects');
+  },
 };

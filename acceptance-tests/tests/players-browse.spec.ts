@@ -1,7 +1,7 @@
 import { test, expect } from '../src/fixtures/test-fixture.js';
 import { Navigate } from '../src/screenplay/tasks/navigate.js';
 import { SearchForPlayer, FilterByPositionGroup } from '../src/screenplay/tasks/player-tasks.js';
-import { PageHeading } from '../src/screenplay/questions/web-questions.js';
+import { PageHeading, CurrentUrl } from '../src/screenplay/questions/web-questions.js';
 import { PlayerCount } from '../src/screenplay/questions/player-questions.js';
 import { BrowseTheWeb } from '../src/screenplay/abilities/browse-the-web.js';
 
@@ -76,5 +76,40 @@ test.describe('Players Browsing', () => {
     const filteredCount = filteredMatch ? parseInt(filteredMatch[1], 10) : 0;
     expect(filteredCount).toBeLessThan(initialCount);
     expect(filteredCount).toBeGreaterThan(0);
+  });
+
+  test('player cards are visible after load', async ({ actor }) => {
+    await actor.attemptsTo(Navigate.toPlayers());
+
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    await page.waitForSelector('[role="button"]', { timeout: 10000 });
+
+    const playerCards = page.locator('[role="button"]');
+    await expect(playerCards.first()).toBeVisible();
+  });
+
+  test('position badges are visible on player cards', async ({ actor }) => {
+    await actor.attemptsTo(Navigate.toPlayers());
+
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    await page.waitForSelector('[role="button"]', { timeout: 10000 });
+
+    const positionBadges = page.locator(
+      '[role="button"] span:text-matches("^(QB|RB|WR|TE|OT|OG|C|DE|DT|LB|CB|S|K|P)$")',
+    );
+    await expect(positionBadges.first()).toBeVisible();
+  });
+
+  test('navigate to player detail from card click', async ({ actor }) => {
+    await actor.attemptsTo(Navigate.toPlayers());
+
+    const page = actor.abilityTo(BrowseTheWeb).getPage();
+    await page.waitForSelector('[role="button"]', { timeout: 10000 });
+
+    await page.locator('[role="button"]').first().click();
+    await page.waitForURL(/\/players\/[a-f0-9-]+/);
+
+    const url = await actor.asks(CurrentUrl.value());
+    expect(url).toMatch(/\/players\/[a-f0-9-]+/);
   });
 });

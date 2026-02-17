@@ -1,6 +1,8 @@
-use axum::routing::{get, post};
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
+use axum::http::{HeaderValue, Method};
+use axum::routing::{delete, get, post};
 use axum::Router;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -10,10 +12,40 @@ use crate::openapi::ApiDoc;
 use crate::state::AppState;
 
 pub fn create_router(state: AppState) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    create_router_with_cors(state, &[])
+}
+
+pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Router {
+    let seed_api_key_header = "X-Seed-Api-Key".parse().unwrap();
+    let allowed_methods = [Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS];
+    let allowed_headers = [CONTENT_TYPE, AUTHORIZATION, seed_api_key_header];
+
+    let cors = if cors_origins.is_empty() {
+        // Default development origins
+        let origins: Vec<HeaderValue> = [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:8080",
+        ]
+        .iter()
+        .map(|o| o.parse().unwrap())
+        .collect();
+
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(origins))
+            .allow_methods(allowed_methods)
+            .allow_headers(allowed_headers)
+    } else {
+        let origins: Vec<HeaderValue> = cors_origins
+            .iter()
+            .filter_map(|o| o.parse().ok())
+            .collect();
+
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(origins))
+            .allow_methods(allowed_methods)
+            .allow_headers(allowed_headers)
+    };
 
     // API v1 routes
     let api_routes = Router::new()
@@ -52,6 +84,10 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/players/{player_id}/rankings",
             get(handlers::rankings::get_player_rankings),
+        )
+        .route(
+            "/players/{player_id}/ras",
+            get(handlers::ras::get_player_ras),
         )
         // Drafts
         .route(
@@ -166,6 +202,11 @@ pub fn create_router(state: AppState) -> Router {
             "/ranking-sources/{source_id}/rankings",
             get(handlers::rankings::get_source_rankings),
         )
+        // Combine Percentiles
+        .route(
+            "/combine-percentiles",
+            get(handlers::combine_percentiles::get_combine_percentiles),
+        )
         // Admin
         .route("/admin/seed-players", post(handlers::seed::seed_players))
         .route("/admin/seed-teams", post(handlers::seed::seed_teams))
@@ -173,7 +214,23 @@ pub fn create_router(state: AppState) -> Router {
             "/admin/seed-team-seasons",
             post(handlers::seed::seed_team_seasons),
         )
-        .route("/admin/seed-rankings", post(handlers::seed::seed_rankings));
+        .route("/admin/seed-rankings", post(handlers::seed::seed_rankings))
+        .route(
+            "/admin/seed-combine-percentiles",
+            post(handlers::seed::seed_combine_percentiles),
+        )
+        .route(
+            "/admin/seed-combine-data",
+            post(handlers::seed::seed_combine_data),
+        )
+        .route(
+            "/admin/seed-percentiles",
+            post(handlers::combine_percentiles::seed_percentiles),
+        )
+        .route(
+            "/admin/percentiles",
+            delete(handlers::combine_percentiles::delete_all_percentiles),
+        );
 
     // Create stateful routes
     let stateful_router = Router::new()

@@ -1,21 +1,67 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
+
+/// Source of combine/athletic testing data
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum CombineSource {
+    Combine,
+    ProDay,
+}
+
+impl fmt::Display for CombineSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CombineSource::Combine => write!(f, "combine"),
+            CombineSource::ProDay => write!(f, "pro_day"),
+        }
+    }
+}
+
+impl FromStr for CombineSource {
+    type Err = DomainError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "combine" => Ok(CombineSource::Combine),
+            "pro_day" => Ok(CombineSource::ProDay),
+            _ => Err(DomainError::ValidationError(format!(
+                "Invalid combine source: '{}'. Must be 'combine' or 'pro_day'",
+                s
+            ))),
+        }
+    }
+}
+
+impl Default for CombineSource {
+    fn default() -> Self {
+        CombineSource::Combine
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct CombineResults {
     pub id: Uuid,
     pub player_id: Uuid,
     pub year: i32,
+    pub source: CombineSource,
     pub forty_yard_dash: Option<f64>,
     pub bench_press: Option<i32>,
     pub vertical_jump: Option<f64>,
     pub broad_jump: Option<i32>,
     pub three_cone_drill: Option<f64>,
     pub twenty_yard_shuttle: Option<f64>,
+    pub arm_length: Option<f64>,
+    pub hand_size: Option<f64>,
+    pub wingspan: Option<f64>,
+    pub ten_yard_split: Option<f64>,
+    pub twenty_yard_split: Option<f64>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -29,15 +75,26 @@ impl CombineResults {
             id: Uuid::new_v4(),
             player_id,
             year,
+            source: CombineSource::default(),
             forty_yard_dash: None,
             bench_press: None,
             vertical_jump: None,
             broad_jump: None,
             three_cone_drill: None,
             twenty_yard_shuttle: None,
+            arm_length: None,
+            hand_size: None,
+            wingspan: None,
+            ten_yard_split: None,
+            twenty_yard_split: None,
             created_at: now,
             updated_at: now,
         })
+    }
+
+    pub fn with_source(mut self, source: CombineSource) -> Self {
+        self.source = source;
+        self
     }
 
     pub fn with_forty_yard_dash(mut self, time: f64) -> DomainResult<Self> {
@@ -73,6 +130,36 @@ impl CombineResults {
     pub fn with_twenty_yard_shuttle(mut self, time: f64) -> DomainResult<Self> {
         Self::validate_twenty_yard_shuttle(time)?;
         self.twenty_yard_shuttle = Some(time);
+        Ok(self)
+    }
+
+    pub fn with_arm_length(mut self, inches: f64) -> DomainResult<Self> {
+        Self::validate_arm_length(inches)?;
+        self.arm_length = Some(inches);
+        Ok(self)
+    }
+
+    pub fn with_hand_size(mut self, inches: f64) -> DomainResult<Self> {
+        Self::validate_hand_size(inches)?;
+        self.hand_size = Some(inches);
+        Ok(self)
+    }
+
+    pub fn with_wingspan(mut self, inches: f64) -> DomainResult<Self> {
+        Self::validate_wingspan(inches)?;
+        self.wingspan = Some(inches);
+        Ok(self)
+    }
+
+    pub fn with_ten_yard_split(mut self, time: f64) -> DomainResult<Self> {
+        Self::validate_ten_yard_split(time)?;
+        self.ten_yard_split = Some(time);
+        Ok(self)
+    }
+
+    pub fn with_twenty_yard_split(mut self, time: f64) -> DomainResult<Self> {
+        Self::validate_twenty_yard_split(time)?;
+        self.twenty_yard_split = Some(time);
         Ok(self)
     }
 
@@ -127,6 +214,51 @@ impl CombineResults {
             Self::validate_twenty_yard_shuttle(t)?;
         }
         self.twenty_yard_shuttle = time;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_arm_length(&mut self, inches: Option<f64>) -> DomainResult<()> {
+        if let Some(i) = inches {
+            Self::validate_arm_length(i)?;
+        }
+        self.arm_length = inches;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_hand_size(&mut self, inches: Option<f64>) -> DomainResult<()> {
+        if let Some(i) = inches {
+            Self::validate_hand_size(i)?;
+        }
+        self.hand_size = inches;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_wingspan(&mut self, inches: Option<f64>) -> DomainResult<()> {
+        if let Some(i) = inches {
+            Self::validate_wingspan(i)?;
+        }
+        self.wingspan = inches;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_ten_yard_split(&mut self, time: Option<f64>) -> DomainResult<()> {
+        if let Some(t) = time {
+            Self::validate_ten_yard_split(t)?;
+        }
+        self.ten_yard_split = time;
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    pub fn update_twenty_yard_split_time(&mut self, time: Option<f64>) -> DomainResult<()> {
+        if let Some(t) = time {
+            Self::validate_twenty_yard_split(t)?;
+        }
+        self.twenty_yard_split = time;
         self.updated_at = Utc::now();
         Ok(())
     }
@@ -193,6 +325,51 @@ impl CombineResults {
         }
         Ok(())
     }
+
+    fn validate_arm_length(inches: f64) -> DomainResult<()> {
+        if !(28.0..=40.0).contains(&inches) {
+            return Err(DomainError::ValidationError(
+                "Arm length must be between 28.0 and 40.0 inches".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_hand_size(inches: f64) -> DomainResult<()> {
+        if !(7.0..=12.0).contains(&inches) {
+            return Err(DomainError::ValidationError(
+                "Hand size must be between 7.0 and 12.0 inches".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_wingspan(inches: f64) -> DomainResult<()> {
+        if !(70.0..=90.0).contains(&inches) {
+            return Err(DomainError::ValidationError(
+                "Wingspan must be between 70.0 and 90.0 inches".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_ten_yard_split(time: f64) -> DomainResult<()> {
+        if !(1.3..=2.1).contains(&time) {
+            return Err(DomainError::ValidationError(
+                "10-yard split must be between 1.3 and 2.1 seconds".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_twenty_yard_split(time: f64) -> DomainResult<()> {
+        if !(2.3..=3.5).contains(&time) {
+            return Err(DomainError::ValidationError(
+                "20-yard split must be between 2.3 and 3.5 seconds".to_string(),
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -206,6 +383,7 @@ mod tests {
 
         assert_eq!(results.player_id, player_id);
         assert_eq!(results.year, 2026);
+        assert_eq!(results.source, CombineSource::Combine);
         assert!(results.forty_yard_dash.is_none());
     }
 
@@ -231,6 +409,39 @@ mod tests {
         assert_eq!(results.forty_yard_dash, Some(4.52));
         assert_eq!(results.bench_press, Some(20));
         assert_eq!(results.vertical_jump, Some(35.5));
+    }
+
+    #[test]
+    fn test_with_source() {
+        let player_id = Uuid::new_v4();
+        let results = CombineResults::new(player_id, 2026)
+            .unwrap()
+            .with_source(CombineSource::ProDay);
+
+        assert_eq!(results.source, CombineSource::ProDay);
+    }
+
+    #[test]
+    fn test_new_measurables() {
+        let player_id = Uuid::new_v4();
+        let results = CombineResults::new(player_id, 2026)
+            .unwrap()
+            .with_arm_length(33.5)
+            .unwrap()
+            .with_hand_size(9.75)
+            .unwrap()
+            .with_wingspan(78.5)
+            .unwrap()
+            .with_ten_yard_split(1.55)
+            .unwrap()
+            .with_twenty_yard_split(2.65)
+            .unwrap();
+
+        assert_eq!(results.arm_length, Some(33.5));
+        assert_eq!(results.hand_size, Some(9.75));
+        assert_eq!(results.wingspan, Some(78.5));
+        assert_eq!(results.ten_yard_split, Some(1.55));
+        assert_eq!(results.twenty_yard_split, Some(2.65));
     }
 
     #[test]
@@ -261,5 +472,24 @@ mod tests {
 
         let results2 = CombineResults::new(player_id, 2026).unwrap();
         assert!(results2.with_vertical_jump(50.1).is_err());
+    }
+
+    #[test]
+    fn test_combine_source_display() {
+        assert_eq!(CombineSource::Combine.to_string(), "combine");
+        assert_eq!(CombineSource::ProDay.to_string(), "pro_day");
+    }
+
+    #[test]
+    fn test_combine_source_from_str() {
+        assert_eq!(
+            CombineSource::from_str("combine").unwrap(),
+            CombineSource::Combine
+        );
+        assert_eq!(
+            CombineSource::from_str("pro_day").unwrap(),
+            CombineSource::ProDay
+        );
+        assert!(CombineSource::from_str("invalid").is_err());
     }
 }

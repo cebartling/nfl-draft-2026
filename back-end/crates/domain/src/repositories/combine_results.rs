@@ -23,6 +23,14 @@ pub trait CombineResultsRepository: Send + Sync {
         year: i32,
     ) -> DomainResult<Option<CombineResults>>;
 
+    /// Find combine results for a player, year, and source
+    async fn find_by_player_year_source(
+        &self,
+        player_id: Uuid,
+        year: i32,
+        source: &str,
+    ) -> DomainResult<Option<CombineResults>>;
+
     /// Update combine results
     async fn update(&self, results: &CombineResults) -> DomainResult<CombineResults>;
 

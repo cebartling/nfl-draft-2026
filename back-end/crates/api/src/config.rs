@@ -5,6 +5,9 @@ pub struct Config {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
     pub seed_api_key: Option<String>,
+    /// Comma-separated list of allowed CORS origins.
+    /// If empty or unset, defaults to common development origins.
+    pub cors_origins: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -42,10 +45,23 @@ impl Config {
 
         let seed_api_key = std::env::var("SEED_API_KEY").ok().filter(|s| !s.is_empty());
 
+        let cors_origins = std::env::var("CORS_ORIGINS")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .map(|s| s.split(',').map(|o| o.trim().to_string()).collect())
+            .unwrap_or_else(|| {
+                vec![
+                    "http://localhost:5173".to_string(),
+                    "http://localhost:3000".to_string(),
+                    "http://localhost:8080".to_string(),
+                ]
+            });
+
         Ok(Config {
             server: ServerConfig { host, port },
             database: DatabaseConfig { url: database_url },
             seed_api_key,
+            cors_origins,
         })
     }
 
@@ -75,6 +91,7 @@ mod tests {
                 url: "postgresql://localhost/test".to_string(),
             },
             seed_api_key: None,
+            cors_origins: vec!["http://localhost:5173".to_string()],
         };
 
         assert_eq!(config.server_address(), "127.0.0.1:3000");
