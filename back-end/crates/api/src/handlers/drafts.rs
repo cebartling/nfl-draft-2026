@@ -220,7 +220,7 @@ async fn initialize_realistic_picks(
     // Try multiple paths to support both local development and Docker environments.
     let filename = format!("draft_order_{}.json", year);
     let candidates = [
-        format!("data/{}", filename),                         // back-end/data/ (cargo run from workspace root)
+        format!("data/{}", filename),                         // back-end/data/ (when CWD is back-end/, e.g. `cargo run` from back-end/)
         format!("../../data/{}", filename),                   // back-end/data/ (cargo test from crate directory)
         format!("/app/data/{}", filename),                    // Docker container path
     ];
