@@ -15,6 +15,7 @@
 </script>
 
 <div
+	data-pick={pick.overall_pick}
 	class="flex items-center px-3 py-2 border-b border-gray-200 bg-white transition-all {highlight
 		? 'ring-2 ring-blue-500 bg-blue-50'
 		: 'hover:bg-gray-50'}"
