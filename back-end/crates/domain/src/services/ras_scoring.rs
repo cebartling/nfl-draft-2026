@@ -125,6 +125,114 @@ impl RasScoringService {
         }
     }
 
+    /// Calculate RAS score using pre-fetched percentile data (avoids N+1 queries).
+    /// `percentiles` should contain all percentiles for the player's position group.
+    pub fn calculate_ras_with_percentiles(
+        player: &Player,
+        combine_results: &CombineResults,
+        percentiles: &[CombinePercentile],
+    ) -> RasScore {
+        let position = map_position_for_percentile(&player.position);
+
+        let mut individual_scores = Vec::new();
+
+        // Height (from Player)
+        if let Some(height) = player.height_inches {
+            if let Some(score) =
+                score_measurement_from_cache(&position, "height", height as f64, percentiles)
+            {
+                individual_scores.push(score);
+            }
+        }
+
+        // Weight (from Player)
+        if let Some(weight) = player.weight_pounds {
+            if let Some(score) =
+                score_measurement_from_cache(&position, "weight", weight as f64, percentiles)
+            {
+                individual_scores.push(score);
+            }
+        }
+
+        // Combine measurements
+        let measurements: Vec<(&str, Option<f64>)> = vec![
+            ("forty_yard_dash", combine_results.forty_yard_dash),
+            (
+                "bench_press",
+                combine_results.bench_press.map(|v| v as f64),
+            ),
+            ("vertical_jump", combine_results.vertical_jump),
+            ("broad_jump", combine_results.broad_jump.map(|v| v as f64)),
+            ("three_cone_drill", combine_results.three_cone_drill),
+            ("twenty_yard_shuttle", combine_results.twenty_yard_shuttle),
+            ("ten_yard_split", combine_results.ten_yard_split),
+            ("twenty_yard_split", combine_results.twenty_yard_split),
+        ];
+
+        for (name, value) in measurements {
+            if let Some(raw) = value {
+                if let Some(score) =
+                    score_measurement_from_cache(&position, name, raw, percentiles)
+                {
+                    individual_scores.push(score);
+                }
+            }
+        }
+
+        let measurements_used = individual_scores.len();
+
+        let size_score = category_average(&individual_scores, SIZE_MEASUREMENTS);
+        let speed_score = category_average(&individual_scores, SPEED_MEASUREMENTS);
+        let strength_score = category_average(&individual_scores, STRENGTH_MEASUREMENTS);
+        let explosion_score = category_average(&individual_scores, EXPLOSION_MEASUREMENTS);
+        let agility_score = category_average(&individual_scores, AGILITY_MEASUREMENTS);
+
+        let (overall_score, explanation) = if measurements_used >= RasScore::MIN_MEASUREMENTS {
+            let avg: f64 =
+                individual_scores.iter().map(|s| s.score).sum::<f64>() / measurements_used as f64;
+            (Some((avg * 100.0).round() / 100.0), None)
+        } else {
+            (
+                None,
+                Some(format!(
+                    "Insufficient measurements: {} of {} minimum required",
+                    measurements_used,
+                    RasScore::MIN_MEASUREMENTS
+                )),
+            )
+        };
+
+        RasScore {
+            player_id: player.id,
+            overall_score,
+            size_score,
+            speed_score,
+            strength_score,
+            explosion_score,
+            agility_score,
+            measurements_used,
+            measurements_total: RasScore::TOTAL_MEASUREMENTS,
+            individual_scores,
+            explanation,
+        }
+    }
+
+    /// Map a Position enum to its percentile position group string
+    pub fn map_position(position: &crate::models::Position) -> String {
+        map_position_for_percentile(position)
+    }
+
+    /// Pre-fetch all percentiles for a position group (for batch scoring).
+    pub async fn fetch_percentiles_for_position(
+        &self,
+        position: &str,
+    ) -> Vec<CombinePercentile> {
+        self.percentile_repo
+            .find_by_position(position)
+            .await
+            .unwrap_or_default()
+    }
+
     /// Score a single measurement against position percentiles.
     /// Returns a 0-10 score based on where the value falls in the percentile distribution.
     async fn score_measurement(
@@ -150,6 +258,28 @@ impl RasScoringService {
             score,
         })
     }
+}
+
+/// Score a single measurement using pre-fetched percentile data
+fn score_measurement_from_cache(
+    position: &str,
+    measurement: &str,
+    raw_value: f64,
+    percentiles: &[CombinePercentile],
+) -> Option<MeasurementScore> {
+    let percentile_data = percentiles
+        .iter()
+        .find(|p| p.position == position && p.measurement.to_string() == measurement)?;
+
+    let percentile = calculate_percentile(percentile_data, raw_value, measurement);
+    let score = percentile / 10.0;
+
+    Some(MeasurementScore {
+        measurement: measurement.to_string(),
+        raw_value,
+        percentile,
+        score,
+    })
 }
 
 /// Calculate what percentile a value falls in, given the percentile breakpoints.
@@ -239,7 +369,7 @@ fn category_average(scores: &[MeasurementScore], category: &[&str]) -> Option<f6
 }
 
 /// Map domain Position enum to the position strings used in combine_percentiles
-fn map_position_for_percentile(position: &crate::models::Position) -> String {
+pub fn map_position_for_percentile(position: &crate::models::Position) -> String {
     use crate::models::Position;
     match position {
         Position::QB => "QB",

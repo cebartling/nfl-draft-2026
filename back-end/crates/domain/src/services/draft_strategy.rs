@@ -69,22 +69,29 @@ impl DraftStrategyService {
     /// Priority 1 (highest need) = 100, Priority 10 (lowest need) = 10
     /// Formula: (11 - priority) × 10
     pub async fn calculate_need_score(&self, player: &Player, team_id: Uuid) -> DomainResult<f64> {
-        // Get team needs
         let needs = self.need_repo.find_by_team_id(team_id).await?;
+        Ok(Self::calculate_need_score_from_needs(player, &needs))
+    }
 
-        // Find matching position need
+    /// Calculate need score using pre-fetched team needs (avoids repeated DB queries)
+    pub fn calculate_need_score_from_needs(
+        player: &Player,
+        needs: &[crate::models::TeamNeed],
+    ) -> f64 {
         let matching_need = needs.iter().find(|need| need.position == player.position);
 
         match matching_need {
-            Some(need) => {
-                let score = (11 - need.priority) as f64 * 10.0;
-                Ok(score)
-            }
-            None => {
-                // No specific need for this position = low priority
-                Ok(10.0)
-            }
+            Some(need) => (11 - need.priority) as f64 * 10.0,
+            None => 10.0,
         }
+    }
+
+    /// Fetch team needs (for pre-loading in batch operations)
+    pub async fn fetch_team_needs(
+        &self,
+        team_id: Uuid,
+    ) -> DomainResult<Vec<crate::models::TeamNeed>> {
+        self.need_repo.find_by_team_id(team_id).await
     }
 
     /// Get position value multiplier from strategy

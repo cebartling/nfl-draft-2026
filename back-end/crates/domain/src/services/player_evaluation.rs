@@ -74,6 +74,61 @@ impl PlayerEvaluationService {
         Ok(bpa_score.clamp(0.0, 100.0))
     }
 
+    /// Access the RAS service (for pre-fetching percentiles)
+    pub fn ras_service(&self) -> Option<&Arc<RasScoringService>> {
+        self.ras_service.as_ref()
+    }
+
+    /// Fetch all scouting reports for a team (for pre-loading in batch operations)
+    pub async fn fetch_team_scouting_reports(
+        &self,
+        team_id: Uuid,
+    ) -> DomainResult<Vec<ScoutingReport>> {
+        self.scouting_repo.find_by_team_id(team_id).await
+    }
+
+    /// Fetch combine results for a player (for pre-loading in batch operations)
+    pub async fn fetch_player_combine_results(
+        &self,
+        player_id: Uuid,
+    ) -> DomainResult<Vec<CombineResults>> {
+        self.combine_repo.find_by_player_id(player_id).await
+    }
+
+    /// Calculate BPA score using pre-fetched data (avoids N+1 queries in batch scoring).
+    /// `scouting_report`: the team's scouting report for this player (None → skip player)
+    /// `combine_results`: the player's combine results (may be empty)
+    /// `percentiles`: pre-fetched percentile data for RAS scoring
+    pub fn calculate_bpa_score_preloaded(
+        &self,
+        player: &Player,
+        scouting_report: &ScoutingReport,
+        combine_results: Option<&CombineResults>,
+        percentiles: &[crate::models::CombinePercentile],
+    ) -> f64 {
+        // Calculate combine component: prefer RAS if available
+        let combine_score = match (&self.ras_service, combine_results) {
+            (Some(_), Some(combine)) if !percentiles.is_empty() => {
+                let ras_score =
+                    RasScoringService::calculate_ras_with_percentiles(player, combine, percentiles);
+                ras_score.overall_score.map(|s| s * 10.0)
+            }
+            _ => None,
+        };
+        let combine_component = combine_score
+            .or_else(|| combine_results.map(|c| self.calculate_combine_score(c, &player.position)))
+            .unwrap_or(50.0)
+            * 0.20;
+
+        let scouting_component = Self::normalize_scouting_grade(scouting_report.grade) * 0.60;
+        let fit_component = Self::calculate_fit_score(scouting_report) * 0.15;
+        let concern_penalty = Self::calculate_concern_penalty(scouting_report);
+
+        let bpa_score = scouting_component + combine_component + fit_component - concern_penalty;
+
+        bpa_score.clamp(0.0, 100.0)
+    }
+
     /// Rank multiple players by BPA score (highest to lowest)
     pub async fn rank_players_bpa(
         &self,
