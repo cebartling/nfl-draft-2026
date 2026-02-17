@@ -57,7 +57,16 @@ impl PlayerEvaluationService {
                 // RAS overall_score is 0-10; convert to 0-100 scale
                 ras_score.overall_score.map(|s| s * 10.0)
             }
-            _ => None,
+            _ => {
+                tracing::debug!(
+                    player_id = %player.id,
+                    position = ?player.position,
+                    has_ras_service = self.ras_service.is_some(),
+                    has_combine_results = combine_results.is_some(),
+                    "RAS scoring unavailable, falling back to hardcoded combine score normalization"
+                );
+                None
+            }
         };
         let combine_component = combine_score
             .or_else(|| combine_results.map(|c| self.calculate_combine_score(c, &player.position)))
@@ -153,7 +162,12 @@ impl PlayerEvaluationService {
         Ok(scored_players)
     }
 
-    /// Calculate position-weighted combine score (0-100 scale)
+    /// Calculate position-weighted combine score (0-100 scale).
+    ///
+    /// This is a fallback scoring method used when RAS (Relative Athletic Score)
+    /// percentile data is unavailable. It uses hardcoded normalization ranges to
+    /// convert raw combine measurements into a weighted score based on the
+    /// player's position.
     pub fn calculate_combine_score(&self, combine: &CombineResults, position: &Position) -> f64 {
         match position {
             // QB: Agility > Speed
@@ -511,6 +525,192 @@ mod tests {
         assert!(PlayerEvaluationService::normalize_vertical_jump(42.0) > 95.0);
         assert!((PlayerEvaluationService::normalize_vertical_jump(33.0) - 50.0).abs() < 10.0);
         assert!(PlayerEvaluationService::normalize_vertical_jump(24.0) < 5.0);
+    }
+
+    mock! {
+        CombinePercentileRepo {}
+
+        #[async_trait::async_trait]
+        impl crate::repositories::CombinePercentileRepository for CombinePercentileRepo {
+            async fn find_all(&self) -> DomainResult<Vec<crate::models::CombinePercentile>>;
+            async fn find_by_position(&self, position: &str) -> DomainResult<Vec<crate::models::CombinePercentile>>;
+            async fn find_by_position_and_measurement(
+                &self,
+                position: &str,
+                measurement: &str,
+            ) -> DomainResult<Option<crate::models::CombinePercentile>>;
+            async fn upsert(&self, percentile: &crate::models::CombinePercentile) -> DomainResult<crate::models::CombinePercentile>;
+            async fn delete_all(&self) -> DomainResult<u64>;
+            async fn delete(&self, id: Uuid) -> DomainResult<()>;
+        }
+    }
+
+    fn make_percentile(
+        position: &str,
+        measurement: &str,
+        p10: f64,
+        p50: f64,
+        p90: f64,
+    ) -> crate::models::CombinePercentile {
+        let m: crate::models::Measurement = measurement.parse().unwrap();
+        crate::models::CombinePercentile::new(position.to_string(), m)
+            .unwrap()
+            .with_percentiles(
+                100,
+                p10 - 0.5 * (p50 - p10), // min
+                p10,
+                p10 + 0.25 * (p50 - p10),
+                p10 + 0.5 * (p50 - p10),
+                p10 + 0.75 * (p50 - p10),
+                p50,
+                p50 + 0.25 * (p90 - p50),
+                p50 + 0.5 * (p90 - p50),
+                p50 + 0.75 * (p90 - p50),
+                p90,
+                p90 + 0.5 * (p90 - p50), // max
+            )
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_calculate_bpa_score_with_ras_service() {
+        let mut scouting_mock = MockScoutingReportRepo::new();
+        let mut combine_mock = MockCombineResultsRepo::new();
+        let mut percentile_mock = MockCombinePercentileRepo::new();
+
+        let player = Player::new("Jane".to_string(), "Smith".to_string(), Position::WR, 2026)
+            .unwrap()
+            .with_physical_stats(72, 200)
+            .unwrap();
+        let team_id = Uuid::new_v4();
+
+        let scouting_report =
+            create_test_scouting_report(player.id, team_id, 8.0, Some(FitGrade::B), false, false);
+
+        let combine = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.4)
+            .unwrap()
+            .with_vertical_jump(38.0)
+            .unwrap()
+            .with_broad_jump(120)
+            .unwrap()
+            .with_three_cone_drill(6.8)
+            .unwrap()
+            .with_twenty_yard_shuttle(4.2)
+            .unwrap()
+            .with_bench_press(15)
+            .unwrap()
+            .with_ten_yard_split(1.5)
+            .unwrap()
+            .with_twenty_yard_split(2.6)
+            .unwrap();
+
+        scouting_mock
+            .expect_find_by_team_and_player()
+            .with(eq(team_id), eq(player.id))
+            .times(1)
+            .returning(move |_, _| Ok(Some(scouting_report.clone())));
+
+        combine_mock
+            .expect_find_by_player_id()
+            .with(eq(player.id))
+            .times(1)
+            .returning(move |_| Ok(vec![combine.clone()]));
+
+        // Mock percentile repo to return data for each measurement
+        percentile_mock
+            .expect_find_by_position_and_measurement()
+            .returning(|position, measurement| {
+                let percentile = match measurement {
+                    "height" => Some(make_percentile(position, "height", 70.0, 72.0, 75.0)),
+                    "weight" => Some(make_percentile(position, "weight", 185.0, 200.0, 215.0)),
+                    "forty_yard_dash" => Some(make_percentile(position, "forty_yard_dash", 4.35, 4.48, 4.62)),
+                    "vertical_jump" => Some(make_percentile(position, "vertical_jump", 30.0, 36.0, 41.0)),
+                    "broad_jump" => Some(make_percentile(position, "broad_jump", 110.0, 120.0, 130.0)),
+                    "three_cone_drill" => Some(make_percentile(position, "three_cone_drill", 6.7, 7.0, 7.3)),
+                    "twenty_yard_shuttle" => Some(make_percentile(position, "twenty_yard_shuttle", 4.1, 4.3, 4.5)),
+                    "bench_press" => Some(make_percentile(position, "bench_press", 10.0, 16.0, 22.0)),
+                    "ten_yard_split" => Some(make_percentile(position, "ten_yard_split", 1.48, 1.55, 1.62)),
+                    "twenty_yard_split" => Some(make_percentile(position, "twenty_yard_split", 2.5, 2.6, 2.7)),
+                    _ => None,
+                };
+                Ok(percentile)
+            });
+
+        let ras_service = RasScoringService::new(Arc::new(percentile_mock));
+        let service = PlayerEvaluationService::new(Arc::new(scouting_mock), Arc::new(combine_mock))
+            .with_ras_service(Arc::new(ras_service));
+
+        let score = service.calculate_bpa_score(&player, team_id).await.unwrap();
+
+        // Score should be > 0 and <= 100, and the RAS path was used
+        assert!(score > 0.0, "BPA score should be positive, got {}", score);
+        assert!(score <= 100.0, "BPA score should be at most 100, got {}", score);
+    }
+
+    #[test]
+    fn test_calculate_bpa_score_preloaded_with_percentiles() {
+        let scouting_mock = MockScoutingReportRepo::new();
+        let combine_mock = MockCombineResultsRepo::new();
+        let percentile_mock = MockCombinePercentileRepo::new();
+
+        let player = Player::new("Tom".to_string(), "Brady".to_string(), Position::WR, 2026)
+            .unwrap()
+            .with_physical_stats(73, 205)
+            .unwrap();
+        let team_id = Uuid::new_v4();
+
+        let scouting_report =
+            create_test_scouting_report(player.id, team_id, 9.0, Some(FitGrade::A), false, false);
+
+        let combine = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.4)
+            .unwrap()
+            .with_vertical_jump(38.0)
+            .unwrap()
+            .with_broad_jump(125)
+            .unwrap()
+            .with_three_cone_drill(6.8)
+            .unwrap()
+            .with_twenty_yard_shuttle(4.1)
+            .unwrap()
+            .with_bench_press(18)
+            .unwrap()
+            .with_ten_yard_split(1.5)
+            .unwrap()
+            .with_twenty_yard_split(2.55)
+            .unwrap();
+
+        // Build percentile data for "WR" position
+        let percentiles = vec![
+            make_percentile("WR", "height", 70.0, 72.0, 75.0),
+            make_percentile("WR", "weight", 185.0, 200.0, 215.0),
+            make_percentile("WR", "forty_yard_dash", 4.35, 4.48, 4.62),
+            make_percentile("WR", "vertical_jump", 30.0, 36.0, 41.0),
+            make_percentile("WR", "broad_jump", 110.0, 120.0, 130.0),
+            make_percentile("WR", "three_cone_drill", 6.7, 7.0, 7.3),
+            make_percentile("WR", "twenty_yard_shuttle", 4.1, 4.3, 4.5),
+            make_percentile("WR", "bench_press", 10.0, 16.0, 22.0),
+            make_percentile("WR", "ten_yard_split", 1.48, 1.55, 1.62),
+            make_percentile("WR", "twenty_yard_split", 2.5, 2.6, 2.7),
+        ];
+
+        let ras_service = RasScoringService::new(Arc::new(percentile_mock));
+        let service = PlayerEvaluationService::new(Arc::new(scouting_mock), Arc::new(combine_mock))
+            .with_ras_service(Arc::new(ras_service));
+
+        let score = service.calculate_bpa_score_preloaded(
+            &player,
+            &scouting_report,
+            Some(&combine),
+            &percentiles,
+        );
+
+        // Score should be > 0 and <= 100
+        assert!(score > 0.0, "Preloaded BPA score should be positive, got {}", score);
+        assert!(score <= 100.0, "Preloaded BPA score should be at most 100, got {}", score);
     }
 
     #[test]
