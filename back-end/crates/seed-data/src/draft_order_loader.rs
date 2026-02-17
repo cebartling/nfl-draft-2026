@@ -2,6 +2,7 @@ use anyhow::Result;
 use domain::models::{Draft, DraftPick, DraftStatus};
 use domain::repositories::{DraftPickRepository, DraftRepository, TeamRepository};
 use serde::Deserialize;
+use uuid::Uuid;
 
 use crate::{COMPENSATORY_ROUND_MAX, COMPENSATORY_ROUND_MIN, MAX_DRAFT_ROUND};
 
@@ -167,7 +168,6 @@ pub async fn load_draft_order(
     pick_repo: &dyn DraftPickRepository,
 ) -> Result<DraftOrderLoadStats> {
     let mut stats = DraftOrderLoadStats::default();
-    let mut consecutive_failures: usize = 0;
     let year = data.meta.draft_year;
     let rounds = data.meta.total_rounds;
 
@@ -214,10 +214,44 @@ pub async fn load_draft_order(
         }
     };
 
-    // Build all picks first, then batch insert
-    let mut picks = Vec::new();
+    // Build picks from entries and batch insert
+    let (picks, entry_stats) =
+        build_picks_from_entries(&data.draft_order, draft.id, team_repo).await;
+    stats.picks_processed = entry_stats.picks_processed;
+    stats.teams_skipped = entry_stats.teams_skipped;
+    stats.warnings = entry_stats.warnings;
+    stats.errors = entry_stats.errors;
 
-    for entry in &data.draft_order {
+    // Batch insert all picks
+    if !picks.is_empty() {
+        match pick_repo.create_many(&picks).await {
+            Ok(created) => {
+                stats.picks_created = created.len();
+                tracing::info!("Created {} draft picks for year {}", created.len(), year);
+            }
+            Err(e) => {
+                let msg = format!("Failed to batch insert picks: {}", e);
+                tracing::error!("{}", msg);
+                stats.errors.push(msg);
+            }
+        }
+    }
+
+    Ok(stats)
+}
+
+/// Shared logic for converting draft order entries into DraftPick objects.
+/// Used by both `load_draft_order()` and `initialize_realistic_draft_picks()`.
+async fn build_picks_from_entries(
+    entries: &[DraftOrderEntry],
+    draft_id: Uuid,
+    team_repo: &dyn TeamRepository,
+) -> (Vec<DraftPick>, DraftOrderLoadStats) {
+    let mut stats = DraftOrderLoadStats::default();
+    let mut picks = Vec::new();
+    let mut consecutive_failures: usize = 0;
+
+    for entry in entries {
         // Look up team by abbreviation
         let team = match team_repo
             .find_by_abbreviation(&entry.team_abbreviation)
@@ -297,7 +331,7 @@ pub async fn load_draft_order(
 
         // Create pick
         let pick = match DraftPick::new_realistic(
-            draft.id,
+            draft_id,
             entry.round,
             entry.pick_in_round,
             entry.overall_pick,
@@ -323,22 +357,77 @@ pub async fn load_draft_order(
         consecutive_failures = 0;
     }
 
-    // Batch insert all picks
-    if !picks.is_empty() {
-        match pick_repo.create_many(&picks).await {
-            Ok(created) => {
-                stats.picks_created = created.len();
-                tracing::info!("Created {} draft picks for year {}", created.len(), year);
-            }
-            Err(e) => {
-                let msg = format!("Failed to batch insert picks: {}", e);
-                tracing::error!("{}", msg);
-                stats.errors.push(msg);
-            }
-        }
+    (picks, stats)
+}
+
+/// Initialize picks for an existing realistic draft using draft order JSON data.
+///
+/// Unlike `load_draft_order()` which creates/reuses a draft, this function
+/// takes an existing draft ID and creates picks from the JSON data, preserving
+/// trade metadata (original_team_id, is_compensatory, notes).
+///
+/// Only entries matching the requested number of rounds are included.
+pub async fn initialize_realistic_draft_picks(
+    data: &DraftOrderData,
+    draft_id: Uuid,
+    rounds: i32,
+    team_repo: &dyn TeamRepository,
+    pick_repo: &dyn DraftPickRepository,
+) -> Result<Vec<DraftPick>> {
+    // Filter entries to only the requested number of rounds
+    let entries: Vec<&DraftOrderEntry> = data
+        .draft_order
+        .iter()
+        .filter(|e| e.round <= rounds)
+        .collect();
+
+    if entries.is_empty() {
+        return Err(anyhow::anyhow!(
+            "No draft order entries found for rounds 1-{}",
+            rounds
+        ));
     }
 
-    Ok(stats)
+    // Convert filtered entries to owned slice for build_picks_from_entries
+    let owned_entries: Vec<DraftOrderEntry> = entries
+        .into_iter()
+        .map(|e| DraftOrderEntry {
+            round: e.round,
+            pick_in_round: e.pick_in_round,
+            overall_pick: e.overall_pick,
+            team_abbreviation: e.team_abbreviation.clone(),
+            original_team_abbreviation: e.original_team_abbreviation.clone(),
+            is_compensatory: e.is_compensatory,
+            notes: e.notes.clone(),
+        })
+        .collect();
+
+    let (picks, stats) = build_picks_from_entries(&owned_entries, draft_id, team_repo).await;
+
+    if !stats.errors.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Errors building picks: {}",
+            stats.errors.join("; ")
+        ));
+    }
+
+    if picks.is_empty() {
+        return Err(anyhow::anyhow!("No picks were built from draft order data"));
+    }
+
+    // Batch insert all picks
+    let created = pick_repo
+        .create_many(&picks)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to batch insert picks: {}", e))?;
+
+    tracing::info!(
+        "Initialized {} realistic draft picks for draft {}",
+        created.len(),
+        draft_id
+    );
+
+    Ok(created)
 }
 
 #[cfg(test)]

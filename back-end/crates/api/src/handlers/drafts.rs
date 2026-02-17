@@ -181,9 +181,77 @@ pub async fn initialize_draft_picks(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<(StatusCode, Json<Vec<DraftPickResponse>>)> {
-    let picks = state.draft_engine.initialize_picks(id).await?;
+    // Check if this is a realistic draft
+    let draft = state
+        .draft_engine
+        .get_draft(id)
+        .await?
+        .ok_or_else(|| ApiError::NotFound(format!("Draft with id {} not found", id)))?;
+
+    let picks = if draft.is_realistic() {
+        // For realistic drafts, use the draft order JSON data with trade metadata
+        initialize_realistic_picks(&state, id, draft.rounds, draft.year).await?
+    } else {
+        // For custom drafts, use the existing standings-based logic
+        state.draft_engine.initialize_picks(id).await?
+    };
+
     let response: Vec<DraftPickResponse> = picks.into_iter().map(DraftPickResponse::from).collect();
     Ok((StatusCode::CREATED, Json(response)))
+}
+
+/// Initialize picks for a realistic draft from draft order JSON data.
+async fn initialize_realistic_picks(
+    state: &AppState,
+    draft_id: Uuid,
+    rounds: i32,
+    year: i32,
+) -> Result<Vec<DraftPick>, ApiError> {
+    // Check if picks already exist
+    let existing = state.draft_pick_repo.find_by_draft_id(draft_id).await?;
+    if !existing.is_empty() {
+        return Err(ApiError::BadRequest(format!(
+            "Draft picks have already been initialized for draft {}",
+            draft_id
+        )));
+    }
+
+    // Load draft order JSON for the given year.
+    // Try multiple paths to support both local development and Docker environments.
+    let filename = format!("draft_order_{}.json", year);
+    let candidates = [
+        format!("data/{}", filename),                         // back-end/data/ (cargo run from workspace root)
+        format!("../../data/{}", filename),                   // back-end/data/ (cargo test from crate directory)
+        format!("/app/data/{}", filename),                    // Docker container path
+    ];
+
+    let data = match candidates
+        .iter()
+        .find_map(|path| seed_data::draft_order_loader::parse_draft_order_file(path).ok())
+    {
+        Some(data) => data,
+        None => {
+            return Err(ApiError::InternalError(format!(
+                "Draft order data file not found for year {}. Tried: {:?}",
+                year, candidates
+            )));
+        }
+    };
+
+    // Create picks from the JSON data
+    let picks = seed_data::draft_order_loader::initialize_realistic_draft_picks(
+        &data,
+        draft_id,
+        rounds,
+        state.team_repo.as_ref(),
+        state.draft_pick_repo.as_ref(),
+    )
+    .await
+    .map_err(|e| {
+        ApiError::InternalError(format!("Failed to initialize realistic draft picks: {}", e))
+    })?;
+
+    Ok(picks)
 }
 
 /// GET /api/v1/drafts/:id/picks - Get all picks for a draft
