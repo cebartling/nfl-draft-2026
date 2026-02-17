@@ -4,6 +4,12 @@ use subtle::ConstantTimeEq;
 ///
 /// Used by all admin endpoints that require the `X-Seed-Api-Key` header.
 pub fn verify_api_key(provided: &str, expected: &str) -> bool {
+    // Reject empty keys outright — a misconfigured server should not
+    // accidentally authenticate requests with an empty header.
+    if expected.is_empty() || provided.is_empty() {
+        return false;
+    }
+
     // Convert to bytes for constant-time comparison
     let provided_bytes = provided.as_bytes();
     let expected_bytes = expected.as_bytes();
@@ -34,8 +40,13 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_keys_match() {
-        assert!(verify_api_key("", ""));
+    fn test_empty_keys_rejected() {
+        assert!(!verify_api_key("", ""));
+    }
+
+    #[test]
+    fn test_empty_expected_rejected() {
+        assert!(!verify_api_key("some-key", ""));
     }
 
     #[test]
