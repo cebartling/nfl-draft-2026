@@ -80,6 +80,9 @@ COPY --from=builder /app/target/release/api /app/api
 # Copy migrations directory (needed for runtime if using embedded migrations)
 COPY migrations ./migrations
 
+# Copy data files (draft order JSON, etc.)
+COPY --from=builder /app/data ./data
+
 # Change ownership to the non-root user
 RUN chown -R appuser:appuser /app
 

@@ -68,3 +68,42 @@ export const SessionStatus = {
     return new SessionStatusQuestion(draftId);
   },
 };
+
+interface DraftDetailsResult {
+  name: string;
+  status: string;
+  rounds: number;
+  is_realistic: boolean;
+  picks_per_round: number | null;
+}
+
+interface DraftDetailsRow {
+  name: string;
+  status: string;
+  rounds: number;
+  picks_per_round: number | null;
+}
+
+class DraftDetailsQuestion implements Question<DraftDetailsResult | null> {
+  constructor(private readonly draftId: string) {}
+
+  async answeredBy(actor: Actor): Promise<DraftDetailsResult | null> {
+    const db = actor.abilityTo(QueryDatabase);
+    const row = await db.queryOne<DraftDetailsRow>(
+      'SELECT name, status, rounds, picks_per_round FROM drafts WHERE id = $1',
+      [this.draftId],
+    );
+    if (!row) return null;
+    return {
+      ...row,
+      // Mirrors backend Draft::is_realistic() — null picks_per_round means realistic draft order
+      is_realistic: row.picks_per_round === null,
+    };
+  }
+}
+
+export const DraftDetails = {
+  inDatabaseFor(draftId: string): Question<DraftDetailsResult | null> {
+    return new DraftDetailsQuestion(draftId);
+  },
+};
