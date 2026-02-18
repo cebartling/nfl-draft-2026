@@ -96,6 +96,7 @@ class DraftDetailsQuestion implements Question<DraftDetailsResult | null> {
     if (!row) return null;
     return {
       ...row,
+      // Mirrors backend Draft::is_realistic() — null picks_per_round means realistic draft order
       is_realistic: row.picks_per_round === null,
     };
   }

@@ -2,7 +2,7 @@ import { test, expect } from '../src/fixtures/test-fixture.js';
 import { Navigate } from '../src/screenplay/tasks/navigate.js';
 import { CreateDraft } from '../src/screenplay/tasks/draft-tasks.js';
 import { CurrentUrl, PageHeading } from '../src/screenplay/questions/web-questions.js';
-import { DraftStatus, DraftPickCount, DraftDetails } from '../src/screenplay/questions/draft-questions.js';
+import { DraftPickCount, DraftDetails } from '../src/screenplay/questions/draft-questions.js';
 import { BrowseTheWeb } from '../src/screenplay/abilities/browse-the-web.js';
 import { cleanupTestDrafts } from '../src/db/cleanup.js';
 
@@ -35,10 +35,6 @@ test.describe('Draft Lifecycle', () => {
     const page = actor.abilityTo(BrowseTheWeb).getPage();
     await expect(page.getByText('NotStarted')).toBeVisible();
 
-    // Verify draft was created in database with correct status
-    const status = await actor.asks(DraftStatus.inDatabaseFor(draftId));
-    expect(status).toBe('NotStarted');
-
     // The create draft page auto-initializes picks: 1 round × 32 teams = 32 picks
     const pickCount = await actor.asks(DraftPickCount.inDatabaseFor(draftId));
     expect(pickCount).toBe(32);
@@ -47,6 +43,7 @@ test.describe('Draft Lifecycle', () => {
     const details = await actor.asks(DraftDetails.inDatabaseFor(draftId));
     expect(details).not.toBeNull();
     expect(details!.name).toBe('E2E Lifecycle Test Draft');
+    expect(details!.status).toBe('NotStarted');
     expect(details!.is_realistic).toBe(true);
     expect(details!.picks_per_round).toBeNull();
     expect(details!.rounds).toBe(1);
