@@ -34,6 +34,7 @@ pub enum ServerMessage {
         player_id: Uuid,
         round: i32,
         pick_number: i32,
+        overall_pick: i32,
         player_name: String,
         team_name: String,
     },
@@ -131,6 +132,7 @@ impl ServerMessage {
         player_id: Uuid,
         round: i32,
         pick_number: i32,
+        overall_pick: i32,
         player_name: String,
         team_name: String,
     ) -> Self {
@@ -141,6 +143,7 @@ impl ServerMessage {
             player_id,
             round,
             pick_number,
+            overall_pick,
             player_name,
             team_name,
         }
@@ -290,6 +293,7 @@ mod tests {
             pick_id,
             team_id,
             player_id,
+            1,
             1,
             1,
             "John Doe".to_string(),

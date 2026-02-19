@@ -14,6 +14,12 @@ export class DraftState {
 	error = $state<string | null>(null);
 	isAutoPickRunning = $state(false);
 
+	/** Set of pick IDs recently arrived via WebSocket, used for flash animation */
+	recentlyPickedIds = $state<Set<string>>(new Set());
+
+	/** Counter incremented on each WS pick, used to trigger available players refresh */
+	wsPickCounter = $state(0);
+
 	/**
 	 * Get the current pick number from the session
 	 */
@@ -172,7 +178,13 @@ export class DraftState {
 	/**
 	 * Update a pick from WebSocket message
 	 */
-	updatePickFromWS(pickData: { pick_id: string; player_id: string; team_id: string }): void {
+	updatePickFromWS(pickData: {
+		pick_id: string;
+		player_id: string;
+		team_id: string;
+		player_name?: string;
+		team_name?: string;
+	}): void {
 		const pickIndex = this.picks.findIndex((pick) => pick.id === pickData.pick_id);
 		if (pickIndex !== -1) {
 			// Update the pick with the player
@@ -180,8 +192,27 @@ export class DraftState {
 				...this.picks[pickIndex],
 				player_id: pickData.player_id,
 				picked_at: new Date().toISOString(),
+				player_name: pickData.player_name,
+				team_name: pickData.team_name,
 			};
 		}
+
+		// Track recently picked IDs for flash animation (reassign for Svelte 5 reactivity)
+		const next = new Set(this.recentlyPickedIds);
+		next.add(pickData.pick_id);
+		this.recentlyPickedIds = next;
+
+		// Increment counter to trigger available players refresh
+		this.wsPickCounter++;
+	}
+
+	/**
+	 * Clear a pick from the recently-picked set
+	 */
+	clearRecentPick(pickId: string): void {
+		const next = new Set(this.recentlyPickedIds);
+		next.delete(pickId);
+		this.recentlyPickedIds = next;
 	}
 
 	/**
@@ -206,6 +237,8 @@ export class DraftState {
 		this.isLoading = false;
 		this.error = null;
 		this.isAutoPickRunning = false;
+		this.recentlyPickedIds = new Set();
+		this.wsPickCounter = 0;
 	}
 }
 

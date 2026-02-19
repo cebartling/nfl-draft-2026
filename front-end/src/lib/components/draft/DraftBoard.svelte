@@ -81,6 +81,20 @@
 		});
 	});
 
+	// Auto-clear recently picked IDs after 2 seconds
+	$effect(() => {
+		const ids = draftState.recentlyPickedIds;
+		if (ids.size === 0) return;
+
+		const timeout = setTimeout(() => {
+			for (const id of ids) {
+				draftState.clearRecentPick(id);
+			}
+		}, 2000);
+
+		return () => clearTimeout(timeout);
+	});
+
 	// Load teams and players when picks change
 	$effect(() => {
 		if (picks.length === 0) return;
@@ -161,6 +175,7 @@
 									{player}
 									{team}
 									highlight={pick.overall_pick === draftState.currentPickNumber}
+									recentlyPicked={draftState.recentlyPickedIds.has(pick.id)}
 								/>
 							{/if}
 						{/each}

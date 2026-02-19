@@ -1,16 +1,14 @@
 use dashmap::DashMap;
-use futures_util::stream::SplitSink;
-use futures_util::SinkExt;
 use std::sync::Arc;
-use tokio::net::TcpStream;
-use tokio_tungstenite::{tungstenite::Message, WebSocketStream};
+use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 use crate::messages::ServerMessage;
 
-/// Type alias for WebSocket sender
-pub type WsSender = SplitSink<WebSocketStream<TcpStream>, Message>;
+/// Type alias for WebSocket sender — an unbounded channel sender carrying JSON strings.
+/// The WS handler bridges this to the actual Axum WebSocket sink.
+pub type WsSender = mpsc::UnboundedSender<String>;
 
 /// Represents a WebSocket connection
 #[derive(Debug)]
@@ -103,15 +101,14 @@ impl ConnectionManager {
         debug!(
             session_id = %session_id,
             connection_count = connection_ids.len(),
-            message_type = ?message,
             "Broadcasting message to session"
         );
 
         let mut failed_connections = Vec::new();
 
         for connection_id in &connection_ids {
-            if let Some(mut sender) = self.connections.get_mut(connection_id) {
-                if let Err(e) = sender.send(Message::Text(json.clone())).await {
+            if let Some(sender) = self.connections.get(connection_id) {
+                if let Err(e) = sender.send(json.clone()) {
                     error!(
                         connection_id = %connection_id,
                         error = %e,
@@ -144,20 +141,28 @@ impl ConnectionManager {
             }
         };
 
-        if let Some(mut sender) = self.connections.get_mut(&connection_id) {
-            if let Err(e) = sender.send(Message::Text(json)).await {
+        let failed = if let Some(sender) = self.connections.get(&connection_id) {
+            if let Err(e) = sender.send(json) {
                 error!(
                     connection_id = %connection_id,
                     error = %e,
                     "Failed to send message to connection"
                 );
-                self.remove_connection(connection_id);
+                true
+            } else {
+                false
             }
         } else {
             warn!(
                 connection_id = %connection_id,
                 "Connection not found in manager"
             );
+            false
+        };
+
+        // Remove outside the DashMap borrow to avoid deadlock
+        if failed {
+            self.remove_connection(connection_id);
         }
     }
 
@@ -187,9 +192,6 @@ impl Default for ConnectionManager {
 mod tests {
     use super::*;
 
-    // Note: These are limited unit tests since we can't easily create WsSender in tests.
-    // Full integration tests will be in the acceptance tests.
-
     #[test]
     fn test_new_manager() {
         let manager = ConnectionManager::new();
@@ -202,5 +204,145 @@ mod tests {
         let manager = ConnectionManager::new();
         let session_id = Uuid::new_v4();
         assert_eq!(manager.session_connection_count(session_id), 0);
+    }
+
+    #[test]
+    fn test_add_connection() {
+        let manager = ConnectionManager::new();
+        let conn_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, _rx) = mpsc::unbounded_channel::<String>();
+
+        manager.add_connection(conn_id, session_id, tx);
+
+        assert_eq!(manager.total_connections(), 1);
+        assert_eq!(manager.total_sessions(), 1);
+        assert_eq!(manager.session_connection_count(session_id), 1);
+    }
+
+    #[test]
+    fn test_remove_connection() {
+        let manager = ConnectionManager::new();
+        let conn_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, _rx) = mpsc::unbounded_channel::<String>();
+
+        manager.add_connection(conn_id, session_id, tx);
+        manager.remove_connection(conn_id);
+
+        assert_eq!(manager.total_connections(), 0);
+        assert_eq!(manager.total_sessions(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_broadcast_to_session_delivers_json() {
+        let manager = ConnectionManager::new();
+        let conn_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+
+        manager.add_connection(conn_id, session_id, tx);
+
+        let msg = ServerMessage::pong();
+        manager.broadcast_to_session(session_id, msg).await;
+
+        let received = rx.recv().await.unwrap();
+        assert_eq!(received, r#"{"type":"pong"}"#);
+    }
+
+    #[tokio::test]
+    async fn test_broadcast_to_multiple_connections() {
+        let manager = ConnectionManager::new();
+        let session_id = Uuid::new_v4();
+
+        let (tx1, mut rx1) = mpsc::unbounded_channel::<String>();
+        let (tx2, mut rx2) = mpsc::unbounded_channel::<String>();
+        let conn1 = Uuid::new_v4();
+        let conn2 = Uuid::new_v4();
+
+        manager.add_connection(conn1, session_id, tx1);
+        manager.add_connection(conn2, session_id, tx2);
+
+        let msg = ServerMessage::pong();
+        manager.broadcast_to_session(session_id, msg).await;
+
+        let r1 = rx1.recv().await.unwrap();
+        let r2 = rx2.recv().await.unwrap();
+        assert_eq!(r1, r#"{"type":"pong"}"#);
+        assert_eq!(r2, r#"{"type":"pong"}"#);
+    }
+
+    #[tokio::test]
+    async fn test_send_to_connection_delivers_json() {
+        let manager = ConnectionManager::new();
+        let conn_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+
+        manager.add_connection(conn_id, session_id, tx);
+
+        let msg = ServerMessage::pong();
+        manager.send_to_connection(conn_id, msg).await;
+
+        let received = rx.recv().await.unwrap();
+        assert_eq!(received, r#"{"type":"pong"}"#);
+    }
+
+    #[tokio::test]
+    async fn test_broadcast_removes_closed_channel() {
+        let manager = ConnectionManager::new();
+        let session_id = Uuid::new_v4();
+
+        let (tx1, rx1) = mpsc::unbounded_channel::<String>();
+        let (tx2, mut rx2) = mpsc::unbounded_channel::<String>();
+        let conn1 = Uuid::new_v4();
+        let conn2 = Uuid::new_v4();
+
+        manager.add_connection(conn1, session_id, tx1);
+        manager.add_connection(conn2, session_id, tx2);
+
+        // Drop receiver for conn1 — sending to tx1 will fail
+        drop(rx1);
+
+        let msg = ServerMessage::pong();
+        manager.broadcast_to_session(session_id, msg).await;
+
+        // conn1 should have been cleaned up
+        assert_eq!(manager.total_connections(), 1);
+        assert_eq!(manager.session_connection_count(session_id), 1);
+
+        // conn2 should still receive
+        let received = rx2.recv().await.unwrap();
+        assert_eq!(received, r#"{"type":"pong"}"#);
+    }
+
+    #[tokio::test]
+    async fn test_send_to_connection_removes_closed_channel() {
+        let manager = ConnectionManager::new();
+        let conn_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, rx) = mpsc::unbounded_channel::<String>();
+
+        manager.add_connection(conn_id, session_id, tx);
+
+        // Drop receiver — sending will fail
+        drop(rx);
+
+        let msg = ServerMessage::pong();
+        manager.send_to_connection(conn_id, msg).await;
+
+        // Connection should have been cleaned up
+        assert_eq!(manager.total_connections(), 0);
+        assert_eq!(manager.total_sessions(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_broadcast_no_connections() {
+        let manager = ConnectionManager::new();
+        let session_id = Uuid::new_v4();
+
+        // Should not panic
+        let msg = ServerMessage::pong();
+        manager.broadcast_to_session(session_id, msg).await;
     }
 }

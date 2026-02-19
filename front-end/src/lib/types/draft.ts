@@ -32,6 +32,9 @@ export const DraftPickSchema = z.object({
 	is_compensatory: z.boolean(),
 	is_traded: z.boolean(),
 	notes: z.string().nullable().optional(),
+	// Optional fields populated from WebSocket pick_made messages
+	player_name: z.string().optional(),
+	team_name: z.string().optional(),
 });
 export type DraftPick = z.infer<typeof DraftPickSchema>;
 

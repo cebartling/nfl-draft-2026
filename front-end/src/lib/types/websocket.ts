@@ -47,6 +47,7 @@ const PickMadeMessageSchema = z.object({
 	player_id: UUIDSchema,
 	round: z.number(),
 	pick_number: z.number(),
+	overall_pick: z.number(),
 	player_name: z.string(),
 	team_name: z.string(),
 });

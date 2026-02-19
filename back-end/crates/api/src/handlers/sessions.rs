@@ -386,6 +386,7 @@ pub async fn auto_pick_run(
                     player_id,
                     pick.round,
                     pick.pick_number,
+                    pick.overall_pick,
                     format!("{} {}", player.first_name, player.last_name),
                     format!("{} {}", team.city, team.name),
                 );

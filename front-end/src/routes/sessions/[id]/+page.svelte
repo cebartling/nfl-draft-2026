@@ -54,6 +54,14 @@
 		}
 	});
 
+	// Refresh available players when WS picks arrive (guarded by auto-pick state)
+	$effect(() => {
+		const counter = draftState.wsPickCounter;
+		if (counter > 0 && !draftState.isAutoPickRunning && playersLoaded) {
+			loadAvailablePlayers();
+		}
+	});
+
 	async function handleMakePick() {
 		if (!selectedPlayer || !draftState.session || !draftState.currentPick) {
 			return;

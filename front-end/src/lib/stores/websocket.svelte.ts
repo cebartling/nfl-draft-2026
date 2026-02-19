@@ -1,6 +1,7 @@
 import { wsClient, WebSocketState } from '$lib/api';
 import type { ServerMessage, SessionStatus } from '$lib/types';
 import { draftState } from './draft.svelte';
+import { toastState } from './toast.svelte';
 import { logger } from '$lib/utils/logger';
 
 /**
@@ -83,16 +84,24 @@ export class WebSocketStateManager {
 
 			case 'pick_made':
 				logger.info('Pick made:', message);
-				// Update draft state with the new pick
+				// Update draft state with the new pick (including player/team names)
 				draftState.updatePickFromWS({
 					pick_id: message.pick_id,
 					player_id: message.player_id,
 					team_id: message.team_id,
+					player_name: message.player_name,
+					team_name: message.team_name,
 				});
 				// Skip advancing pick when auto-pick HTTP request is in-flight
 				// (the HTTP response will set the authoritative session state)
 				if (!draftState.isAutoPickRunning) {
 					draftState.advancePick();
+				}
+				// Show toast notification (suppress during batch auto-pick to avoid spam)
+				if (!draftState.isAutoPickRunning) {
+					toastState.info(
+						`${message.team_name} selects ${message.player_name} (#${message.overall_pick} overall)`,
+					);
 				}
 				break;
 

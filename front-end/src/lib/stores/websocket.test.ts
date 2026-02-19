@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ServerMessage } from '$lib/types';
 
 // Use vi.hoisted to create mock objects that can be referenced in vi.mock factories
-const { mockWsClient, mockDraftState, WebSocketState } = vi.hoisted(() => {
+const { mockWsClient, mockDraftState, mockToastState, WebSocketState } = vi.hoisted(() => {
 	const WebSocketState = {
 		Disconnected: 'disconnected',
 		Connecting: 'connecting',
@@ -26,6 +26,12 @@ const { mockWsClient, mockDraftState, WebSocketState } = vi.hoisted(() => {
 			updatePickFromWS: vi.fn(),
 			advancePick: vi.fn(),
 			loadDraft: vi.fn(),
+		},
+		mockToastState: {
+			info: vi.fn(),
+			success: vi.fn(),
+			error: vi.fn(),
+			warning: vi.fn(),
 		},
 		WebSocketState,
 	};
@@ -54,6 +60,10 @@ vi.mock('$lib/api', () => ({
 
 vi.mock('./draft.svelte', () => ({
 	draftState: mockDraftState,
+}));
+
+vi.mock('./toast.svelte', () => ({
+	toastState: mockToastState,
 }));
 
 vi.mock('$lib/utils/logger', () => ({
@@ -138,7 +148,7 @@ describe('WebSocketStateManager', () => {
 	});
 
 	describe('handleMessage pick_made', () => {
-		it('should call draftState.updatePickFromWS and advancePick', () => {
+		it('should call draftState.updatePickFromWS with player_name and team_name, and advancePick', () => {
 			expect(capturedMessageHandler).not.toBeNull();
 
 			capturedMessageHandler!({
@@ -149,6 +159,7 @@ describe('WebSocketStateManager', () => {
 				team_id: 'team-1',
 				round: 1,
 				pick_number: 1,
+				overall_pick: 1,
 				player_name: 'John Doe',
 				team_name: 'Team A',
 			});
@@ -157,6 +168,8 @@ describe('WebSocketStateManager', () => {
 				pick_id: 'pick-1',
 				player_id: 'player-1',
 				team_id: 'team-1',
+				player_name: 'John Doe',
+				team_name: 'Team A',
 			});
 			expect(mockDraftState.advancePick).toHaveBeenCalled();
 		});
@@ -172,12 +185,53 @@ describe('WebSocketStateManager', () => {
 				team_id: 'team-1',
 				round: 1,
 				pick_number: 1,
+				overall_pick: 1,
 				player_name: 'John Doe',
 				team_name: 'Team A',
 			});
 
 			expect(mockDraftState.updatePickFromWS).toHaveBeenCalled();
 			expect(mockDraftState.advancePick).not.toHaveBeenCalled();
+		});
+
+		it('should show toast notification when not auto-picking', () => {
+			mockDraftState.isAutoPickRunning = false;
+
+			capturedMessageHandler!({
+				type: 'pick_made',
+				session_id: 'session-1',
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+				round: 1,
+				pick_number: 1,
+				overall_pick: 5,
+				player_name: 'John Doe',
+				team_name: 'Team A',
+			});
+
+			expect(mockToastState.info).toHaveBeenCalledWith(
+				'Team A selects John Doe (#5 overall)',
+			);
+		});
+
+		it('should NOT show toast when auto-pick is running', () => {
+			mockDraftState.isAutoPickRunning = true;
+
+			capturedMessageHandler!({
+				type: 'pick_made',
+				session_id: 'session-1',
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+				round: 1,
+				pick_number: 1,
+				overall_pick: 5,
+				player_name: 'John Doe',
+				team_name: 'Team A',
+			});
+
+			expect(mockToastState.info).not.toHaveBeenCalled();
 		});
 	});
 

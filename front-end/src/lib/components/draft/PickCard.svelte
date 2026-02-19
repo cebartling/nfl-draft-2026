@@ -8,9 +8,10 @@
 		player: Player | null;
 		team: Team;
 		highlight?: boolean;
+		recentlyPicked?: boolean;
 	}
 
-	let { pick, player, team, highlight = false }: Props = $props();
+	let { pick, player, team, highlight = false, recentlyPicked = false }: Props = $props();
 	let logoError = $state(false);
 </script>
 
@@ -18,7 +19,7 @@
 	data-pick={pick.overall_pick}
 	class="flex items-center px-3 py-2 border-b border-gray-200 bg-white transition-all {highlight
 		? 'ring-2 ring-blue-500 bg-blue-50'
-		: 'hover:bg-gray-50'}"
+		: 'hover:bg-gray-50'} {recentlyPicked ? 'animate-pick-flash' : ''}"
 >
 	<!-- Pick number -->
 	<span class="w-10 text-sm font-bold text-gray-500 shrink-0 text-right mr-3">
