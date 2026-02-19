@@ -92,17 +92,10 @@ export class WebSocketStateManager {
 					player_name: message.player_name,
 					team_name: message.team_name,
 				});
-				// Skip advancing pick when auto-pick HTTP request is in-flight
-				// (the HTTP response will set the authoritative session state)
-				if (!draftState.isAutoPickRunning) {
-					draftState.advancePick();
-				}
-				// Show toast notification (suppress during batch auto-pick to avoid spam)
-				if (!draftState.isAutoPickRunning) {
-					toastState.info(
-						`${message.team_name} selects ${message.player_name} (#${message.overall_pick} overall)`,
-					);
-				}
+				draftState.advancePick();
+				toastState.info(
+					`${message.team_name} selects ${message.player_name} (#${message.overall_pick} overall)`,
+				);
 				break;
 
 			case 'clock_update':

@@ -396,8 +396,8 @@ pub async fn auto_pick_run(
 
         picks_made.push(DraftPickResponse::from(made_pick));
 
-        // Yield to let WS messages flush without holding the HTTP connection too long
-        tokio::task::yield_now().await;
+        // Space out picks so each WebSocket notification arrives individually
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     }
 
     // Check if draft is complete (no more picks available)

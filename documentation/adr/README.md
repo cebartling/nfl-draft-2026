@@ -87,6 +87,10 @@ Each ADR follows this structure:
   - Three-tier testing model: backend acceptance, frontend E2E, full-stack acceptance
   - Bug category matrix across tiers
 
+- [ADR-0015: Server-Paced Auto-Pick with WebSocket-Driven UI Updates](./0015-server-paced-auto-pick-with-websocket-driven-ui.md)
+  - 1-second delay between auto-pick iterations for individual WebSocket notifications
+  - Removed frontend suppression guards — WebSocket is the single real-time update path
+
 ## Decision Status
 
 ### Accepted

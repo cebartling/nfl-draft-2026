@@ -174,7 +174,7 @@ describe('WebSocketStateManager', () => {
 			expect(mockDraftState.advancePick).toHaveBeenCalled();
 		});
 
-		it('should not advance pick when auto-pick is running', () => {
+		it('should advance pick even when auto-pick is running', () => {
 			mockDraftState.isAutoPickRunning = true;
 
 			capturedMessageHandler!({
@@ -191,7 +191,7 @@ describe('WebSocketStateManager', () => {
 			});
 
 			expect(mockDraftState.updatePickFromWS).toHaveBeenCalled();
-			expect(mockDraftState.advancePick).not.toHaveBeenCalled();
+			expect(mockDraftState.advancePick).toHaveBeenCalled();
 		});
 
 		it('should show toast notification when not auto-picking', () => {
@@ -215,7 +215,7 @@ describe('WebSocketStateManager', () => {
 			);
 		});
 
-		it('should NOT show toast when auto-pick is running', () => {
+		it('should show toast even when auto-pick is running', () => {
 			mockDraftState.isAutoPickRunning = true;
 
 			capturedMessageHandler!({
@@ -231,7 +231,9 @@ describe('WebSocketStateManager', () => {
 				team_name: 'Team A',
 			});
 
-			expect(mockToastState.info).not.toHaveBeenCalled();
+			expect(mockToastState.info).toHaveBeenCalledWith(
+				'Team A selects John Doe (#5 overall)',
+			);
 		});
 	});
 

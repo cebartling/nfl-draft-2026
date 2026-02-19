@@ -54,10 +54,10 @@
 		}
 	});
 
-	// Refresh available players when WS picks arrive (guarded by auto-pick state)
+	// Refresh available players when WS picks arrive
 	$effect(() => {
 		const counter = draftState.wsPickCounter;
-		if (counter > 0 && !draftState.isAutoPickRunning && playersLoaded) {
+		if (counter > 0 && playersLoaded) {
 			loadAvailablePlayers();
 		}
 	});
