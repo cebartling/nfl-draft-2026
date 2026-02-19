@@ -142,10 +142,6 @@
 		try {
 			const result = await sessionsApi.autoPickRun(sessionId);
 			draftState.session = result.session;
-			// Reload picks to reflect AI picks
-			if (draftState.session) {
-				await draftState.loadDraft(draftState.session.draft_id);
-			}
 		} catch (err) {
 			logger.error('Auto-pick run failed:', err);
 			toastState.error('Auto-pick failed');

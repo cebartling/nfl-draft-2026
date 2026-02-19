@@ -397,7 +397,7 @@ pub async fn auto_pick_run(
         picks_made.push(DraftPickResponse::from(made_pick));
 
         // Space out picks so each WebSocket notification arrives individually
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
 
     // Check if draft is complete (no more picks available)
