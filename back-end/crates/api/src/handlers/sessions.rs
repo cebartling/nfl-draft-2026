@@ -401,8 +401,9 @@ pub async fn auto_pick_run(
 
         picks_made.push(DraftPickResponse::from(made_pick));
 
-        // Yield to let WS messages flush without holding the HTTP connection too long
-        tokio::task::yield_now().await;
+        // Pause between picks so WS notifications arrive one at a time,
+        // giving the frontend a real-time draft experience
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
     }
 
     // Check if draft is complete (no more picks available)
