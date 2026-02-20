@@ -75,9 +75,11 @@
 		scrollContainer.scrollTo({ top: centeredTop, behavior: 'smooth' });
 	}
 
-	// Auto-scroll to the current pick and expand its round if collapsed
+	// Auto-scroll to the current pick and expand its round if collapsed.
+	// Also re-scroll when session status changes (e.g. pause → resume).
 	$effect(() => {
 		const currentPick = draftState.currentPickNumber;
+		const _status = draftState.session?.status; // track status changes
 		if (!currentPick || !scrollContainer) return;
 
 		// Find which round contains the current pick
