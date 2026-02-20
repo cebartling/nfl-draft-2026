@@ -15,7 +15,7 @@
 
 	let teams = $state<Map<string, Team>>(new Map());
 	let players = $state<Map<string, Player>>(new Map());
-	let isLoading = $state(false);
+	let initialLoadDone = $state(false);
 	let collapsedRounds = $state<Set<number>>(new Set());
 	let initializedCollapse = $state(false);
 	let scrollContainer = $state<HTMLDivElement>();
@@ -58,6 +58,23 @@
 		}
 	});
 
+	/**
+	 * Scroll to a pick element within the scroll container only,
+	 * without affecting the outer page scroll position.
+	 */
+	function scrollContainerToPick(pickNumber: number) {
+		if (!scrollContainer) return;
+		const el = scrollContainer.querySelector(`[data-pick="${pickNumber}"]`) as HTMLElement | null;
+		if (!el) return;
+
+		const containerRect = scrollContainer.getBoundingClientRect();
+		const elRect = el.getBoundingClientRect();
+		const offsetInContainer = elRect.top - containerRect.top + scrollContainer.scrollTop;
+		const centeredTop = offsetInContainer - containerRect.height / 2 + elRect.height / 2;
+
+		scrollContainer.scrollTo({ top: centeredTop, behavior: 'smooth' });
+	}
+
 	// Auto-scroll to the current pick and expand its round if collapsed
 	$effect(() => {
 		const currentPick = draftState.currentPickNumber;
@@ -74,18 +91,15 @@
 			collapsedRounds = next;
 		}
 
-		// Wait for DOM update then scroll to the pick
+		// Wait for DOM update then scroll within the container only
 		tick().then(() => {
-			const el = scrollContainer?.querySelector(`[data-pick="${currentPick}"]`);
-			el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			scrollContainerToPick(currentPick);
 		});
 	});
 
 	// Load teams and players when picks change
 	$effect(() => {
 		if (picks.length === 0) return;
-
-		isLoading = true;
 
 		const teamIds = new Set<string>();
 		const playerIds = new Set<string>();
@@ -117,12 +131,12 @@
 				logger.error('Failed to load data:', err);
 			})
 			.finally(() => {
-				isLoading = false;
+				initialLoadDone = true;
 			});
 	});
 </script>
 
-{#if isLoading}
+{#if !initialLoadDone && picks.length > 0}
 	<div class="flex justify-center py-12">
 		<LoadingSpinner size="lg" />
 	</div>
