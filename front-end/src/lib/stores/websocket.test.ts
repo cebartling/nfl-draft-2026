@@ -118,11 +118,26 @@ describe('WebSocketStateManager', () => {
 			});
 		});
 
-		it('should not send when disconnected', () => {
+		it('should not send when disconnected but store pending session', () => {
 			mockWsClient.isConnected.mockReturnValueOnce(false);
 			manager.subscribeToSession('session-1');
 
 			expect(mockWsClient.send).not.toHaveBeenCalled();
+		});
+
+		it('should auto-subscribe when connection becomes Connected', () => {
+			mockWsClient.isConnected.mockReturnValueOnce(false);
+			manager.subscribeToSession('session-1');
+			expect(mockWsClient.send).not.toHaveBeenCalled();
+
+			// Simulate connection becoming Connected
+			expect(_capturedStateHandler).not.toBeNull();
+			_capturedStateHandler!(WebSocketState.Connected);
+
+			expect(mockWsClient.send).toHaveBeenCalledWith({
+				type: 'subscribe',
+				session_id: 'session-1',
+			});
 		});
 	});
 
