@@ -44,9 +44,10 @@ async fn insert_player(pool: &sqlx::PgPool, id: Uuid, first: &str, last: &str, p
 }
 
 /// Helper: insert a scouting report for a player/team combo.
+/// Note: grade must be 0.0-10.0 per DB check constraint.
 async fn insert_scouting_report(pool: &sqlx::PgPool, player_id: Uuid, team_id: Uuid, grade: f64) {
     sqlx::query(
-        "INSERT INTO scouting_reports (id, player_id, team_id, scout_name, grade, report, strengths, weaknesses) VALUES ($1, $2, $3, 'Scout', $4, 'Good prospect', ARRAY['Talent'], ARRAY['Development'])",
+        "INSERT INTO scouting_reports (id, player_id, team_id, grade) VALUES ($1, $2, $3, $4)",
     )
     .bind(Uuid::new_v4())
     .bind(player_id)
@@ -116,8 +117,8 @@ async fn test_auto_pick_run_stores_pick_made_events() {
     insert_player(&pool, player_1_id, "Alpha", "Player", "QB").await;
     insert_player(&pool, player_2_id, "Beta", "Player", "WR").await;
 
-    insert_scouting_report(&pool, player_1_id, team_1_id, 85.0).await;
-    insert_scouting_report(&pool, player_2_id, team_2_id, 80.0).await;
+    insert_scouting_report(&pool, player_1_id, team_1_id, 8.5).await;
+    insert_scouting_report(&pool, player_2_id, team_2_id, 8.0).await;
 
     sqlx::query!(
         "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id) VALUES ($1, $2, 1, 1, 1, $3), ($4, $2, 1, 2, 2, $5)",
@@ -239,8 +240,8 @@ async fn test_auto_pick_run_response_includes_pick_details() {
     insert_player(&pool, player_1_id, "Jake", "Quarterback", "QB").await;
     insert_player(&pool, player_2_id, "Sam", "Receiver", "WR").await;
 
-    insert_scouting_report(&pool, player_1_id, team_1_id, 90.0).await;
-    insert_scouting_report(&pool, player_2_id, team_2_id, 88.0).await;
+    insert_scouting_report(&pool, player_1_id, team_1_id, 9.0).await;
+    insert_scouting_report(&pool, player_2_id, team_2_id, 8.8).await;
 
     sqlx::query!(
         "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id) VALUES ($1, $2, 1, 1, 1, $3), ($4, $2, 1, 2, 2, $5)",
@@ -356,16 +357,16 @@ async fn test_auto_pick_run_all_picks_unique_players() {
 
     // Create 4 players with scouting reports
     insert_player(&pool, player_1, "Zach", "Passer", "QB").await;
-    insert_scouting_report(&pool, player_1, team_1, 90.0).await;
+    insert_scouting_report(&pool, player_1, team_1, 9.0).await;
 
     insert_player(&pool, player_2, "Devon", "Runner", "RB").await;
-    insert_scouting_report(&pool, player_2, team_2, 88.0).await;
+    insert_scouting_report(&pool, player_2, team_2, 8.8).await;
 
     insert_player(&pool, player_3, "Miles", "Catcher", "WR").await;
-    insert_scouting_report(&pool, player_3, team_3, 86.0).await;
+    insert_scouting_report(&pool, player_3, team_3, 8.6).await;
 
     insert_player(&pool, player_4, "Jake", "Blocker", "OT").await;
-    insert_scouting_report(&pool, player_4, team_4, 84.0).await;
+    insert_scouting_report(&pool, player_4, team_4, 8.4).await;
 
     // Create 4 picks
     insert_draft_pick(&pool, pick_1, draft_id, 1, 1, 1, team_1).await;
@@ -470,8 +471,8 @@ async fn test_auto_pick_run_completes_draft_and_stores_completion_event() {
     insert_player(&pool, player_1_id, "First", "Pick", "QB").await;
     insert_player(&pool, player_2_id, "Second", "Pick", "RB").await;
 
-    insert_scouting_report(&pool, player_1_id, team_1_id, 92.0).await;
-    insert_scouting_report(&pool, player_2_id, team_2_id, 88.0).await;
+    insert_scouting_report(&pool, player_1_id, team_1_id, 9.2).await;
+    insert_scouting_report(&pool, player_2_id, team_2_id, 8.8).await;
 
     sqlx::query!(
         "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id) VALUES ($1, $2, 1, 1, 1, $3), ($4, $2, 1, 2, 2, $5)",
@@ -587,13 +588,13 @@ async fn test_auto_pick_run_picks_have_sequential_timestamps() {
     insert_team(&pool, team_3, "Seq Team C", "Seq C", "SQC", "NFC", "NFC East").await;
 
     insert_player(&pool, player_1, "Seq", "Player1", "QB").await;
-    insert_scouting_report(&pool, player_1, team_1, 90.0).await;
+    insert_scouting_report(&pool, player_1, team_1, 9.0).await;
 
     insert_player(&pool, player_2, "Seq", "Player2", "RB").await;
-    insert_scouting_report(&pool, player_2, team_2, 87.0).await;
+    insert_scouting_report(&pool, player_2, team_2, 8.7).await;
 
     insert_player(&pool, player_3, "Seq", "Player3", "WR").await;
-    insert_scouting_report(&pool, player_3, team_3, 84.0).await;
+    insert_scouting_report(&pool, player_3, team_3, 8.4).await;
 
     insert_draft_pick(&pool, pick_1, draft_id, 1, 1, 1, team_1).await;
     insert_draft_pick(&pool, pick_2, draft_id, 1, 2, 2, team_2).await;

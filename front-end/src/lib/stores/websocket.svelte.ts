@@ -89,11 +89,19 @@ export class WebSocketStateManager {
 					player_id: message.player_id,
 					team_id: message.team_id,
 				});
-				// Skip advancing pick when auto-pick HTTP request is in-flight
-				// (the HTTP response will set the authoritative session state)
-				if (!draftState.isAutoPickRunning) {
-					draftState.advancePick();
-				}
+				// Add notification for the activity feed
+				draftState.addPickNotification({
+					pick_id: message.pick_id,
+					player_id: message.player_id,
+					team_id: message.team_id,
+					player_name: message.player_name,
+					team_name: message.team_name,
+					round: message.round,
+					pick_number: message.pick_number,
+				});
+				// Always advance pick on WS pick_made — the HTTP response will
+				// reconcile with the authoritative session state afterwards.
+				draftState.advancePick();
 				break;
 
 			case 'clock_update':

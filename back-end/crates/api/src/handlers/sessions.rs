@@ -378,6 +378,12 @@ pub async fn auto_pick_run(
             let team = team_cache.get(&pick.team_id);
             let player = state.player_repo.find_by_id(player_id).await?;
 
+            // Persist PickMade event for audit trail
+            let event = DraftEvent::pick_made(
+                id, pick.id, pick.team_id, player_id, pick.round, pick.pick_number,
+            );
+            state.event_repo.create(&event).await?;
+
             if let (Some(team), Some(player)) = (team, player) {
                 let ws_msg = websocket::ServerMessage::pick_made(
                     id,

@@ -98,16 +98,20 @@
 		});
 
 		Promise.all([
-			...Array.from(teamIds).map((id) =>
-				teamsApi.get(id).then((team) => {
-					teams.set(id, team);
-				})
-			),
-			...Array.from(playerIds).map((id) =>
-				playersApi.get(id).then((player) => {
-					players.set(id, player);
-				})
-			),
+			...Array.from(teamIds)
+				.filter((id) => !teams.has(id))
+				.map((id) =>
+					teamsApi.get(id).then((team) => {
+						teams.set(id, team);
+					})
+				),
+			...Array.from(playerIds)
+				.filter((id) => !players.has(id))
+				.map((id) =>
+					playersApi.get(id).then((player) => {
+						players.set(id, player);
+					})
+				),
 		])
 			.catch((err) => {
 				logger.error('Failed to load data:', err);
