@@ -1,16 +1,13 @@
 use dashmap::DashMap;
-use futures_util::stream::SplitSink;
-use futures_util::SinkExt;
 use std::sync::Arc;
-use tokio::net::TcpStream;
-use tokio_tungstenite::{tungstenite::Message, WebSocketStream};
+use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 use crate::messages::ServerMessage;
 
-/// Type alias for WebSocket sender
-pub type WsSender = SplitSink<WebSocketStream<TcpStream>, Message>;
+/// Type alias for WebSocket sender — transport-agnostic channel
+pub type WsSender = mpsc::UnboundedSender<String>;
 
 /// Represents a WebSocket connection
 #[derive(Debug)]
@@ -103,15 +100,14 @@ impl ConnectionManager {
         debug!(
             session_id = %session_id,
             connection_count = connection_ids.len(),
-            message_type = ?message,
             "Broadcasting message to session"
         );
 
         let mut failed_connections = Vec::new();
 
         for connection_id in &connection_ids {
-            if let Some(mut sender) = self.connections.get_mut(connection_id) {
-                if let Err(e) = sender.send(Message::Text(json.clone())).await {
+            if let Some(sender) = self.connections.get(connection_id) {
+                if let Err(e) = sender.send(json.clone()) {
                     error!(
                         connection_id = %connection_id,
                         error = %e,
@@ -144,8 +140,8 @@ impl ConnectionManager {
             }
         };
 
-        if let Some(mut sender) = self.connections.get_mut(&connection_id) {
-            if let Err(e) = sender.send(Message::Text(json)).await {
+        if let Some(sender) = self.connections.get(&connection_id) {
+            if let Err(e) = sender.send(json) {
                 error!(
                     connection_id = %connection_id,
                     error = %e,
@@ -187,9 +183,6 @@ impl Default for ConnectionManager {
 mod tests {
     use super::*;
 
-    // Note: These are limited unit tests since we can't easily create WsSender in tests.
-    // Full integration tests will be in the acceptance tests.
-
     #[test]
     fn test_new_manager() {
         let manager = ConnectionManager::new();
@@ -202,5 +195,37 @@ mod tests {
         let manager = ConnectionManager::new();
         let session_id = Uuid::new_v4();
         assert_eq!(manager.session_connection_count(session_id), 0);
+    }
+
+    #[test]
+    fn test_add_and_remove_connection() {
+        let manager = ConnectionManager::new();
+        let connection_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, _rx) = mpsc::unbounded_channel();
+
+        manager.add_connection(connection_id, session_id, tx);
+        assert_eq!(manager.total_connections(), 1);
+        assert_eq!(manager.session_connection_count(session_id), 1);
+
+        manager.remove_connection(connection_id);
+        assert_eq!(manager.total_connections(), 0);
+        assert_eq!(manager.session_connection_count(session_id), 0);
+    }
+
+    #[tokio::test]
+    async fn test_broadcast_to_session() {
+        let manager = ConnectionManager::new();
+        let connection_id = Uuid::new_v4();
+        let session_id = Uuid::new_v4();
+        let (tx, mut rx) = mpsc::unbounded_channel();
+
+        manager.add_connection(connection_id, session_id, tx);
+
+        let msg = ServerMessage::pong();
+        manager.broadcast_to_session(session_id, msg).await;
+
+        let received = rx.recv().await.unwrap();
+        assert!(received.contains("pong"));
     }
 }

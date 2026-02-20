@@ -2,6 +2,16 @@ import { logger } from '$lib/utils/logger';
 import { draftsApi, sessionsApi } from '$lib/api';
 import type { Draft, DraftSession, DraftPick } from '$lib/types';
 
+export interface PickNotification {
+	pick_id: string;
+	player_id: string;
+	team_id: string;
+	player_name: string;
+	team_name: string;
+	round: number;
+	pick_number: number;
+}
+
 /**
  * Draft state management using Svelte 5 runes
  */
@@ -13,6 +23,7 @@ export class DraftState {
 	isLoading = $state(false);
 	error = $state<string | null>(null);
 	isAutoPickRunning = $state(false);
+	pickNotifications = $state<PickNotification[]>([]);
 
 	/**
 	 * Get the current pick number from the session
@@ -197,6 +208,13 @@ export class DraftState {
 	}
 
 	/**
+	 * Add a pick notification to the activity feed
+	 */
+	addPickNotification(data: PickNotification): void {
+		this.pickNotifications = [...this.pickNotifications, data];
+	}
+
+	/**
 	 * Reset state
 	 */
 	reset(): void {
@@ -206,6 +224,7 @@ export class DraftState {
 		this.isLoading = false;
 		this.error = null;
 		this.isAutoPickRunning = false;
+		this.pickNotifications = [];
 	}
 }
 

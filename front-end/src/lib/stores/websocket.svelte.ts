@@ -15,6 +15,7 @@ export class WebSocketStateManager {
 
 	private unsubscribeMessage?: () => void;
 	private unsubscribeState?: () => void;
+	private pendingSessionId: string | null = null;
 
 	constructor() {
 		this.setupListeners();
@@ -35,14 +36,22 @@ export class WebSocketStateManager {
 	}
 
 	/**
-	 * Subscribe to a draft session
+	 * Subscribe to a draft session.
+	 * If the WebSocket is not yet connected, stores the session ID
+	 * and auto-subscribes once the connection is established.
 	 */
 	subscribeToSession(sessionId: string): void {
+		this.pendingSessionId = sessionId;
+
 		if (!wsClient.isConnected()) {
-			logger.warn('WebSocket not connected, cannot subscribe');
+			logger.info('WebSocket not yet connected, will subscribe on connect');
 			return;
 		}
 
+		this.sendSubscribe(sessionId);
+	}
+
+	private sendSubscribe(sessionId: string): void {
 		wsClient.send({
 			type: 'subscribe',
 			session_id: sessionId,
@@ -69,6 +78,11 @@ export class WebSocketStateManager {
 		// Listen for state changes
 		this.unsubscribeState = wsClient.onStateChange((state) => {
 			this.connectionState = state;
+
+			// Auto-subscribe to pending session when connection is established
+			if (state === WebSocketState.Connected && this.pendingSessionId) {
+				this.sendSubscribe(this.pendingSessionId);
+			}
 		});
 	}
 
@@ -89,11 +103,19 @@ export class WebSocketStateManager {
 					player_id: message.player_id,
 					team_id: message.team_id,
 				});
-				// Skip advancing pick when auto-pick HTTP request is in-flight
-				// (the HTTP response will set the authoritative session state)
-				if (!draftState.isAutoPickRunning) {
-					draftState.advancePick();
-				}
+				// Add notification for the activity feed
+				draftState.addPickNotification({
+					pick_id: message.pick_id,
+					player_id: message.player_id,
+					team_id: message.team_id,
+					player_name: message.player_name,
+					team_name: message.team_name,
+					round: message.round,
+					pick_number: message.pick_number,
+				});
+				// Always advance pick on WS pick_made — the HTTP response will
+				// reconcile with the authoritative session state afterwards.
+				draftState.advancePick();
 				break;
 
 			case 'clock_update':
@@ -143,6 +165,7 @@ export class WebSocketStateManager {
 	 * Cleanup listeners
 	 */
 	destroy(): void {
+		this.pendingSessionId = null;
 		if (this.unsubscribeMessage) {
 			this.unsubscribeMessage();
 		}

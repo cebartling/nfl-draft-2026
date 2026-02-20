@@ -290,9 +290,11 @@
 
 		<!-- Status Badge (right-aligned) -->
 		<div class="lg:pl-6 lg:ml-auto">
-			<Badge variant={statusBadge.variant} size="lg">
-				{statusBadge.text}
-			</Badge>
+			<span data-testid="session-status">
+				<Badge variant={statusBadge.variant} size="lg">
+					{statusBadge.text}
+				</Badge>
+			</span>
 		</div>
 	</div>
 
