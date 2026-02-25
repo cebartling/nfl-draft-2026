@@ -16,13 +16,14 @@
 		visible = true;
 		if (triggerEl) {
 			const rect = triggerEl.getBoundingClientRect();
-			// Position above the trigger, right-aligned to its right edge
 			tooltipStyle = `bottom: ${window.innerHeight - rect.top + 8}px; right: ${window.innerWidth - rect.right}px;`;
 		}
+		window.addEventListener('scroll', hide, { once: true, capture: true });
 	}
 
 	function hide() {
 		visible = false;
+		window.removeEventListener('scroll', hide, { capture: true });
 	}
 </script>
 
@@ -44,7 +45,7 @@
 	<span
 		id={tooltipId}
 		role="tooltip"
-		class="fixed px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal z-50 pointer-events-none {width ?? 'max-w-xs'}"
+		class="fixed px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal z-50 pointer-events-none {width ?? 'max-w-xs'}"
 		style={tooltipStyle}
 	>
 		{text}
