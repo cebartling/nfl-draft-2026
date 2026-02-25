@@ -58,3 +58,11 @@ echo "Scouting report validation complete."
 echo "Seeding scouting reports..."
 /app/seed-data scouting load --file "$RANKINGS_FILE"
 echo "Scouting report seeding complete."
+
+echo "Validating Feldman Freaks data..."
+/app/seed-data freaks validate --file /app/data/feldman_freaks_2026.json
+echo "Feldman Freaks validation complete."
+
+echo "Seeding Feldman Freaks..."
+/app/seed-data freaks load --file /app/data/feldman_freaks_2026.json
+echo "Feldman Freaks seeding complete."
