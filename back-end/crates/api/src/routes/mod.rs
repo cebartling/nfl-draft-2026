@@ -224,6 +224,10 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             post(handlers::seed::seed_combine_data),
         )
         .route(
+            "/admin/seed-feldman-freaks",
+            post(handlers::seed::seed_feldman_freaks),
+        )
+        .route(
             "/admin/seed-percentiles",
             post(handlers::combine_percentiles::seed_percentiles),
         )

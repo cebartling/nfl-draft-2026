@@ -1,6 +1,7 @@
 pub mod combine_percentile;
 pub mod combine_results;
 pub mod draft;
+pub mod feldman_freak;
 pub mod draft_strategy;
 pub mod event_repository;
 pub mod player;
@@ -15,6 +16,7 @@ pub mod trade;
 
 pub use combine_percentile::CombinePercentileRepository;
 pub use combine_results::CombineResultsRepository;
+pub use feldman_freak::FeldmanFreakRepository;
 pub use draft::{DraftPickRepository, DraftRepository};
 pub use draft_strategy::DraftStrategyRepository;
 pub use event_repository::EventRepository;
