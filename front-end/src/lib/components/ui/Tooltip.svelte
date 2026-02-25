@@ -1,35 +1,52 @@
 <script lang="ts">
 	interface Props {
 		text: string;
+		width?: string;
 		children?: import('svelte').Snippet;
 	}
 
-	let { text, children }: Props = $props();
+	let { text, width, children }: Props = $props();
 
 	let visible = $state(false);
+	let triggerEl = $state<HTMLSpanElement | null>(null);
+	let tooltipStyle = $state('');
 	let tooltipId = $derived(`tooltip-${Math.random().toString(36).slice(2, 9)}`);
+
+	function show() {
+		visible = true;
+		if (triggerEl) {
+			const rect = triggerEl.getBoundingClientRect();
+			// Position above the trigger, right-aligned to its right edge
+			tooltipStyle = `bottom: ${window.innerHeight - rect.top + 8}px; right: ${window.innerWidth - rect.right}px;`;
+		}
+	}
+
+	function hide() {
+		visible = false;
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
-	class="relative inline-flex"
-	onmouseenter={() => (visible = true)}
-	onmouseleave={() => (visible = false)}
-	onfocusin={() => (visible = true)}
-	onfocusout={() => (visible = false)}
+	class="inline-flex"
+	bind:this={triggerEl}
+	onmouseenter={show}
+	onmouseleave={hide}
+	onfocusin={show}
+	onfocusout={hide}
 	aria-describedby={visible ? tooltipId : undefined}
 >
 	{#if children}
 		{@render children()}
 	{/if}
-	{#if visible}
-		<span
-			id={tooltipId}
-			role="tooltip"
-			class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg max-w-xs whitespace-normal z-50 pointer-events-none"
-		>
-			{text}
-			<span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
-		</span>
-	{/if}
 </span>
+{#if visible}
+	<span
+		id={tooltipId}
+		role="tooltip"
+		class="fixed px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal z-50 pointer-events-none {width ?? 'max-w-xs'}"
+		style={tooltipStyle}
+	>
+		{text}
+	</span>
+{/if}

@@ -64,8 +64,8 @@
 			</div>
 		{/if}
 		{#if player.feldman_freak}
-			<Tooltip text="Feldman Freak #{player.feldman_freak.rank}: {player.feldman_freak.description}">
-				<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 cursor-help">
+			<Tooltip text="Feldman Freak #{player.feldman_freak.rank}: {player.feldman_freak.description}" width="w-96">
+				<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
 					FREAK #{player.feldman_freak.rank}
 				</span>
 			</Tooltip>

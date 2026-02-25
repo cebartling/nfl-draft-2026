@@ -202,6 +202,11 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             "/ranking-sources/{source_id}/rankings",
             get(handlers::rankings::get_source_rankings),
         )
+        // Feldman Freaks
+        .route(
+            "/feldman-freaks",
+            get(handlers::feldman_freaks::list_feldman_freaks),
+        )
         // Combine Percentiles
         .route(
             "/combine-percentiles",
