@@ -45,7 +45,7 @@
 	<span
 		id={tooltipId}
 		role="tooltip"
-		class="fixed px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal z-50 pointer-events-none {width ?? 'max-w-xs'}"
+		class="fixed px-3 py-2 text-sm text-white bg-gray-700 rounded-lg shadow-lg whitespace-normal z-50 pointer-events-none {width ?? 'max-w-xs'}"
 		style={tooltipStyle}
 	>
 		{text}
