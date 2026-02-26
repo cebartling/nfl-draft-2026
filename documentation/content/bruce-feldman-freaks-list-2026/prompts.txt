@@ -1,0 +1,12 @@
+The following players were not matched in the database. They are part of Bruce Feldman's freaks list for 2026.
+Therefore I want to seed them in the database and then match them for the freaks badging.
+They should be added to our database seeding data file.
+For each player below go out and find their measurables, their height, their weight, that sort of thing.
+- Kendrick Law (WR, Kentucky)
+- Mike Washington (RB, Arkansas)
+- Jaren Kanak (TE, Oklahoma)
+- John Michael Gyllenborg (TE, Wyoming)
+- Chris Hilton Jr. (WR, LSU)
+- Darrell Jackson (DT, Florida State)
+- Grayson Halton (DL, Oklahoma)
+- David Gusta (DL, Kentucky)
