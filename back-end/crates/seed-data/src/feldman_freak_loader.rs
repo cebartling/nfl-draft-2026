@@ -224,3 +224,109 @@ pub async fn clear_freaks(year: i32, freak_repo: &dyn FeldmanFreakRepository) ->
         .map_err(|e| anyhow::anyhow!("Failed to delete freaks: {}", e))?;
     Ok(deleted)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_json() -> &'static str {
+        r#"{
+            "meta": {
+                "year": 2026,
+                "source": "Bruce Feldman's Freaks List",
+                "article_url": "https://example.com/freaks"
+            },
+            "freaks": [
+                {
+                    "rank": 1,
+                    "first_name": "Kenyon",
+                    "last_name": "Sadiq",
+                    "college": "Oregon",
+                    "position": "TE",
+                    "description": "Vertical jumped 41.5 inches"
+                },
+                {
+                    "rank": 2,
+                    "first_name": "Sonny",
+                    "last_name": "Styles",
+                    "college": "Ohio State",
+                    "position": "LB",
+                    "description": "Broad jumped 11 feet"
+                }
+            ]
+        }"#
+    }
+
+    #[test]
+    fn test_parse_freaks_json() {
+        let data = parse_freaks_json(sample_json()).unwrap();
+        assert_eq!(data.meta.year, 2026);
+        assert_eq!(data.meta.source, "Bruce Feldman's Freaks List");
+        assert_eq!(
+            data.meta.article_url,
+            "https://example.com/freaks"
+        );
+        assert_eq!(data.freaks.len(), 2);
+        assert_eq!(data.freaks[0].rank, 1);
+        assert_eq!(data.freaks[0].first_name, "Kenyon");
+        assert_eq!(data.freaks[0].last_name, "Sadiq");
+        assert_eq!(data.freaks[0].college, "Oregon");
+        assert_eq!(data.freaks[0].position, "TE");
+        assert_eq!(data.freaks[1].rank, 2);
+        assert_eq!(data.freaks[1].first_name, "Sonny");
+    }
+
+    #[test]
+    fn test_parse_freaks_json_invalid() {
+        let result = parse_freaks_json("not valid json");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_freaks_json_missing_field() {
+        let json = r#"{
+            "meta": { "year": 2026, "source": "Test" },
+            "freaks": []
+        }"#;
+        // Missing article_url in meta
+        let result = parse_freaks_json(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_dry_run() {
+        let data = parse_freaks_json(sample_json()).unwrap();
+        let stats = load_freaks_dry_run(&data).unwrap();
+        assert_eq!(stats.matched, 2);
+        assert_eq!(stats.inserted, 2);
+        assert_eq!(stats.unmatched, 0);
+        assert!(stats.errors.is_empty());
+        assert!(stats.unmatched_names.is_empty());
+    }
+
+    #[test]
+    fn test_dry_run_empty_freaks() {
+        let json = r#"{
+            "meta": {
+                "year": 2026,
+                "source": "Test",
+                "article_url": "https://example.com"
+            },
+            "freaks": []
+        }"#;
+        let data = parse_freaks_json(json).unwrap();
+        let stats = load_freaks_dry_run(&data).unwrap();
+        assert_eq!(stats.matched, 0);
+        assert_eq!(stats.inserted, 0);
+    }
+
+    #[test]
+    fn test_freaks_load_stats_default() {
+        let stats = FreaksLoadStats::default();
+        assert_eq!(stats.matched, 0);
+        assert_eq!(stats.unmatched, 0);
+        assert_eq!(stats.inserted, 0);
+        assert!(stats.errors.is_empty());
+        assert!(stats.unmatched_names.is_empty());
+    }
+}
