@@ -48,7 +48,13 @@
 		if (filterStatus === 'all') {
 			return sortedDrafts;
 		}
-		return sortedDrafts.filter((d) => d.status === filterStatus);
+		const statusMap: Record<string, string> = {
+			pending: 'NotStarted',
+			active: 'InProgress',
+			completed: 'Completed'
+		};
+		const mappedStatus = statusMap[filterStatus] ?? filterStatus;
+		return sortedDrafts.filter((d) => d.status === mappedStatus);
 	});
 </script>
 
