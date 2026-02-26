@@ -50,9 +50,13 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
         trades::get_trade,
         trades::get_pending_trades,
 
+        // Available Players
+        drafts::get_available_players,
+
         // Admin
         seed::seed_players,
         seed::seed_teams,
+        seed::seed_feldman_freaks,
     ),
     components(
         schemas(
@@ -82,6 +86,11 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
             trades::TradeProposalResponse,
             trades::ProposeTradeRequest,
             trades::TradeActionRequest,
+
+            // Available player types
+            drafts::AvailablePlayerResponse,
+            drafts::RankingBadgeResponse,
+            drafts::FeldmanFreakResponse,
 
             // Admin types
             seed::SeedResponse,

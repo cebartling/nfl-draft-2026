@@ -1,6 +1,8 @@
 pub mod combine_loader;
 pub mod draft_order_loader;
 pub mod draft_order_validator;
+pub mod feldman_freak_loader;
+pub mod feldman_freak_validator;
 pub mod grade_generator;
 pub mod loader;
 pub mod percentile_loader;

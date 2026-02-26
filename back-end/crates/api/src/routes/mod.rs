@@ -202,6 +202,11 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             "/ranking-sources/{source_id}/rankings",
             get(handlers::rankings::get_source_rankings),
         )
+        // Feldman Freaks
+        .route(
+            "/feldman-freaks",
+            get(handlers::feldman_freaks::list_feldman_freaks),
+        )
         // Combine Percentiles
         .route(
             "/combine-percentiles",
@@ -222,6 +227,10 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
         .route(
             "/admin/seed-combine-data",
             post(handlers::seed::seed_combine_data),
+        )
+        .route(
+            "/admin/seed-feldman-freaks",
+            post(handlers::seed::seed_feldman_freaks),
         )
         .route(
             "/admin/seed-percentiles",

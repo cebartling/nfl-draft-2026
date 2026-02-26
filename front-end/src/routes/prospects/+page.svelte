@@ -3,13 +3,13 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
-	import { rankingsApi } from '$lib/api';
+	import { rankingsApi, freaksApi } from '$lib/api';
 	import { computeConsensusRankings, sortByConsensusRank } from '$lib/utils/prospect-ranking';
 	import { filterProspects, getPositionsForGroup } from '$lib/utils/prospect-filter';
 	import type { ProspectRanking } from '$lib/utils/prospect-ranking';
 	import ProspectRankingsTable from '$components/player/ProspectRankingsTable.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
-	import type { Player, RankingBadge, RankingSource } from '$lib/types';
+	import type { Player, FeldmanFreak, RankingBadge, RankingSource } from '$lib/types';
 
 	let loading = $state(true);
 	let rankingsLoading = $state(true);
@@ -20,6 +20,7 @@
 	let sources = $state<RankingSource[]>([]);
 	let consensusRankings = $state<Map<string, ProspectRanking>>(new Map());
 	let sortedPlayerIds = $state<string[]>([]);
+	let playerFreaks = $state<Map<string, FeldmanFreak>>(new Map());
 
 	let availablePositions = $derived(getPositionsForGroup(selectedGroup));
 
@@ -32,13 +33,18 @@
 			loading = false;
 		}
 
-		// Load rankings and sources in parallel (non-blocking)
-		Promise.all([rankingsApi.loadAllPlayerRankings(), rankingsApi.listSources()])
-			.then(([rankings, rankingSources]) => {
+		// Load rankings, sources, and freaks in parallel (non-blocking)
+		Promise.all([
+			rankingsApi.loadAllPlayerRankings(),
+			rankingsApi.listSources(),
+			freaksApi.loadByYear(2026),
+		])
+			.then(([rankings, rankingSources, freaks]) => {
 				playerRankings = rankings;
 				sources = rankingSources;
 				consensusRankings = computeConsensusRankings(rankings);
 				sortedPlayerIds = sortByConsensusRank(consensusRankings);
+				playerFreaks = freaks;
 			})
 			.catch((error) => {
 				logger.error('Failed to load rankings:', error);
@@ -212,6 +218,7 @@
 					sortedPlayerIds={filteredSortedIds}
 					{playerRankings}
 					{consensusRankings}
+					{playerFreaks}
 					onSelectPlayer={handleSelectPlayer}
 				/>
 			{/if}

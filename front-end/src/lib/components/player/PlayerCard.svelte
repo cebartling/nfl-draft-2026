@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge } from '$components/ui';
+	import { Badge, Tooltip } from '$components/ui';
 	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
 	import type { AvailablePlayer } from '$types';
 
@@ -62,6 +62,13 @@
 					</span>
 				{/each}
 			</div>
+		{/if}
+		{#if player.feldman_freak}
+			<Tooltip text="Feldman Freak #{player.feldman_freak.rank}: {player.feldman_freak.description}" width="w-96">
+				<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+					FREAK #{player.feldman_freak.rank}
+				</span>
+			</Tooltip>
 		{/if}
 		<p class="text-sm text-gray-600 hidden sm:block">{player.college || 'N/A'}</p>
 		{#if player.height_inches || player.weight_pounds}

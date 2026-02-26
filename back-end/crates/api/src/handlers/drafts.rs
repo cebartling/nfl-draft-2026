@@ -413,6 +413,13 @@ pub struct RankingBadgeResponse {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
+pub struct FeldmanFreakResponse {
+    pub rank: i32,
+    pub description: String,
+    pub article_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
 pub struct AvailablePlayerResponse {
     pub id: Uuid,
     pub first_name: String,
@@ -430,6 +437,8 @@ pub struct AvailablePlayerResponse {
     pub character_concern: Option<bool>,
     // Big board rankings across all sources
     pub rankings: Vec<RankingBadgeResponse>,
+    // Feldman Freaks list entry (if player is on the list)
+    pub feldman_freak: Option<FeldmanFreakResponse>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -471,25 +480,32 @@ pub async fn get_available_players(
     let picks = picks_result?;
     let picked_ids: HashSet<Uuid> = picks.iter().filter_map(|p| p.player_id).collect();
 
-    // 2. Fetch players (scoped to draft year), rankings, sources, and optionally scouting reports concurrently
+    // 2. Fetch players (scoped to draft year), rankings, sources, freaks, and optionally scouting reports concurrently
     let players_fut = state.player_repo.find_by_draft_year(draft.year);
     let rankings_fut = state.prospect_ranking_repo.find_all_with_source();
     let sources_fut = state.ranking_source_repo.find_all();
+    let freaks_fut = state.feldman_freak_repo.find_by_year(draft.year);
 
-    let (all_players, all_rankings, sources, scouting_map) = if let Some(team_id) = params.team_id {
+    let (all_players, all_rankings, sources, scouting_map, freaks) = if let Some(team_id) = params.team_id {
         let scouting_fut = state.scouting_report_repo.find_by_team_id(team_id);
-        let (players_res, rankings_res, sources_res, scouting_res) =
-            tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut);
+        let (players_res, rankings_res, sources_res, scouting_res, freaks_res) =
+            tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut, freaks_fut);
         let map: HashMap<Uuid, domain::models::ScoutingReport> = scouting_res?
             .into_iter()
             .map(|r| (r.player_id, r))
             .collect();
-        (players_res?, rankings_res?, sources_res?, map)
+        (players_res?, rankings_res?, sources_res?, map, freaks_res?)
     } else {
-        let (players_res, rankings_res, sources_res) =
-            tokio::join!(players_fut, rankings_fut, sources_fut);
-        (players_res?, rankings_res?, sources_res?, HashMap::new())
+        let (players_res, rankings_res, sources_res, freaks_res) =
+            tokio::join!(players_fut, rankings_fut, sources_fut, freaks_fut);
+        (players_res?, rankings_res?, sources_res?, HashMap::new(), freaks_res?)
     };
+
+    // Build freaks lookup by player_id
+    let freaks_map: HashMap<Uuid, domain::models::FeldmanFreak> = freaks
+        .into_iter()
+        .map(|f| (f.player_id, f))
+        .collect();
 
     // 3. Filter out already-picked players
     let available: Vec<_> = all_players
@@ -535,6 +551,11 @@ pub async fn get_available_players(
         .map(|player| {
             let report = scouting_map.get(&player.id);
             let rankings = rankings_map.remove(&player.id).unwrap_or_default();
+            let feldman_freak = freaks_map.get(&player.id).map(|f| FeldmanFreakResponse {
+                rank: f.rank,
+                description: f.description.clone(),
+                article_url: f.article_url.clone(),
+            });
             AvailablePlayerResponse {
                 id: player.id,
                 first_name: player.first_name,
@@ -550,6 +571,7 @@ pub async fn get_available_players(
                 injury_concern: report.map(|r| r.injury_concern),
                 character_concern: report.map(|r| r.character_concern),
                 rankings,
+                feldman_freak,
             }
         })
         .collect();
