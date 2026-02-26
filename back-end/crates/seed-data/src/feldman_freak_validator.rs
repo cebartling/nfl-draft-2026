@@ -227,4 +227,127 @@ mod tests {
         let result = validate_freaks_data(&data);
         assert!(!result.valid);
     }
+
+    #[test]
+    fn test_empty_first_name() {
+        let data = make_data(vec![FreakEntry {
+            rank: 1,
+            first_name: "".to_string(),
+            last_name: "Sadiq".to_string(),
+            college: "Oregon".to_string(),
+            position: "TE".to_string(),
+            description: "Vertical jumped 41.5 inches".to_string(),
+        }]);
+
+        let result = validate_freaks_data(&data);
+        assert!(!result.valid);
+        assert!(result.errors.iter().any(|e| e.contains("empty first name")));
+    }
+
+    #[test]
+    fn test_empty_last_name() {
+        let data = make_data(vec![FreakEntry {
+            rank: 1,
+            first_name: "Kenyon".to_string(),
+            last_name: "  ".to_string(),
+            college: "Oregon".to_string(),
+            position: "TE".to_string(),
+            description: "Vertical jumped 41.5 inches".to_string(),
+        }]);
+
+        let result = validate_freaks_data(&data);
+        assert!(!result.valid);
+        assert!(result.errors.iter().any(|e| e.contains("empty last name")));
+    }
+
+    #[test]
+    fn test_empty_position() {
+        let data = make_data(vec![FreakEntry {
+            rank: 1,
+            first_name: "Kenyon".to_string(),
+            last_name: "Sadiq".to_string(),
+            college: "Oregon".to_string(),
+            position: "".to_string(),
+            description: "Vertical jumped 41.5 inches".to_string(),
+        }]);
+
+        let result = validate_freaks_data(&data);
+        assert!(!result.valid);
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.contains("empty position")));
+    }
+
+    #[test]
+    fn test_empty_college_warns() {
+        let data = make_data(vec![FreakEntry {
+            rank: 1,
+            first_name: "Kenyon".to_string(),
+            last_name: "Sadiq".to_string(),
+            college: "".to_string(),
+            position: "TE".to_string(),
+            description: "Vertical jumped 41.5 inches".to_string(),
+        }]);
+
+        let result = validate_freaks_data(&data);
+        // Empty college is a warning, not an error
+        assert!(result.valid);
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("empty college")));
+    }
+
+    #[test]
+    fn test_empty_source() {
+        let data = FreaksData {
+            meta: FreaksMeta {
+                year: 2026,
+                source: "".to_string(),
+                article_url: "https://example.com/freaks".to_string(),
+            },
+            freaks: vec![FreakEntry {
+                rank: 1,
+                first_name: "Kenyon".to_string(),
+                last_name: "Sadiq".to_string(),
+                college: "Oregon".to_string(),
+                position: "TE".to_string(),
+                description: "Vertical jumped 41.5 inches".to_string(),
+            }],
+        };
+
+        let result = validate_freaks_data(&data);
+        assert!(!result.valid);
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.contains("source is empty")));
+    }
+
+    #[test]
+    fn test_year_out_of_range() {
+        let data = FreaksData {
+            meta: FreaksMeta {
+                year: 2050,
+                source: "Bruce Feldman's Freaks List".to_string(),
+                article_url: "https://example.com/freaks".to_string(),
+            },
+            freaks: vec![FreakEntry {
+                rank: 1,
+                first_name: "Kenyon".to_string(),
+                last_name: "Sadiq".to_string(),
+                college: "Oregon".to_string(),
+                position: "TE".to_string(),
+                description: "Vertical jumped 41.5 inches".to_string(),
+            }],
+        };
+
+        let result = validate_freaks_data(&data);
+        assert!(!result.valid);
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.contains("out of reasonable range")));
+    }
 }
