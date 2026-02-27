@@ -215,7 +215,7 @@ pub fn convert_csv_file(
 pub fn write_combine_json(data: &CombineFileData, output_path: &str) -> Result<()> {
     let json = serde_json::to_string_pretty(data)
         .context("Failed to serialize combine data to JSON")?;
-    std::fs::write(output_path, json)
+    std::fs::write(output_path, json + "\n")
         .with_context(|| format!("Failed to write output file: {}", output_path))?;
     Ok(())
 }
