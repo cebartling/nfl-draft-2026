@@ -38,6 +38,13 @@ pub fn map_position(source: &str) -> Result<Position> {
         "S" => (Position::S, "S"),
         "SS" => (Position::S, "S"),
         "FS" => (Position::S, "S"),
+        // nflverse uses DB and SAF for defensive backs / safeties
+        "DB" => (Position::S, "S"),
+        "SAF" => (Position::S, "S"),
+        // nflverse uses OL for generic offensive linemen
+        "OL" => (Position::OG, "OG"),
+        // Fullback → RB
+        "FB" => (Position::RB, "RB"),
         "K" => (Position::K, "K"),
         "P" => (Position::P, "P"),
         _ => {
@@ -114,10 +121,16 @@ mod tests {
     }
 
     #[test]
+    fn test_nflverse_positions() {
+        assert_eq!(map_position("DB").unwrap(), Position::S);
+        assert_eq!(map_position("SAF").unwrap(), Position::S);
+        assert_eq!(map_position("OL").unwrap(), Position::OG);
+        assert_eq!(map_position("FB").unwrap(), Position::RB);
+    }
+
+    #[test]
     fn test_invalid_positions() {
         assert!(map_position("ATH").is_err());
-        assert!(map_position("DB").is_err());
-        assert!(map_position("OL").is_err());
         assert!(map_position("").is_err());
         assert!(map_position("INVALID").is_err());
     }

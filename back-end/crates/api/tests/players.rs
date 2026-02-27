@@ -70,3 +70,55 @@ async fn test_create_and_get_player() {
     assert_eq!(player["last_name"].as_str().unwrap(), db_player.last_name);
     assert_eq!(player["position"].as_str().unwrap(), db_player.position);
 }
+
+#[tokio::test]
+async fn test_create_player_minimal() {
+    let (base_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Create player with only required fields (all optional fields null)
+    let create_response = client
+        .post(&format!("{}/api/v1/players", base_url))
+        .json(&serde_json::json!({
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "position": "WR",
+            "draft_year": 2026
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to create player");
+
+    assert_eq!(create_response.status(), 201);
+
+    let created_player: serde_json::Value =
+        create_response.json().await.expect("Failed to parse JSON");
+    let player_id = created_player["id"].as_str().expect("Missing player id");
+
+    // Verify optional fields are null in response
+    assert_eq!(created_player["first_name"], "Jane");
+    assert_eq!(created_player["last_name"], "Smith");
+    assert_eq!(created_player["position"], "WR");
+    assert_eq!(created_player["draft_year"], 2026);
+    assert!(created_player["college"].is_null());
+    assert!(created_player["height_inches"].is_null());
+    assert!(created_player["weight_pounds"].is_null());
+
+    // Validate player was persisted in database with nulls
+    let db_player = sqlx::query!(
+        "SELECT id, first_name, last_name, position, college, height_inches, weight_pounds, draft_year FROM players WHERE id = $1",
+        uuid::Uuid::parse_str(player_id).expect("Invalid UUID")
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Player not found in database");
+
+    assert_eq!(db_player.first_name, "Jane");
+    assert_eq!(db_player.last_name, "Smith");
+    assert_eq!(db_player.position, "WR");
+    assert_eq!(db_player.draft_year, 2026);
+    assert_eq!(db_player.college, None);
+    assert_eq!(db_player.height_inches, None);
+    assert_eq!(db_player.weight_pounds, None);
+}

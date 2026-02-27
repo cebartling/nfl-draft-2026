@@ -5,6 +5,7 @@ pub mod feldman_freak_loader;
 pub mod feldman_freak_validator;
 pub mod grade_generator;
 pub mod loader;
+pub mod nflverse_converter;
 pub mod percentile_loader;
 pub mod position_mapper;
 pub mod rankings_loader;
