@@ -1,4 +1,5 @@
 pub mod combine_loader;
+pub mod nflverse_converter;
 pub mod draft_order_loader;
 pub mod draft_order_validator;
 pub mod feldman_freak_loader;

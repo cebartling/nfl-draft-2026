@@ -1,22 +1,22 @@
 use anyhow::Result;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use domain::models::{CombineResults, CombineSource};
 use domain::repositories::{CombineResultsRepository, PlayerRepository};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CombineFileData {
     pub meta: CombineFileMeta,
     pub combine_results: Vec<CombineFileEntry>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CombineFileMeta {
     pub source: String,
     pub year: i32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CombineFileEntry {
     pub first_name: String,
     pub last_name: String,
