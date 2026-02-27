@@ -25,7 +25,7 @@ struct Args {
     year: i32,
 
     /// Source field value (combine or pro_day)
-    #[arg(short, long, default_value = "combine")]
+    #[arg(short, long, default_value = "combine", value_parser = ["combine", "pro_day"])]
     source: String,
 }
 

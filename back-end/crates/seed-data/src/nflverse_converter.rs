@@ -123,19 +123,22 @@ pub fn convert_nflverse_to_combine_json(
             }
         };
 
-        // Validate position
-        if let Err(_) = map_position(&row.pos) {
-            skipped_position += 1;
-            warnings.push(format!(
-                "Unmapped position '{}' for {} {}",
-                row.pos, first_name, last_name
-            ));
-            continue;
-        }
-
-        // Map the position to canonical form for the JSON output.
-        // Position derives Debug which gives us the variant name (e.g., "QB", "S").
-        let canonical_pos = format!("{:?}", map_position(&row.pos).unwrap());
+        // Map position to canonical form. Uses serde serialization to ensure
+        // the string matches what combine_loader expects when deserializing.
+        let canonical_pos = match map_position(&row.pos) {
+            Ok(pos) => {
+                let value = serde_json::to_value(pos).expect("Position serializes to JSON");
+                value.as_str().expect("Position serializes as string").to_string()
+            }
+            Err(_) => {
+                skipped_position += 1;
+                warnings.push(format!(
+                    "Unmapped position '{}' for {} {}",
+                    row.pos, first_name, last_name
+                ));
+                continue;
+            }
+        };
 
         let entry = CombineFileEntry {
             first_name,
@@ -395,5 +398,98 @@ season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos
         assert_eq!(parsed.combine_results[0].first_name, "BJ");
         assert_eq!(parsed.combine_results[0].last_name, "Adams");
         assert_eq!(parsed.combine_results[0].forty_yard_dash, Some(4.53));
+    }
+
+    #[test]
+    fn test_split_hyphenated_last_name() {
+        let (first, last) = split_player_name("Jean Pierre-Louis").unwrap();
+        assert_eq!(first, "Jean");
+        assert_eq!(last, "Pierre-Louis");
+    }
+
+    #[test]
+    fn test_empty_csv_produces_empty_results() {
+        let csv_data = "\
+season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos,school,ht,wt,forty,bench,vertical,broad_jump,cone,shuttle";
+
+        let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
+        assert!(rows.is_empty());
+
+        let (data, stats) = convert_nflverse_to_combine_json(rows, 2025, "combine");
+        assert_eq!(stats.total_rows, 0);
+        assert_eq!(stats.converted, 0);
+        assert!(data.combine_results.is_empty());
+    }
+
+    #[test]
+    fn test_no_rows_match_year_filter() {
+        let csv_data = "\
+season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos,school,ht,wt,forty,bench,vertical,broad_jump,cone,shuttle
+2024,,,,,,,John Doe,QB,Alabama,6-2,220,4.72,,,,,
+2024,,,,,,,Jane Doe,WR,Ohio State,6-0,190,4.40,,38.0,128,,";
+
+        let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
+        let (data, stats) = convert_nflverse_to_combine_json(rows, 2026, "combine");
+
+        assert_eq!(stats.total_rows, 0);
+        assert_eq!(stats.converted, 0);
+        assert!(data.combine_results.is_empty());
+    }
+
+    #[test]
+    fn test_all_position_variants_roundtrip() {
+        // Every canonical position must serialize to a string that the combine_loader
+        // can deserialize. This guards against format!("{:?}", pos) vs serde divergence.
+        let positions = [
+            "QB", "RB", "WR", "TE", "OT", "OG", "C", "DE", "DT", "LB", "CB", "S", "K", "P",
+        ];
+        let mut csv_rows = vec![
+            "season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos,school,ht,wt,forty,bench,vertical,broad_jump,cone,shuttle".to_string(),
+        ];
+        for (i, pos) in positions.iter().enumerate() {
+            csv_rows.push(format!(
+                "2025,,,,,,,Player{} Test,{},School,6-0,200,4.50,,30.0,100,,",
+                i, pos
+            ));
+        }
+        let csv_data = csv_rows.join("\n");
+
+        let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
+        let (data, stats) = convert_nflverse_to_combine_json(rows, 2025, "combine");
+
+        assert_eq!(stats.converted, positions.len());
+        assert_eq!(stats.skipped_position, 0);
+
+        // Roundtrip through JSON to verify combine_loader compatibility
+        let json = serde_json::to_string(&data).unwrap();
+        let parsed: CombineFileData = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.combine_results.len(), positions.len());
+
+        for (entry, expected_pos) in parsed.combine_results.iter().zip(positions.iter()) {
+            assert_eq!(&entry.position, expected_pos);
+        }
+    }
+
+    #[test]
+    fn test_malformed_csv_numeric_field_returns_error() {
+        let csv_data = "\
+season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos,school,ht,wt,forty,bench,vertical,broad_jump,cone,shuttle
+2025,,,,,,,John Doe,QB,Alabama,6-2,200,not_a_number,,30.0,100,,";
+
+        let result = parse_nflverse_csv(csv_data.as_bytes());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_csv_with_extra_columns_ignored() {
+        // Real nflverse data may add new columns in the future.
+        // The csv crate with serde(default) should handle extra columns gracefully.
+        let csv_data = "\
+season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos,school,ht,wt,forty,bench,vertical,broad_jump,cone,shuttle,extra_col
+2025,,,,,,,BJ Adams,CB,Central Florida,6-2,182,4.53,,32.5,117,,,some_value";
+
+        let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].player_name, "BJ Adams");
     }
 }
