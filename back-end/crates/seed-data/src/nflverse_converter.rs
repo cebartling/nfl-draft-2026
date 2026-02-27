@@ -50,6 +50,7 @@ pub struct ConversionStats {
     pub skipped_position: usize,
     pub skipped_name: usize,
     pub total_rows: usize,
+    pub filtered_rows: usize,
     pub warnings: Vec<String>,
 }
 
@@ -57,6 +58,7 @@ impl ConversionStats {
     pub fn print_summary(&self) {
         println!("\nConversion Summary:");
         println!("  Total CSV rows:    {}", self.total_rows);
+        println!("  Rows matching year: {}", self.filtered_rows);
         println!("  Converted:         {}", self.converted);
         println!("  Skipped (position): {}", self.skipped_position);
         println!("  Skipped (name):    {}", self.skipped_name);
@@ -102,8 +104,9 @@ pub fn convert_nflverse_to_combine_json(
     year: i32,
     source: &str,
 ) -> (CombineFileData, ConversionStats) {
+    let total_rows = rows.len();
     let filtered: Vec<_> = rows.into_iter().filter(|r| r.season == year).collect();
-    let total_rows = filtered.len();
+    let filtered_rows = filtered.len();
     let mut entries = Vec::new();
     let mut skipped_position = 0;
     let mut skipped_name = 0;
@@ -177,6 +180,7 @@ pub fn convert_nflverse_to_combine_json(
         skipped_position,
         skipped_name,
         total_rows,
+        filtered_rows,
         warnings,
     };
 
@@ -292,7 +296,8 @@ season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos
         let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
         let (data, stats) = convert_nflverse_to_combine_json(rows, 2025, "combine");
 
-        assert_eq!(stats.total_rows, 1);
+        assert_eq!(stats.total_rows, 2);
+        assert_eq!(stats.filtered_rows, 1);
         assert_eq!(stats.converted, 1);
         assert_eq!(data.combine_results.len(), 1);
         assert_eq!(data.combine_results[0].first_name, "BJ");
@@ -309,6 +314,7 @@ season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos
         let (data, stats) = convert_nflverse_to_combine_json(rows, 2025, "combine");
 
         assert_eq!(stats.total_rows, 1);
+        assert_eq!(stats.filtered_rows, 1);
         assert_eq!(stats.converted, 0);
         assert_eq!(stats.skipped_position, 1);
         assert!(data.combine_results.is_empty());
@@ -325,6 +331,8 @@ season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos
         let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
         let (data, stats) = convert_nflverse_to_combine_json(rows, 2025, "combine");
 
+        assert_eq!(stats.total_rows, 3);
+        assert_eq!(stats.filtered_rows, 3);
         assert_eq!(stats.converted, 3);
         assert_eq!(data.combine_results[0].position, "S");
         assert_eq!(data.combine_results[1].position, "S");
@@ -417,6 +425,7 @@ season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos
 
         let (data, stats) = convert_nflverse_to_combine_json(rows, 2025, "combine");
         assert_eq!(stats.total_rows, 0);
+        assert_eq!(stats.filtered_rows, 0);
         assert_eq!(stats.converted, 0);
         assert!(data.combine_results.is_empty());
     }
@@ -431,7 +440,8 @@ season,draft_year,draft_team,draft_round,draft_ovr,pfr_id,cfb_id,player_name,pos
         let rows = parse_nflverse_csv(csv_data.as_bytes()).unwrap();
         let (data, stats) = convert_nflverse_to_combine_json(rows, 2026, "combine");
 
-        assert_eq!(stats.total_rows, 0);
+        assert_eq!(stats.total_rows, 2);
+        assert_eq!(stats.filtered_rows, 0);
         assert_eq!(stats.converted, 0);
         assert!(data.combine_results.is_empty());
     }
