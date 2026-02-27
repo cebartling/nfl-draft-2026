@@ -102,7 +102,7 @@ pub fn split_player_name(full_name: &str) -> Option<(String, String)> {
 pub fn convert_nflverse_to_combine_json(
     rows: Vec<NflverseCombineRow>,
     year: i32,
-    source: &str,
+    entry_source: &str,
 ) -> (CombineFileData, ConversionStats) {
     let total_rows = rows.len();
     let filtered: Vec<_> = rows.into_iter().filter(|r| r.season == year).collect();
@@ -147,7 +147,7 @@ pub fn convert_nflverse_to_combine_json(
             first_name,
             last_name,
             position: canonical_pos,
-            source: source.to_string(),
+            source: entry_source.to_string(),
             year,
             forty_yard_dash: row.forty,
             bench_press: row.bench,
@@ -203,12 +203,12 @@ pub fn parse_nflverse_csv<R: std::io::Read>(reader: R) -> Result<Vec<NflverseCom
 pub fn convert_csv_file(
     input_path: &str,
     year: i32,
-    source: &str,
+    entry_source: &str,
 ) -> Result<(CombineFileData, ConversionStats)> {
     let file = std::fs::File::open(input_path)
         .with_context(|| format!("Failed to open CSV file: {}", input_path))?;
     let rows = parse_nflverse_csv(file)?;
-    Ok(convert_nflverse_to_combine_json(rows, year, source))
+    Ok(convert_nflverse_to_combine_json(rows, year, entry_source))
 }
 
 /// Write the combine JSON data to a file.
