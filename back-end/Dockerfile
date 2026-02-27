@@ -24,7 +24,7 @@ COPY crates/combine-data-scraper/Cargo.toml ./crates/combine-data-scraper/
 
 # Build dependencies only (this layer will be cached)
 # Create dummy source files to compile dependencies
-RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src crates/seed-data/src/bin crates/draft-order-scraper/src crates/prospect-rankings-scraper/src crates/combine-data-scraper/src && \
+RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src/bin crates/draft-order-scraper/src crates/prospect-rankings-scraper/src crates/combine-data-scraper/src && \
     echo "fn main() {}" > crates/api/src/main.rs && \
     echo "pub fn dummy() {}" > crates/domain/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/db/src/lib.rs && \
