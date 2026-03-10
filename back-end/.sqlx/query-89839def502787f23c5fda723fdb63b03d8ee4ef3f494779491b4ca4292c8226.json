@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT overall_pick, picked_at FROM draft_picks WHERE draft_id = $1 AND picked_at IS NOT NULL ORDER BY overall_pick ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "overall_pick",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "picked_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "89839def502787f23c5fda723fdb63b03d8ee4ef3f494779491b4ca4292c8226"
+}

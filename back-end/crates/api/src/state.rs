@@ -1,5 +1,6 @@
 use dashmap::DashMap;
 use sqlx::PgPool;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -49,6 +50,8 @@ pub struct AppState {
     pub seed_api_key: Option<String>,
     /// Per-session mutex to prevent concurrent auto-pick-run requests
     pub session_locks: Arc<DashMap<Uuid, Arc<Mutex<()>>>>,
+    /// Per-session cancellation flags for cooperative auto-pick-run shutdown
+    pub auto_pick_cancel: Arc<DashMap<Uuid, Arc<AtomicBool>>>,
 }
 
 impl AppState {
@@ -124,6 +127,7 @@ impl AppState {
 
         let ws_manager = ConnectionManager::new();
         let session_locks = Arc::new(DashMap::new());
+        let auto_pick_cancel = Arc::new(DashMap::new());
 
         Self {
             pool,
@@ -148,6 +152,7 @@ impl AppState {
             ws_manager,
             seed_api_key,
             session_locks,
+            auto_pick_cancel,
         }
     }
 }

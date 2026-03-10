@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT player_id FROM draft_picks WHERE draft_id = $1 AND player_id IS NOT NULL ORDER BY overall_pick",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "player_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "a7f242d8b8e4dafaadaefa4d64f12b2793957cbc368b8c7ca3a98ab5fba91623"
+}

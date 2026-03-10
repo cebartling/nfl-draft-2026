@@ -1,136 +1,136 @@
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        State,
+    },
     response::Response,
 };
 use futures::{SinkExt, StreamExt};
 use tracing::{error, info, warn};
+use uuid::Uuid;
 use websocket::{ClientMessage, ServerMessage};
+
+use crate::state::AppState;
 
 /// WebSocket upgrade handler
 ///
-/// This is a minimal WebSocket endpoint that accepts connections at `/ws`
-/// and handles basic Subscribe and Ping messages.
-///
-/// ## Current Limitations
-///
-/// This implementation does NOT integrate with `ConnectionManager` due to a type
-/// incompatibility:
-/// - Axum provides `axum::extract::ws::WebSocket`
-/// - ConnectionManager expects `tokio_tungstenite::WebSocketStream<TcpStream>`
-///
-/// These types are not directly compatible. Full integration requires:
-/// 1. A type adapter to bridge Axum's WebSocket with tokio-tungstenite
-/// 2. Session-based connection tracking
-/// 3. Broadcasting to all clients in a session
-///
-/// ## What This Handler Does
-///
-/// - Accepts WebSocket upgrade requests at `/ws`
-/// - Parses incoming JSON messages as `ClientMessage`
-/// - Responds to:
-///   - `Subscribe`: Returns `Subscribed` confirmation
-///   - `Ping`: Returns `Pong`
-///   - `MakePick`/`ProposeTrade`: Returns "not implemented" error with guidance to use REST API
-/// - Logs all connections and messages for debugging
-///
-/// ## Future Work
-///
-/// To enable full bidirectional communication:
-/// 1. Create an adapter that wraps Axum's WebSocket and implements the interface expected by ConnectionManager
-/// 2. Register connections with ConnectionManager on Subscribe
-/// 3. Listen for broadcast messages from ConnectionManager
-/// 4. Unregister connections on disconnect
-///
-pub async fn ws_handler(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(handle_socket)
+/// Accepts WebSocket connections at `/ws`, registers them with the ConnectionManager
+/// on Subscribe, and multiplexes inbound client messages with outbound server-push
+/// messages via an mpsc channel.
+pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> Response {
+    ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 
-async fn handle_socket(socket: WebSocket) {
-    info!("WebSocket connection established");
+async fn handle_socket(socket: WebSocket, state: AppState) {
+    let connection_id = Uuid::new_v4();
+    info!(connection_id = %connection_id, "WebSocket connection established");
 
-    let (mut sender, mut receiver) = socket.split();
+    let (mut ws_sender, mut ws_receiver) = socket.split();
 
-    // Process incoming messages
-    while let Some(msg) = receiver.next().await {
-        match msg {
-            Ok(Message::Text(text)) => {
-                info!("Received WebSocket message: {}", text);
+    // Channel for server-push messages (ConnectionManager → this handler → WS client)
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+    let mut subscribed_session_id: Option<Uuid> = None;
 
-                // Parse the client message
-                match ClientMessage::from_json(&text) {
-                    Ok(client_msg) => {
-                        // Handle the message and generate a response
-                        let response = handle_client_message(client_msg).await;
-
-                        // Send the response
-                        if let Ok(response_json) = response.to_json() {
-                            if let Err(e) = sender.send(Message::Text(response_json.into())).await {
-                                error!("Failed to send WebSocket message: {}", e);
-                                break;
-                            }
-                        } else {
-                            error!("Failed to serialize server message");
-                        }
-                    }
-                    Err(e) => {
-                        warn!("Failed to parse client message: {}", e);
-                        let error_msg =
-                            ServerMessage::error(format!("Invalid message format: {}", e));
-                        if let Ok(error_json) = error_msg.to_json() {
-                            let _ = sender.send(Message::Text(error_json.into())).await;
-                        }
-                    }
-                }
-            }
-            Ok(Message::Close(_)) => {
-                info!("WebSocket client disconnected");
-                break;
-            }
-            Ok(Message::Ping(data)) => {
-                // Respond to WebSocket protocol ping with pong
-                if let Err(e) = sender.send(Message::Pong(data)).await {
-                    error!("Failed to send pong: {}", e);
+    loop {
+        tokio::select! {
+            // Outbound: forward server-push messages to the WS client
+            Some(msg) = rx.recv() => {
+                if let Err(e) = ws_sender.send(Message::Text(msg.into())).await {
+                    error!(connection_id = %connection_id, error = %e, "Failed to forward server message to WS client");
                     break;
                 }
             }
-            Ok(Message::Pong(_)) => {
-                // Ignore pong messages
-            }
-            Ok(Message::Binary(_)) => {
-                warn!("Received binary message (not supported)");
-            }
-            Err(e) => {
-                error!("WebSocket error: {}", e);
-                break;
+            // Inbound: handle messages from the WS client
+            msg = ws_receiver.next() => {
+                match msg {
+                    Some(Ok(Message::Text(text))) => {
+                        match ClientMessage::from_json(&text) {
+                            Ok(client_msg) => {
+                                match client_msg {
+                                    ClientMessage::Subscribe { session_id } => {
+                                        info!(connection_id = %connection_id, session_id = %session_id, "Client subscribing to session");
+
+                                        // Register with ConnectionManager
+                                        state.ws_manager.add_connection(connection_id, session_id, tx.clone());
+                                        subscribed_session_id = Some(session_id);
+
+                                        // Send Subscribed confirmation directly
+                                        let response = ServerMessage::subscribed(session_id);
+                                        if let Ok(json) = response.to_json() {
+                                            if let Err(e) = ws_sender.send(Message::Text(json.into())).await {
+                                                error!(connection_id = %connection_id, error = %e, "Failed to send Subscribed response");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    ClientMessage::Ping => {
+                                        let response = ServerMessage::pong();
+                                        if let Ok(json) = response.to_json() {
+                                            if let Err(e) = ws_sender.send(Message::Text(json.into())).await {
+                                                error!(connection_id = %connection_id, error = %e, "Failed to send Pong");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    ClientMessage::MakePick { .. } => {
+                                        warn!(connection_id = %connection_id, "MakePick not implemented via WebSocket");
+                                        let response = ServerMessage::error(
+                                            "MakePick is not yet implemented via WebSocket. Please use the REST API endpoint: POST /api/v1/sessions/:id/picks".to_string()
+                                        );
+                                        if let Ok(json) = response.to_json() {
+                                            let _ = ws_sender.send(Message::Text(json.into())).await;
+                                        }
+                                    }
+                                    ClientMessage::ProposeTrade { .. } => {
+                                        warn!(connection_id = %connection_id, "ProposeTrade not implemented via WebSocket");
+                                        let response = ServerMessage::error(
+                                            "ProposeTrade is not yet implemented via WebSocket. Please use the REST API endpoint: POST /api/v1/trades".to_string()
+                                        );
+                                        if let Ok(json) = response.to_json() {
+                                            let _ = ws_sender.send(Message::Text(json.into())).await;
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                warn!(connection_id = %connection_id, error = %e, "Failed to parse client message");
+                                let error_msg = ServerMessage::error(format!("Invalid message format: {}", e));
+                                if let Ok(json) = error_msg.to_json() {
+                                    let _ = ws_sender.send(Message::Text(json.into())).await;
+                                }
+                            }
+                        }
+                    }
+                    Some(Ok(Message::Close(_))) => {
+                        info!(connection_id = %connection_id, "WebSocket client disconnected");
+                        break;
+                    }
+                    Some(Ok(Message::Ping(data))) => {
+                        if let Err(e) = ws_sender.send(Message::Pong(data)).await {
+                            error!(connection_id = %connection_id, error = %e, "Failed to send pong");
+                            break;
+                        }
+                    }
+                    Some(Ok(Message::Pong(_))) => {}
+                    Some(Ok(Message::Binary(_))) => {
+                        warn!(connection_id = %connection_id, "Received binary message (not supported)");
+                    }
+                    Some(Err(e)) => {
+                        error!(connection_id = %connection_id, error = %e, "WebSocket error");
+                        break;
+                    }
+                    None => {
+                        // Stream ended
+                        break;
+                    }
+                }
             }
         }
     }
 
-    info!("WebSocket connection closed");
-}
-
-async fn handle_client_message(msg: ClientMessage) -> ServerMessage {
-    match msg {
-        ClientMessage::Subscribe { session_id } => {
-            info!("Client subscribed to session: {}", session_id);
-            // TODO: Register connection with ConnectionManager when type adapter is implemented
-            ServerMessage::subscribed(session_id)
-        }
-        ClientMessage::Ping => {
-            info!("Received ping");
-            ServerMessage::pong()
-        }
-        ClientMessage::MakePick { .. } => {
-            warn!("MakePick not implemented via WebSocket");
-            ServerMessage::error(
-                "MakePick is not yet implemented via WebSocket. Please use the REST API endpoint: POST /api/v1/sessions/:id/picks".to_string()
-            )
-        }
-        ClientMessage::ProposeTrade { .. } => {
-            warn!("ProposeTrade not implemented via WebSocket");
-            ServerMessage::error(
-                "ProposeTrade is not yet implemented via WebSocket. Please use the REST API endpoint: POST /api/v1/trades".to_string()
-            )
-        }
+    // Clean up connection on disconnect
+    if subscribed_session_id.is_some() {
+        state.ws_manager.remove_connection(connection_id);
     }
+    info!(connection_id = %connection_id, "WebSocket connection closed");
 }

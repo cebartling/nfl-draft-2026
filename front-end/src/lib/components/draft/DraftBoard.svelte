@@ -15,7 +15,7 @@
 
 	let teams = $state<Map<string, Team>>(new Map());
 	let players = $state<Map<string, Player>>(new Map());
-	let isLoading = $state(false);
+	let initialLoadDone = $state(false);
 	let collapsedRounds = $state<Set<number>>(new Set());
 	let initializedCollapse = $state(false);
 	let scrollContainer = $state<HTMLDivElement>();
@@ -58,9 +58,28 @@
 		}
 	});
 
-	// Auto-scroll to the current pick and expand its round if collapsed
+	/**
+	 * Scroll to a pick element within the scroll container only,
+	 * without affecting the outer page scroll position.
+	 */
+	function scrollContainerToPick(pickNumber: number) {
+		if (!scrollContainer) return;
+		const el = scrollContainer.querySelector(`[data-pick="${pickNumber}"]`) as HTMLElement | null;
+		if (!el) return;
+
+		const containerRect = scrollContainer.getBoundingClientRect();
+		const elRect = el.getBoundingClientRect();
+		const offsetInContainer = elRect.top - containerRect.top + scrollContainer.scrollTop;
+		const centeredTop = offsetInContainer - containerRect.height / 2 + elRect.height / 2;
+
+		scrollContainer.scrollTo({ top: centeredTop, behavior: 'smooth' });
+	}
+
+	// Auto-scroll to the current pick and expand its round if collapsed.
+	// Also re-scroll when session status changes (e.g. pause → resume).
 	$effect(() => {
 		const currentPick = draftState.currentPickNumber;
+		const _status = draftState.session?.status; // track status changes
 		if (!currentPick || !scrollContainer) return;
 
 		// Find which round contains the current pick
@@ -74,18 +93,15 @@
 			collapsedRounds = next;
 		}
 
-		// Wait for DOM update then scroll to the pick
+		// Wait for DOM update then scroll within the container only
 		tick().then(() => {
-			const el = scrollContainer?.querySelector(`[data-pick="${currentPick}"]`);
-			el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			scrollContainerToPick(currentPick);
 		});
 	});
 
 	// Load teams and players when picks change
 	$effect(() => {
 		if (picks.length === 0) return;
-
-		isLoading = true;
 
 		const teamIds = new Set<string>();
 		const playerIds = new Set<string>();
@@ -97,28 +113,40 @@
 			}
 		});
 
+		const newTeamIds = Array.from(teamIds).filter((id) => !teams.has(id));
+		const newPlayerIds = Array.from(playerIds).filter((id) => !players.has(id));
+
+		if (newTeamIds.length === 0 && newPlayerIds.length === 0) return;
+
 		Promise.all([
-			...Array.from(teamIds).map((id) =>
-				teamsApi.get(id).then((team) => {
-					teams.set(id, team);
-				})
-			),
-			...Array.from(playerIds).map((id) =>
-				playersApi.get(id).then((player) => {
-					players.set(id, player);
-				})
-			),
+			...newTeamIds.map((id) => teamsApi.get(id).then((team) => ({ id, team }))),
+			...newPlayerIds.map((id) => playersApi.get(id).then((player) => ({ id, player }))),
 		])
+			.then((results) => {
+				const updatedTeams = new Map(teams);
+				const updatedPlayers = new Map(players);
+
+				for (const result of results) {
+					if ('team' in result) {
+						updatedTeams.set(result.id, result.team);
+					} else {
+						updatedPlayers.set(result.id, result.player);
+					}
+				}
+
+				teams = updatedTeams;
+				players = updatedPlayers;
+			})
 			.catch((err) => {
 				logger.error('Failed to load data:', err);
 			})
 			.finally(() => {
-				isLoading = false;
+				initialLoadDone = true;
 			});
 	});
 </script>
 
-{#if isLoading}
+{#if !initialLoadDone && picks.length > 0}
 	<div class="flex justify-center py-12">
 		<LoadingSpinner size="lg" />
 	</div>

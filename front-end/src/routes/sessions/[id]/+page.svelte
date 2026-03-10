@@ -6,6 +6,7 @@
 	import { draftsApi, sessionsApi } from '$lib/api';
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
+
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import PlayerDetails from '$components/player/PlayerDetails.svelte';
 	import Modal from '$components/ui/Modal.svelte';

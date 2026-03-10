@@ -5,3 +5,4 @@ export { default as PickCard } from './PickCard.svelte';
 export { default as DraftBoard } from './DraftBoard.svelte';
 export { default as SessionControls } from './SessionControls.svelte';
 export { default as TeamSelector } from './TeamSelector.svelte';
+export { default as PickActivityFeed } from './PickActivityFeed.svelte';

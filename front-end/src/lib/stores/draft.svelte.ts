@@ -2,6 +2,16 @@ import { logger } from '$lib/utils/logger';
 import { draftsApi, sessionsApi } from '$lib/api';
 import type { Draft, DraftSession, DraftPick } from '$lib/types';
 
+export interface PickNotification {
+	pick_id: string;
+	player_id: string;
+	team_id: string;
+	player_name: string;
+	team_name: string;
+	round: number;
+	pick_number: number;
+}
+
 /**
  * Draft state management using Svelte 5 runes
  */
@@ -13,6 +23,7 @@ export class DraftState {
 	isLoading = $state(false);
 	error = $state<string | null>(null);
 	isAutoPickRunning = $state(false);
+	pickNotifications = $state<PickNotification[]>([]);
 
 	/**
 	 * Get the current pick number from the session
@@ -134,7 +145,8 @@ export class DraftState {
 	}
 
 	/**
-	 * Start a draft session
+	 * Start a draft session.
+	 * Throws on failure so callers can distinguish success from error.
 	 */
 	async startSession(sessionId: string): Promise<void> {
 		this.isLoading = true;
@@ -146,13 +158,15 @@ export class DraftState {
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to start session';
 			logger.error('Failed to start session:', err);
+			throw err;
 		} finally {
 			this.isLoading = false;
 		}
 	}
 
 	/**
-	 * Pause a draft session
+	 * Pause a draft session.
+	 * Throws on failure so callers can distinguish success from error.
 	 */
 	async pauseSession(sessionId: string): Promise<void> {
 		this.isLoading = true;
@@ -164,36 +178,45 @@ export class DraftState {
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to pause session';
 			logger.error('Failed to pause session:', err);
+			throw err;
 		} finally {
 			this.isLoading = false;
 		}
 	}
 
 	/**
-	 * Update a pick from WebSocket message
+	 * Update a pick from WebSocket message and advance the current pick number.
+	 * Derives the next pick from the actual pick that was made rather than
+	 * blindly incrementing, so state stays correct after pause/resume.
 	 */
 	updatePickFromWS(pickData: { pick_id: string; player_id: string; team_id: string }): void {
 		const pickIndex = this.picks.findIndex((pick) => pick.id === pickData.pick_id);
 		if (pickIndex !== -1) {
+			const pick = this.picks[pickIndex];
 			// Update the pick with the player
 			this.picks[pickIndex] = {
-				...this.picks[pickIndex],
+				...pick,
 				player_id: pickData.player_id,
 				picked_at: new Date().toISOString(),
 			};
+
+			// Advance current pick number based on the actual pick's overall position.
+			// Only move forward to avoid going backwards if messages arrive out of order.
+			const nextPickNumber = pick.overall_pick + 1;
+			if (this.session && nextPickNumber > this.session.current_pick_number) {
+				this.session = {
+					...this.session,
+					current_pick_number: nextPickNumber,
+				};
+			}
 		}
 	}
 
 	/**
-	 * Advance to the next pick
+	 * Add a pick notification to the activity feed
 	 */
-	advancePick(): void {
-		if (this.session) {
-			this.session = {
-				...this.session,
-				current_pick_number: this.session.current_pick_number + 1,
-			};
-		}
+	addPickNotification(data: PickNotification): void {
+		this.pickNotifications = [...this.pickNotifications, data];
 	}
 
 	/**
@@ -206,6 +229,7 @@ export class DraftState {
 		this.isLoading = false;
 		this.error = null;
 		this.isAutoPickRunning = false;
+		this.pickNotifications = [];
 	}
 }
 

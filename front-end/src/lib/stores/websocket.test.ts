@@ -24,7 +24,7 @@ const { mockWsClient, mockDraftState, WebSocketState } = vi.hoisted(() => {
 			draft: null as any,
 			isAutoPickRunning: false,
 			updatePickFromWS: vi.fn(),
-			advancePick: vi.fn(),
+			addPickNotification: vi.fn(),
 			loadDraft: vi.fn(),
 		},
 		WebSocketState,
@@ -117,11 +117,26 @@ describe('WebSocketStateManager', () => {
 			});
 		});
 
-		it('should not send when disconnected', () => {
+		it('should not send when disconnected but store pending session', () => {
 			mockWsClient.isConnected.mockReturnValueOnce(false);
 			manager.subscribeToSession('session-1');
 
 			expect(mockWsClient.send).not.toHaveBeenCalled();
+		});
+
+		it('should auto-subscribe when connection becomes Connected', () => {
+			mockWsClient.isConnected.mockReturnValueOnce(false);
+			manager.subscribeToSession('session-1');
+			expect(mockWsClient.send).not.toHaveBeenCalled();
+
+			// Simulate connection becoming Connected
+			expect(_capturedStateHandler).not.toBeNull();
+			_capturedStateHandler!(WebSocketState.Connected);
+
+			expect(mockWsClient.send).toHaveBeenCalledWith({
+				type: 'subscribe',
+				session_id: 'session-1',
+			});
 		});
 	});
 
@@ -138,7 +153,7 @@ describe('WebSocketStateManager', () => {
 	});
 
 	describe('handleMessage pick_made', () => {
-		it('should call draftState.updatePickFromWS and advancePick', () => {
+		it('should call draftState.updatePickFromWS and addPickNotification', () => {
 			expect(capturedMessageHandler).not.toBeNull();
 
 			capturedMessageHandler!({
@@ -158,10 +173,18 @@ describe('WebSocketStateManager', () => {
 				player_id: 'player-1',
 				team_id: 'team-1',
 			});
-			expect(mockDraftState.advancePick).toHaveBeenCalled();
+			expect(mockDraftState.addPickNotification).toHaveBeenCalledWith({
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+				player_name: 'John Doe',
+				team_name: 'Team A',
+				round: 1,
+				pick_number: 1,
+			});
 		});
 
-		it('should not advance pick when auto-pick is running', () => {
+		it('should update pick even when auto-pick is running', () => {
 			mockDraftState.isAutoPickRunning = true;
 
 			capturedMessageHandler!({
@@ -177,7 +200,7 @@ describe('WebSocketStateManager', () => {
 			});
 
 			expect(mockDraftState.updatePickFromWS).toHaveBeenCalled();
-			expect(mockDraftState.advancePick).not.toHaveBeenCalled();
+			expect(mockDraftState.addPickNotification).toHaveBeenCalled();
 		});
 	});
 

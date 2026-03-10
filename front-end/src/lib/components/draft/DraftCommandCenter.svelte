@@ -126,6 +126,10 @@
 		try {
 			await draftState.startSession(sessionId);
 			toastState.success('Draft session started');
+			// Reload picks to ensure we have the latest state (critical after pause/resume)
+			if (draftState.session) {
+				await draftState.loadDraft(draftState.session.draft_id);
+			}
 			// Trigger AI auto-picks if current pick is not user-controlled
 			await triggerAutoPickRun();
 		} catch (err) {
@@ -290,9 +294,11 @@
 
 		<!-- Status Badge (right-aligned) -->
 		<div class="lg:pl-6 lg:ml-auto">
-			<Badge variant={statusBadge.variant} size="lg">
-				{statusBadge.text}
-			</Badge>
+			<span data-testid="session-status">
+				<Badge variant={statusBadge.variant} size="lg">
+					{statusBadge.text}
+				</Badge>
+			</span>
 		</div>
 	</div>
 
