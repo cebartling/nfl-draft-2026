@@ -9,13 +9,15 @@ NFL Draft Simulator 2026 - A full-stack application for simulating NFL drafts wi
 This is a full-stack project: Rust backend + SvelteKit frontend + PostgreSQL, all orchestrated via Docker Compose. Backend tests: `cargo test --workspace`. Frontend tests: check package.json for test commands. Always run both test suites after cross-cutting changes.
 
 **Tech Stack:**
+
 - Backend: Rust + Axum + PostgreSQL 18
 - Frontend: SvelteKit + TypeScript + Tailwind CSS
 - Real-time: WebSocket (tokio-tungstenite)
 
 ## Important Rules
 
-Never fabricate or hallucinate real-world data (NFL stats, draft orders, player records, season data). If real data is needed, scrape it from a credible source or ask the user to provide it. Always use the correct season year.
+- **MUST** - Use real-world data (NFL stats, draft orders, player records, season data). Scrape this information from the web.
+- **MUST** - Use red/green TDD
 
 ## Docker Workflow
 
@@ -62,6 +64,7 @@ docker-compose.yml  # Shared infrastructure (PostgreSQL, pgAdmin)
 ```
 
 **Key Architectural Patterns:**
+
 - **Repository Pattern**: Domain defines traits, DB crate implements with SQLx
 - **Dependency Injection**: Services depend on repository traits, not concrete implementations
 - **Layer Separation**: API → Domain (services) → DB (repositories) → PostgreSQL
@@ -70,6 +73,7 @@ docker-compose.yml  # Shared infrastructure (PostgreSQL, pgAdmin)
 ### Database Schema Philosophy
 
 The database is organized into logical domains:
+
 1. **Teams & Organizations** (teams)
 2. **Players & Scouting** (players, scouting_reports, combine_results, team_needs)
 3. **Drafts & Picks** (drafts, draft_picks, pick_trades, pick_trade_details)
@@ -82,6 +86,7 @@ The database is organized into logical domains:
 **Infrastructure services (PostgreSQL, pgAdmin) are managed from the repository root:**
 
 **Start services:**
+
 ```bash
 # Start PostgreSQL only
 docker compose up -d postgres
@@ -100,6 +105,7 @@ docker compose down -v
 ```
 
 **Database access:**
+
 ```bash
 # Connect to PostgreSQL via psql
 docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
@@ -111,6 +117,7 @@ docker compose exec postgres psql -U nfl_draft_user -d nfl_draft
 ### Backend (Rust)
 
 **Initial Setup:**
+
 ```bash
 # Start PostgreSQL (from repository root)
 docker compose up -d postgres
@@ -133,6 +140,7 @@ sqlx migrate run --database-url "postgresql://nfl_draft_user:nfl_draft_pass@loca
 ```
 
 **Development:**
+
 ```bash
 cd back-end
 
@@ -154,6 +162,7 @@ cargo clippy --workspace -- -D warnings
 ```
 
 **Database Migrations:**
+
 ```bash
 cd back-end
 
@@ -172,12 +181,14 @@ sqlx migrate revert
 > **Tip for AI agents:** When iterating on frontend UI, use the Vite dev server (`npm run dev` from `front-end/`) on port 5173 instead of rebuilding the Docker frontend container. Vite provides hot module replacement (HMR) so changes appear instantly. The dev server proxies API requests to the backend on port 8000. Use the Playwright MCP browser against `http://localhost:5173` for visual testing during development.
 
 **Setup:**
+
 ```bash
 cd front-end
 npm install
 ```
 
 **Development:**
+
 ```bash
 # Development server (with HMR)
 npm run dev
@@ -199,6 +210,7 @@ npm run preview
 ```
 
 **Testing:**
+
 ```bash
 # Unit tests (Vitest)
 npm run test
@@ -231,6 +243,7 @@ This order ensures you're always coding against abstractions, not concrete imple
 ### Backend: Database Queries
 
 **Use SQLx with compile-time verification:**
+
 ```rust
 // Query macros are verified at compile time
 let row = sqlx::query_as!(
@@ -247,6 +260,7 @@ let row = sqlx::query_as!(
 ### Frontend: State Management
 
 **Use Svelte 5 runes** (not traditional stores):
+
 ```typescript
 // lib/stores/draft.svelte.ts
 export class DraftState {
@@ -268,6 +282,7 @@ This is the modern approach (2026) and provides better TypeScript support than t
 ### Frontend: API Integration
 
 **Domain-specific API modules** match backend structure:
+
 ```typescript
 // lib/api/draft.ts
 export const draftApi = {
@@ -281,11 +296,13 @@ Types in `lib/types/` should mirror Rust structs from the backend for end-to-end
 ### WebSocket Integration
 
 **Backend** (`back-end/crates/websocket/`):
+
 - Connection manager using DashMap for concurrent access
 - Broadcasting to all clients in a session
 - Reconnection handled client-side
 
 **Frontend** (`lib/api/websocket.ts`):
+
 - Auto-reconnection with exponential backoff
 - Type-safe message handlers
 - Integrated with Svelte stores for reactive updates
@@ -311,6 +328,7 @@ Types in `lib/types/` should mirror Rust structs from the backend for end-to-end
 #### Running Tests
 
 **All Tests:**
+
 ```bash
 cd back-end
 
@@ -325,12 +343,14 @@ cargo test -p api
 ```
 
 **Unit/Integration Tests Only:**
+
 ```bash
 # Run all unit/integration tests (faster, no HTTP overhead)
 cargo test --workspace --lib -- --test-threads=1
 ```
 
 **Acceptance Tests Only:**
+
 ```bash
 # Run end-to-end HTTP tests with ephemeral servers
 cargo test -p api --test acceptance -- --test-threads=1
@@ -344,6 +364,7 @@ cargo test -p api --test acceptance -- --test-threads=1 --nocapture
 Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing organized by feature:
 
 **Test Files:**
+
 - `health.rs` - Health endpoint validation
 - `teams.rs` - Team CRUD operations with database validation
 - `players.rs` - Player CRUD operations with database validation
@@ -353,6 +374,7 @@ Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing 
 - `common/mod.rs` - Shared test utilities (spawn_app returns pool, create_client, cleanup_database)
 
 **How They Work:**
+
 1. Each test spawns the API server on an ephemeral port (OS-assigned)
 2. Uses `tokio::sync::oneshot` channel to notify when server is ready
 3. Creates a configured `reqwest::Client` with timeouts (30s overall, 5s connect, 5s per-request)
@@ -362,6 +384,7 @@ Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing 
 7. Cleans up database after each test
 
 **What They Validate:**
+
 - **HTTP Layer**: Correct status codes (200, 201, 404, 400, 409) and JSON responses
 - **Database Layer**: Data is correctly persisted in PostgreSQL
 - **Consistency**: HTTP responses match database state
@@ -369,6 +392,7 @@ Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing 
 - **Data Integrity**: Foreign keys, constraints, and counts are correct
 
 **Important Notes:**
+
 - Must run with `--test-threads=1` (tests share the same test database)
 - Each test spawns its own server instance with a shared database pool
 - Tests verify both HTTP responses AND database persistence
@@ -377,6 +401,7 @@ Acceptance tests (`back-end/crates/api/tests/`) provide end-to-end HTTP testing 
 - True end-to-end testing: HTTP → API → Service → Repository → PostgreSQL
 
 **Example Usage:**
+
 ```bash
 # Run all acceptance tests
 cargo test -p api --tests -- --test-threads=1
@@ -392,6 +417,7 @@ cargo test -p api --tests -- --test-threads=1 --nocapture
 ```
 
 ### Frontend
+
 - **Unit tests**: Pure functions, utilities, formatters
 - **Component tests**: Vitest browser mode for real browser environment
 - **E2E tests**: Playwright for complete user flows
@@ -411,6 +437,7 @@ documentation/demos/
 ```
 
 **Naming conventions:**
+
 - Folder: `YYYY-MM-DD-feature-name` (e.g., `2026-02-15-prospect-rankings`)
 - Files: `demo-NN-description.png` with sequential numbering and a short description of what the screenshot shows
 
