@@ -85,9 +85,8 @@ async fn insert_draft_pick(
 /// Test: auto-pick-run stores PickMade events in the draft_events table
 ///
 /// This test verifies the event sourcing audit trail is maintained during auto-pick.
-/// Currently, the auto-pick-run handler broadcasts PickMade via WebSocket but does NOT
-/// persist DraftEvent::pick_made() to the database. This test will fail until that gap
-/// is fixed.
+/// The auto-pick-run handler persists DraftEvent::pick_made() to the database and
+/// broadcasts PickMade via WebSocket for each pick made.
 #[tokio::test]
 async fn test_auto_pick_run_stores_pick_made_events() {
     let (app_url, pool) = common::spawn_app().await;
