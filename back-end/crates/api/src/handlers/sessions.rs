@@ -5,6 +5,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::error::ApiResult;
@@ -245,16 +247,25 @@ pub async fn pause_session(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> ApiResult<Json<SessionResponse>> {
+    // Signal any running auto-pick-run to stop
+    if let Some(cancel_flag) = state.auto_pick_cancel.get(&id) {
+        cancel_flag.store(true, Ordering::SeqCst);
+    }
+
+    // Wait for the session lock with a timeout instead of try_lock.
+    // This allows pause to succeed even when auto-pick-run is mid-loop.
     let lock = state
         .session_locks
         .entry(id)
-        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
         .clone();
-    let _guard = lock.try_lock().map_err(|_| {
-        domain::errors::DomainError::InvalidState(
-            "Session is being modified by another request".to_string(),
-        )
-    })?;
+    let _guard = tokio::time::timeout(std::time::Duration::from_secs(10), lock.lock())
+        .await
+        .map_err(|_| {
+            domain::errors::DomainError::InvalidState(
+                "Timed out waiting for session lock".to_string(),
+            )
+        })?;
 
     let mut session = state
         .session_repo
@@ -293,7 +304,8 @@ pub struct AutoPickRunResponse {
 }
 
 /// POST /api/v1/sessions/:id/auto-pick-run
-/// Loops through AI picks until reaching a user-controlled team's turn or draft completion.
+/// Loops through AI picks until reaching a user-controlled team's turn, draft completion,
+/// or cancellation (e.g., from a pause request).
 pub async fn auto_pick_run(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -302,13 +314,19 @@ pub async fn auto_pick_run(
     let lock = state
         .session_locks
         .entry(id)
-        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
         .clone();
     let _guard = lock.try_lock().map_err(|_| {
         domain::errors::DomainError::InvalidState(
             "Auto-pick run already in progress for this session".to_string(),
         )
     })?;
+
+    // Register a cancellation flag so pause_session can signal us to stop
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    state
+        .auto_pick_cancel
+        .insert(id, Arc::clone(&cancel_flag));
 
     let mut session = state
         .session_repo
@@ -317,6 +335,7 @@ pub async fn auto_pick_run(
         .ok_or_else(|| domain::errors::DomainError::NotFound(format!("Session {}", id)))?;
 
     if session.status != domain::models::SessionStatus::InProgress {
+        state.auto_pick_cancel.remove(&id);
         return Err(domain::errors::DomainError::InvalidState(
             "Session is not in progress".to_string(),
         )
@@ -335,6 +354,12 @@ pub async fn auto_pick_run(
         .ok_or_else(|| domain::errors::DomainError::NotFound("Draft not found".to_string()))?;
 
     loop {
+        // Check for cancellation (e.g., pause was requested)
+        if cancel_flag.load(Ordering::SeqCst) {
+            tracing::info!(session_id = %id, "Auto-pick run cancelled (pause requested)");
+            break;
+        }
+
         // Get the next unmade pick
         let next_pick = state.draft_engine.get_next_pick(session.draft_id).await?;
         let Some(pick) = next_pick else {
@@ -406,6 +431,9 @@ pub async fn auto_pick_run(
         // With 224 picks this completes in ~45s.
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
     }
+
+    // Clean up cancellation flag
+    state.auto_pick_cancel.remove(&id);
 
     // Check if draft is complete (no more picks available)
     let remaining = state.draft_engine.get_next_pick(session.draft_id).await?;

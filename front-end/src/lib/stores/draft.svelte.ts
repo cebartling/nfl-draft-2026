@@ -145,7 +145,8 @@ export class DraftState {
 	}
 
 	/**
-	 * Start a draft session
+	 * Start a draft session.
+	 * Throws on failure so callers can distinguish success from error.
 	 */
 	async startSession(sessionId: string): Promise<void> {
 		this.isLoading = true;
@@ -157,13 +158,15 @@ export class DraftState {
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to start session';
 			logger.error('Failed to start session:', err);
+			throw err;
 		} finally {
 			this.isLoading = false;
 		}
 	}
 
 	/**
-	 * Pause a draft session
+	 * Pause a draft session.
+	 * Throws on failure so callers can distinguish success from error.
 	 */
 	async pauseSession(sessionId: string): Promise<void> {
 		this.isLoading = true;
@@ -175,6 +178,7 @@ export class DraftState {
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Failed to pause session';
 			logger.error('Failed to pause session:', err);
+			throw err;
 		} finally {
 			this.isLoading = false;
 		}
