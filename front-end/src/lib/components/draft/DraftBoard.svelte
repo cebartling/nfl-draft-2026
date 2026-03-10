@@ -113,22 +113,30 @@
 			}
 		});
 
+		const newTeamIds = Array.from(teamIds).filter((id) => !teams.has(id));
+		const newPlayerIds = Array.from(playerIds).filter((id) => !players.has(id));
+
+		if (newTeamIds.length === 0 && newPlayerIds.length === 0) return;
+
 		Promise.all([
-			...Array.from(teamIds)
-				.filter((id) => !teams.has(id))
-				.map((id) =>
-					teamsApi.get(id).then((team) => {
-						teams.set(id, team);
-					})
-				),
-			...Array.from(playerIds)
-				.filter((id) => !players.has(id))
-				.map((id) =>
-					playersApi.get(id).then((player) => {
-						players.set(id, player);
-					})
-				),
+			...newTeamIds.map((id) => teamsApi.get(id).then((team) => ({ id, team }))),
+			...newPlayerIds.map((id) => playersApi.get(id).then((player) => ({ id, player }))),
 		])
+			.then((results) => {
+				const updatedTeams = new Map(teams);
+				const updatedPlayers = new Map(players);
+
+				for (const result of results) {
+					if ('team' in result) {
+						updatedTeams.set(result.id, result.team);
+					} else {
+						updatedPlayers.set(result.id, result.player);
+					}
+				}
+
+				teams = updatedTeams;
+				players = updatedPlayers;
+			})
 			.catch((err) => {
 				logger.error('Failed to load data:', err);
 			})
