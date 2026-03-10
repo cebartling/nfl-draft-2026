@@ -9,13 +9,6 @@ use crate::messages::ServerMessage;
 /// Type alias for WebSocket sender — transport-agnostic channel
 pub type WsSender = mpsc::UnboundedSender<String>;
 
-/// Represents a WebSocket connection
-#[derive(Debug)]
-pub struct Connection {
-    pub id: Uuid,
-    pub session_id: Uuid,
-}
-
 /// Manages WebSocket connections for draft sessions
 #[derive(Clone)]
 pub struct ConnectionManager {
@@ -92,7 +85,7 @@ impl ConnectionManager {
         let connection_ids = match self.sessions.get(&session_id) {
             Some(ids) => ids.clone(),
             None => {
-                warn!(session_id = %session_id, "No connections for session");
+                debug!(session_id = %session_id, "No connections for session");
                 return;
             }
         };
