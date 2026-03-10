@@ -401,9 +401,10 @@ pub async fn auto_pick_run(
 
         picks_made.push(DraftPickResponse::from(made_pick));
 
-        // Pause between picks so WS notifications arrive one at a time,
-        // giving the frontend a real-time draft experience
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        // Brief pause between picks so WS notifications arrive one at a time.
+        // Keep this short (200ms) to stay within proxy timeouts (nginx 60s, Vite ~120s).
+        // With 224 picks this completes in ~45s.
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
     }
 
     // Check if draft is complete (no more picks available)
