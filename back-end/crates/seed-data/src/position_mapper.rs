@@ -25,7 +25,7 @@ pub fn map_position(source: &str) -> Result<Position> {
         "DE" => (Position::DE, "DE"),
         "EDGE" => (Position::DE, "DE"),
         // EDGE/LB hybrid → DE: prioritize pass-rush role over coverage
-        "EDGE/LB" => (Position::DE, "DE"),
+        "EDGE/LB" | "LB/EDGE" => (Position::DE, "DE"),
         "DT" => (Position::DT, "DT"),
         // DL (generic defensive line) → DT: most generic DL prospects are interior
         "DL" => (Position::DT, "DT"),
@@ -111,6 +111,7 @@ mod tests {
         assert_eq!(map_position("IOL").unwrap(), Position::OG);
         assert_eq!(map_position("EDGE").unwrap(), Position::DE);
         assert_eq!(map_position("EDGE/LB").unwrap(), Position::DE);
+        assert_eq!(map_position("LB/EDGE").unwrap(), Position::DE);
         assert_eq!(map_position("DL").unwrap(), Position::DT);
         assert_eq!(map_position("NT").unwrap(), Position::DT);
         assert_eq!(map_position("OLB").unwrap(), Position::LB);
