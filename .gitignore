@@ -80,3 +80,6 @@ back-end/data/.draft_order_last_scraped
 
 # Prospect rankings scraper local state
 back-end/data/rankings/.rankings_last_scraped
+
+# Dolt database files (added by bd init)
+.dolt/
