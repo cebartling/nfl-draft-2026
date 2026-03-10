@@ -7,5 +7,5 @@ cd "$REPO_ROOT/back-end"
 # Pure unit tests (no DB) — run with full parallelism
 cargo test -p domain -p seed-data -p websocket --lib -- "$@"
 
-# DB-dependent tests (api + db crates) — run single-threaded
-cargo test -p db -p api --lib -- --test-threads=1 "$@"
+# API unit tests (no DB) — run with full parallelism
+cargo test -p api --lib -- "$@"
