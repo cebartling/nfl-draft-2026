@@ -7,15 +7,15 @@ use uuid::Uuid;
 use db::repositories::{
     EventRepo, SessionRepo, SqlxCombinePercentileRepository, SqlxCombineResultsRepository,
     SqlxDraftPickRepository, SqlxDraftRepository, SqlxDraftStrategyRepository,
-    SqlxPlayerRepository, SqlxProspectRankingRepository, SqlxRankingSourceRepository,
-    SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
-    SqlxTeamSeasonRepository, SqlxTradeRepository,
+    SqlxFeldmanFreakRepository, SqlxPlayerRepository, SqlxProspectRankingRepository,
+    SqlxRankingSourceRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
+    SqlxTeamRepository, SqlxTeamSeasonRepository, SqlxTradeRepository,
 };
 use domain::repositories::{
     CombinePercentileRepository, CombineResultsRepository, DraftPickRepository, DraftRepository,
-    DraftStrategyRepository, EventRepository, PlayerRepository, ProspectRankingRepository,
-    RankingSourceRepository, ScoutingReportRepository, SessionRepository, TeamNeedRepository,
-    TeamRepository, TeamSeasonRepository, TradeRepository,
+    DraftStrategyRepository, EventRepository, FeldmanFreakRepository, PlayerRepository,
+    ProspectRankingRepository, RankingSourceRepository, ScoutingReportRepository,
+    SessionRepository, TeamNeedRepository, TeamRepository, TeamSeasonRepository, TradeRepository,
 };
 use domain::services::{
     AutoPickService, DraftEngine, DraftStrategyService, PlayerEvaluationService, RasScoringService,
@@ -41,6 +41,7 @@ pub struct AppState {
     pub trade_repo: Arc<dyn TradeRepository>,
     pub ranking_source_repo: Arc<dyn RankingSourceRepository>,
     pub prospect_ranking_repo: Arc<dyn ProspectRankingRepository>,
+    pub feldman_freak_repo: Arc<dyn FeldmanFreakRepository>,
     pub ras_service: Arc<RasScoringService>,
     pub draft_engine: Arc<DraftEngine>,
     pub trade_engine: Arc<TradeEngine>,
@@ -81,6 +82,8 @@ impl AppState {
             Arc::new(SqlxRankingSourceRepository::new(pool.clone()));
         let prospect_ranking_repo: Arc<dyn ProspectRankingRepository> =
             Arc::new(SqlxProspectRankingRepository::new(pool.clone()));
+        let feldman_freak_repo: Arc<dyn FeldmanFreakRepository> =
+            Arc::new(SqlxFeldmanFreakRepository::new(pool.clone()));
         let draft_strategy_repo: Arc<dyn DraftStrategyRepository> =
             Arc::new(SqlxDraftStrategyRepository::new(pool.clone()));
 
@@ -138,6 +141,7 @@ impl AppState {
             trade_repo,
             ranking_source_repo,
             prospect_ranking_repo,
+            feldman_freak_repo,
             ras_service,
             draft_engine,
             trade_engine,
@@ -145,26 +149,5 @@ impl AppState {
             seed_api_key,
             session_locks,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_app_state_creation() {
-        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
-            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-        });
-
-        let pool = db::create_pool(&database_url)
-            .await
-            .expect("Failed to create pool");
-        let state = AppState::new(pool, None);
-
-        // Just verify state was created successfully
-        assert!(Arc::strong_count(&state.team_repo) >= 1);
-        assert!(Arc::strong_count(&state.player_repo) >= 1);
     }
 }

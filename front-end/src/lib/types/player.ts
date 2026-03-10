@@ -71,6 +71,14 @@ export const RankingBadgeSchema = z.object({
 	rank: z.number(),
 });
 
+// FeldmanFreak schema — matches backend FeldmanFreakResponse
+export const FeldmanFreakSchema = z.object({
+	rank: z.number(),
+	description: z.string(),
+	article_url: z.string().nullable().optional(),
+});
+export type FeldmanFreak = z.infer<typeof FeldmanFreakSchema>;
+
 // AvailablePlayer schema — matches backend AvailablePlayerResponse
 export const AvailablePlayerSchema = z.object({
 	id: UUIDSchema,
@@ -87,6 +95,7 @@ export const AvailablePlayerSchema = z.object({
 	injury_concern: z.boolean().nullable().optional(),
 	character_concern: z.boolean().nullable().optional(),
 	rankings: z.array(RankingBadgeSchema),
+	feldman_freak: FeldmanFreakSchema.nullable().optional(),
 });
 export type AvailablePlayer = z.infer<typeof AvailablePlayerSchema>;
 
@@ -103,6 +112,7 @@ export function toAvailablePlayer(
 		injury_concern: null,
 		character_concern: null,
 		rankings,
+		feldman_freak: null,
 	};
 }
 

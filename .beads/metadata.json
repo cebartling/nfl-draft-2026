@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "nfl_draft_2026",
+  "project_id": "763a9435-8df1-434d-b5b0-138f9cc38ca2"
+}

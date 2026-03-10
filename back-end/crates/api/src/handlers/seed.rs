@@ -16,6 +16,7 @@ const RANKINGS_WALTERFOOTBALL_JSON: &str =
     include_str!("../../../../data/rankings/walterfootball_2026.json");
 const COMBINE_PERCENTILES_JSON: &str = include_str!("../../../../data/combine_percentiles.json");
 const COMBINE_2026_MOCK_JSON: &str = include_str!("../../../../data/combine_2026_mock.json");
+const FELDMAN_FREAKS_2026_JSON: &str = include_str!("../../../../data/feldman_freaks_2026.json");
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SeedResponse {
@@ -536,5 +537,93 @@ pub async fn seed_combine_data(
         error_count: stats.errors.len(),
         errors: stats.errors,
         validation_warnings: vec![],
+    }))
+}
+
+/// Seed the database with embedded Feldman Freaks list data for 2026
+///
+/// Requires the `X-Seed-Api-Key` header matching the server's `SEED_API_KEY` environment variable.
+/// Returns 404 if `SEED_API_KEY` is not configured (endpoint is hidden).
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/seed-feldman-freaks",
+    tag = "admin",
+    responses(
+        (status = 200, description = "Feldman Freaks seeded successfully", body = SeedResponse),
+        (status = 401, description = "Unauthorized - invalid or missing API key"),
+        (status = 404, description = "Not found - endpoint not enabled"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(
+        ("api_key" = [])
+    )
+)]
+pub async fn seed_feldman_freaks(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> ApiResult<Json<SeedResponse>> {
+    let expected_key = match &state.seed_api_key {
+        Some(key) => key,
+        None => {
+            return Err(ApiError::NotFound("Not found".to_string()));
+        }
+    };
+
+    let provided_key = headers
+        .get("X-Seed-Api-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !verify_api_key(provided_key, expected_key) {
+        return Err(ApiError::Unauthorized(
+            "Invalid or missing API key".to_string(),
+        ));
+    }
+
+    // Parse the embedded Feldman Freaks data
+    let data =
+        seed_data::feldman_freak_loader::parse_freaks_json(FELDMAN_FREAKS_2026_JSON).map_err(
+            |e| ApiError::InternalError(format!("Failed to parse Feldman Freaks data: {}", e)),
+        )?;
+
+    // Validate the data
+    let validation = seed_data::feldman_freak_validator::validate_freaks_data(&data);
+    let validation_warnings = validation.warnings;
+
+    if !validation.valid {
+        return Ok(Json(SeedResponse {
+            message: "Seeding aborted due to validation errors".to_string(),
+            success_count: 0,
+            skipped_count: 0,
+            error_count: validation.errors.len(),
+            errors: validation.errors,
+            validation_warnings,
+        }));
+    }
+
+    // Load Feldman Freaks into the database
+    let stats = seed_data::feldman_freak_loader::load_freaks(
+        &data,
+        state.player_repo.as_ref(),
+        state.feldman_freak_repo.as_ref(),
+    )
+    .await
+    .map_err(|e| ApiError::InternalError(format!("Failed to load Feldman Freaks: {}", e)))?;
+
+    let message = format!(
+        "Feldman Freaks seeding complete: {} matched, {} inserted, {} unmatched, {} errors",
+        stats.matched,
+        stats.inserted,
+        stats.unmatched,
+        stats.errors.len()
+    );
+
+    Ok(Json(SeedResponse {
+        message,
+        success_count: stats.inserted,
+        skipped_count: stats.unmatched,
+        error_count: stats.errors.len(),
+        errors: stats.errors,
+        validation_warnings,
     }))
 }

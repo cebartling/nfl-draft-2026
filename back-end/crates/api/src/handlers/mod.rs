@@ -1,6 +1,7 @@
 pub mod combine_percentiles;
 pub mod combine_results;
 pub mod drafts;
+pub mod feldman_freaks;
 pub mod health;
 pub mod players;
 pub mod rankings;

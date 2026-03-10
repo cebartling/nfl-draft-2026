@@ -16,7 +16,7 @@ use crate::scouting_report_loader::{RankingData, RankingEntry};
 
 /// Normalize a name component for matching by stripping periods and collapsing whitespace.
 /// This handles variations like "C.J." vs "CJ", "Jr." vs "Jr", "L.T." vs "LT".
-fn normalize_name(name: &str) -> String {
+pub fn normalize_name(name: &str) -> String {
     name.replace('.', "")
         .split_whitespace()
         .collect::<Vec<_>>()

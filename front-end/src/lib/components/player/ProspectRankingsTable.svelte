@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Badge } from '$components/ui';
+	import { Badge, Tooltip } from '$components/ui';
 	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
-	import type { Player, RankingBadge } from '$types';
+	import type { Player, FeldmanFreak, RankingBadge } from '$types';
 	import type { ProspectRanking } from '$lib/utils/prospect-ranking';
 
 	interface Props {
@@ -9,11 +9,18 @@
 		sortedPlayerIds: string[];
 		playerRankings: Map<string, RankingBadge[]>;
 		consensusRankings: Map<string, ProspectRanking>;
+		playerFreaks?: Map<string, FeldmanFreak>;
 		onSelectPlayer?: (player: Player) => void;
 	}
 
-	let { players, sortedPlayerIds, playerRankings, consensusRankings, onSelectPlayer }: Props =
-		$props();
+	let {
+		players,
+		sortedPlayerIds,
+		playerRankings,
+		consensusRankings,
+		playerFreaks,
+		onSelectPlayer,
+	}: Props = $props();
 
 	const playerMap = $derived(
 		(() => {
@@ -78,6 +85,7 @@
 			{#each rankedPlayers as player, index (player.id)}
 				{@const ranking = consensusRankings.get(player.id)}
 				{@const badges = playerRankings.get(player.id) ?? []}
+				{@const freak = playerFreaks?.get(player.id)}
 				<tr
 					class="hover:bg-gray-50 {onSelectPlayer ? 'cursor-pointer' : ''}"
 					onclick={() => onSelectPlayer?.(player)}
@@ -122,6 +130,13 @@
 									{badge.abbreviation}:&nbsp;#{badge.rank}
 								</span>
 							{/each}
+							{#if freak}
+								<Tooltip text="Feldman Freak #{freak.rank}: {freak.description}" width="w-96">
+									<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+										FREAK #{freak.rank}
+									</span>
+								</Tooltip>
+							{/if}
 						</div>
 					</td>
 				</tr>

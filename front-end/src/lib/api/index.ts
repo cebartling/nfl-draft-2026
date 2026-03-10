@@ -7,4 +7,5 @@ export { draftsApi } from './drafts';
 export { sessionsApi, type CreateSessionParams } from './sessions';
 export { tradesApi, type ProposeTradeParams } from './trades';
 export { rankingsApi } from './rankings';
+export { freaksApi } from './freaks';
 export { wsClient, WebSocketClient, WebSocketState } from './websocket';

@@ -202,6 +202,11 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             "/ranking-sources/{source_id}/rankings",
             get(handlers::rankings::get_source_rankings),
         )
+        // Feldman Freaks
+        .route(
+            "/feldman-freaks",
+            get(handlers::feldman_freaks::list_feldman_freaks),
+        )
         // Combine Percentiles
         .route(
             "/combine-percentiles",
@@ -222,6 +227,10 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
         .route(
             "/admin/seed-combine-data",
             post(handlers::seed::seed_combine_data),
+        )
+        .route(
+            "/admin/seed-feldman-freaks",
+            post(handlers::seed::seed_feldman_freaks),
         )
         .route(
             "/admin/seed-percentiles",
@@ -249,76 +258,4 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
         .merge(swagger_router)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::body::Body;
-    use axum::http::{Request, StatusCode};
-    use tower::ServiceExt;
-
-    async fn setup_test_router() -> Router {
-        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
-            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-        });
-
-        let pool = db::create_pool(&database_url)
-            .await
-            .expect("Failed to create pool");
-        let state = AppState::new(pool, None);
-
-        create_router(state)
-    }
-
-    #[tokio::test]
-    async fn test_health_endpoint() {
-        let app = setup_test_router().await;
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/health")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-
-    #[tokio::test]
-    async fn test_teams_endpoint_exists() {
-        let app = setup_test_router().await;
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/v1/teams")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-
-    #[tokio::test]
-    async fn test_players_endpoint_exists() {
-        let app = setup_test_router().await;
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/v1/players")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-    }
 }

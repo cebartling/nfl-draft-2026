@@ -1,7 +1,8 @@
 use seed_data::{
-    draft_order_loader, draft_order_validator, loader, rankings_loader, rankings_validator,
-    scouting_report_loader, scouting_report_validator, team_loader, team_need_loader,
-    team_need_validator, team_season_loader, team_season_validator, team_validator, validator,
+    draft_order_loader, draft_order_validator, feldman_freak_loader, feldman_freak_validator,
+    loader, rankings_loader, rankings_validator, scouting_report_loader,
+    scouting_report_validator, team_loader, team_need_loader, team_need_validator,
+    team_season_loader, team_season_validator, team_validator, validator,
 };
 
 use anyhow::Result;
@@ -9,9 +10,10 @@ use clap::{Parser, Subcommand};
 use db::{
     create_pool,
     repositories::{
-        SqlxDraftPickRepository, SqlxDraftRepository, SqlxPlayerRepository,
-        SqlxProspectRankingRepository, SqlxRankingSourceRepository, SqlxScoutingReportRepository,
-        SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository,
+        SqlxDraftPickRepository, SqlxDraftRepository, SqlxFeldmanFreakRepository,
+        SqlxPlayerRepository, SqlxProspectRankingRepository, SqlxRankingSourceRepository,
+        SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
+        SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -67,6 +69,12 @@ enum EntityCommands {
     Rankings {
         #[command(subcommand)]
         action: RankingsActions,
+    },
+
+    /// Manage Feldman Freaks list data
+    Freaks {
+        #[command(subcommand)]
+        action: FreaksActions,
     },
 }
 
@@ -231,6 +239,34 @@ enum ScoutingActions {
 }
 
 #[derive(Subcommand)]
+enum FreaksActions {
+    /// Load Feldman Freaks from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/feldman_freaks_2026.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear Feldman Freaks for a given year
+    Clear {
+        /// The year to clear
+        #[arg(short, long)]
+        year: i32,
+    },
+
+    /// Validate JSON file without loading
+    Validate {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/feldman_freaks_2026.json")]
+        file: String,
+    },
+}
+
+#[derive(Subcommand)]
 enum RankingsActions {
     /// Load prospect rankings from JSON file (auto-creates new players + scouting reports)
     Load {
@@ -278,6 +314,7 @@ async fn main() -> Result<()> {
         EntityCommands::DraftOrder { action } => handle_draft_order(action).await?,
         EntityCommands::Scouting { action } => handle_scouting(action).await?,
         EntityCommands::Rankings { action } => handle_rankings(action).await?,
+        EntityCommands::Freaks { action } => handle_freaks(action).await?,
     }
 
     Ok(())
@@ -974,6 +1011,84 @@ async fn handle_rankings(action: RankingsActions) -> Result<()> {
             )
             .await?;
             println!("Deleted {} rankings", deleted);
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_freaks(action: FreaksActions) -> Result<()> {
+    match action {
+        FreaksActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = feldman_freak_loader::parse_freaks_file(&file)?;
+            println!(
+                "Loaded {} freaks from file (year {})",
+                data.freaks.len(),
+                data.meta.year
+            );
+
+            let result = feldman_freak_validator::validate_freaks_data(&data);
+            result.print_summary();
+
+            if !result.valid {
+                std::process::exit(1);
+            }
+        }
+
+        FreaksActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading Feldman Freaks from: {}", file);
+            }
+
+            let data = feldman_freak_loader::parse_freaks_file(&file)?;
+            println!(
+                "Parsed {} freaks from file (year {})",
+                data.freaks.len(),
+                data.meta.year
+            );
+
+            // Validate first
+            let validation = feldman_freak_validator::validate_freaks_data(&data);
+            validation.print_summary();
+
+            if !validation.valid {
+                println!("\nAborting load due to validation errors.");
+                std::process::exit(1);
+            }
+
+            if dry_run {
+                let stats = feldman_freak_loader::load_freaks_dry_run(&data)?;
+                stats.print_summary();
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let player_repo = SqlxPlayerRepository::new(pool.clone());
+                let freak_repo = SqlxFeldmanFreakRepository::new(pool);
+
+                let stats =
+                    feldman_freak_loader::load_freaks(&data, &player_repo, &freak_repo).await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        FreaksActions::Clear { year } => {
+            println!("Clearing Feldman Freaks for year {}", year);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+            let freak_repo = SqlxFeldmanFreakRepository::new(pool);
+
+            let deleted = feldman_freak_loader::clear_freaks(year, &freak_repo).await?;
+            println!("Deleted {} freaks", deleted);
         }
     }
 

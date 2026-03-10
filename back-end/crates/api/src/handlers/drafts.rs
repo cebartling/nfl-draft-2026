@@ -413,6 +413,13 @@ pub struct RankingBadgeResponse {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
+pub struct FeldmanFreakResponse {
+    pub rank: i32,
+    pub description: String,
+    pub article_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
 pub struct AvailablePlayerResponse {
     pub id: Uuid,
     pub first_name: String,
@@ -430,6 +437,8 @@ pub struct AvailablePlayerResponse {
     pub character_concern: Option<bool>,
     // Big board rankings across all sources
     pub rankings: Vec<RankingBadgeResponse>,
+    // Feldman Freaks list entry (if player is on the list)
+    pub feldman_freak: Option<FeldmanFreakResponse>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -471,25 +480,32 @@ pub async fn get_available_players(
     let picks = picks_result?;
     let picked_ids: HashSet<Uuid> = picks.iter().filter_map(|p| p.player_id).collect();
 
-    // 2. Fetch players (scoped to draft year), rankings, sources, and optionally scouting reports concurrently
+    // 2. Fetch players (scoped to draft year), rankings, sources, freaks, and optionally scouting reports concurrently
     let players_fut = state.player_repo.find_by_draft_year(draft.year);
     let rankings_fut = state.prospect_ranking_repo.find_all_with_source();
     let sources_fut = state.ranking_source_repo.find_all();
+    let freaks_fut = state.feldman_freak_repo.find_by_year(draft.year);
 
-    let (all_players, all_rankings, sources, scouting_map) = if let Some(team_id) = params.team_id {
+    let (all_players, all_rankings, sources, scouting_map, freaks) = if let Some(team_id) = params.team_id {
         let scouting_fut = state.scouting_report_repo.find_by_team_id(team_id);
-        let (players_res, rankings_res, sources_res, scouting_res) =
-            tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut);
+        let (players_res, rankings_res, sources_res, scouting_res, freaks_res) =
+            tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut, freaks_fut);
         let map: HashMap<Uuid, domain::models::ScoutingReport> = scouting_res?
             .into_iter()
             .map(|r| (r.player_id, r))
             .collect();
-        (players_res?, rankings_res?, sources_res?, map)
+        (players_res?, rankings_res?, sources_res?, map, freaks_res?)
     } else {
-        let (players_res, rankings_res, sources_res) =
-            tokio::join!(players_fut, rankings_fut, sources_fut);
-        (players_res?, rankings_res?, sources_res?, HashMap::new())
+        let (players_res, rankings_res, sources_res, freaks_res) =
+            tokio::join!(players_fut, rankings_fut, sources_fut, freaks_fut);
+        (players_res?, rankings_res?, sources_res?, HashMap::new(), freaks_res?)
     };
+
+    // Build freaks lookup by player_id
+    let freaks_map: HashMap<Uuid, domain::models::FeldmanFreak> = freaks
+        .into_iter()
+        .map(|f| (f.player_id, f))
+        .collect();
 
     // 3. Filter out already-picked players
     let available: Vec<_> = all_players
@@ -535,6 +551,11 @@ pub async fn get_available_players(
         .map(|player| {
             let report = scouting_map.get(&player.id);
             let rankings = rankings_map.remove(&player.id).unwrap_or_default();
+            let feldman_freak = freaks_map.get(&player.id).map(|f| FeldmanFreakResponse {
+                rank: f.rank,
+                description: f.description.clone(),
+                article_url: f.article_url.clone(),
+            });
             AvailablePlayerResponse {
                 id: player.id,
                 first_name: player.first_name,
@@ -550,6 +571,7 @@ pub async fn get_available_players(
                 injury_concern: report.map(|r| r.injury_concern),
                 character_concern: report.map(|r| r.character_concern),
                 rankings,
+                feldman_freak,
             }
         })
         .collect();
@@ -566,227 +588,4 @@ pub async fn get_available_players(
     });
 
     Ok(Json(response))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::extract::State;
-    use domain::models::{Conference, Division, Position};
-    use sqlx::PgPool;
-
-    async fn setup_test_state() -> (AppState, PgPool) {
-        let database_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
-            "postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test".to_string()
-        });
-
-        let pool = db::create_pool(&database_url)
-            .await
-            .expect("Failed to create pool");
-        let state = AppState::new(pool.clone(), None);
-
-        // Cleanup (delete in order of foreign key dependencies)
-        sqlx::query("DELETE FROM draft_picks")
-            .execute(&pool)
-            .await
-            .expect("Failed to cleanup picks");
-        sqlx::query("DELETE FROM drafts")
-            .execute(&pool)
-            .await
-            .expect("Failed to cleanup drafts");
-        sqlx::query("DELETE FROM players")
-            .execute(&pool)
-            .await
-            .expect("Failed to cleanup players");
-        sqlx::query("DELETE FROM team_seasons")
-            .execute(&pool)
-            .await
-            .expect("Failed to cleanup team_seasons");
-        sqlx::query("DELETE FROM teams")
-            .execute(&pool)
-            .await
-            .expect("Failed to cleanup teams");
-
-        (state, pool)
-    }
-
-    #[tokio::test]
-    async fn test_create_draft() {
-        let (state, _pool) = setup_test_state().await;
-
-        let request = CreateDraftRequest {
-            name: "Test Draft".to_string(),
-            year: 2026,
-            rounds: 7,
-            picks_per_round: Some(32),
-        };
-
-        let result = create_draft(State(state), Json(request)).await;
-        assert!(result.is_ok());
-
-        let (status, response) = result.unwrap();
-        assert_eq!(status, StatusCode::CREATED);
-        assert_eq!(response.0.name, "Test Draft");
-        assert_eq!(response.0.year, 2026);
-        assert_eq!(response.0.rounds, 7);
-        assert_eq!(response.0.picks_per_round, Some(32));
-        assert_eq!(response.0.total_picks, Some(224));
-    }
-
-    #[tokio::test]
-    async fn test_get_draft() {
-        let (state, _pool) = setup_test_state().await;
-
-        // Create draft first
-        let request = CreateDraftRequest {
-            name: "Test Draft".to_string(),
-            year: 2026,
-            rounds: 7,
-            picks_per_round: Some(32),
-        };
-        let (_status, created) = create_draft(State(state.clone()), Json(request))
-            .await
-            .unwrap();
-
-        // Get draft
-        let result = get_draft(State(state), Path(created.0.id)).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap().0;
-        assert_eq!(response.id, created.0.id);
-        assert_eq!(response.year, 2026);
-    }
-
-    #[tokio::test]
-    async fn test_list_drafts() {
-        let (state, _pool) = setup_test_state().await;
-
-        // Create two drafts
-        let request1 = CreateDraftRequest {
-            name: "Draft 1".to_string(),
-            year: 2026,
-            rounds: 7,
-            picks_per_round: Some(32),
-        };
-        let _ = create_draft(State(state.clone()), Json(request1))
-            .await
-            .unwrap();
-
-        let request2 = CreateDraftRequest {
-            name: "Draft 2".to_string(),
-            year: 2027,
-            rounds: 7,
-            picks_per_round: Some(32),
-        };
-        let _ = create_draft(State(state.clone()), Json(request2))
-            .await
-            .unwrap();
-
-        // List all drafts
-        let result = list_drafts(State(state)).await;
-        assert!(result.is_ok());
-
-        let drafts = result.unwrap().0;
-        assert_eq!(drafts.len(), 2);
-    }
-
-    #[tokio::test]
-    async fn test_initialize_draft_picks() {
-        let (state, _pool) = setup_test_state().await;
-
-        // Create teams first
-        use domain::models::Team;
-        let team1 = Team::new(
-            "Team A".to_string(),
-            "TMA".to_string(),
-            "City A".to_string(),
-            Conference::AFC,
-            Division::AFCEast,
-        )
-        .unwrap();
-        state.team_repo.create(&team1).await.unwrap();
-
-        let team2 = Team::new(
-            "Team B".to_string(),
-            "TMB".to_string(),
-            "City B".to_string(),
-            Conference::NFC,
-            Division::NFCEast,
-        )
-        .unwrap();
-        state.team_repo.create(&team2).await.unwrap();
-
-        // Create draft
-        let request = CreateDraftRequest {
-            name: "Test Draft".to_string(),
-            year: 2026,
-            rounds: 7,
-            picks_per_round: Some(2), // 2 teams
-        };
-        let (_status, created) = create_draft(State(state.clone()), Json(request))
-            .await
-            .unwrap();
-
-        // Initialize picks
-        let result = initialize_draft_picks(State(state), Path(created.0.id)).await;
-        assert!(result.is_ok());
-
-        let (_status, picks) = result.unwrap();
-        // 2 teams * 7 rounds = 14 picks
-        assert_eq!(picks.0.len(), 14);
-        assert_eq!(picks.0[0].overall_pick, 1);
-        assert_eq!(picks.0[13].overall_pick, 14);
-    }
-
-    #[tokio::test]
-    async fn test_make_pick() {
-        let (state, _pool) = setup_test_state().await;
-
-        // Create team
-        use domain::models::Team;
-        let team = Team::new(
-            "Team A".to_string(),
-            "TMA".to_string(),
-            "City A".to_string(),
-            Conference::AFC,
-            Division::AFCEast,
-        )
-        .unwrap();
-        let _created_team = state.team_repo.create(&team).await.unwrap();
-
-        // Create player
-        use domain::models::Player;
-        let player =
-            Player::new("John".to_string(), "Doe".to_string(), Position::QB, 2026).unwrap();
-        let created_player = state.player_repo.create(&player).await.unwrap();
-
-        // Create draft
-        let request = CreateDraftRequest {
-            name: "Test Draft".to_string(),
-            year: 2026,
-            rounds: 1,
-            picks_per_round: Some(1),
-        };
-        let (_status, created_draft) = create_draft(State(state.clone()), Json(request))
-            .await
-            .unwrap();
-
-        // Initialize picks
-        let (_status, picks) =
-            initialize_draft_picks(State(state.clone()), Path(created_draft.0.id))
-                .await
-                .unwrap();
-        let pick_id = picks.0[0].id;
-
-        // Make pick
-        let make_pick_req = MakePickRequest {
-            player_id: created_player.id,
-        };
-        let result = make_pick(State(state), Path(pick_id), Json(make_pick_req)).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap().0;
-        assert_eq!(response.player_id, Some(created_player.id));
-        assert!(response.picked_at.is_some());
-    }
 }

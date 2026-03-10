@@ -10,7 +10,7 @@
       "CBS Sports Renner Big Board",
       "DraftTek Top 400 Big Board"
     ],
-    "total_players": 350
+    "total_players": 357
   },
   "players": [
     {
@@ -3162,6 +3162,69 @@
       "height_inches": 73,
       "weight_pounds": 185,
       "notes": "Small-school standout receiver"
+    },
+    {
+      "first_name": "Kendrick",
+      "last_name": "Law",
+      "position": "WR",
+      "college": "University of Kentucky",
+      "height_inches": 72,
+      "weight_pounds": 203,
+      "notes": "Feldman Freaks #3"
+    },
+    {
+      "first_name": "Mike",
+      "last_name": "Washington",
+      "position": "RB",
+      "college": "University of Arkansas",
+      "height_inches": 74,
+      "weight_pounds": 228,
+      "notes": "Feldman Freaks #20"
+    },
+    {
+      "first_name": "Jaren",
+      "last_name": "Kanak",
+      "position": "TE",
+      "college": "University of Oklahoma",
+      "height_inches": 74,
+      "weight_pounds": 233,
+      "notes": "Feldman Freaks #22"
+    },
+    {
+      "first_name": "John Michael",
+      "last_name": "Gyllenborg",
+      "position": "TE",
+      "college": "University of Wyoming",
+      "height_inches": 77,
+      "weight_pounds": 250,
+      "notes": "Feldman Freaks #26"
+    },
+    {
+      "first_name": "Chris",
+      "last_name": "Hilton Jr.",
+      "position": "WR",
+      "college": "Louisiana State University",
+      "height_inches": 72,
+      "weight_pounds": 190,
+      "notes": "Feldman Freaks #27"
+    },
+    {
+      "first_name": "Darrell",
+      "last_name": "Jackson",
+      "position": "DT",
+      "college": "Florida State University",
+      "height_inches": 77,
+      "weight_pounds": 330,
+      "notes": "Feldman Freaks #28"
+    },
+    {
+      "first_name": "David",
+      "last_name": "Gusta",
+      "position": "DT",
+      "college": "University of Kentucky",
+      "height_inches": 75,
+      "weight_pounds": 316,
+      "notes": "Feldman Freaks #40"
     }
   ]
 }
