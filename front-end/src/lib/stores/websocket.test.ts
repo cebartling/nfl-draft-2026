@@ -24,7 +24,6 @@ const { mockWsClient, mockDraftState, WebSocketState } = vi.hoisted(() => {
 			draft: null as any,
 			isAutoPickRunning: false,
 			updatePickFromWS: vi.fn(),
-			advancePick: vi.fn(),
 			addPickNotification: vi.fn(),
 			loadDraft: vi.fn(),
 		},
@@ -154,7 +153,7 @@ describe('WebSocketStateManager', () => {
 	});
 
 	describe('handleMessage pick_made', () => {
-		it('should call draftState.updatePickFromWS and advancePick', () => {
+		it('should call draftState.updatePickFromWS and addPickNotification', () => {
 			expect(capturedMessageHandler).not.toBeNull();
 
 			capturedMessageHandler!({
@@ -183,10 +182,9 @@ describe('WebSocketStateManager', () => {
 				round: 1,
 				pick_number: 1,
 			});
-			expect(mockDraftState.advancePick).toHaveBeenCalled();
 		});
 
-		it('should always advance pick even when auto-pick is running', () => {
+		it('should update pick even when auto-pick is running', () => {
 			mockDraftState.isAutoPickRunning = true;
 
 			capturedMessageHandler!({
@@ -202,7 +200,6 @@ describe('WebSocketStateManager', () => {
 			});
 
 			expect(mockDraftState.updatePickFromWS).toHaveBeenCalled();
-			expect(mockDraftState.advancePick).toHaveBeenCalled();
 			expect(mockDraftState.addPickNotification).toHaveBeenCalled();
 		});
 	});

@@ -196,24 +196,88 @@ describe('DraftState', () => {
 		});
 	});
 
-	describe('advancePick', () => {
-		it('should increment current_pick_number', () => {
+	describe('updatePickFromWS', () => {
+		it('should update pick and advance current_pick_number', () => {
 			state.session = makeSession({ current_pick_number: 1 });
-			state.advancePick();
+			state.picks = [
+				makePick({ id: 'pick-1', overall_pick: 1, team_id: 'team-1' }),
+				makePick({ id: 'pick-2', overall_pick: 2, team_id: 'team-2' }),
+			];
+
+			state.updatePickFromWS({
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+			});
+
+			expect(state.picks[0].player_id).toBe('player-1');
+			expect(state.picks[0].picked_at).toBeDefined();
 			expect(state.session?.current_pick_number).toBe(2);
 		});
 
-		it('should do nothing when no session', () => {
-			state.advancePick();
-			expect(state.session).toBeNull();
+		it('should advance pick number based on actual pick position', () => {
+			// Simulates resume: session says pick 11, WS confirms pick 11 was made
+			state.session = makeSession({ current_pick_number: 11 });
+			state.picks = [
+				makePick({ id: 'pick-11', overall_pick: 11, team_id: 'team-3' }),
+				makePick({ id: 'pick-12', overall_pick: 12, team_id: 'team-4' }),
+			];
+
+			state.updatePickFromWS({
+				pick_id: 'pick-11',
+				player_id: 'player-11',
+				team_id: 'team-3',
+			});
+
+			expect(state.session?.current_pick_number).toBe(12);
 		});
 
-		it('should increment multiple times', () => {
+		it('should not go backwards if messages arrive out of order', () => {
+			state.session = makeSession({ current_pick_number: 15 });
+			state.picks = [
+				makePick({ id: 'pick-10', overall_pick: 10, team_id: 'team-1' }),
+			];
+
+			// Late message for an earlier pick
+			state.updatePickFromWS({
+				pick_id: 'pick-10',
+				player_id: 'player-10',
+				team_id: 'team-1',
+			});
+
+			// Should NOT go backwards from 15 to 11
+			expect(state.session?.current_pick_number).toBe(15);
+		});
+
+		it('should do nothing when pick_id not found', () => {
 			state.session = makeSession({ current_pick_number: 1 });
-			state.advancePick();
-			state.advancePick();
-			state.advancePick();
-			expect(state.session?.current_pick_number).toBe(4);
+			state.picks = [
+				makePick({ id: 'pick-1', overall_pick: 1 }),
+			];
+
+			state.updatePickFromWS({
+				pick_id: 'nonexistent',
+				player_id: 'player-1',
+				team_id: 'team-1',
+			});
+
+			expect(state.session?.current_pick_number).toBe(1);
+			expect(state.picks[0].player_id).toBeUndefined();
+		});
+
+		it('should work without a session', () => {
+			state.picks = [
+				makePick({ id: 'pick-1', overall_pick: 1 }),
+			];
+
+			state.updatePickFromWS({
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+			});
+
+			// Pick should still be updated even without session
+			expect(state.picks[0].player_id).toBe('player-1');
 		});
 	});
 

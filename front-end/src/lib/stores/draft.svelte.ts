@@ -181,29 +181,30 @@ export class DraftState {
 	}
 
 	/**
-	 * Update a pick from WebSocket message
+	 * Update a pick from WebSocket message and advance the current pick number.
+	 * Derives the next pick from the actual pick that was made rather than
+	 * blindly incrementing, so state stays correct after pause/resume.
 	 */
 	updatePickFromWS(pickData: { pick_id: string; player_id: string; team_id: string }): void {
 		const pickIndex = this.picks.findIndex((pick) => pick.id === pickData.pick_id);
 		if (pickIndex !== -1) {
+			const pick = this.picks[pickIndex];
 			// Update the pick with the player
 			this.picks[pickIndex] = {
-				...this.picks[pickIndex],
+				...pick,
 				player_id: pickData.player_id,
 				picked_at: new Date().toISOString(),
 			};
-		}
-	}
 
-	/**
-	 * Advance to the next pick
-	 */
-	advancePick(): void {
-		if (this.session) {
-			this.session = {
-				...this.session,
-				current_pick_number: this.session.current_pick_number + 1,
-			};
+			// Advance current pick number based on the actual pick's overall position.
+			// Only move forward to avoid going backwards if messages arrive out of order.
+			const nextPickNumber = pick.overall_pick + 1;
+			if (this.session && nextPickNumber > this.session.current_pick_number) {
+				this.session = {
+					...this.session,
+					current_pick_number: nextPickNumber,
+				};
+			}
 		}
 	}
 

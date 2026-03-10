@@ -97,7 +97,10 @@ export class WebSocketStateManager {
 
 			case 'pick_made':
 				logger.info('Pick made:', message);
-				// Update draft state with the new pick
+				// Update draft state with the new pick and advance current pick number.
+				// updatePickFromWS derives the next pick from the actual pick's overall
+				// position rather than blindly incrementing, so state stays correct
+				// after pause/resume.
 				draftState.updatePickFromWS({
 					pick_id: message.pick_id,
 					player_id: message.player_id,
@@ -113,9 +116,6 @@ export class WebSocketStateManager {
 					round: message.round,
 					pick_number: message.pick_number,
 				});
-				// Always advance pick on WS pick_made — the HTTP response will
-				// reconcile with the authoritative session state afterwards.
-				draftState.advancePick();
 				break;
 
 			case 'clock_update':
