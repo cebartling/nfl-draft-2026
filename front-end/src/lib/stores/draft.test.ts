@@ -305,13 +305,61 @@ describe('DraftState', () => {
 		});
 	});
 
+	describe('addPickNotification', () => {
+		it('should add a notification to the list', () => {
+			state.addPickNotification({
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+				player_name: 'John Doe',
+				team_name: 'Team A',
+				round: 1,
+				pick_number: 1,
+			});
+			expect(state.pickNotifications).toHaveLength(1);
+			expect(state.pickNotifications[0].player_name).toBe('John Doe');
+		});
+
+		it('should accumulate multiple notifications', () => {
+			state.addPickNotification({
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+				player_name: 'John Doe',
+				team_name: 'Team A',
+				round: 1,
+				pick_number: 1,
+			});
+			state.addPickNotification({
+				pick_id: 'pick-2',
+				player_id: 'player-2',
+				team_id: 'team-2',
+				player_name: 'Jane Smith',
+				team_name: 'Team B',
+				round: 1,
+				pick_number: 2,
+			});
+			expect(state.pickNotifications).toHaveLength(2);
+			expect(state.pickNotifications[1].player_name).toBe('Jane Smith');
+		});
+	});
+
 	describe('reset', () => {
-		it('should clear all state', () => {
+		it('should clear all state including notifications', () => {
 			state.session = makeSession();
 			state.picks = [makePick()];
 			state.isLoading = true;
 			state.error = 'some error';
 			state.isAutoPickRunning = true;
+			state.addPickNotification({
+				pick_id: 'pick-1',
+				player_id: 'player-1',
+				team_id: 'team-1',
+				player_name: 'John Doe',
+				team_name: 'Team A',
+				round: 1,
+				pick_number: 1,
+			});
 
 			state.reset();
 
@@ -321,6 +369,7 @@ describe('DraftState', () => {
 			expect(state.isLoading).toBe(false);
 			expect(state.error).toBeNull();
 			expect(state.isAutoPickRunning).toBe(false);
+			expect(state.pickNotifications).toEqual([]);
 		});
 	});
 });
