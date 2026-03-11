@@ -15,7 +15,7 @@ const RANKINGS_TANKATHON_JSON: &str = include_str!("../../../../data/rankings/ta
 const RANKINGS_WALTERFOOTBALL_JSON: &str =
     include_str!("../../../../data/rankings/walterfootball_2026.json");
 const COMBINE_PERCENTILES_JSON: &str = include_str!("../../../../data/combine_percentiles.json");
-const COMBINE_2026_MOCK_JSON: &str = include_str!("../../../../data/combine_2026_mock.json");
+const COMBINE_2026_JSON: &str = include_str!("../../../../data/combine_2026.json");
 const FELDMAN_FREAKS_2026_JSON: &str = include_str!("../../../../data/feldman_freaks_2026.json");
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -510,7 +510,7 @@ pub async fn seed_combine_data(
         ));
     }
 
-    let data = seed_data::combine_loader::parse_combine_json(COMBINE_2026_MOCK_JSON).map_err(
+    let data = seed_data::combine_loader::parse_combine_json(COMBINE_2026_JSON).map_err(
         |e| ApiError::InternalError(format!("Failed to parse combine data: {}", e)),
     )?;
 

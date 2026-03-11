@@ -5,13 +5,13 @@ This document describes how external data flows from web sources into the NFL Dr
 ## Overview
 
 ```
-Web Sources (PFR, Mockdraftable, Tankathon, etc.)
+Web Sources (PFR, Mockdraftable, Tankathon, WalterFootball, DraftTek)
         │
         ▼
-┌─────────────────────┐
-│  Scraper Crates      │   cargo run -p combine-data-scraper -- scrape ...
-│  (Rust + Playwright) │   cargo run -p prospect-rankings-scraper ...
-└────────┬────────────┘
+┌─────────────────────────┐
+│  TypeScript/Bun Scrapers │   cd scrapers && bun run scrape <command> [options]
+│  (Cheerio + Playwright)  │
+└────────┬────────────────┘
          │  JSON files
          ▼
 ┌─────────────────────┐
@@ -31,6 +31,38 @@ Web Sources (PFR, Mockdraftable, Tankathon, etc.)
 └─────────────────────┘
 ```
 
+## Scraper Technology Stack
+
+All scrapers live in the `scrapers/` directory and share a unified CLI:
+
+- **Runtime**: [Bun](https://bun.sh/) (JavaScript/TypeScript runtime)
+- **Language**: TypeScript (strict mode)
+- **HTML Parsing**: [Cheerio](https://cheerio.js.org/) (for static HTML)
+- **Browser Automation**: Playwright (for JavaScript-heavy sites like Tankathon)
+- **Schema Validation**: [Zod](https://zod.dev/) (runtime type checking for all output)
+- **Testing**: [Vitest](https://vitest.dev/)
+- **Formatting**: Prettier
+
+### CLI Entry Point
+
+```bash
+cd scrapers
+bun run scrape <command> [options]
+
+# Commands:
+#   draft-order    Scrape NFL draft order from Tankathon
+#   rankings       Scrape prospect rankings
+#   combine        Scrape NFL Combine data
+
+# Common options:
+#   --year <year>                Draft year (default: 2026)
+#   --output <path>              Output file path
+#   --template                   Generate template without scraping
+#   --source <name>              Source to scrape
+#   --merge                      Merge data from all sources
+#   --allow-template-fallback    Fall back to template if scraping fails
+```
+
 ## Key Concept: Compile-Time Embedding
 
 The API server uses `include_str!()` to embed JSON data files at compile time (see `api/src/handlers/seed.rs`). This means:
@@ -41,29 +73,79 @@ The API server uses `include_str!()` to embed JSON data files at compile time (s
 
 **After scraping new data, you must rebuild the API server** (or rebuild the Docker container) before seeding will reflect the new data.
 
-## Combine Data Pipeline
+## Draft Order Pipeline
 
 ### Step 1: Scrape
 
-The `combine-data-scraper` crate scrapes real NFL Combine results from Pro Football Reference (PFR) and Mockdraftable.
+The draft-order scraper fetches the full NFL draft order from Tankathon.
 
 ```bash
-cd back-end
+cd scrapers
 
-# Scrape from a single source
-cargo run -p combine-data-scraper -- scrape --source pfr --year 2026 --output data/combine_2026.json
+# Scrape draft order
+bun run scrape draft-order --year 2026 --output ../back-end/data/draft_order_2026.json
 
-# Scrape both sources and merge (recommended)
-cargo run -p combine-data-scraper -- scrape --merge --year 2026 --output data/combine_2026.json
-
-# If direct HTTP is blocked (403), use Playwright browser fallback
-cargo run -p combine-data-scraper -- scrape --source pfr --year 2026 --browser
+# Generate template (offline, no scraping)
+bun run scrape draft-order --template --output ../back-end/data/draft_order_2026.json
 ```
 
 Or use the convenience script from the repository root:
 
 ```bash
-./scripts/scrape-combine-results.sh          # Merge PFR + Mockdraftable
+./scripts/scrape-draft-order.sh              # With staleness check
+./scripts/scrape-draft-order.sh --force      # Bypass staleness check
+./scripts/scrape-draft-order.sh --commit     # Scrape and git commit
+```
+
+**Source:**
+
+| Source | Method | Technology |
+|--------|--------|------------|
+| Tankathon | Full draft order page | Playwright (JavaScript rendering) |
+
+**Data collected:** Round, pick number, overall pick, team, original team (for trades), compensatory flag, notes.
+
+### Step 2: Automated Scraping (GitHub Actions)
+
+The workflow `.github/workflows/scrape-draft-order.yml` runs daily at 06:00 UTC and on manual dispatch:
+
+1. Sets up Bun and installs dependencies
+2. Installs Playwright Chromium
+3. Runs the draft-order scraper
+4. Validates JSON output
+5. Creates a PR on branch `auto/draft-order-update`
+6. Auto-merges via squash
+
+```bash
+gh workflow run scrape-draft-order.yml
+```
+
+## Combine Data Pipeline
+
+### Step 1: Scrape
+
+The combine scraper fetches real NFL Combine results from Pro Football Reference (PFR) and Mockdraftable.
+
+```bash
+cd scrapers
+
+# Scrape from a single source
+bun run scrape combine --source pfr --year 2026 --output ../back-end/data/combine_2026.json
+
+# Scrape from Mockdraftable
+bun run scrape combine --source mockdraftable --year 2026 --output ../back-end/data/combine_2026.json
+
+# Scrape both sources and merge (recommended)
+bun run scrape combine --merge --year 2026 --output ../back-end/data/combine_2026.json
+
+# Generate template without scraping
+bun run scrape combine --template --output ../back-end/data/combine_2026.json
+```
+
+Or use the convenience script from the repository root:
+
+```bash
+./scripts/scrape-combine-results.sh              # Merge PFR + Mockdraftable
 ./scripts/scrape-combine-results.sh --source pfr  # PFR only
 ```
 
@@ -71,10 +153,10 @@ Or use the convenience script from the repository root:
 
 | Source | Method | URL Pattern |
 |--------|--------|-------------|
-| Pro Football Reference | HTML table parsing (`table#combine`) | `pro-football-reference.com/draft/{year}-combine.htm` |
-| Mockdraftable | `window.INITIAL_STATE` JSON extraction | `mockdraftable.com/search?year={year}` |
+| Pro Football Reference | HTML table parsing (Cheerio) | `pro-football-reference.com/draft/{year}-combine.htm` |
+| Mockdraftable | `window.INITIAL_STATE` JSON extraction (Playwright) | `mockdraftable.com/search?year={year}` |
 
-**Merge behavior:** PFR is the primary source. For players found in both sources, PFR values are kept and Mockdraftable backfills any `None` fields. Players unique to either source are included.
+**Merge behavior:** PFR is the primary source. For players found in both sources, PFR values are kept and Mockdraftable backfills any null fields. Players unique to either source are included.
 
 ### Step 2: Output Format
 
@@ -131,20 +213,16 @@ curl -X POST http://localhost:8000/api/v1/admin/seed-combine-data
 ```
 
 The loader:
-1. Reads the embedded JSON (compiled from `data/combine_2026_mock.json`)
+1. Reads the embedded JSON (compiled from `data/combine_2026.json`)
 2. Matches each entry to a player by **case-insensitive first + last name**
 3. Skips entries where combine data already exists for that player/year/source
 4. Returns counts: loaded, skipped, player_not_found
-
-**Important:** The seed handler currently references `combine_2026_mock.json`. To use real scraped data, either:
-- Replace `combine_2026_mock.json` with the scraper output, or
-- Update the `include_str!` path in `seed.rs` to point to `combine_2026.json`
 
 ### Step 4: Automated Scraping (GitHub Actions)
 
 The workflow `.github/workflows/scrape-combine-results.yml` runs on **manual dispatch only** (the combine is a one-time annual event):
 
-1. Builds the scraper in release mode
+1. Sets up Bun and installs dependencies
 2. Runs `--merge` to scrape PFR + Mockdraftable and merge
 3. Validates JSON output
 4. Creates a PR on branch `auto/combine-results-update`
@@ -157,23 +235,64 @@ gh workflow run scrape-combine-results.yml
 
 ## Prospect Rankings Pipeline
 
-The `prospect-rankings-scraper` crate follows the same pattern for prospect big board rankings:
+### Step 1: Scrape
+
+The rankings scraper fetches prospect big board rankings from multiple sources.
 
 ```bash
-cd back-end
+cd scrapers
 
-# Scrape Tankathon
-cargo run -p prospect-rankings-scraper -- --source tankathon --year 2026 --output data/rankings/tankathon_2026.json
+# Scrape from a single source
+bun run scrape rankings --source tankathon --year 2026 --output ../back-end/data/rankings/tankathon_2026.json
+bun run scrape rankings --source walterfootball --year 2026 --output ../back-end/data/rankings/walterfootball_2026.json
+bun run scrape rankings --source drafttek --year 2026 --output ../back-end/data/rankings/drafttek_2026.json
 
-# Scrape and merge multiple sources
-cargo run -p prospect-rankings-scraper -- --merge --primary data/rankings/tankathon_2026.json --secondary data/rankings/walterfootball_2026.json --output data/rankings/rankings_2026.json
+# Merge from all sources
+bun run scrape rankings --merge --year 2026 --output ../back-end/data/rankings/rankings_2026.json
+
+# Generate template without scraping
+bun run scrape rankings --template --output ../back-end/data/prospect_rankings_2026.json
 ```
 
-Automated via `.github/workflows/scrape-prospect-rankings.yml` (daily at 07:00 UTC).
+Or use the convenience script from the repository root:
+
+```bash
+./scripts/scrape-prospect-rankings.sh              # Scrape all sources + merge
+./scripts/scrape-prospect-rankings.sh --force       # Bypass staleness check
+./scripts/scrape-prospect-rankings.sh --commit      # Scrape and git commit
+```
+
+**Sources:**
+
+| Source | Method | Technology |
+|--------|--------|------------|
+| Tankathon | Big board page | Playwright (JavaScript rendering) |
+| WalterFootball | Big board page | Cheerio (static HTML) |
+| DraftTek | Big board page | Cheerio (static HTML) |
+
+**Data collected:** Rank, first name, last name, position, school, height (optional), weight (optional).
+
+**Merge behavior:** Tankathon is the primary source. The merge combines rankings from all available sources to produce a consensus ranking.
+
+### Step 2: Automated Scraping (GitHub Actions)
+
+The workflow `.github/workflows/scrape-prospect-rankings.yml` runs daily at 07:00 UTC and on manual dispatch:
+
+1. Sets up Bun and installs dependencies
+2. Installs Playwright Chromium
+3. Scrapes Tankathon and WalterFootball (each with `continue-on-error`)
+4. Merges results into consensus rankings
+5. Validates JSON output
+6. Creates a PR on branch `auto/prospect-rankings-update`
+7. Auto-merges via squash
+
+```bash
+gh workflow run scrape-prospect-rankings.yml
+```
 
 ## Position Normalization
 
-All scrapers normalize source-specific position abbreviations to canonical values matching the database `Position` enum. The authoritative mapping is in `seed-data/src/position_mapper.rs`:
+All scrapers normalize source-specific position abbreviations to canonical values matching the database `Position` enum. The mapping is maintained in the TypeScript scrapers at `scrapers/src/shared/position-normalizer.ts` and must stay in sync with `seed-data/src/position_mapper.rs`:
 
 | Source Abbreviation | Canonical Value |
 |---------------------|-----------------|
@@ -186,10 +305,9 @@ All scrapers normalize source-specific position abbreviations to canonical value
 | FS, SS, DB, SAF | S |
 | HB, FB | RB |
 
-This mapping is duplicated in three places that must stay in sync:
-1. `seed-data/src/position_mapper.rs` — authoritative source
-2. `combine-data-scraper/src/models.rs` — `normalize_position()`
-3. `back-end/scripts/scrape-combine.mjs` — JavaScript `positionMap`
+This mapping is maintained in two places that must stay in sync:
+1. `scrapers/src/shared/position-normalizer.ts` — TypeScript scrapers
+2. `back-end/crates/seed-data/src/position_mapper.rs` — Rust seed-data loader (authoritative for DB loading)
 
 ## File Inventory
 
@@ -197,20 +315,34 @@ This mapping is duplicated in three places that must stay in sync:
 
 | File | Producer | Consumer |
 |------|----------|----------|
-| `data/combine_2026.json` | combine-data-scraper (merged) | seed.rs via `include_str!` |
-| `data/combine_2026_pfr.json` | combine-data-scraper (PFR only) | merge input |
-| `data/combine_2026_mockdraftable.json` | combine-data-scraper (Mockdraftable only) | merge input |
-| `data/combine_2026_mock.json` | combine-data-scraper `mock-data` subcommand | seed.rs via `include_str!` (current default) |
-| `data/combine_percentiles.json` | combine-data-scraper `template` subcommand | seed.rs via `include_str!` |
-| `data/rankings/rankings_2026.json` | prospect-rankings-scraper (merged) | seed.rs via `include_str!` |
-| `data/rankings/tankathon_2026.json` | prospect-rankings-scraper | merge input |
+| `data/draft_order_2026.json` | `bun run scrape draft-order` | seed.rs via `include_str!` |
+| `data/combine_2026.json` | `bun run scrape combine --merge` | seed.rs via `include_str!` |
+| `data/combine_percentiles.json` | Template generation | seed.rs via `include_str!` |
+| `data/rankings/rankings_2026.json` | `bun run scrape rankings --merge` | seed.rs via `include_str!` |
+| `data/rankings/tankathon_2026.json` | `bun run scrape rankings --source tankathon` | merge input |
+| `data/rankings/walterfootball_2026.json` | `bun run scrape rankings --source walterfootball` | merge input |
 
-### Scraper Crates
+### Scraper Project Structure
 
-| Crate | Binary | Purpose |
-|-------|--------|---------|
-| `combine-data-scraper` | `combine-data-scraper` | Combine results (PFR + Mockdraftable) |
-| `prospect-rankings-scraper` | `prospect-rankings-scraper` | Big board rankings (Tankathon + WalterFootball) |
+```
+scrapers/
+├── src/
+│   ├── cli.ts                    # CLI entry point and command routing
+│   ├── commands/                  # Command handlers
+│   │   ├── draft-order.ts
+│   │   ├── rankings.ts
+│   │   └── combine.ts
+│   ├── scrapers/                  # Scraping logic per data type
+│   │   ├── draft-order/           # Tankathon draft order
+│   │   ├── rankings/              # Tankathon, DraftTek, WalterFootball rankings
+│   │   └── combine/               # PFR, Mockdraftable combine data
+│   ├── types/                     # Zod schemas and TypeScript types
+│   └── shared/                    # Position normalizer, name normalizer, team abbreviations
+├── tests/                         # Vitest test suite
+├── package.json
+├── tsconfig.json
+└── vitest.config.ts
+```
 
 ### Loader Modules (in seed-data crate)
 
@@ -231,10 +363,7 @@ This mapping is duplicated in three places that must stay in sync:
 # 2. Verify output
 cat back-end/data/combine_2026.json | python3 -m json.tool | head -30
 
-# 3. Replace mock data with real data for the seed handler
-cp back-end/data/combine_2026.json back-end/data/combine_2026_mock.json
-
-# 4. Rebuild and restart
+# 3. Rebuild and restart
 docker compose up --build -d
 
 # 5. Re-seed the database

@@ -9,8 +9,7 @@ This directory contains NFL Draft data used to seed the database. Files are eith
 | File | Source | Description |
 |------|--------|-------------|
 | `players_2026.json` | Manual / scraped | Top 150+ prospects for the 2026 NFL Draft class |
-| `combine_2026_mock.json` | `combine-data-scraper mock-data` | Mock combine data (used by seed handler via `include_str!`) |
-| `combine_2026.json` | `combine-data-scraper scrape --merge` | Real scraped combine data (replace mock file to use) |
+| `combine_2026.json` | `bun run scrape combine --merge` | Real scraped combine data (used by seed handler via `include_str!`) |
 | `combine_2026_pfr.json` | `combine-data-scraper scrape --source pfr` | PFR-only combine data (merge input) |
 | `combine_2026_mockdraftable.json` | `combine-data-scraper scrape --source mockdraftable` | Mockdraftable-only combine data (merge input) |
 | `combine_percentiles.json` | `combine-data-scraper template` | Combine percentile baselines from NFL averages |
@@ -62,9 +61,6 @@ Source data may use various position abbreviations. The seed tool normalizes the
 ```bash
 # From the repository root — scrapes PFR + Mockdraftable and merges
 ./scripts/scrape-combine-results.sh
-
-# Then replace the mock file so the seed handler uses real data
-cp data/combine_2026.json data/combine_2026_mock.json
 ```
 
 ### After NFL Combine (Late February/March)
