@@ -43,9 +43,28 @@ pub struct CombineLoadStats {
     pub errors: Vec<String>,
 }
 
+impl CombineLoadStats {
+    pub fn print_summary(&self) {
+        println!("  Loaded:          {}", self.loaded);
+        println!("  Skipped:         {}", self.skipped);
+        println!("  Player not found: {}", self.player_not_found);
+        if !self.errors.is_empty() {
+            println!("  Errors: {}", self.errors.len());
+            for err in &self.errors {
+                println!("    - {}", err);
+            }
+        }
+    }
+}
+
 pub fn parse_combine_json(json: &str) -> Result<CombineFileData> {
     let data: CombineFileData = serde_json::from_str(json)?;
     Ok(data)
+}
+
+pub fn parse_combine_file(path: &str) -> Result<CombineFileData> {
+    let json = std::fs::read_to_string(path)?;
+    parse_combine_json(&json)
 }
 
 pub async fn load_combine_data(

@@ -1,6 +1,6 @@
 use seed_data::{
-    draft_order_loader, draft_order_validator, feldman_freak_loader, feldman_freak_validator,
-    loader, rankings_loader, rankings_validator, scouting_report_loader,
+    combine_loader, draft_order_loader, draft_order_validator, feldman_freak_loader,
+    feldman_freak_validator, loader, rankings_loader, rankings_validator, scouting_report_loader,
     scouting_report_validator, team_loader, team_need_loader, team_need_validator,
     team_season_loader, team_season_validator, team_validator, validator,
 };
@@ -10,10 +10,10 @@ use clap::{Parser, Subcommand};
 use db::{
     create_pool,
     repositories::{
-        SqlxDraftPickRepository, SqlxDraftRepository, SqlxFeldmanFreakRepository,
-        SqlxPlayerRepository, SqlxProspectRankingRepository, SqlxRankingSourceRepository,
-        SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
-        SqlxTeamSeasonRepository,
+        SqlxCombineResultsRepository, SqlxDraftPickRepository, SqlxDraftRepository,
+        SqlxFeldmanFreakRepository, SqlxPlayerRepository, SqlxProspectRankingRepository,
+        SqlxRankingSourceRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
+        SqlxTeamRepository, SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -75,6 +75,12 @@ enum EntityCommands {
     Freaks {
         #[command(subcommand)]
         action: FreaksActions,
+    },
+
+    /// Manage combine results data
+    Combine {
+        #[command(subcommand)]
+        action: CombineActions,
     },
 }
 
@@ -267,6 +273,27 @@ enum FreaksActions {
 }
 
 #[derive(Subcommand)]
+enum CombineActions {
+    /// Load combine results from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/combine_2026.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear combine results for a given year
+    Clear {
+        /// The year to clear
+        #[arg(short, long)]
+        year: i32,
+    },
+}
+
+#[derive(Subcommand)]
 enum RankingsActions {
     /// Load prospect rankings from JSON file (auto-creates new players + scouting reports)
     Load {
@@ -315,6 +342,7 @@ async fn main() -> Result<()> {
         EntityCommands::Scouting { action } => handle_scouting(action).await?,
         EntityCommands::Rankings { action } => handle_rankings(action).await?,
         EntityCommands::Freaks { action } => handle_freaks(action).await?,
+        EntityCommands::Combine { action } => handle_combine(action).await?,
     }
 
     Ok(())
@@ -1089,6 +1117,61 @@ async fn handle_freaks(action: FreaksActions) -> Result<()> {
 
             let deleted = feldman_freak_loader::clear_freaks(year, &freak_repo).await?;
             println!("Deleted {} freaks", deleted);
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_combine(action: CombineActions) -> Result<()> {
+    match action {
+        CombineActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Loading combine data: {}", file);
+            } else {
+                println!("Loading combine data from: {}", file);
+            }
+
+            let data = combine_loader::parse_combine_file(&file)?;
+            println!(
+                "Parsed {} combine entries from file (year {}, source: {})",
+                data.combine_results.len(),
+                data.meta.year,
+                data.meta.source
+            );
+
+            if dry_run {
+                println!("DRY RUN complete. {} entries would be processed.", data.combine_results.len());
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let player_repo = SqlxPlayerRepository::new(pool.clone());
+                let combine_repo = SqlxCombineResultsRepository::new(pool);
+
+                let stats =
+                    combine_loader::load_combine_data(&data, &player_repo, &combine_repo).await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        CombineActions::Clear { year } => {
+            println!("Clearing combine results for year {}", year);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+
+            let result = sqlx::query("DELETE FROM combine_results WHERE year = $1")
+                .bind(year)
+                .execute(&pool)
+                .await?;
+
+            println!("Deleted {} combine results", result.rows_affected());
         }
     }
 

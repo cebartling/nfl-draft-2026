@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for NFL Draft Simulator Backend
 # Stage 1: Build the application
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 
 # Install system dependencies required for building
 RUN apt-get update && apt-get install -y \
@@ -22,6 +22,7 @@ COPY crates/seed-data/Cargo.toml ./crates/seed-data/
 # Build dependencies only (this layer will be cached)
 # Create dummy source files to compile dependencies
 RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src/bin && \
+    echo "pub fn dummy() {}" > crates/api/src/lib.rs && \
     echo "fn main() {}" > crates/api/src/main.rs && \
     echo "pub fn dummy() {}" > crates/domain/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/db/src/lib.rs && \
