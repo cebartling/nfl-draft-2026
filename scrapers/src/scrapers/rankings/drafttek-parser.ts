@@ -17,7 +17,6 @@ function findRows($: cheerio.CheerioAPI): cheerio.Cheerio<cheerio.Element> {
     "table.bpa tr",
     "table tr.pointed",
     "table[class*='draft'] tr",
-    "table tr",
   ];
 
   for (const sel of selectors) {

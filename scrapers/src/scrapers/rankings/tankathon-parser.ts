@@ -70,7 +70,7 @@ function tryExtractEmbeddedJson(
   _year: number,
 ): RankingEntry[] {
   // Look for __NEXT_DATA__ pattern
-  const nextDataMatch = html.match(/window\.__NEXT_DATA__\s*=\s*({[\s\S]*?})\s*<\/script>/);
+  const nextDataMatch = html.match(/window\.__NEXT_DATA__\s*=\s*({[\s\S]*})\s*<\/script>/);
   if (!nextDataMatch) return [];
 
   try {
