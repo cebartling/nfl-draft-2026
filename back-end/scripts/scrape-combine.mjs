@@ -20,6 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 let chromium;
 for (const candidate of [
   join(__dirname, "../../front-end/node_modules/playwright/index.mjs"),
+  join(__dirname, "../../acceptance-tests/node_modules/playwright/index.mjs"),
   "playwright",
 ]) {
   try {
@@ -168,28 +169,23 @@ async function scrapeMockdraftable(page) {
     );
   }
 
-  // Find players array recursively
-  function findPlayers(obj) {
-    if (!obj || typeof obj !== "object") return null;
-    for (const key of ["players", "results", "searchResults", "prospects"]) {
-      if (Array.isArray(obj[key]) && obj[key].length > 0) {
-        const first = obj[key][0];
-        if (first.firstName || first.first_name) return obj[key];
-      }
-    }
-    for (const val of Object.values(obj)) {
-      const found = findPlayers(val);
-      if (found) return found;
-    }
-    return null;
-  }
+  // Measurable key ID mapping (numeric keys from Mockdraftable's real format)
+  const measurableKeyMap = {
+    3: "wingspan",
+    4: "arm_length",
+    5: "hand_size",
+    6: "ten_yard_split",
+    7: "twenty_yard_split",
+    8: "forty_yard_dash",
+    9: "bench_press",
+    10: "vertical_jump",
+    11: "broad_jump",
+    12: "three_cone_drill",
+    13: "twenty_yard_shuttle",
+  };
 
-  const players = findPlayers(initialState);
-  if (!players) {
-    throw new Error("Could not find players array in INITIAL_STATE");
-  }
-
-  const measurementMap = {
+  // String-based measurement name mapping (legacy/fallback format)
+  const measurementNameMap = {
     "40 yard dash": "forty_yard_dash",
     "forty yard dash": "forty_yard_dash",
     "bench press": "bench_press",
@@ -212,49 +208,166 @@ async function scrapeMockdraftable(page) {
     "20 yard split": "twenty_yard_split",
   };
 
-  return players
-    .filter((p) => (p.firstName || p.first_name))
-    .map((p) => {
-      const entry = {
-        first_name: (p.firstName || p.first_name || "").trim(),
-        last_name: (p.lastName || p.last_name || "").trim(),
-        position: normalizePosition(
-          typeof p.position === "string"
-            ? p.position
-            : p.position?.abbreviation || p.position?.name || "",
-        ),
-        source: "combine",
-        year,
-        forty_yard_dash: null,
-        bench_press: null,
-        vertical_jump: null,
-        broad_jump: null,
-        three_cone_drill: null,
-        twenty_yard_shuttle: null,
-        arm_length: null,
-        hand_size: null,
-        wingspan: null,
-        ten_yard_split: null,
-        twenty_yard_split: null,
-      };
+  function makeEmptyEntry(firstName, lastName, position) {
+    return {
+      first_name: firstName,
+      last_name: lastName,
+      position: normalizePosition(position),
+      source: "combine",
+      year,
+      forty_yard_dash: null,
+      bench_press: null,
+      vertical_jump: null,
+      broad_jump: null,
+      three_cone_drill: null,
+      twenty_yard_shuttle: null,
+      arm_length: null,
+      hand_size: null,
+      wingspan: null,
+      ten_yard_split: null,
+      twenty_yard_split: null,
+    };
+  }
 
-      const measurements = p.measurements || p.measurables || [];
-      for (const m of measurements) {
-        const name = (
-          m.measurementType || m.name || m.type?.name || ""
-        ).toLowerCase();
-        const value = m.measurement ?? m.value;
-        const field = measurementMap[name];
-        if (field && value != null) {
-          entry[field] =
-            field === "bench_press" || field === "broad_jump"
-              ? Math.round(value)
-              : value;
+  function setMeasurement(entry, field, value) {
+    if (field && value != null) {
+      entry[field] =
+        field === "bench_press" || field === "broad_jump"
+          ? Math.round(value)
+          : value;
+    }
+  }
+
+  // Try dict-keyed format first (real Mockdraftable site)
+  function parseDictFormat(state) {
+    // Players is a dict keyed by slug, e.g. { "cam-ward": { name: "Cam Ward", ... } }
+    const playersObj = state.players;
+    if (!playersObj || typeof playersObj !== "object" || Array.isArray(playersObj)) {
+      return null;
+    }
+
+    // Build measurables name map from state.measurables (id -> name)
+    const measurablesMap = {};
+    if (state.measurables && typeof state.measurables === "object") {
+      for (const [id, info] of Object.entries(state.measurables)) {
+        if (info && info.name) {
+          measurablesMap[parseInt(id, 10)] = info.name;
+        }
+      }
+    }
+
+    const entries = [];
+    for (const player of Object.values(playersObj)) {
+      const fullName = (player.name || "").trim();
+      if (!fullName) continue;
+
+      const parts = fullName.split(/\s+/);
+      const firstName = parts[0] || "";
+      const lastName = parts.slice(1).join(" ");
+
+      const pos =
+        typeof player.positions === "object" && player.positions?.primary
+          ? typeof player.positions.primary === "string"
+            ? player.positions.primary
+            : player.positions.primary?.abbreviation || player.positions.primary?.name || ""
+          : typeof player.position === "string"
+            ? player.position
+            : player.position?.abbreviation || "";
+
+      const entry = makeEmptyEntry(firstName, lastName, pos);
+
+      // Parse measurements from dict format
+      const measurements = player.measurements || player.measurables;
+      if (measurements && typeof measurements === "object" && !Array.isArray(measurements)) {
+        for (const [key, m] of Object.entries(measurements)) {
+          const measurableKey = m?.measurableKey ?? parseInt(key, 10);
+          const value = m?.measurement ?? m?.value;
+          const field = measurableKeyMap[measurableKey];
+          setMeasurement(entry, field, value);
+        }
+      } else if (Array.isArray(measurements)) {
+        for (const m of measurements) {
+          const measurableKey = m?.measurableKey;
+          if (measurableKey != null) {
+            const field = measurableKeyMap[measurableKey];
+            setMeasurement(entry, field, m?.measurement ?? m?.value);
+          } else {
+            const name = (m.measurementType || m.name || m.type?.name || "").toLowerCase();
+            const field = measurementNameMap[name];
+            setMeasurement(entry, field, m?.measurement ?? m?.value);
+          }
         }
       }
 
-      return entry;
-    });
+      entries.push(entry);
+    }
+
+    return entries.length > 0 ? entries : null;
+  }
+
+  // Fallback: array-based format
+  function parseArrayFormat(state) {
+    function findPlayers(obj) {
+      if (!obj || typeof obj !== "object") return null;
+      for (const key of ["players", "results", "searchResults", "prospects"]) {
+        if (Array.isArray(obj[key]) && obj[key].length > 0) {
+          const first = obj[key][0];
+          if (first.firstName || first.first_name || first.name) return obj[key];
+        }
+      }
+      for (const val of Object.values(obj)) {
+        const found = findPlayers(val);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    const players = findPlayers(state);
+    if (!players) return null;
+
+    return players
+      .filter((p) => p.firstName || p.first_name || p.name)
+      .map((p) => {
+        let firstName, lastName;
+        if (p.name) {
+          const parts = p.name.trim().split(/\s+/);
+          firstName = parts[0] || "";
+          lastName = parts.slice(1).join(" ");
+        } else {
+          firstName = (p.firstName || p.first_name || "").trim();
+          lastName = (p.lastName || p.last_name || "").trim();
+        }
+
+        const pos =
+          typeof p.position === "string"
+            ? p.position
+            : p.position?.abbreviation || p.position?.name || "";
+
+        const entry = makeEmptyEntry(firstName, lastName, pos);
+
+        const measurements = p.measurements || p.measurables || [];
+        if (Array.isArray(measurements)) {
+          for (const m of measurements) {
+            const name = (m.measurementType || m.name || m.type?.name || "").toLowerCase();
+            const value = m.measurement ?? m.value;
+            setMeasurement(entry, measurementNameMap[name], value);
+          }
+        }
+
+        return entry;
+      });
+  }
+
+  // Try dict format first (real site), fall back to array format
+  let entries = parseDictFormat(initialState);
+  if (!entries) {
+    entries = parseArrayFormat(initialState);
+  }
+  if (!entries || entries.length === 0) {
+    throw new Error("Could not find players in INITIAL_STATE (tried dict and array formats)");
+  }
+
+  return entries;
 }
 
 const browser = await chromium.launch({ headless: true });
