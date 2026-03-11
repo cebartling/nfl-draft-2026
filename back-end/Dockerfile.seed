@@ -2,7 +2,7 @@
 # Builds the seed-data binary and includes sqlx-cli for migrations
 
 # Stage 1: Build the application
-FROM rust:1.88-bookworm AS builder
+FROM rust:1.94-bookworm AS builder
 
 # Install system dependencies required for building
 RUN apt-get update && apt-get install -y \
