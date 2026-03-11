@@ -57,7 +57,8 @@ export const rankingsApi = {
 		for (const entry of entries) {
 			const badge: RankingBadge = {
 				source_name: entry.source_name,
-				abbreviation: abbreviations.get(entry.source_name) ?? entry.source_name.slice(0, 2).toUpperCase(),
+				abbreviation:
+					abbreviations.get(entry.source_name) ?? entry.source_name.slice(0, 2).toUpperCase(),
 				rank: entry.rank,
 			};
 			const existing = map.get(entry.player_id);

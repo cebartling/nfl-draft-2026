@@ -135,9 +135,9 @@ describe('formatRawValue', () => {
 	});
 
 	it('formats height as feet and inches', () => {
-		expect(formatRawValue('height', 73)).toBe("6'1\"");
-		expect(formatRawValue('height', 72)).toBe("6'0\"");
-		expect(formatRawValue('height', 76)).toBe("6'4\"");
+		expect(formatRawValue('height', 73)).toBe('6\'1"');
+		expect(formatRawValue('height', 72)).toBe('6\'0"');
+		expect(formatRawValue('height', 76)).toBe('6\'4"');
 	});
 
 	it('formats weight with lbs', () => {

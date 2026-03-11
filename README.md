@@ -43,6 +43,13 @@ Before working with this project, ensure you have the following installed:
    cargo install sqlx-cli --no-default-features --features postgres
    ```
 
+5. **Bun** (for data scrapers)
+   - Version: 1.0+
+   - Install: https://bun.sh/
+   ```bash
+   curl -fsSL https://bun.sh/install | bash
+   ```
+
 ### Optional Tools
 
 - **pgAdmin** - Database GUI (included in docker-compose with `--profile tools`)
@@ -59,12 +66,21 @@ nfl-draft-2026/
 │   │   ├── domain/       # Business logic & services
 │   │   ├── db/           # Database layer (SQLx)
 │   │   └── websocket/    # WebSocket connections
+│   ├── data/             # Scraped JSON data files
 │   └── migrations/       # SQLx database migrations
 ├── front-end/            # SvelteKit application
 │   ├── src/
 │   │   ├── lib/          # Components, stores, utilities
 │   │   └── routes/       # SvelteKit pages
 │   └── tests/            # E2E tests (Playwright)
+├── scrapers/             # TypeScript/Bun data scrapers
+│   ├── src/
+│   │   ├── commands/     # CLI command handlers
+│   │   ├── scrapers/     # Per-source scraping logic
+│   │   ├── shared/       # Position/name normalizers, utilities
+│   │   └── types/        # Zod schemas and TypeScript types
+│   └── tests/            # Vitest test suite
+├── scripts/              # Shell scripts (scraping, testing, lifecycle)
 ├── documentation/        # Architecture & planning docs
 └── docker-compose.yml    # Infrastructure services
 ```

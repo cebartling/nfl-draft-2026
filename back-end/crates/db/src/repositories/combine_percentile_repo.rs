@@ -163,11 +163,9 @@ impl CombinePercentileRepository for SqlxCombinePercentileRepository {
             .map_err(DbError::DatabaseError)?;
 
         if result.rows_affected() == 0 {
-            return Err(DbError::NotFound(format!(
-                "Combine percentile with id {} not found",
-                id
-            ))
-            .into());
+            return Err(
+                DbError::NotFound(format!("Combine percentile with id {} not found", id)).into(),
+            );
         }
 
         Ok(())
@@ -204,7 +202,9 @@ mod tests {
 
         let p = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3)
+            .with_percentiles(
+                100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3,
+            )
             .unwrap();
 
         let created = repo.upsert(&p).await.unwrap();
@@ -227,7 +227,9 @@ mod tests {
 
         let p1 = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3)
+            .with_percentiles(
+                100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3,
+            )
             .unwrap();
 
         repo.upsert(&p1).await.unwrap();
@@ -235,7 +237,9 @@ mod tests {
         // Upsert again with different data
         let p2 = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(200, 4.3, 4.45, 4.5, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.9, 5.2)
+            .with_percentiles(
+                200, 4.3, 4.45, 4.5, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.9, 5.2,
+            )
             .unwrap();
 
         let updated = repo.upsert(&p2).await.unwrap();
@@ -258,15 +262,21 @@ mod tests {
 
         let qb_40 = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.4, 4.5, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3)
+            .with_percentiles(
+                100, 4.4, 4.5, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3,
+            )
             .unwrap();
         let qb_bench = CombinePercentile::new("QB".to_string(), Measurement::BenchPress)
             .unwrap()
-            .with_percentiles(100, 10.0, 14.0, 16.0, 18.0, 19.0, 20.0, 22.0, 24.0, 26.0, 28.0, 35.0)
+            .with_percentiles(
+                100, 10.0, 14.0, 16.0, 18.0, 19.0, 20.0, 22.0, 24.0, 26.0, 28.0, 35.0,
+            )
             .unwrap();
         let wr_40 = CombinePercentile::new("WR".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(150, 4.2, 4.3, 4.35, 4.4, 4.42, 4.45, 4.5, 4.55, 4.6, 4.7, 5.0)
+            .with_percentiles(
+                150, 4.2, 4.3, 4.35, 4.4, 4.42, 4.45, 4.5, 4.55, 4.6, 4.7, 5.0,
+            )
             .unwrap();
 
         repo.upsert(&qb_40).await.unwrap();
@@ -294,7 +304,9 @@ mod tests {
 
         let p = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3)
+            .with_percentiles(
+                100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3,
+            )
             .unwrap();
 
         repo.upsert(&p).await.unwrap();
@@ -324,7 +336,9 @@ mod tests {
 
         let p = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3)
+            .with_percentiles(
+                100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3,
+            )
             .unwrap();
         repo.upsert(&p).await.unwrap();
 
@@ -344,7 +358,9 @@ mod tests {
 
         let p = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3)
+            .with_percentiles(
+                100, 4.4, 4.55, 4.6, 4.65, 4.7, 4.75, 4.8, 4.85, 4.9, 5.0, 5.3,
+            )
             .unwrap();
         let created = repo.upsert(&p).await.unwrap();
 

@@ -10,7 +10,7 @@ export interface ProspectRanking {
  * Compute consensus rankings by averaging each player's rank across all sources.
  */
 export function computeConsensusRankings(
-	playerRankings: Map<string, RankingBadge[]>,
+	playerRankings: Map<string, RankingBadge[]>
 ): Map<string, ProspectRanking> {
 	const result = new Map<string, ProspectRanking>();
 
@@ -34,9 +34,7 @@ export function computeConsensusRankings(
  * Sort player IDs by consensus rank ascending, then source count descending
  * (more sources = higher confidence), then player ID for stability.
  */
-export function sortByConsensusRank(
-	rankings: Map<string, ProspectRanking>,
-): string[] {
+export function sortByConsensusRank(rankings: Map<string, ProspectRanking>): string[] {
 	return [...rankings.values()]
 		.sort((a, b) => {
 			if (a.consensusRank !== b.consensusRank) {

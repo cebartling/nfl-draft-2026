@@ -104,7 +104,7 @@
 				time_per_pick_seconds: DEFAULT_TIME_PER_PICK,
 				auto_pick_enabled: true,
 				chart_type: 'JimmyJohnson',
-				controlled_team_ids: controlledTeamIds
+				controlled_team_ids: controlledTeamIds,
 			});
 			await goto(`/sessions/${session.id}`);
 		} catch (e) {
@@ -123,7 +123,6 @@
 			}
 		}
 	}
-
 </script>
 
 <div class="space-y-6">

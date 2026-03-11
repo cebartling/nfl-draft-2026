@@ -106,11 +106,7 @@ describe('sessionsApi', () => {
 
 			const result = await sessionsApi.start('session-1');
 
-			expect(mockPost).toHaveBeenCalledWith(
-				'/sessions/session-1/start',
-				{},
-				expect.any(Object)
-			);
+			expect(mockPost).toHaveBeenCalledWith('/sessions/session-1/start', {}, expect.any(Object));
 			expect(result.status).toBe('InProgress');
 		});
 
@@ -128,11 +124,7 @@ describe('sessionsApi', () => {
 
 			const result = await sessionsApi.pause('session-1');
 
-			expect(mockPost).toHaveBeenCalledWith(
-				'/sessions/session-1/pause',
-				{},
-				expect.any(Object)
-			);
+			expect(mockPost).toHaveBeenCalledWith('/sessions/session-1/pause', {}, expect.any(Object));
 			expect(result.status).toBe('Paused');
 		});
 	});
@@ -152,10 +144,7 @@ describe('sessionsApi', () => {
 
 			const result = await sessionsApi.getEvents('session-1');
 
-			expect(mockGet).toHaveBeenCalledWith(
-				'/sessions/session-1/events',
-				expect.any(Object)
-			);
+			expect(mockGet).toHaveBeenCalledWith('/sessions/session-1/events', expect.any(Object));
 			expect(result).toEqual(mockEvents);
 		});
 	});

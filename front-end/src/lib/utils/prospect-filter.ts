@@ -30,7 +30,7 @@ export function filterProspects(
 	playerMap: Map<string, Player>,
 	searchQuery: string,
 	selectedGroup: string,
-	selectedPosition: string,
+	selectedPosition: string
 ): string[] {
 	const hasSearch = searchQuery.length > 0;
 	const hasGroup = selectedGroup !== 'all';

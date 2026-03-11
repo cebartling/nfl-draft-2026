@@ -104,9 +104,7 @@
 
 		<!-- Fit Grade -->
 		<div>
-			<label for="fitGrade" class="block text-sm font-medium text-gray-700 mb-2">
-				Fit Grade
-			</label>
+			<label for="fitGrade" class="block text-sm font-medium text-gray-700 mb-2"> Fit Grade </label>
 			<select
 				id="fitGrade"
 				bind:value={fitGrade}

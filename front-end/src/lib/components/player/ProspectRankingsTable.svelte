@@ -29,13 +29,11 @@
 				map.set(p.id, p);
 			}
 			return map;
-		})(),
+		})()
 	);
 
 	const rankedPlayers = $derived(
-		sortedPlayerIds
-			.map((id) => playerMap.get(id))
-			.filter((p): p is Player => p !== undefined),
+		sortedPlayerIds.map((id) => playerMap.get(id)).filter((p): p is Player => p !== undefined)
 	);
 </script>
 
@@ -115,9 +113,7 @@
 					<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden md:table-cell">
 						{player.college || 'N/A'}
 					</td>
-					<td
-						class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell"
-					>
+					<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
 						{formatHeight(player.height_inches)}{#if player.weight_pounds}, {player.weight_pounds} lbs{/if}
 					</td>
 					<td class="px-4 py-3">
@@ -132,7 +128,9 @@
 							{/each}
 							{#if freak}
 								<Tooltip text="Feldman Freak #{freak.rank}: {freak.description}" width="w-96">
-									<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+									<span
+										class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300"
+									>
 										FREAK #{freak.rank}
 									</span>
 								</Tooltip>

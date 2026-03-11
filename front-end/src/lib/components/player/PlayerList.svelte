@@ -16,7 +16,12 @@
 	let searchQuery = $state('');
 	let selectedPosition = $state<Position | 'all'>('all');
 
-	const allPositions: (Position | 'all')[] = ['all', ...OFFENSE_POSITIONS, ...DEFENSE_POSITIONS, ...SPECIAL_POSITIONS];
+	const allPositions: (Position | 'all')[] = [
+		'all',
+		...OFFENSE_POSITIONS,
+		...DEFENSE_POSITIONS,
+		...SPECIAL_POSITIONS,
+	];
 
 	const filteredPlayers = $derived(
 		players.filter((player) => {
@@ -50,7 +55,10 @@
 			<button
 				type="button"
 				class="text-xs text-blue-600 hover:text-blue-800 font-medium"
-				onclick={() => { searchQuery = ''; selectedPosition = 'all'; }}
+				onclick={() => {
+					searchQuery = '';
+					selectedPosition = 'all';
+				}}
 			>
 				Clear
 			</button>
@@ -62,7 +70,8 @@
 		{#each allPositions as position (position)}
 			<button
 				type="button"
-				class="px-2 py-0.5 rounded text-xs font-medium transition-colors {selectedPosition === position
+				class="px-2 py-0.5 rounded text-xs font-medium transition-colors {selectedPosition ===
+				position
 					? 'bg-blue-600 text-white'
 					: 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}"
 				onclick={() => (selectedPosition = position)}

@@ -1,0 +1,23 @@
+{
+  "name": "nfl-draft-scrapers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NFL Draft data scrapers (combine results, prospect rankings, draft order)",
+  "scripts": {
+    "scrape": "bun run src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "typescript": "^5.7.0",
+    "prettier": "^3.5.0"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "zod": "^4.3.6"
+  }
+}

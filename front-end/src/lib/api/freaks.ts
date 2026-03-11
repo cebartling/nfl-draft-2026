@@ -21,7 +21,7 @@ export const freaksApi = {
 	async loadByYear(year: number): Promise<Map<string, FeldmanFreak>> {
 		const entries = await apiClient.get(
 			`/feldman-freaks?year=${year}`,
-			z.array(FeldmanFreakWithPlayerSchema),
+			z.array(FeldmanFreakWithPlayerSchema)
 		);
 
 		const map = new Map<string, FeldmanFreak>();

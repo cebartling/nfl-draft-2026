@@ -31,9 +31,7 @@
 		return groups;
 	});
 
-	const selectedTeams = $derived(
-		teams.filter((t) => selectedTeamIds.includes(t.id))
-	);
+	const selectedTeams = $derived(teams.filter((t) => selectedTeamIds.includes(t.id)));
 
 	function toggleTeam(teamId: string) {
 		if (selectedTeamIds.includes(teamId)) {
@@ -97,7 +95,12 @@
 				>
 					{team.abbreviation}
 					<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			{/each}
@@ -122,12 +125,19 @@
 					>
 						<span>{division}</span>
 						<svg
-							class="w-4 h-4 text-gray-400 transition-transform {expandedDivisions.has(division) ? 'rotate-180' : ''}"
+							class="w-4 h-4 text-gray-400 transition-transform {expandedDivisions.has(division)
+								? 'rotate-180'
+								: ''}"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
 						>
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M19 9l-7 7-7-7"
+							/>
 						</svg>
 					</button>
 
@@ -143,7 +153,9 @@
 										: 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}"
 								>
 									{#if failedLogos.has(team.id)}
-										<span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+										<span
+											class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+										>
 											{team.abbreviation}
 										</span>
 									{:else}
@@ -158,13 +170,22 @@
 									{/if}
 									<div class="flex-1 min-w-0">
 										<div class="text-sm font-medium text-gray-900 truncate">
-											{team.city} {team.name}
+											{team.city}
+											{team.name}
 										</div>
 										<div class="text-xs text-gray-500">{team.abbreviation}</div>
 									</div>
 									{#if isSelected}
-										<svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-											<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+										<svg
+											class="w-5 h-5 text-blue-600 flex-shrink-0"
+											fill="currentColor"
+											viewBox="0 0 20 20"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+												clip-rule="evenodd"
+											/>
 										</svg>
 									{/if}
 								</button>

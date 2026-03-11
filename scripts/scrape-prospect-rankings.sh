@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# scrape-prospect-rankings.sh — Build and run the prospect-rankings-scraper
+# scrape-prospect-rankings.sh — Run the TypeScript/Bun prospect rankings scraper
 # for multiple sources, then merge results.
 #
 # Features:
@@ -17,10 +17,10 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BACKEND_DIR="$REPO_ROOT/back-end"
+SCRAPERS_DIR="$REPO_ROOT/scrapers"
 YEAR="${YEAR:-2026}"
 STALENESS_HOURS="${STALENESS_HOURS:-24}"
-RANKINGS_DIR="$BACKEND_DIR/data/rankings"
+RANKINGS_DIR="$REPO_ROOT/back-end/data/rankings"
 TIMESTAMP_FILE="$RANKINGS_DIR/.rankings_last_scraped"
 
 TANKATHON_FILE="$RANKINGS_DIR/tankathon_${YEAR}.json"
@@ -44,13 +44,11 @@ done
 
 # --- Staleness check ---
 
-# Parse an ISO 8601 / RFC 3339 timestamp to epoch seconds (portable macOS + Linux)
 parse_timestamp() {
     local ts="$1"
     if date -j -f "%Y-%m-%dT%H:%M:%S" "${ts%%.*}" "+%s" 2>/dev/null; then
         return
     fi
-    # Linux fallback
     date -d "$ts" "+%s" 2>/dev/null || echo 0
 }
 
@@ -74,19 +72,14 @@ else
     fi
 fi
 
-# --- Build ---
-
-echo "Building prospect-rankings-scraper (release)..."
-cargo build --release -p prospect-rankings-scraper --manifest-path "$BACKEND_DIR/Cargo.toml"
-
-SCRAPER="$BACKEND_DIR/target/release/prospect-rankings-scraper"
+cd "$SCRAPERS_DIR"
 SOURCES_SUCCEEDED=0
 
 # --- Scrape Tankathon (fault-tolerant) ---
 
 echo ""
 echo "=== Scraping Tankathon ==="
-if "$SCRAPER" \
+if bun run src/cli.ts rankings \
     --source tankathon \
     --year "$YEAR" \
     --output "$TANKATHON_FILE"; then
@@ -100,7 +93,7 @@ fi
 
 echo ""
 echo "=== Scraping WalterFootball ==="
-if "$SCRAPER" \
+if bun run src/cli.ts rankings \
     --source walterfootball \
     --year "$YEAR" \
     --output "$WALTERFOOTBALL_FILE"; then
@@ -110,7 +103,7 @@ else
     echo "WARNING: WalterFootball scrape failed (exit $?). Continuing..."
 fi
 
-# --- Merge (only if at least one source succeeded) ---
+# --- Merge ---
 
 if [ "$SOURCES_SUCCEEDED" -eq 0 ]; then
     echo ""
@@ -120,31 +113,11 @@ fi
 
 echo ""
 echo "=== Merging rankings ($SOURCES_SUCCEEDED source(s) succeeded) ==="
-
-MERGE_ARGS=("--merge" "--output" "$MERGED_FILE")
-
-# Build primary/secondary args based on which files exist and have content
-if [ -f "$TANKATHON_FILE" ]; then
-    MERGE_ARGS+=("--primary" "$TANKATHON_FILE")
-    if [ -f "$WALTERFOOTBALL_FILE" ]; then
-        MERGE_ARGS+=("--secondary" "$WALTERFOOTBALL_FILE")
-    fi
-elif [ -f "$WALTERFOOTBALL_FILE" ]; then
-    MERGE_ARGS+=("--primary" "$WALTERFOOTBALL_FILE")
-else
-    echo "ERROR: No ranking files found to merge."
-    exit 1
-fi
-
-# Only run merge if we have both primary and secondary
-if [[ " ${MERGE_ARGS[*]} " == *" --secondary "* ]]; then
-    "$SCRAPER" "${MERGE_ARGS[@]}"
-    echo "Merge complete."
-else
-    echo "Only one source available — copying as merged output."
-    cp "${MERGE_ARGS[3]}" "$MERGED_FILE"
-    echo "Copied ${MERGE_ARGS[3]} to $MERGED_FILE"
-fi
+bun run src/cli.ts rankings \
+    --merge \
+    --year "$YEAR" \
+    --output "$MERGED_FILE"
+echo "Merge complete."
 
 # --- Optional commit ---
 
@@ -155,9 +128,8 @@ if [ "$COMMIT" = true ]; then
         if [ -f "$f" ] && ! git diff --quiet "$f" 2>/dev/null; then
             CHANGED_FILES+=("$f")
         fi
-        # Also pick up newly created (untracked) files
         if [ -f "$f" ] && git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
-            : # already tracked, handled by diff above
+            : # already tracked
         elif [ -f "$f" ]; then
             CHANGED_FILES+=("$f")
         fi

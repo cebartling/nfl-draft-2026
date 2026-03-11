@@ -18,32 +18,104 @@ const NFL_TEAMS: &[(&str, &str, &str, &str, &str)] = &[
     ("Buffalo Bills", "BUF", "Buffalo", "AFC", "AFC East"),
     ("Carolina Panthers", "CAR", "Charlotte", "NFC", "NFC South"),
     ("Chicago Bears", "CHI", "Chicago", "NFC", "NFC North"),
-    ("Cincinnati Bengals", "CIN", "Cincinnati", "AFC", "AFC North"),
+    (
+        "Cincinnati Bengals",
+        "CIN",
+        "Cincinnati",
+        "AFC",
+        "AFC North",
+    ),
     ("Cleveland Browns", "CLE", "Cleveland", "AFC", "AFC North"),
     ("Dallas Cowboys", "DAL", "Dallas", "NFC", "NFC East"),
     ("Denver Broncos", "DEN", "Denver", "AFC", "AFC West"),
     ("Detroit Lions", "DET", "Detroit", "NFC", "NFC North"),
     ("Green Bay Packers", "GB", "Green Bay", "NFC", "NFC North"),
     ("Houston Texans", "HOU", "Houston", "AFC", "AFC South"),
-    ("Indianapolis Colts", "IND", "Indianapolis", "AFC", "AFC South"),
-    ("Jacksonville Jaguars", "JAX", "Jacksonville", "AFC", "AFC South"),
+    (
+        "Indianapolis Colts",
+        "IND",
+        "Indianapolis",
+        "AFC",
+        "AFC South",
+    ),
+    (
+        "Jacksonville Jaguars",
+        "JAX",
+        "Jacksonville",
+        "AFC",
+        "AFC South",
+    ),
     ("Kansas City Chiefs", "KC", "Kansas City", "AFC", "AFC West"),
-    ("Los Angeles Chargers", "LAC", "Los Angeles", "AFC", "AFC West"),
+    (
+        "Los Angeles Chargers",
+        "LAC",
+        "Los Angeles",
+        "AFC",
+        "AFC West",
+    ),
     ("Los Angeles Rams", "LAR", "Los Angeles", "NFC", "NFC West"),
     ("Las Vegas Raiders", "LV", "Las Vegas", "AFC", "AFC West"),
     ("Miami Dolphins", "MIA", "Miami", "AFC", "AFC East"),
-    ("Minnesota Vikings", "MIN", "Minneapolis", "NFC", "NFC North"),
-    ("New England Patriots", "NE", "Foxborough", "AFC", "AFC East"),
-    ("New Orleans Saints", "NO", "New Orleans", "NFC", "NFC South"),
-    ("New York Giants", "NYG", "East Rutherford", "NFC", "NFC East"),
+    (
+        "Minnesota Vikings",
+        "MIN",
+        "Minneapolis",
+        "NFC",
+        "NFC North",
+    ),
+    (
+        "New England Patriots",
+        "NE",
+        "Foxborough",
+        "AFC",
+        "AFC East",
+    ),
+    (
+        "New Orleans Saints",
+        "NO",
+        "New Orleans",
+        "NFC",
+        "NFC South",
+    ),
+    (
+        "New York Giants",
+        "NYG",
+        "East Rutherford",
+        "NFC",
+        "NFC East",
+    ),
     ("New York Jets", "NYJ", "East Rutherford", "AFC", "AFC East"),
-    ("Philadelphia Eagles", "PHI", "Philadelphia", "NFC", "NFC East"),
-    ("Pittsburgh Steelers", "PIT", "Pittsburgh", "AFC", "AFC North"),
+    (
+        "Philadelphia Eagles",
+        "PHI",
+        "Philadelphia",
+        "NFC",
+        "NFC East",
+    ),
+    (
+        "Pittsburgh Steelers",
+        "PIT",
+        "Pittsburgh",
+        "AFC",
+        "AFC North",
+    ),
     ("Seattle Seahawks", "SEA", "Seattle", "NFC", "NFC West"),
-    ("San Francisco 49ers", "SF", "Santa Clara", "NFC", "NFC West"),
+    (
+        "San Francisco 49ers",
+        "SF",
+        "Santa Clara",
+        "NFC",
+        "NFC West",
+    ),
     ("Tampa Bay Buccaneers", "TB", "Tampa", "NFC", "NFC South"),
     ("Tennessee Titans", "TEN", "Nashville", "AFC", "AFC South"),
-    ("Washington Commanders", "WAS", "Landover", "NFC", "NFC East"),
+    (
+        "Washington Commanders",
+        "WAS",
+        "Landover",
+        "NFC",
+        "NFC East",
+    ),
 ];
 
 async fn seed_all_nfl_teams(client: &reqwest::Client, base_url: &str) {
@@ -181,10 +253,7 @@ async fn test_realistic_draft_initialize_uses_trade_data() {
 
     // 7. Verify via GET endpoint too
     let get_resp = client
-        .get(&format!(
-            "{}/api/v1/drafts/{}/picks",
-            base_url, draft_id
-        ))
+        .get(&format!("{}/api/v1/drafts/{}/picks", base_url, draft_id))
         .timeout(Duration::from_secs(5))
         .send()
         .await

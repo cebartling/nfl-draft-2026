@@ -102,14 +102,13 @@ pub async fn create_combine_results(
     Json(req): Json<CreateCombineResultsRequest>,
 ) -> ApiResult<(StatusCode, Json<CombineResultsResponse>)> {
     let source = match &req.source {
-        Some(s) => s.parse::<CombineSource>().map_err(|e| {
-            ApiError::BadRequest(format!("Invalid source: {}", e))
-        })?,
+        Some(s) => s
+            .parse::<CombineSource>()
+            .map_err(|e| ApiError::BadRequest(format!("Invalid source: {}", e)))?,
         None => CombineSource::Combine,
     };
 
-    let mut results = CombineResults::new(req.player_id, req.year)?
-        .with_source(source);
+    let mut results = CombineResults::new(req.player_id, req.year)?.with_source(source);
 
     if let Some(time) = req.forty_yard_dash {
         results = results.with_forty_yard_dash(time)?;

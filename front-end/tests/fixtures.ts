@@ -306,10 +306,7 @@ export function createMockDraftWithPicks(
 /**
  * Helper function to simulate picks being made
  */
-export function simulatePicks(
-	picks: DraftPick[],
-	numPicksToMake: number
-): DraftPick[] {
+export function simulatePicks(picks: DraftPick[], numPicksToMake: number): DraftPick[] {
 	return picks.map((pick, index) => {
 		if (index < numPicksToMake) {
 			const playerIndex = index % mockPlayers.length;

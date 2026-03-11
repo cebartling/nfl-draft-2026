@@ -324,9 +324,7 @@ pub async fn auto_pick_run(
 
     // Register a cancellation flag so pause_session can signal us to stop
     let cancel_flag = Arc::new(AtomicBool::new(false));
-    state
-        .auto_pick_cancel
-        .insert(id, Arc::clone(&cancel_flag));
+    state.auto_pick_cancel.insert(id, Arc::clone(&cancel_flag));
 
     let mut session = state
         .session_repo
@@ -405,7 +403,12 @@ pub async fn auto_pick_run(
 
             // Persist PickMade event for audit trail
             let event = DraftEvent::pick_made(
-                id, pick.id, pick.team_id, player_id, pick.round, pick.pick_number,
+                id,
+                pick.id,
+                pick.team_id,
+                player_id,
+                pick.round,
+                pick.pick_number,
             );
             state.event_repo.create(&event).await?;
 

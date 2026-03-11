@@ -35,10 +35,7 @@ describe('freaksApi', () => {
 
 			const result = await freaksApi.loadByYear(2026);
 
-			expect(mockGet).toHaveBeenCalledWith(
-				'/feldman-freaks?year=2026',
-				expect.any(Object),
-			);
+			expect(mockGet).toHaveBeenCalledWith('/feldman-freaks?year=2026', expect.any(Object));
 			expect(result).toBeInstanceOf(Map);
 			expect(result.size).toBe(2);
 
@@ -62,10 +59,7 @@ describe('freaksApi', () => {
 
 			const result = await freaksApi.loadByYear(2025);
 
-			expect(mockGet).toHaveBeenCalledWith(
-				'/feldman-freaks?year=2025',
-				expect.any(Object),
-			);
+			expect(mockGet).toHaveBeenCalledWith('/feldman-freaks?year=2025', expect.any(Object));
 			expect(result).toBeInstanceOf(Map);
 			expect(result.size).toBe(0);
 		});

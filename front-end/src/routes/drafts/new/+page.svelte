@@ -17,7 +17,6 @@
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
 
-
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
 
@@ -72,9 +71,7 @@
 
 			<!-- Draft Name Field -->
 			<div>
-				<label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-					Draft Name
-				</label>
+				<label for="name" class="block text-sm font-medium text-gray-700 mb-2"> Draft Name </label>
 				<input
 					type="text"
 					id="name"

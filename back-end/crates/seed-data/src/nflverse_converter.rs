@@ -118,10 +118,7 @@ pub fn convert_nflverse_to_combine_json(
             Some(names) => names,
             None => {
                 skipped_name += 1;
-                warnings.push(format!(
-                    "Could not split name: '{}'",
-                    row.player_name
-                ));
+                warnings.push(format!("Could not split name: '{}'", row.player_name));
                 continue;
             }
         };
@@ -131,7 +128,10 @@ pub fn convert_nflverse_to_combine_json(
         let canonical_pos = match map_position(&row.pos) {
             Ok(pos) => {
                 let value = serde_json::to_value(pos).expect("Position serializes to JSON");
-                value.as_str().expect("Position serializes as string").to_string()
+                value
+                    .as_str()
+                    .expect("Position serializes as string")
+                    .to_string()
             }
             Err(_) => {
                 skipped_position += 1;
@@ -192,8 +192,7 @@ pub fn parse_nflverse_csv<R: std::io::Read>(reader: R) -> Result<Vec<NflverseCom
     let mut csv_reader = csv::Reader::from_reader(reader);
     let mut rows = Vec::new();
     for result in csv_reader.deserialize() {
-        let row: NflverseCombineRow =
-            result.context("Failed to parse CSV row")?;
+        let row: NflverseCombineRow = result.context("Failed to parse CSV row")?;
         rows.push(row);
     }
     Ok(rows)
@@ -213,8 +212,8 @@ pub fn convert_csv_file(
 
 /// Write the combine JSON data to a file.
 pub fn write_combine_json(data: &CombineFileData, output_path: &str) -> Result<()> {
-    let json = serde_json::to_string_pretty(data)
-        .context("Failed to serialize combine data to JSON")?;
+    let json =
+        serde_json::to_string_pretty(data).context("Failed to serialize combine data to JSON")?;
     std::fs::write(output_path, json + "\n")
         .with_context(|| format!("Failed to write output file: {}", output_path))?;
     Ok(())

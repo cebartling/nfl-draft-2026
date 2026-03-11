@@ -100,10 +100,7 @@ export const AvailablePlayerSchema = z.object({
 export type AvailablePlayer = z.infer<typeof AvailablePlayerSchema>;
 
 /** Convert a Player to an AvailablePlayer with optional ranking badges. */
-export function toAvailablePlayer(
-	player: Player,
-	rankings: RankingBadge[] = [],
-): AvailablePlayer {
+export function toAvailablePlayer(player: Player, rankings: RankingBadge[] = []): AvailablePlayer {
 	return {
 		...player,
 		college: player.college ?? null,

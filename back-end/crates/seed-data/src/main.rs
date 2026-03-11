@@ -1,6 +1,6 @@
 use seed_data::{
-    draft_order_loader, draft_order_validator, feldman_freak_loader, feldman_freak_validator,
-    loader, rankings_loader, rankings_validator, scouting_report_loader,
+    combine_loader, draft_order_loader, draft_order_validator, feldman_freak_loader,
+    feldman_freak_validator, loader, rankings_loader, rankings_validator, scouting_report_loader,
     scouting_report_validator, team_loader, team_need_loader, team_need_validator,
     team_season_loader, team_season_validator, team_validator, validator,
 };
@@ -10,10 +10,10 @@ use clap::{Parser, Subcommand};
 use db::{
     create_pool,
     repositories::{
-        SqlxDraftPickRepository, SqlxDraftRepository, SqlxFeldmanFreakRepository,
-        SqlxPlayerRepository, SqlxProspectRankingRepository, SqlxRankingSourceRepository,
-        SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
-        SqlxTeamSeasonRepository,
+        SqlxCombineResultsRepository, SqlxDraftPickRepository, SqlxDraftRepository,
+        SqlxFeldmanFreakRepository, SqlxPlayerRepository, SqlxProspectRankingRepository,
+        SqlxRankingSourceRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
+        SqlxTeamRepository, SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -75,6 +75,12 @@ enum EntityCommands {
     Freaks {
         #[command(subcommand)]
         action: FreaksActions,
+    },
+
+    /// Manage combine results data
+    Combine {
+        #[command(subcommand)]
+        action: CombineActions,
     },
 }
 
@@ -267,6 +273,34 @@ enum FreaksActions {
 }
 
 #[derive(Subcommand)]
+enum CombineActions {
+    /// Load combine results from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/combine_2026.json")]
+        file: String,
+
+        /// Simulate loading without writing to database
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Clear combine results for a given year
+    Clear {
+        /// The year to clear
+        #[arg(short, long)]
+        year: i32,
+    },
+
+    /// Validate JSON file without loading
+    Validate {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/combine_2026.json")]
+        file: String,
+    },
+}
+
+#[derive(Subcommand)]
 enum RankingsActions {
     /// Load prospect rankings from JSON file (auto-creates new players + scouting reports)
     Load {
@@ -315,6 +349,7 @@ async fn main() -> Result<()> {
         EntityCommands::Scouting { action } => handle_scouting(action).await?,
         EntityCommands::Rankings { action } => handle_rankings(action).await?,
         EntityCommands::Freaks { action } => handle_freaks(action).await?,
+        EntityCommands::Combine { action } => handle_combine(action).await?,
     }
 
     Ok(())
@@ -1089,6 +1124,164 @@ async fn handle_freaks(action: FreaksActions) -> Result<()> {
 
             let deleted = feldman_freak_loader::clear_freaks(year, &freak_repo).await?;
             println!("Deleted {} freaks", deleted);
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_combine(action: CombineActions) -> Result<()> {
+    match action {
+        CombineActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = combine_loader::parse_combine_file(&file)?;
+            println!(
+                "Loaded {} combine entries from file (year {}, source: {})",
+                data.combine_results.len(),
+                data.meta.year,
+                data.meta.source
+            );
+
+            // Validate year is reasonable
+            let mut errors: Vec<String> = Vec::new();
+            let mut warnings: Vec<String> = Vec::new();
+
+            if data.meta.year < 2020 || data.meta.year > 2030 {
+                errors.push(format!(
+                    "Year {} is outside reasonable range (2020-2030)",
+                    data.meta.year
+                ));
+            }
+
+            if data.meta.source.trim().is_empty() {
+                errors.push("Meta source is empty".to_string());
+            }
+
+            let mut entries_with_measurements = 0;
+            let mut entries_without_measurements = 0;
+            let mut empty_source_count = 0;
+            let mut invalid_source_count = 0;
+
+            for (i, entry) in data.combine_results.iter().enumerate() {
+                if entry.source.trim().is_empty() {
+                    errors.push(format!(
+                        "Entry {} ({} {}): source is empty",
+                        i, entry.first_name, entry.last_name
+                    ));
+                    empty_source_count += 1;
+                } else if entry
+                    .source
+                    .parse::<domain::models::CombineSource>()
+                    .is_err()
+                {
+                    errors.push(format!(
+                        "Entry {} ({} {}): invalid source '{}'",
+                        i, entry.first_name, entry.last_name, entry.source
+                    ));
+                    invalid_source_count += 1;
+                }
+
+                if combine_loader::entry_has_any_measurement(entry) {
+                    entries_with_measurements += 1;
+                } else {
+                    entries_without_measurements += 1;
+                }
+            }
+
+            if entries_with_measurements == 0 && !data.combine_results.is_empty() {
+                warnings.push("No entries have any measurements".to_string());
+            }
+
+            println!("\nValidation Summary:");
+            println!(
+                "  Total entries:              {}",
+                data.combine_results.len()
+            );
+            println!(
+                "  With measurements:          {}",
+                entries_with_measurements
+            );
+            println!(
+                "  Without measurements:       {}",
+                entries_without_measurements
+            );
+            if empty_source_count > 0 {
+                println!("  Empty source strings:       {}", empty_source_count);
+            }
+            if invalid_source_count > 0 {
+                println!("  Invalid source strings:     {}", invalid_source_count);
+            }
+
+            if !warnings.is_empty() {
+                println!("\n  Warnings: {}", warnings.len());
+                for w in &warnings {
+                    println!("    - {}", w);
+                }
+            }
+
+            if !errors.is_empty() {
+                println!("\n  Errors: {}", errors.len());
+                for e in &errors {
+                    println!("    - {}", e);
+                }
+                std::process::exit(1);
+            } else {
+                println!("\n  Result: VALID");
+            }
+        }
+
+        CombineActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Loading combine data: {}", file);
+            } else {
+                println!("Loading combine data from: {}", file);
+            }
+
+            let data = combine_loader::parse_combine_file(&file)?;
+            println!(
+                "Parsed {} combine entries from file (year {}, source: {})",
+                data.combine_results.len(),
+                data.meta.year,
+                data.meta.source
+            );
+
+            if dry_run {
+                let stats = combine_loader::load_combine_data_dry_run(&data)?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let player_repo = SqlxPlayerRepository::new(pool.clone());
+                let combine_repo = SqlxCombineResultsRepository::new(pool);
+
+                let stats =
+                    combine_loader::load_combine_data(&data, &player_repo, &combine_repo).await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() {
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        CombineActions::Clear { year } => {
+            println!("Clearing combine results for year {}", year);
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+
+            let result = sqlx::query("DELETE FROM combine_results WHERE year = $1")
+                .bind(year)
+                .execute(&pool)
+                .await?;
+
+            println!("Deleted {} combine results", result.rows_affected());
         }
     }
 

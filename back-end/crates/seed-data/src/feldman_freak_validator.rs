@@ -273,10 +273,7 @@ mod tests {
 
         let result = validate_freaks_data(&data);
         assert!(!result.valid);
-        assert!(result
-            .errors
-            .iter()
-            .any(|e| e.contains("empty position")));
+        assert!(result.errors.iter().any(|e| e.contains("empty position")));
     }
 
     #[test]
@@ -293,10 +290,7 @@ mod tests {
         let result = validate_freaks_data(&data);
         // Empty college is a warning, not an error
         assert!(result.valid);
-        assert!(result
-            .warnings
-            .iter()
-            .any(|w| w.contains("empty college")));
+        assert!(result.warnings.iter().any(|w| w.contains("empty college")));
     }
 
     #[test]
@@ -319,10 +313,7 @@ mod tests {
 
         let result = validate_freaks_data(&data);
         assert!(!result.valid);
-        assert!(result
-            .errors
-            .iter()
-            .any(|e| e.contains("source is empty")));
+        assert!(result.errors.iter().any(|e| e.contains("source is empty")));
     }
 
     #[test]

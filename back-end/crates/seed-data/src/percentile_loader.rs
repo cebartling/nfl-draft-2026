@@ -76,10 +76,7 @@ pub async fn load_percentiles(
         let percentile = match CombinePercentile::new(entry.position.clone(), measurement) {
             Ok(p) => p,
             Err(e) => {
-                errors.push(format!(
-                    "Invalid position '{}': {}",
-                    entry.position, e
-                ));
+                errors.push(format!("Invalid position '{}': {}", entry.position, e));
                 continue;
             }
         };

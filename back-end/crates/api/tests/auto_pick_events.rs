@@ -110,8 +110,26 @@ async fn test_auto_pick_run_stores_pick_made_events() {
     .await
     .unwrap();
 
-    insert_team(&pool, team_1_id, "Team Alpha", "Alpha City", "ALP", "AFC", "AFC East").await;
-    insert_team(&pool, team_2_id, "Team Beta", "Beta City", "BET", "NFC", "NFC East").await;
+    insert_team(
+        &pool,
+        team_1_id,
+        "Team Alpha",
+        "Alpha City",
+        "ALP",
+        "AFC",
+        "AFC East",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_2_id,
+        "Team Beta",
+        "Beta City",
+        "BET",
+        "NFC",
+        "NFC East",
+    )
+    .await;
 
     insert_player(&pool, player_1_id, "Alpha", "Player", "QB").await;
     insert_player(&pool, player_2_id, "Beta", "Player", "WR").await;
@@ -191,8 +209,14 @@ async fn test_auto_pick_run_stores_pick_made_events() {
 
     for event in &events {
         let data: Value = event.event_data.clone();
-        assert!(data["pick_id"].is_string(), "event_data should contain pick_id");
-        assert!(data["team_id"].is_string(), "event_data should contain team_id");
+        assert!(
+            data["pick_id"].is_string(),
+            "event_data should contain pick_id"
+        );
+        assert!(
+            data["team_id"].is_string(),
+            "event_data should contain team_id"
+        );
         assert!(
             data["player_id"].is_string(),
             "event_data should contain player_id"
@@ -233,8 +257,26 @@ async fn test_auto_pick_run_response_includes_pick_details() {
     .await
     .unwrap();
 
-    insert_team(&pool, team_1_id, "East Eagles", "East", "EEA", "AFC", "AFC East").await;
-    insert_team(&pool, team_2_id, "West Wolves", "West", "WWO", "NFC", "NFC West").await;
+    insert_team(
+        &pool,
+        team_1_id,
+        "East Eagles",
+        "East",
+        "EEA",
+        "AFC",
+        "AFC East",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_2_id,
+        "West Wolves",
+        "West",
+        "WWO",
+        "NFC",
+        "NFC West",
+    )
+    .await;
 
     insert_player(&pool, player_1_id, "Jake", "Quarterback", "QB").await;
     insert_player(&pool, player_2_id, "Sam", "Receiver", "WR").await;
@@ -281,7 +323,10 @@ async fn test_auto_pick_run_response_includes_pick_details() {
 
     // Verify each pick has detailed fields
     for pick in picks_made {
-        assert!(pick["player_id"].is_string(), "player_id should be non-null");
+        assert!(
+            pick["player_id"].is_string(),
+            "player_id should be non-null"
+        );
         assert!(pick["round"].is_number(), "round should be present");
         assert!(
             pick["pick_number"].is_number(),
@@ -349,9 +394,36 @@ async fn test_auto_pick_run_all_picks_unique_players() {
     .unwrap();
 
     // Create 4 teams
-    insert_team(&pool, team_1, "North Bears", "North", "NBR", "AFC", "AFC North").await;
-    insert_team(&pool, team_2, "South Lions", "South", "SLI", "AFC", "AFC South").await;
-    insert_team(&pool, team_3, "East Hawks", "East", "EHK", "NFC", "NFC East").await;
+    insert_team(
+        &pool,
+        team_1,
+        "North Bears",
+        "North",
+        "NBR",
+        "AFC",
+        "AFC North",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_2,
+        "South Lions",
+        "South",
+        "SLI",
+        "AFC",
+        "AFC South",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_3,
+        "East Hawks",
+        "East",
+        "EHK",
+        "NFC",
+        "NFC East",
+    )
+    .await;
     insert_team(&pool, team_4, "West Rams", "West", "WRM", "NFC", "NFC West").await;
 
     // Create 4 players with scouting reports
@@ -422,10 +494,7 @@ async fn test_auto_pick_run_all_picks_unique_players() {
 
     assert_eq!(db_picks.len(), 4, "All 4 picks should have player_id in DB");
 
-    let mut db_player_ids: Vec<Uuid> = db_picks
-        .iter()
-        .map(|p| p.player_id.unwrap())
-        .collect();
+    let mut db_player_ids: Vec<Uuid> = db_picks.iter().map(|p| p.player_id.unwrap()).collect();
     db_player_ids.sort();
     db_player_ids.dedup();
     assert_eq!(
@@ -464,8 +533,26 @@ async fn test_auto_pick_run_completes_draft_and_stores_completion_event() {
     .await
     .unwrap();
 
-    insert_team(&pool, team_1_id, "Finish First", "City A", "FFA", "AFC", "AFC East").await;
-    insert_team(&pool, team_2_id, "Done Deal", "City B", "DDB", "NFC", "NFC East").await;
+    insert_team(
+        &pool,
+        team_1_id,
+        "Finish First",
+        "City A",
+        "FFA",
+        "AFC",
+        "AFC East",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_2_id,
+        "Done Deal",
+        "City B",
+        "DDB",
+        "NFC",
+        "NFC East",
+    )
+    .await;
 
     insert_player(&pool, player_1_id, "First", "Pick", "QB").await;
     insert_player(&pool, player_2_id, "Second", "Pick", "RB").await;
@@ -582,9 +669,36 @@ async fn test_auto_pick_run_picks_have_sequential_timestamps() {
     .await
     .unwrap();
 
-    insert_team(&pool, team_1, "Seq Team A", "Seq A", "SQA", "AFC", "AFC East").await;
-    insert_team(&pool, team_2, "Seq Team B", "Seq B", "SQB", "AFC", "AFC North").await;
-    insert_team(&pool, team_3, "Seq Team C", "Seq C", "SQC", "NFC", "NFC East").await;
+    insert_team(
+        &pool,
+        team_1,
+        "Seq Team A",
+        "Seq A",
+        "SQA",
+        "AFC",
+        "AFC East",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_2,
+        "Seq Team B",
+        "Seq B",
+        "SQB",
+        "AFC",
+        "AFC North",
+    )
+    .await;
+    insert_team(
+        &pool,
+        team_3,
+        "Seq Team C",
+        "Seq C",
+        "SQC",
+        "NFC",
+        "NFC East",
+    )
+    .await;
 
     insert_player(&pool, player_1, "Seq", "Player1", "QB").await;
     insert_scouting_report(&pool, player_1, team_1, 9.0).await;

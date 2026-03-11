@@ -4,7 +4,14 @@
 	import { playersApi, rankingsApi } from '$api';
 	import { logger } from '$lib/utils/logger';
 	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
-	import type { AvailablePlayer, ScoutingReport, CombineResults, RasScore, PlayerRanking, RankingSource } from '$types';
+	import type {
+		AvailablePlayer,
+		ScoutingReport,
+		CombineResults,
+		RasScore,
+		PlayerRanking,
+		RankingSource,
+	} from '$types';
 
 	interface Props {
 		player: AvailablePlayer;
@@ -120,10 +127,7 @@
 	$effect(() => {
 		if (activeTab === 'rankings' && !hasEmbeddedRankings && !rankingsLoaded && !isLoadingRankings) {
 			isLoadingRankings = true;
-			Promise.all([
-				rankingsApi.getPlayerRankings(player.id),
-				rankingsApi.listSources(),
-			])
+			Promise.all([rankingsApi.getPlayerRankings(player.id), rankingsApi.listSources()])
 				.then(([rankings, sources]) => {
 					playerRankings = rankings;
 					rankingSources = sources;
@@ -214,7 +218,9 @@
 				{#if player.feldman_freak}
 					<div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
 						<div class="flex items-center gap-2 mb-2">
-							<span class="inline-flex items-center px-2 py-0.5 rounded text-sm font-bold bg-amber-100 text-amber-800 border border-amber-300">
+							<span
+								class="inline-flex items-center px-2 py-0.5 rounded text-sm font-bold bg-amber-100 text-amber-800 border border-amber-300"
+							>
 								FREAK #{player.feldman_freak.rank}
 							</span>
 							<h4 class="text-sm font-semibold text-amber-900">Feldman's Freaks List</h4>
@@ -229,7 +235,12 @@
 							>
 								Read full article
 								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+									/>
 								</svg>
 							</a>
 						{/if}
@@ -270,10 +281,14 @@
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="bg-gray-50">
 								<tr>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										Source
 									</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										Rank
 									</th>
 								</tr>
@@ -283,7 +298,9 @@
 									<tr>
 										<td class="px-6 py-4 whitespace-nowrap">
 											<div class="flex items-center gap-2">
-												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+												<span
+													class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+												>
 													{badge.abbreviation}
 												</span>
 												<span class="text-sm text-gray-900">{badge.source_name}</span>
@@ -310,13 +327,19 @@
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="bg-gray-50">
 								<tr>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										Source
 									</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										Rank
 									</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										Date
 									</th>
 								</tr>
@@ -326,7 +349,9 @@
 									<tr>
 										<td class="px-6 py-4 whitespace-nowrap">
 											<div class="flex items-center gap-2">
-												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+												<span
+													class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+												>
 													{getSourceAbbreviation(ranking.source_name)}
 												</span>
 												<span class="text-sm text-gray-900">{ranking.source_name}</span>
@@ -403,36 +428,48 @@
 
 					<!-- Speed & Agility -->
 					<div>
-						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Speed & Agility</h4>
+						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+							Speed & Agility
+						</h4>
 						<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 							{#if combineResults.forty_yard_dash}
 								<div class="bg-gray-50 rounded-lg p-3">
 									<p class="text-xs font-medium text-gray-500">40-Yard Dash</p>
-									<p class="text-lg font-bold text-gray-900">{combineResults.forty_yard_dash.toFixed(2)}s</p>
+									<p class="text-lg font-bold text-gray-900">
+										{combineResults.forty_yard_dash.toFixed(2)}s
+									</p>
 								</div>
 							{/if}
 							{#if combineResults.ten_yard_split}
 								<div class="bg-gray-50 rounded-lg p-3">
 									<p class="text-xs font-medium text-gray-500">10-Yard Split</p>
-									<p class="text-lg font-bold text-gray-900">{combineResults.ten_yard_split.toFixed(2)}s</p>
+									<p class="text-lg font-bold text-gray-900">
+										{combineResults.ten_yard_split.toFixed(2)}s
+									</p>
 								</div>
 							{/if}
 							{#if combineResults.twenty_yard_split}
 								<div class="bg-gray-50 rounded-lg p-3">
 									<p class="text-xs font-medium text-gray-500">20-Yard Split</p>
-									<p class="text-lg font-bold text-gray-900">{combineResults.twenty_yard_split.toFixed(2)}s</p>
+									<p class="text-lg font-bold text-gray-900">
+										{combineResults.twenty_yard_split.toFixed(2)}s
+									</p>
 								</div>
 							{/if}
 							{#if combineResults.three_cone_drill}
 								<div class="bg-gray-50 rounded-lg p-3">
 									<p class="text-xs font-medium text-gray-500">3-Cone Drill</p>
-									<p class="text-lg font-bold text-gray-900">{combineResults.three_cone_drill.toFixed(2)}s</p>
+									<p class="text-lg font-bold text-gray-900">
+										{combineResults.three_cone_drill.toFixed(2)}s
+									</p>
 								</div>
 							{/if}
 							{#if combineResults.twenty_yard_shuttle}
 								<div class="bg-gray-50 rounded-lg p-3">
 									<p class="text-xs font-medium text-gray-500">20-Yard Shuttle</p>
-									<p class="text-lg font-bold text-gray-900">{combineResults.twenty_yard_shuttle.toFixed(2)}s</p>
+									<p class="text-lg font-bold text-gray-900">
+										{combineResults.twenty_yard_shuttle.toFixed(2)}s
+									</p>
 								</div>
 							{/if}
 						</div>
@@ -440,7 +477,9 @@
 
 					<!-- Strength & Explosion -->
 					<div>
-						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Strength & Explosion</h4>
+						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+							Strength & Explosion
+						</h4>
 						<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 							{#if combineResults.bench_press}
 								<div class="bg-gray-50 rounded-lg p-3">
@@ -466,7 +505,9 @@
 					<!-- Measurables -->
 					{#if combineResults.arm_length || combineResults.hand_size || combineResults.wingspan}
 						<div>
-							<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Measurables</h4>
+							<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+								Measurables
+							</h4>
 							<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 								{#if combineResults.arm_length}
 									<div class="bg-gray-50 rounded-lg p-3">
@@ -497,7 +538,9 @@
 					<LoadingSpinner size="lg" />
 				</div>
 			{:else if !rasScore}
-				<p class="text-center text-gray-500 py-12">No RAS data available (requires combine results and percentile baselines)</p>
+				<p class="text-center text-gray-500 py-12">
+					No RAS data available (requires combine results and percentile baselines)
+				</p>
 			{:else}
 				<RasScoreCard {rasScore} />
 			{/if}

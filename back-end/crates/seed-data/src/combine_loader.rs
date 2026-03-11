@@ -39,13 +39,49 @@ pub struct CombineFileEntry {
 pub struct CombineLoadStats {
     pub loaded: usize,
     pub skipped: usize,
+    pub skipped_no_data: usize,
     pub player_not_found: usize,
     pub errors: Vec<String>,
+}
+
+impl CombineLoadStats {
+    pub fn print_summary(&self) {
+        println!("\nCombine Load Summary:");
+        println!("  Loaded:           {}", self.loaded);
+        println!("  Skipped (exists): {}", self.skipped);
+        println!("  Skipped (no data): {}", self.skipped_no_data);
+        println!("  Player not found: {}", self.player_not_found);
+        if !self.errors.is_empty() {
+            println!("  Errors: {}", self.errors.len());
+            for err in &self.errors {
+                println!("    - {}", err);
+            }
+        }
+    }
 }
 
 pub fn parse_combine_json(json: &str) -> Result<CombineFileData> {
     let data: CombineFileData = serde_json::from_str(json)?;
     Ok(data)
+}
+
+pub fn parse_combine_file(path: &str) -> Result<CombineFileData> {
+    let json = std::fs::read_to_string(path)?;
+    parse_combine_json(&json)
+}
+
+pub fn entry_has_any_measurement(entry: &CombineFileEntry) -> bool {
+    entry.forty_yard_dash.is_some()
+        || entry.bench_press.is_some()
+        || entry.vertical_jump.is_some()
+        || entry.broad_jump.is_some()
+        || entry.three_cone_drill.is_some()
+        || entry.twenty_yard_shuttle.is_some()
+        || entry.arm_length.is_some()
+        || entry.hand_size.is_some()
+        || entry.wingspan.is_some()
+        || entry.ten_yard_split.is_some()
+        || entry.twenty_yard_split.is_some()
 }
 
 pub async fn load_combine_data(
@@ -55,15 +91,23 @@ pub async fn load_combine_data(
 ) -> Result<CombineLoadStats> {
     let mut loaded = 0;
     let mut skipped = 0;
+    let mut skipped_no_data = 0;
     let mut player_not_found = 0;
     let mut errors: Vec<String> = Vec::new();
 
     // Load all players for name matching
-    let all_players = player_repo.find_all().await.map_err(|e| {
-        anyhow::anyhow!("Failed to load players: {}", e)
-    })?;
+    let all_players = player_repo
+        .find_all()
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to load players: {}", e))?;
 
     for entry in &data.combine_results {
+        // Skip entries where every measurement is null
+        if !entry_has_any_measurement(entry) {
+            skipped_no_data += 1;
+            continue;
+        }
+
         // Find player by name match
         let player = all_players.iter().find(|p| {
             p.first_name.eq_ignore_ascii_case(&entry.first_name)
@@ -117,7 +161,10 @@ pub async fn load_combine_data(
             results = match results.with_forty_yard_dash(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: forty_yard_dash: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: forty_yard_dash: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -126,7 +173,10 @@ pub async fn load_combine_data(
             results = match results.with_bench_press(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: bench_press: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: bench_press: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -135,7 +185,10 @@ pub async fn load_combine_data(
             results = match results.with_vertical_jump(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: vertical_jump: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: vertical_jump: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -144,7 +197,10 @@ pub async fn load_combine_data(
             results = match results.with_broad_jump(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: broad_jump: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: broad_jump: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -153,7 +209,10 @@ pub async fn load_combine_data(
             results = match results.with_three_cone_drill(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: three_cone_drill: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: three_cone_drill: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -162,7 +221,10 @@ pub async fn load_combine_data(
             results = match results.with_twenty_yard_shuttle(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: twenty_yard_shuttle: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: twenty_yard_shuttle: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -171,7 +233,10 @@ pub async fn load_combine_data(
             results = match results.with_arm_length(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: arm_length: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: arm_length: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -180,7 +245,10 @@ pub async fn load_combine_data(
             results = match results.with_hand_size(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: hand_size: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: hand_size: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -189,7 +257,10 @@ pub async fn load_combine_data(
             results = match results.with_wingspan(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: wingspan: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: wingspan: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -198,7 +269,10 @@ pub async fn load_combine_data(
             results = match results.with_ten_yard_split(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: ten_yard_split: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: ten_yard_split: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -207,7 +281,10 @@ pub async fn load_combine_data(
             results = match results.with_twenty_yard_split(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: twenty_yard_split: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: twenty_yard_split: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -227,7 +304,51 @@ pub async fn load_combine_data(
     Ok(CombineLoadStats {
         loaded,
         skipped,
+        skipped_no_data,
         player_not_found,
+        errors,
+    })
+}
+
+pub fn load_combine_data_dry_run(data: &CombineFileData) -> Result<CombineLoadStats> {
+    let mut valid = 0;
+    let mut skipped_no_data = 0;
+    let mut errors: Vec<String> = Vec::new();
+
+    for entry in &data.combine_results {
+        // Check if entry has any measurements
+        if !entry_has_any_measurement(entry) {
+            skipped_no_data += 1;
+            continue;
+        }
+
+        // Validate source string parses to a valid CombineSource
+        if let Err(e) = entry.source.parse::<CombineSource>() {
+            errors.push(format!(
+                "Invalid source '{}' for {} {}: {}",
+                entry.source, entry.first_name, entry.last_name, e
+            ));
+            continue;
+        }
+
+        valid += 1;
+    }
+
+    println!("\nDry Run Summary:");
+    println!("  Valid entries:        {}", valid);
+    println!("  Skipped (no data):   {}", skipped_no_data);
+    if !errors.is_empty() {
+        println!("  Errors:              {}", errors.len());
+        for err in &errors {
+            println!("    - {}", err);
+        }
+    }
+
+    Ok(CombineLoadStats {
+        loaded: valid,
+        skipped: 0,
+        skipped_no_data,
+        player_not_found: 0,
         errors,
     })
 }

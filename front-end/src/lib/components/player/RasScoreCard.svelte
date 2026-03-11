@@ -21,7 +21,7 @@
 			{ label: 'Strength', score: rasScore.strength_score },
 			{ label: 'Explosion', score: rasScore.explosion_score },
 			{ label: 'Agility', score: rasScore.agility_score },
-		].filter((c) => c.score !== null),
+		].filter((c) => c.score !== null)
 	);
 </script>
 

@@ -70,9 +70,7 @@ export const sessionsApi = {
 	/**
 	 * Run auto-picks for AI-controlled teams until a user-controlled team's turn
 	 */
-	async autoPickRun(
-		id: string
-	): Promise<{ session: DraftSession; picks_made: DraftPick[] }> {
+	async autoPickRun(id: string): Promise<{ session: DraftSession; picks_made: DraftPick[] }> {
 		return apiClient.post(
 			`/sessions/${id}/auto-pick-run`,
 			{},

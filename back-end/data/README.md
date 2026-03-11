@@ -1,12 +1,23 @@
-# NFL Draft Player Data
+# NFL Draft Data Files
 
 ## Overview
 
-This directory contains manually curated NFL Draft prospect data used to seed the database.
+This directory contains NFL Draft data used to seed the database. Files are either manually curated or produced by scraper crates. See [documentation/data-pipeline.md](../../documentation/data-pipeline.md) for the full data pipeline documentation.
 
 ## Files
 
-- `players_2026.json` - Top 150 prospects for the 2026 NFL Draft class
+| File | Source | Description |
+|------|--------|-------------|
+| `players_2026.json` | Manual / scraped | Top 150+ prospects for the 2026 NFL Draft class |
+| `combine_2026.json` | `bun run scrape combine --merge` | Real scraped combine data (used by seed handler via `include_str!`) |
+| `combine_2026_pfr.json` | `bun run scrape combine --source pfr` | PFR-only combine data (merge input) |
+| `combine_2026_mockdraftable.json` | `bun run scrape combine --source mockdraftable` | Mockdraftable-only combine data (merge input) |
+| `combine_percentiles.json` | `bun run scrape combine --template` | Combine percentile baselines from NFL averages |
+| `draft_order_2026.json` | Scraped | Draft pick order for 2026 |
+| `teams_nfl.json` | Manual | All 32 NFL teams |
+| `team_needs_2026.json` | Manual | Team positional needs |
+| `team_seasons_2025.json` | Manual | 2025 season records |
+| `rankings/` | `bun run scrape rankings` | Prospect big board rankings by source |
 
 ## Data Sources
 
@@ -45,11 +56,19 @@ Source data may use various position abbreviations. The seed tool normalizes the
 
 ## Updating Data
 
+### Scraping Real Combine Results
+
+```bash
+# From the repository root — scrapes PFR + Mockdraftable and merges
+./scripts/scrape-combine-results.sh
+```
+
 ### After NFL Combine (Late February/March)
 
-1. Update `players_2026.json` with official measurements
-2. Clear existing data: `cargo run -p seed-data clear --year 2026`
-3. Reload: `cargo run -p seed-data load`
+1. Scrape real combine data (see above)
+2. Update `players_2026.json` with official measurements if needed
+3. Rebuild the API: `cargo build -p api` (or `docker compose up --build`)
+4. Re-seed: `curl -X POST http://localhost:8000/api/v1/admin/seed-combine-data`
 
 ### Adding More Prospects
 

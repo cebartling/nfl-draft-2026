@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# scrape-draft-order.sh — Build and run the draft-order-scraper.
+# scrape-draft-order.sh — Run the TypeScript/Bun draft order scraper.
 #
 # Features:
 #   - Staleness check: skips if last scrape was < STALENESS_HOURS ago (default 24)
@@ -14,11 +14,11 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BACKEND_DIR="$REPO_ROOT/back-end"
+SCRAPERS_DIR="$REPO_ROOT/scrapers"
 YEAR="${YEAR:-2026}"
 STALENESS_HOURS="${STALENESS_HOURS:-24}"
-OUTPUT_FILE="$BACKEND_DIR/data/draft_order_${YEAR}.json"
-TIMESTAMP_FILE="$BACKEND_DIR/data/.draft_order_last_scraped"
+OUTPUT_FILE="$REPO_ROOT/back-end/data/draft_order_${YEAR}.json"
+TIMESTAMP_FILE="$REPO_ROOT/back-end/data/.draft_order_last_scraped"
 
 FORCE=false
 COMMIT=false
@@ -37,13 +37,11 @@ done
 
 # --- Staleness check ---
 
-# Parse an ISO 8601 / RFC 3339 timestamp to epoch seconds (portable macOS + Linux)
 parse_timestamp() {
     local ts="$1"
     if date -j -f "%Y-%m-%dT%H:%M:%S" "${ts%%.*}" "+%s" 2>/dev/null; then
         return
     fi
-    # Linux fallback
     date -d "$ts" "+%s" 2>/dev/null || echo 0
 }
 
@@ -67,13 +65,10 @@ else
     fi
 fi
 
-# --- Build and run ---
+# --- Run scraper ---
 
-echo "Building draft-order-scraper (release)..."
-cargo build --release -p draft-order-scraper --manifest-path "$BACKEND_DIR/Cargo.toml"
-
-echo "Running scraper for year $YEAR..."
-"$BACKEND_DIR/target/release/draft-order-scraper" \
+cd "$SCRAPERS_DIR"
+bun run src/cli.ts draft-order \
     --year "$YEAR" \
     --output "$OUTPUT_FILE"
 

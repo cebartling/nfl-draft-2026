@@ -1,0 +1,144 @@
+name: Backend Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'back-end/**'
+      - '.github/workflows/backend-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'back-end/**'
+      - '.github/workflows/backend-tests.yml'
+
+concurrency:
+  group: backend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  SQLX_OFFLINE: true
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            back-end/target
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('back-end/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-
+
+      - name: Check formatting
+        working-directory: back-end
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        working-directory: back-end
+        run: cargo clippy --workspace -- -D warnings
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            back-end/target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('back-end/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
+
+      - name: Run unit tests (no database required)
+        working-directory: back-end
+        run: |
+          cargo test -p domain
+          cargo test -p seed-data --lib
+          cargo test -p websocket
+
+  acceptance-tests:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests]
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: nfl_draft_user
+          POSTGRES_PASSWORD: nfl_draft_pass
+          POSTGRES_DB: nfl_draft_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nfl_draft_user -d nfl_draft_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            back-end/target
+          key: ${{ runner.os }}-cargo-acceptance-${{ hashFiles('back-end/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-acceptance-
+
+      - name: Run database migrations
+        working-directory: back-end
+        env:
+          DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
+        run: sqlx migrate run
+
+      - name: Run acceptance tests
+        working-directory: back-end
+        env:
+          TEST_DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
+          DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
+        run: cargo test -p api --tests -- --test-threads=1
+
+      - name: Run db crate integration tests
+        working-directory: back-end
+        env:
+          TEST_DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
+          DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
+        run: cargo test -p db -- --test-threads=1

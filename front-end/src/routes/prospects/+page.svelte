@@ -62,12 +62,12 @@
 				map.set(p.id, p);
 			}
 			return map;
-		})(),
+		})()
 	);
 
 	// Filter to only ranked players, then apply search/group/position filters
 	let filteredSortedIds = $derived(
-		filterProspects(sortedPlayerIds, playerMap, searchQuery, selectedGroup, selectedPosition),
+		filterProspects(sortedPlayerIds, playerMap, searchQuery, selectedGroup, selectedPosition)
 	);
 
 	let unrankedCount = $derived(playersState.allPlayers.length - sortedPlayerIds.length);
@@ -211,7 +211,9 @@
 					<span class="ml-3 text-sm text-gray-500">Loading rankings...</span>
 				</div>
 			{:else if filteredSortedIds.length === 0}
-				<div class="text-center py-8 text-gray-600">No ranked prospects found matching your filters.</div>
+				<div class="text-center py-8 text-gray-600">
+					No ranked prospects found matching your filters.
+				</div>
 			{:else}
 				<ProspectRankingsTable
 					players={playersState.allPlayers}

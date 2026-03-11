@@ -23,11 +23,7 @@ async fn create_player(client: &reqwest::Client, base_url: &str) -> uuid::Uuid {
 }
 
 /// Helper to create combine results for a player
-async fn create_combine_results(
-    client: &reqwest::Client,
-    base_url: &str,
-    player_id: uuid::Uuid,
-) {
+async fn create_combine_results(client: &reqwest::Client, base_url: &str, player_id: uuid::Uuid) {
     let resp = client
         .post(format!("{}/api/v1/combine-results", base_url))
         .json(&json!({
@@ -195,9 +191,16 @@ async fn test_get_ras_score_for_player() {
     assert_eq!(ras["player_id"], player_id.to_string());
 
     // Should have an overall score (we provided all measurements)
-    assert!(ras["overall_score"].is_number(), "Expected overall_score to be a number");
+    assert!(
+        ras["overall_score"].is_number(),
+        "Expected overall_score to be a number"
+    );
     let overall = ras["overall_score"].as_f64().unwrap();
-    assert!(overall >= 0.0 && overall <= 10.0, "RAS should be 0-10, got {}", overall);
+    assert!(
+        overall >= 0.0 && overall <= 10.0,
+        "RAS should be 0-10, got {}",
+        overall
+    );
 
     // Should have category scores
     assert!(ras["size_score"].is_number());
@@ -207,7 +210,10 @@ async fn test_get_ras_score_for_player() {
 
     // Should have individual scores
     let individual = ras["individual_scores"].as_array().unwrap();
-    assert!(individual.len() >= 6, "Should have at least 6 individual scores");
+    assert!(
+        individual.len() >= 6,
+        "Should have at least 6 individual scores"
+    );
 }
 
 #[tokio::test]
@@ -240,7 +246,10 @@ async fn test_ras_score_requires_minimum_measurements() {
 
     let ras: serde_json::Value = resp.json().await.unwrap();
     // Should have null overall score due to insufficient measurements
-    assert!(ras["overall_score"].is_null(), "Expected null overall score with few measurements");
+    assert!(
+        ras["overall_score"].is_null(),
+        "Expected null overall score with few measurements"
+    );
     assert!(ras["explanation"].is_string(), "Should have explanation");
 }
 
@@ -263,7 +272,13 @@ async fn test_ras_score_includes_category_breakdown() {
     let ras: serde_json::Value = resp.json().await.unwrap();
 
     // Check all category scores exist
-    for category in &["size_score", "speed_score", "strength_score", "explosion_score", "agility_score"] {
+    for category in &[
+        "size_score",
+        "speed_score",
+        "strength_score",
+        "explosion_score",
+        "agility_score",
+    ] {
         assert!(
             ras[category].is_number(),
             "Expected {} to be a number, got {:?}",
@@ -271,7 +286,12 @@ async fn test_ras_score_includes_category_breakdown() {
             ras[category]
         );
         let score = ras[category].as_f64().unwrap();
-        assert!(score >= 0.0 && score <= 10.0, "{} should be 0-10, got {}", category, score);
+        assert!(
+            score >= 0.0 && score <= 10.0,
+            "{} should be 0-10, got {}",
+            category,
+            score
+        );
     }
 }
 

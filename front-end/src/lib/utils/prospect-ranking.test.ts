@@ -20,9 +20,7 @@ describe('computeConsensusRankings', () => {
 	});
 
 	it('should compute average rank across multiple sources', () => {
-		const input = new Map([
-			['p1', [badge('ESPN', 3), badge('Tankathon', 7), badge('Walter', 5)]],
-		]);
+		const input = new Map([['p1', [badge('ESPN', 3), badge('Tankathon', 7), badge('Walter', 5)]]]);
 
 		const result = computeConsensusRankings(input);
 
@@ -109,9 +107,7 @@ describe('sortByConsensusRank', () => {
 	});
 
 	it('should handle single player', () => {
-		const rankings = new Map([
-			['p1', { playerId: 'p1', consensusRank: 1, sourceCount: 5 }],
-		]);
+		const rankings = new Map([['p1', { playerId: 'p1', consensusRank: 1, sourceCount: 5 }]]);
 
 		const result = sortByConsensusRank(rankings);
 

@@ -220,9 +220,9 @@ async fn initialize_realistic_picks(
     // Try multiple paths to support both local development and Docker environments.
     let filename = format!("draft_order_{}.json", year);
     let candidates = [
-        format!("data/{}", filename),                         // back-end/data/ (when CWD is back-end/, e.g. `cargo run` from back-end/)
-        format!("../../data/{}", filename),                   // back-end/data/ (cargo test from crate directory)
-        format!("/app/data/{}", filename),                    // Docker container path
+        format!("data/{}", filename), // back-end/data/ (when CWD is back-end/, e.g. `cargo run` from back-end/)
+        format!("../../data/{}", filename), // back-end/data/ (cargo test from crate directory)
+        format!("/app/data/{}", filename), // Docker container path
     ];
 
     let data = match candidates
@@ -486,26 +486,36 @@ pub async fn get_available_players(
     let sources_fut = state.ranking_source_repo.find_all();
     let freaks_fut = state.feldman_freak_repo.find_by_year(draft.year);
 
-    let (all_players, all_rankings, sources, scouting_map, freaks) = if let Some(team_id) = params.team_id {
-        let scouting_fut = state.scouting_report_repo.find_by_team_id(team_id);
-        let (players_res, rankings_res, sources_res, scouting_res, freaks_res) =
-            tokio::join!(players_fut, rankings_fut, sources_fut, scouting_fut, freaks_fut);
-        let map: HashMap<Uuid, domain::models::ScoutingReport> = scouting_res?
-            .into_iter()
-            .map(|r| (r.player_id, r))
-            .collect();
-        (players_res?, rankings_res?, sources_res?, map, freaks_res?)
-    } else {
-        let (players_res, rankings_res, sources_res, freaks_res) =
-            tokio::join!(players_fut, rankings_fut, sources_fut, freaks_fut);
-        (players_res?, rankings_res?, sources_res?, HashMap::new(), freaks_res?)
-    };
+    let (all_players, all_rankings, sources, scouting_map, freaks) =
+        if let Some(team_id) = params.team_id {
+            let scouting_fut = state.scouting_report_repo.find_by_team_id(team_id);
+            let (players_res, rankings_res, sources_res, scouting_res, freaks_res) = tokio::join!(
+                players_fut,
+                rankings_fut,
+                sources_fut,
+                scouting_fut,
+                freaks_fut
+            );
+            let map: HashMap<Uuid, domain::models::ScoutingReport> = scouting_res?
+                .into_iter()
+                .map(|r| (r.player_id, r))
+                .collect();
+            (players_res?, rankings_res?, sources_res?, map, freaks_res?)
+        } else {
+            let (players_res, rankings_res, sources_res, freaks_res) =
+                tokio::join!(players_fut, rankings_fut, sources_fut, freaks_fut);
+            (
+                players_res?,
+                rankings_res?,
+                sources_res?,
+                HashMap::new(),
+                freaks_res?,
+            )
+        };
 
     // Build freaks lookup by player_id
-    let freaks_map: HashMap<Uuid, domain::models::FeldmanFreak> = freaks
-        .into_iter()
-        .map(|f| (f.player_id, f))
-        .collect();
+    let freaks_map: HashMap<Uuid, domain::models::FeldmanFreak> =
+        freaks.into_iter().map(|f| (f.player_id, f)).collect();
 
     // 3. Filter out already-picked players
     let available: Vec<_> = all_players

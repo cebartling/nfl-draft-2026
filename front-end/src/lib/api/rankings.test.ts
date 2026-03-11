@@ -67,10 +67,7 @@ describe('rankingsApi', () => {
 
 			const result = await rankingsApi.getPlayerRankings(playerId);
 
-			expect(mockGet).toHaveBeenCalledWith(
-				`/players/${playerId}/rankings`,
-				expect.any(Object),
-			);
+			expect(mockGet).toHaveBeenCalledWith(`/players/${playerId}/rankings`, expect.any(Object));
 			expect(result).toEqual(mockRankings);
 		});
 
@@ -97,7 +94,7 @@ describe('rankingsApi', () => {
 
 			expect(mockGet).toHaveBeenCalledWith(
 				`/ranking-sources/${sourceId}/rankings`,
-				expect.any(Object),
+				expect.any(Object)
 			);
 			expect(result).toEqual(mockRankings);
 		});
@@ -211,9 +208,7 @@ describe('rankingsApi', () => {
 		it('should propagate API errors from loadAllPlayerRankings', async () => {
 			mockGet.mockRejectedValueOnce(new client.ApiClientError('Internal Server Error', 500));
 
-			await expect(rankingsApi.loadAllPlayerRankings()).rejects.toThrow(
-				'Internal Server Error',
-			);
+			await expect(rankingsApi.loadAllPlayerRankings()).rejects.toThrow('Internal Server Error');
 		});
 	});
 });

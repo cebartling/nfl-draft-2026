@@ -15,7 +15,7 @@ const RANKINGS_TANKATHON_JSON: &str = include_str!("../../../../data/rankings/ta
 const RANKINGS_WALTERFOOTBALL_JSON: &str =
     include_str!("../../../../data/rankings/walterfootball_2026.json");
 const COMBINE_PERCENTILES_JSON: &str = include_str!("../../../../data/combine_percentiles.json");
-const COMBINE_2026_MOCK_JSON: &str = include_str!("../../../../data/combine_2026_mock.json");
+const COMBINE_2026_JSON: &str = include_str!("../../../../data/combine_2026.json");
 const FELDMAN_FREAKS_2026_JSON: &str = include_str!("../../../../data/feldman_freaks_2026.json");
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -447,9 +447,7 @@ pub async fn seed_combine_percentiles(
     }
 
     let data = seed_data::percentile_loader::parse_percentile_json(COMBINE_PERCENTILES_JSON)
-        .map_err(|e| {
-            ApiError::InternalError(format!("Failed to parse percentile data: {}", e))
-        })?;
+        .map_err(|e| ApiError::InternalError(format!("Failed to parse percentile data: {}", e)))?;
 
     let stats = seed_data::percentile_loader::load_percentiles(
         &data,
@@ -474,7 +472,7 @@ pub async fn seed_combine_percentiles(
     }))
 }
 
-/// Seed the database with embedded mock combine data for 2026 prospects
+/// Seed the database with embedded 2026 NFL Combine results
 #[utoipa::path(
     post,
     path = "/api/v1/admin/seed-combine-data",
@@ -510,9 +508,8 @@ pub async fn seed_combine_data(
         ));
     }
 
-    let data = seed_data::combine_loader::parse_combine_json(COMBINE_2026_MOCK_JSON).map_err(
-        |e| ApiError::InternalError(format!("Failed to parse combine data: {}", e)),
-    )?;
+    let data = seed_data::combine_loader::parse_combine_json(COMBINE_2026_JSON)
+        .map_err(|e| ApiError::InternalError(format!("Failed to parse combine data: {}", e)))?;
 
     let stats = seed_data::combine_loader::load_combine_data(
         &data,
@@ -581,10 +578,10 @@ pub async fn seed_feldman_freaks(
     }
 
     // Parse the embedded Feldman Freaks data
-    let data =
-        seed_data::feldman_freak_loader::parse_freaks_json(FELDMAN_FREAKS_2026_JSON).map_err(
-            |e| ApiError::InternalError(format!("Failed to parse Feldman Freaks data: {}", e)),
-        )?;
+    let data = seed_data::feldman_freak_loader::parse_freaks_json(FELDMAN_FREAKS_2026_JSON)
+        .map_err(|e| {
+            ApiError::InternalError(format!("Failed to parse Feldman Freaks data: {}", e))
+        })?;
 
     // Validate the data
     let validation = seed_data::feldman_freak_validator::validate_freaks_data(&data);

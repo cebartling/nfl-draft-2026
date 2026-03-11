@@ -1,9 +1,9 @@
 pub mod combine_percentile_repo;
 pub mod combine_results_repo;
 pub mod draft;
-pub mod feldman_freak_repo;
 pub mod draft_strategy_repo;
 pub mod event_repo;
+pub mod feldman_freak_repo;
 pub mod player;
 pub mod prospect_ranking_repo;
 pub mod ranking_source_repo;
@@ -16,10 +16,10 @@ pub mod trade_repo;
 
 pub use combine_percentile_repo::SqlxCombinePercentileRepository;
 pub use combine_results_repo::SqlxCombineResultsRepository;
-pub use feldman_freak_repo::SqlxFeldmanFreakRepository;
 pub use draft::{SqlxDraftPickRepository, SqlxDraftRepository};
 pub use draft_strategy_repo::SqlxDraftStrategyRepository;
 pub use event_repo::EventRepo;
+pub use feldman_freak_repo::SqlxFeldmanFreakRepository;
 pub use player::SqlxPlayerRepository;
 pub use prospect_ranking_repo::SqlxProspectRankingRepository;
 pub use ranking_source_repo::SqlxRankingSourceRepository;

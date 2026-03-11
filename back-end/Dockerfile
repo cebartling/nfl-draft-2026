@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for NFL Draft Simulator Backend
 # Stage 1: Build the application
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.94-bookworm AS builder
 
 # Install system dependencies required for building
 RUN apt-get update && apt-get install -y \
@@ -18,13 +18,11 @@ COPY crates/domain/Cargo.toml ./crates/domain/
 COPY crates/db/Cargo.toml ./crates/db/
 COPY crates/websocket/Cargo.toml ./crates/websocket/
 COPY crates/seed-data/Cargo.toml ./crates/seed-data/
-COPY crates/draft-order-scraper/Cargo.toml ./crates/draft-order-scraper/
-COPY crates/prospect-rankings-scraper/Cargo.toml ./crates/prospect-rankings-scraper/
-COPY crates/combine-data-scraper/Cargo.toml ./crates/combine-data-scraper/
 
 # Build dependencies only (this layer will be cached)
 # Create dummy source files to compile dependencies
-RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src/bin crates/draft-order-scraper/src crates/prospect-rankings-scraper/src crates/combine-data-scraper/src && \
+RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src crates/seed-data/src/bin && \
+    echo "pub fn dummy() {}" > crates/api/src/lib.rs && \
     echo "fn main() {}" > crates/api/src/main.rs && \
     echo "pub fn dummy() {}" > crates/domain/src/lib.rs && \
     echo "pub fn dummy() {}" > crates/db/src/lib.rs && \
@@ -32,9 +30,6 @@ RUN mkdir -p crates/api/src crates/domain/src crates/db/src crates/websocket/src
     echo "pub fn dummy() {}" > crates/seed-data/src/lib.rs && \
     echo "fn main() {}" > crates/seed-data/src/main.rs && \
     echo "fn main() {}" > crates/seed-data/src/bin/nflverse_converter.rs && \
-    echo "fn main() {}" > crates/draft-order-scraper/src/main.rs && \
-    echo "fn main() {}" > crates/prospect-rankings-scraper/src/main.rs && \
-    echo "fn main() {}" > crates/combine-data-scraper/src/main.rs && \
     cargo build --release && \
     rm -rf crates/*/src
 
@@ -55,9 +50,6 @@ RUN touch crates/api/src/main.rs && \
     touch crates/websocket/src/lib.rs && \
     touch crates/seed-data/src/lib.rs && \
     touch crates/seed-data/src/main.rs && \
-    touch crates/draft-order-scraper/src/main.rs && \
-    touch crates/prospect-rankings-scraper/src/main.rs && \
-    touch crates/combine-data-scraper/src/main.rs && \
     cargo build --release -p api
 
 # Stage 2: Create the runtime image

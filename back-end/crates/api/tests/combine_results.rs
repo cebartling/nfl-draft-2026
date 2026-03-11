@@ -307,10 +307,7 @@ async fn test_create_combine_results_with_new_measurables() {
     assert_eq!(db_results.hand_size, Some(bigdecimal_to_f64(9.75)));
     assert_eq!(db_results.wingspan, Some(bigdecimal_to_f64(78.5)));
     assert_eq!(db_results.ten_yard_split, Some(bigdecimal_to_f64(1.55)));
-    assert_eq!(
-        db_results.twenty_yard_split,
-        Some(bigdecimal_to_f64(2.65))
-    );
+    assert_eq!(db_results.twenty_yard_split, Some(bigdecimal_to_f64(2.65)));
 
     common::cleanup_database(&pool).await;
 }

@@ -11,10 +11,7 @@ async fn test_list_feldman_freaks_empty() {
     let client = common::create_client();
 
     let response = client
-        .get(&format!(
-            "{}/api/v1/feldman-freaks?year=2026",
-            base_url
-        ))
+        .get(&format!("{}/api/v1/feldman-freaks?year=2026", base_url))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -65,10 +62,7 @@ async fn test_list_feldman_freaks_with_data() {
 
     // Query the endpoint
     let response = client
-        .get(&format!(
-            "{}/api/v1/feldman-freaks?year=2026",
-            base_url
-        ))
+        .get(&format!("{}/api/v1/feldman-freaks?year=2026", base_url))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -92,12 +86,10 @@ async fn test_list_feldman_freaks_with_data() {
     );
 
     // Verify DB consistency
-    let db_count = sqlx::query!(
-        "SELECT COUNT(*) as count FROM feldman_freaks WHERE year = 2026"
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_count = sqlx::query!("SELECT COUNT(*) as count FROM feldman_freaks WHERE year = 2026")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_count.count.unwrap(), 1);
 }
 
@@ -137,10 +129,7 @@ async fn test_list_feldman_freaks_wrong_year_returns_empty() {
 
     // Query with a different year
     let response = client
-        .get(&format!(
-            "{}/api/v1/feldman-freaks?year=2025",
-            base_url
-        ))
+        .get(&format!("{}/api/v1/feldman-freaks?year=2025", base_url))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -214,10 +203,7 @@ async fn test_list_feldman_freaks_multiple_entries_ordered_by_rank() {
 
     // Query
     let response = client
-        .get(&format!(
-            "{}/api/v1/feldman-freaks?year=2026",
-            base_url
-        ))
+        .get(&format!("{}/api/v1/feldman-freaks?year=2026", base_url))
         .timeout(Duration::from_secs(5))
         .send()
         .await
@@ -233,12 +219,10 @@ async fn test_list_feldman_freaks_multiple_entries_ordered_by_rank() {
     assert_eq!(body[1]["rank"].as_i64().unwrap(), 2);
 
     // Verify DB count matches
-    let db_count = sqlx::query!(
-        "SELECT COUNT(*) as count FROM feldman_freaks WHERE year = 2026"
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_count = sqlx::query!("SELECT COUNT(*) as count FROM feldman_freaks WHERE year = 2026")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(db_count.count.unwrap(), 2);
 }
 
@@ -259,10 +243,7 @@ async fn test_seed_feldman_freaks_succeeds() {
 
     // Seed feldman freaks
     let response = client
-        .post(&format!(
-            "{}/api/v1/admin/seed-feldman-freaks",
-            base_url
-        ))
+        .post(&format!("{}/api/v1/admin/seed-feldman-freaks", base_url))
         .header("X-Seed-Api-Key", "test-seed-key")
         .timeout(Duration::from_secs(30))
         .send()
@@ -278,20 +259,15 @@ async fn test_seed_feldman_freaks_succeeds() {
     );
 
     // Verify data in database
-    let db_count = sqlx::query!(
-        "SELECT COUNT(*) as count FROM feldman_freaks WHERE year = 2026"
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let db_count = sqlx::query!("SELECT COUNT(*) as count FROM feldman_freaks WHERE year = 2026")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert!(db_count.count.unwrap() > 0);
 
     // Verify the API endpoint returns the seeded data
     let list_response = client
-        .get(&format!(
-            "{}/api/v1/feldman-freaks?year=2026",
-            base_url
-        ))
+        .get(&format!("{}/api/v1/feldman-freaks?year=2026", base_url))
         .timeout(Duration::from_secs(5))
         .send()
         .await

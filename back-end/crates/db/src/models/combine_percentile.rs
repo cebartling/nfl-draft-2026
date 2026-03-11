@@ -53,10 +53,9 @@ impl CombinePercentileDb {
     }
 
     pub fn to_domain(self) -> Result<CombinePercentile, DbError> {
-        let measurement = self
-            .measurement
-            .parse()
-            .map_err(|_| DbError::MappingError(format!("Invalid measurement: {}", self.measurement)))?;
+        let measurement = self.measurement.parse().map_err(|_| {
+            DbError::MappingError(format!("Invalid measurement: {}", self.measurement))
+        })?;
 
         Ok(CombinePercentile {
             id: self.id,
@@ -91,7 +90,9 @@ mod tests {
     fn test_domain_to_db_conversion() {
         let domain = CombinePercentile::new("QB".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(100, 4.2, 4.3, 4.35, 4.4, 4.42, 4.45, 4.5, 4.55, 4.6, 4.7, 5.0)
+            .with_percentiles(
+                100, 4.2, 4.3, 4.35, 4.4, 4.42, 4.45, 4.5, 4.55, 4.6, 4.7, 5.0,
+            )
             .unwrap();
 
         let db = CombinePercentileDb::from_domain(&domain);

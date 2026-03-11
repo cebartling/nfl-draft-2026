@@ -65,10 +65,7 @@ impl RasScoringService {
         // Combine measurements
         let measurements: Vec<(&str, Option<f64>)> = vec![
             ("forty_yard_dash", combine_results.forty_yard_dash),
-            (
-                "bench_press",
-                combine_results.bench_press.map(|v| v as f64),
-            ),
+            ("bench_press", combine_results.bench_press.map(|v| v as f64)),
             ("vertical_jump", combine_results.vertical_jump),
             ("broad_jump", combine_results.broad_jump.map(|v| v as f64)),
             ("three_cone_drill", combine_results.three_cone_drill),
@@ -157,10 +154,7 @@ impl RasScoringService {
         // Combine measurements
         let measurements: Vec<(&str, Option<f64>)> = vec![
             ("forty_yard_dash", combine_results.forty_yard_dash),
-            (
-                "bench_press",
-                combine_results.bench_press.map(|v| v as f64),
-            ),
+            ("bench_press", combine_results.bench_press.map(|v| v as f64)),
             ("vertical_jump", combine_results.vertical_jump),
             ("broad_jump", combine_results.broad_jump.map(|v| v as f64)),
             ("three_cone_drill", combine_results.three_cone_drill),
@@ -171,8 +165,7 @@ impl RasScoringService {
 
         for (name, value) in measurements {
             if let Some(raw) = value {
-                if let Some(score) =
-                    score_measurement_from_cache(&position, name, raw, percentiles)
+                if let Some(score) = score_measurement_from_cache(&position, name, raw, percentiles)
                 {
                     individual_scores.push(score);
                 }
@@ -223,10 +216,7 @@ impl RasScoringService {
     }
 
     /// Pre-fetch all percentiles for a position group (for batch scoring).
-    pub async fn fetch_percentiles_for_position(
-        &self,
-        position: &str,
-    ) -> Vec<CombinePercentile> {
+    pub async fn fetch_percentiles_for_position(&self, position: &str) -> Vec<CombinePercentile> {
         self.percentile_repo
             .find_by_position(position)
             .await
@@ -284,11 +274,7 @@ fn score_measurement_from_cache(
 
 /// Calculate what percentile a value falls in, given the percentile breakpoints.
 /// For lower-is-better measurements, we invert the percentile.
-fn calculate_percentile(
-    data: &CombinePercentile,
-    value: f64,
-    measurement: &str,
-) -> f64 {
+fn calculate_percentile(data: &CombinePercentile, value: f64, measurement: &str) -> f64 {
     let is_lower_better = LOWER_IS_BETTER.contains(&measurement);
 
     // The breakpoints from database: min, p10, p20, ..., p90, max
@@ -323,8 +309,8 @@ fn calculate_percentile(
                     if (val_high - val_low).abs() < f64::EPSILON {
                         percentile = pct_low;
                     } else {
-                        percentile =
-                            pct_low + (value - val_low) / (val_high - val_low) * (pct_high - pct_low);
+                        percentile = pct_low
+                            + (value - val_low) / (val_high - val_low) * (pct_high - pct_low);
                     }
                     break;
                 }
@@ -334,8 +320,8 @@ fn calculate_percentile(
                     if (val_low - val_high).abs() < f64::EPSILON {
                         percentile = pct_low;
                     } else {
-                        percentile =
-                            pct_low + (val_low - value) / (val_low - val_high) * (pct_high - pct_low);
+                        percentile = pct_low
+                            + (val_low - value) / (val_low - val_high) * (pct_high - pct_low);
                     }
                     break;
                 }
@@ -452,11 +438,19 @@ mod tests {
 
         // Very fast time (4.35 = p10) → raw percentile ~10 → inverted: ~90 → high
         let pct = calculate_percentile(&data, 4.35, "forty_yard_dash");
-        assert!(pct > 70.0, "Fast 40 should have high percentile, got {}", pct);
+        assert!(
+            pct > 70.0,
+            "Fast 40 should have high percentile, got {}",
+            pct
+        );
 
         // Slow time (4.62 = p90) → raw percentile ~90 → inverted: ~10 → low
         let pct = calculate_percentile(&data, 4.62, "forty_yard_dash");
-        assert!(pct < 30.0, "Slow 40 should have low percentile, got {}", pct);
+        assert!(
+            pct < 30.0,
+            "Slow 40 should have low percentile, got {}",
+            pct
+        );
     }
 
     #[test]
@@ -483,13 +477,24 @@ mod tests {
         ];
 
         let speed = category_average(&scores, SPEED_MEASUREMENTS).unwrap();
-        assert!((speed - 6.5).abs() < 0.01, "Speed should avg 7+6/2 = 6.5, got {}", speed);
+        assert!(
+            (speed - 6.5).abs() < 0.01,
+            "Speed should avg 7+6/2 = 6.5, got {}",
+            speed
+        );
 
         let explosion = category_average(&scores, EXPLOSION_MEASUREMENTS).unwrap();
-        assert!((explosion - 5.0).abs() < 0.01, "Explosion should be 5.0, got {}", explosion);
+        assert!(
+            (explosion - 5.0).abs() < 0.01,
+            "Explosion should be 5.0, got {}",
+            explosion
+        );
 
         let strength = category_average(&scores, STRENGTH_MEASUREMENTS);
-        assert!(strength.is_none(), "No strength measurements, should be None");
+        assert!(
+            strength.is_none(),
+            "No strength measurements, should be None"
+        );
     }
 
     #[test]
@@ -558,8 +563,7 @@ mod tests {
         let data = CombinePercentile::new("WR".to_string(), m)
             .unwrap()
             .with_percentiles(
-                50,
-                20.0, // min
+                50, 20.0, // min
                 20.0, // p10
                 20.0, // p20
                 20.0, // p30
@@ -660,14 +664,46 @@ mod tests {
                 let percentile = match measurement {
                     "height" => Some(make_percentile(position, "height", 70.0, 73.0, 76.0)),
                     "weight" => Some(make_percentile(position, "weight", 185.0, 210.0, 235.0)),
-                    "forty_yard_dash" => Some(make_percentile(position, "forty_yard_dash", 4.35, 4.48, 4.62)),
-                    "vertical_jump" => Some(make_percentile(position, "vertical_jump", 28.0, 36.0, 41.0)),
-                    "broad_jump" => Some(make_percentile(position, "broad_jump", 110.0, 120.0, 130.0)),
-                    "three_cone_drill" => Some(make_percentile(position, "three_cone_drill", 6.7, 7.0, 7.3)),
-                    "twenty_yard_shuttle" => Some(make_percentile(position, "twenty_yard_shuttle", 4.1, 4.3, 4.5)),
-                    "bench_press" => Some(make_percentile(position, "bench_press", 10.0, 16.0, 22.0)),
-                    "ten_yard_split" => Some(make_percentile(position, "ten_yard_split", 1.48, 1.55, 1.62)),
-                    "twenty_yard_split" => Some(make_percentile(position, "twenty_yard_split", 2.5, 2.6, 2.7)),
+                    "forty_yard_dash" => Some(make_percentile(
+                        position,
+                        "forty_yard_dash",
+                        4.35,
+                        4.48,
+                        4.62,
+                    )),
+                    "vertical_jump" => {
+                        Some(make_percentile(position, "vertical_jump", 28.0, 36.0, 41.0))
+                    }
+                    "broad_jump" => {
+                        Some(make_percentile(position, "broad_jump", 110.0, 120.0, 130.0))
+                    }
+                    "three_cone_drill" => {
+                        Some(make_percentile(position, "three_cone_drill", 6.7, 7.0, 7.3))
+                    }
+                    "twenty_yard_shuttle" => Some(make_percentile(
+                        position,
+                        "twenty_yard_shuttle",
+                        4.1,
+                        4.3,
+                        4.5,
+                    )),
+                    "bench_press" => {
+                        Some(make_percentile(position, "bench_press", 10.0, 16.0, 22.0))
+                    }
+                    "ten_yard_split" => Some(make_percentile(
+                        position,
+                        "ten_yard_split",
+                        1.48,
+                        1.55,
+                        1.62,
+                    )),
+                    "twenty_yard_split" => Some(make_percentile(
+                        position,
+                        "twenty_yard_split",
+                        2.5,
+                        2.6,
+                        2.7,
+                    )),
                     _ => None,
                 };
                 Ok(percentile)
@@ -724,7 +760,10 @@ mod tests {
             RasScore::MIN_MEASUREMENTS,
             ras.measurements_used
         );
-        assert!(ras.explanation.is_none(), "No explanation needed when score is produced");
+        assert!(
+            ras.explanation.is_none(),
+            "No explanation needed when score is produced"
+        );
     }
 
     #[tokio::test]
@@ -777,7 +816,10 @@ mod tests {
             RasScore::MIN_MEASUREMENTS,
             ras.measurements_used
         );
-        let explanation = ras.explanation.as_ref().expect("Should have an explanation");
+        let explanation = ras
+            .explanation
+            .as_ref()
+            .expect("Should have an explanation");
         assert!(
             explanation.contains("Insufficient measurements"),
             "Explanation should mention insufficient measurements, got: {}",

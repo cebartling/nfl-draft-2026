@@ -66,7 +66,6 @@ export function formatRawValue(measurement: string, value: number): string {
 		return `${feet}'${inches}"`;
 	}
 	if (measurement === 'weight') return `${value} lbs`;
-	if (['arm_length', 'hand_size', 'wingspan'].includes(measurement))
-		return `${value.toFixed(2)}"`;
+	if (['arm_length', 'hand_size', 'wingspan'].includes(measurement)) return `${value.toFixed(2)}"`;
 	return `${value}`;
 }

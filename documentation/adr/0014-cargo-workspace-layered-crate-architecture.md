@@ -30,11 +30,15 @@ back-end/
 │   ├── domain/             # Business logic, services, models, repository traits
 │   ├── db/                 # SQLx repository implementations, database models
 │   ├── websocket/          # WebSocket connection management
-│   ├── seed-data/          # Data loading pipeline (lib + binary)
-│   ├── draft-order-scraper/        # Standalone scraping tool
-│   └── prospect-rankings-scraper/  # Standalone scraping tool
+│   └── seed-data/          # Data loading pipeline (lib + binary)
 └── migrations/             # SQLx database migrations
+
+scrapers/                   # TypeScript/Bun data scrapers (separate project)
+├── src/                    # CLI, commands, scraping logic, shared utilities
+└── tests/                  # Vitest test suite
 ```
+
+> **Note:** Scraper crates (`draft-order-scraper`, `prospect-rankings-scraper`, `combine-data-scraper`) were originally Rust workspace members but have been migrated to a standalone TypeScript/Bun project in `scrapers/` for faster iteration and simpler HTML parsing. See `documentation/data-pipeline.md` for details.
 
 ### Crate Categories
 
@@ -53,12 +57,11 @@ back-end/
 |-------------|-----------------------------|-----------------------------|
 | `seed-data` | JSON loading and validation | `domain`, `db`              |
 
-**Standalone tool crates** have zero local dependencies:
+**Standalone tools** (migrated to TypeScript/Bun in `scrapers/`):
 
-| Crate                       | Role                                  | Local Dependencies |
-|-----------------------------|---------------------------------------|--------------------|
-| `draft-order-scraper`       | Scrapes draft order data from the web | None               |
-| `prospect-rankings-scraper` | Scrapes prospect rankings from the web| None               |
+| Project | Role | Technology |
+|---------|------|------------|
+| `scrapers/` | Draft order, prospect rankings, combine data scraping | TypeScript/Bun + Cheerio + Playwright |
 
 ### Dependency Graph
 
@@ -69,8 +72,7 @@ graph TD
     db["<strong>db</strong><br/>(SQLx)"]
     ws["<strong>websocket</strong><br/>(realtime)"]
     domain["<strong>domain</strong><br/>(foundation)"]
-    scraper1["<strong>draft-order-scraper</strong><br/>(standalone)"]
-    scraper2["<strong>prospect-rankings-scraper</strong><br/>(standalone)"]
+    scrapers["<strong>scrapers/</strong><br/>(TypeScript/Bun)"]
 
     api --> seed
     api --> db
@@ -80,11 +82,10 @@ graph TD
     db --> domain
     ws --> domain
 
-    style scraper1 fill:#f0f0f0,stroke:#999
-    style scraper2 fill:#f0f0f0,stroke:#999
+    style scrapers fill:#f0f0f0,stroke:#999
 ```
 
-The `domain` crate sits at the bottom with zero local dependencies. It defines models, service logic, and repository traits. The `db` and `websocket` crates depend only on `domain`. The `api` crate coordinates everything. Standalone scrapers are fully independent.
+The `domain` crate sits at the bottom with zero local dependencies. It defines models, service logic, and repository traits. The `db` and `websocket` crates depend only on `domain`. The `api` crate coordinates everything. Scrapers are a separate TypeScript/Bun project that produces JSON files consumed by the `seed-data` crate.
 
 ### Workspace-Level Dependency Management
 
