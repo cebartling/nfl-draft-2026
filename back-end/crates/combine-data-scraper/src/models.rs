@@ -45,18 +45,24 @@ pub struct CombineMeta {
 
 /// Normalize a position abbreviation from various sources (PFR, Mockdraftable)
 /// to the canonical values used in the player database.
+///
+/// This must stay aligned with `seed-data/src/position_mapper.rs`.
 pub fn normalize_position(pos: &str) -> String {
     match pos.trim().to_uppercase().as_str() {
-        "DE" | "OLB" | "EDGE" | "EDGE/LB" | "LB/EDGE" => "EDGE".to_string(),
-        "ILB" | "MLB" => "LB".to_string(),
-        "NT" => "DT".to_string(),
-        "C" | "OG" | "G" => "IOL".to_string(),
-        "FS" | "SS" | "DB" | "SAF" => "S".to_string(),
-        "FB" | "HB" => "RB".to_string(),
-        "T" | "OT" => "OT".to_string(),
-        "QB" | "WR" | "TE" | "RB" | "CB" | "DL" | "DT" | "LB" | "S" | "IOL" | "K" | "P" => {
-            pos.trim().to_uppercase()
-        }
+        "QB" => "QB".to_string(),
+        "RB" | "HB" | "FB" => "RB".to_string(),
+        "WR" => "WR".to_string(),
+        "TE" => "TE".to_string(),
+        "OT" | "T" => "OT".to_string(),
+        "OG" | "G" | "IOL" | "OL" => "OG".to_string(),
+        "C" => "C".to_string(),
+        "DE" | "EDGE" | "EDGE/LB" | "LB/EDGE" => "DE".to_string(),
+        "DT" | "DL" | "NT" => "DT".to_string(),
+        "LB" | "OLB" | "ILB" | "MLB" => "LB".to_string(),
+        "CB" => "CB".to_string(),
+        "S" | "SS" | "FS" | "DB" | "SAF" => "S".to_string(),
+        "K" => "K".to_string(),
+        "P" => "P".to_string(),
         other => other.to_string(),
     }
 }
@@ -164,23 +170,33 @@ mod tests {
         assert_eq!(deserialized.combine_results[0].first_name, "Cam");
     }
 
-    // Position normalization tests
+    // Position normalization tests — aligned with seed-data/src/position_mapper.rs
     #[test]
     fn test_normalize_position_edge_mappings() {
-        assert_eq!(normalize_position("DE"), "EDGE");
-        assert_eq!(normalize_position("OLB"), "EDGE");
-        assert_eq!(normalize_position("EDGE"), "EDGE");
-        assert_eq!(normalize_position("EDGE/LB"), "EDGE");
+        assert_eq!(normalize_position("DE"), "DE");
+        assert_eq!(normalize_position("EDGE"), "DE");
+        assert_eq!(normalize_position("EDGE/LB"), "DE");
+        assert_eq!(normalize_position("LB/EDGE"), "DE");
+    }
+
+    #[test]
+    fn test_normalize_position_linebacker_mappings() {
+        assert_eq!(normalize_position("LB"), "LB");
+        assert_eq!(normalize_position("OLB"), "LB");
+        assert_eq!(normalize_position("ILB"), "LB");
+        assert_eq!(normalize_position("MLB"), "LB");
     }
 
     #[test]
     fn test_normalize_position_interior_mappings() {
-        assert_eq!(normalize_position("ILB"), "LB");
-        assert_eq!(normalize_position("MLB"), "LB");
         assert_eq!(normalize_position("NT"), "DT");
-        assert_eq!(normalize_position("C"), "IOL");
-        assert_eq!(normalize_position("OG"), "IOL");
-        assert_eq!(normalize_position("G"), "IOL");
+        assert_eq!(normalize_position("DL"), "DT");
+        assert_eq!(normalize_position("DT"), "DT");
+        assert_eq!(normalize_position("C"), "C");
+        assert_eq!(normalize_position("OG"), "OG");
+        assert_eq!(normalize_position("G"), "OG");
+        assert_eq!(normalize_position("IOL"), "OG");
+        assert_eq!(normalize_position("OL"), "OG");
     }
 
     #[test]
@@ -188,6 +204,7 @@ mod tests {
         assert_eq!(normalize_position("FS"), "S");
         assert_eq!(normalize_position("SS"), "S");
         assert_eq!(normalize_position("DB"), "S");
+        assert_eq!(normalize_position("SAF"), "S");
     }
 
     #[test]
@@ -203,22 +220,23 @@ mod tests {
         assert_eq!(normalize_position("TE"), "TE");
         assert_eq!(normalize_position("OT"), "OT");
         assert_eq!(normalize_position("CB"), "CB");
-        assert_eq!(normalize_position("DL"), "DL");
         assert_eq!(normalize_position("RB"), "RB");
         assert_eq!(normalize_position("S"), "S");
         assert_eq!(normalize_position("LB"), "LB");
+        assert_eq!(normalize_position("K"), "K");
+        assert_eq!(normalize_position("P"), "P");
     }
 
     #[test]
     fn test_normalize_position_case_insensitive() {
-        assert_eq!(normalize_position("de"), "EDGE");
+        assert_eq!(normalize_position("de"), "DE");
         assert_eq!(normalize_position("qb"), "QB");
         assert_eq!(normalize_position("ilb"), "LB");
     }
 
     #[test]
     fn test_normalize_position_trims_whitespace() {
-        assert_eq!(normalize_position(" DE "), "EDGE");
+        assert_eq!(normalize_position(" DE "), "DE");
         assert_eq!(normalize_position("  QB  "), "QB");
     }
 }

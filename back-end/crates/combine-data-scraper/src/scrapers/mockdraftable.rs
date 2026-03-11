@@ -404,7 +404,7 @@ mod tests {
         .unwrap();
 
         let data = parse_initial_state(&json, 2026).unwrap();
-        assert_eq!(data.combine_results[0].position, "EDGE"); // DE -> EDGE
+        assert_eq!(data.combine_results[0].position, "DE"); // DE -> DE
     }
 
     #[test]

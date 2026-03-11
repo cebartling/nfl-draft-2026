@@ -3,10 +3,6 @@ use serde::Deserialize;
 
 use crate::models::{CombineData, CombineEntry, CombineMeta};
 
-/// Type aliases for backward compatibility
-pub type MockCombineEntry = CombineEntry;
-pub type MockCombineData = CombineData;
-pub type MockCombineMeta = CombineMeta;
 
 #[derive(Debug, Deserialize)]
 pub struct ProspectEntry {
@@ -22,7 +18,7 @@ pub struct ProspectData {
 
 /// Generate mock combine data for a list of prospects.
 /// Higher-ranked prospects (lower index) get better numbers on average.
-pub fn generate_mock_combine_data(prospects: &[ProspectEntry], year: i32) -> MockCombineData {
+pub fn generate_mock_combine_data(prospects: &[ProspectEntry], year: i32) -> CombineData {
     let mut rng = rand::rng();
     let total = prospects.len();
     let mut entries = Vec::new();
@@ -59,8 +55,8 @@ pub fn generate_mock_combine_data(prospects: &[ProspectEntry], year: i32) -> Moc
     let player_count = prospects.len();
     let entry_count = entries.len();
 
-    MockCombineData {
-        meta: MockCombineMeta {
+    CombineData {
+        meta: CombineMeta {
             source: "mock_generator".to_string(),
             description: format!("Mock combine data for {} NFL Draft prospects", year),
             year,
@@ -78,7 +74,7 @@ fn generate_entry(
     source: &str,
     rank_factor: f64,
     rng: &mut impl Rng,
-) -> MockCombineEntry {
+) -> CombineEntry {
     let pos = prospect.position.as_str();
 
     // Better players (lower rank_factor) get a bonus to their scores
@@ -96,7 +92,7 @@ fn generate_entry(
     let ten_yard_split = maybe_timed(rng, 0.75, pos_ten_yd_median(pos), 0.04, quality_bonus);
     let twenty_yard_split = maybe_timed(rng, 0.75, pos_twenty_yd_median(pos), 0.05, quality_bonus);
 
-    MockCombineEntry {
+    CombineEntry {
         first_name: prospect.first_name.clone(),
         last_name: prospect.last_name.clone(),
         position: prospect.position.clone(),

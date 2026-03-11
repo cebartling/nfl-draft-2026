@@ -37,49 +37,18 @@ jobs:
         working-directory: back-end
         run: cargo build --release -p combine-data-scraper
 
-      - name: Scrape PFR
+      - name: Scrape and merge combine data
         working-directory: back-end
-        continue-on-error: true
         run: |
           ./target/release/combine-data-scraper scrape \
-            --source pfr \
+            --merge \
             --year 2026 \
-            --output data/combine_pfr_2026.json
-
-      - name: Scrape Mockdraftable
-        working-directory: back-end
-        continue-on-error: true
-        run: |
-          ./target/release/combine-data-scraper scrape \
-            --source mockdraftable \
-            --year 2026 \
-            --output data/combine_mockdraftable_2026.json
-
-      - name: Merge combine data
-        working-directory: back-end
-        run: |
-          PFR=data/combine_pfr_2026.json
-          MD=data/combine_mockdraftable_2026.json
-          if [ -f "$PFR" ] && [ -f "$MD" ]; then
-            ./target/release/combine-data-scraper scrape \
-              --merge \
-              --year 2026 \
-              --output data/combine_2026.json
-          elif [ -f "$PFR" ]; then
-            echo "Only PFR source available; copying as output."
-            cp "$PFR" data/combine_2026.json
-          elif [ -f "$MD" ]; then
-            echo "Only Mockdraftable source available; copying as output."
-            cp "$MD" data/combine_2026.json
-          else
-            echo "ERROR: Both scrapers failed; no combine data produced." >&2
-            exit 1
-          fi
+            --output data/combine_2026.json
 
       - name: Validate JSON output
         working-directory: back-end
         run: |
-          for f in data/combine_pfr_2026.json data/combine_mockdraftable_2026.json data/combine_2026.json; do
+          for f in data/combine_2026_pfr.json data/combine_2026_mockdraftable.json data/combine_2026.json; do
             if [ -f "$f" ]; then
               if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
                 echo "ERROR: $f is not valid JSON" >&2
@@ -103,8 +72,8 @@ jobs:
           delete-branch: true
           labels: automated,data-update
           add-paths: |
-            back-end/data/combine_pfr_2026.json
-            back-end/data/combine_mockdraftable_2026.json
+            back-end/data/combine_2026_pfr.json
+            back-end/data/combine_2026_mockdraftable.json
             back-end/data/combine_2026.json
 
       - name: Enable auto-merge

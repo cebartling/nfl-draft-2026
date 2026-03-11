@@ -48,25 +48,29 @@ const outputPath = resolve(
   getArg("--output", `data/combine_${year}.json`),
 );
 
-// Position normalization matching models.rs normalize_position()
+// Position normalization — must stay aligned with models.rs normalize_position()
+// and seed-data/src/position_mapper.rs
 const positionMap = {
-  DE: "EDGE",
-  OLB: "EDGE",
-  "EDGE/LB": "EDGE",
-  "LB/EDGE": "EDGE",
+  DE: "DE",
+  EDGE: "DE",
+  "EDGE/LB": "DE",
+  "LB/EDGE": "DE",
+  OLB: "LB",
   ILB: "LB",
   MLB: "LB",
+  DL: "DT",
   NT: "DT",
-  C: "IOL",
-  OG: "IOL",
-  G: "IOL",
+  OG: "OG",
+  G: "OG",
+  IOL: "OG",
+  OL: "OG",
+  T: "OT",
   FS: "S",
   SS: "S",
   DB: "S",
   SAF: "S",
   FB: "RB",
   HB: "RB",
-  T: "OT",
 };
 
 function normalizePosition(pos) {

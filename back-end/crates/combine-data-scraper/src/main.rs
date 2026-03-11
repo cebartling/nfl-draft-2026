@@ -192,8 +192,22 @@ async fn main() -> Result<()> {
         } => {
             if do_merge {
                 // Scrape both sources, merge them
-                let pfr_output = output.replace(".json", "_pfr.json");
-                let md_output = output.replace(".json", "_mockdraftable.json");
+                let output_path = Path::new(&output);
+                let stem = output_path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("combine");
+                let parent = output_path
+                    .parent()
+                    .unwrap_or_else(|| Path::new("."));
+                let pfr_output = parent
+                    .join(format!("{}_pfr.json", stem))
+                    .to_string_lossy()
+                    .to_string();
+                let md_output = parent
+                    .join(format!("{}_mockdraftable.json", stem))
+                    .to_string_lossy()
+                    .to_string();
 
                 let pfr_result = scrape_source("pfr", year, &pfr_output, browser).await;
                 let md_result =

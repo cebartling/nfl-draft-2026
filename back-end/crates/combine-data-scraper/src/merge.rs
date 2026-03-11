@@ -56,6 +56,7 @@ pub fn merge_combine_data(
     primary: CombineData,
     secondaries: Vec<CombineData>,
 ) -> Result<CombineData> {
+    let year = primary.meta.year;
     let mut key_to_index: HashMap<String, usize> = HashMap::new();
     let mut merged: Vec<CombineEntry> = Vec::new();
 
@@ -83,7 +84,6 @@ pub fn merge_combine_data(
     }
 
     let entry_count = merged.len();
-    let year = primary.meta.year;
 
     Ok(CombineData {
         meta: CombineMeta {
@@ -316,5 +316,36 @@ mod tests {
         assert_eq!(name_key("Fernando", "Carmona Jr."), "fernando carmona");
         assert_eq!(name_key("Will", "Lee III"), "will lee");
         assert_eq!(name_key("CAM", "WARD"), "cam ward");
+    }
+
+    #[test]
+    fn test_merge_does_not_overwrite_existing_fields() {
+        let mut pfr_entry = make_entry("Cam", "Ward", "QB");
+        pfr_entry.forty_yard_dash = Some(4.72);
+        pfr_entry.bench_press = Some(18);
+        pfr_entry.arm_length = Some(32.5);
+
+        let mut md_entry = make_entry("Cam", "Ward", "QB");
+        md_entry.forty_yard_dash = Some(4.75); // different — should NOT overwrite
+        md_entry.bench_press = Some(20); // different — should NOT overwrite
+        md_entry.arm_length = Some(33.0); // different — should NOT overwrite
+        md_entry.hand_size = Some(9.75); // new — should backfill
+
+        let primary = CombineData {
+            meta: make_meta("pfr", 2026),
+            combine_results: vec![pfr_entry],
+        };
+
+        let secondary = CombineData {
+            meta: make_meta("mockdraftable", 2026),
+            combine_results: vec![md_entry],
+        };
+
+        let result = merge_combine_data(primary, vec![secondary]).unwrap();
+        let merged = &result.combine_results[0];
+        assert_eq!(merged.forty_yard_dash, Some(4.72)); // kept primary
+        assert_eq!(merged.bench_press, Some(18)); // kept primary
+        assert_eq!(merged.arm_length, Some(32.5)); // kept primary
+        assert_eq!(merged.hand_size, Some(9.75)); // backfilled from secondary
     }
 }

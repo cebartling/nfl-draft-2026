@@ -15,6 +15,7 @@ pub fn combine_url(year: i32) -> String {
 }
 
 /// Parse a PFR height string like "6-2" into total inches (74).
+#[allow(dead_code)]
 fn parse_height(s: &str) -> Option<i32> {
     let parts: Vec<&str> = s.split('-').collect();
     if parts.len() == 2 {
@@ -109,13 +110,6 @@ pub fn parse_html(html: &str, year: i32) -> Result<CombineData> {
 
         let position = cells.get("pos").map(|s| s.as_str()).unwrap_or("");
         let position = normalize_position(position);
-
-        let _height = cells
-            .get("height")
-            .and_then(|s| parse_height(s));
-        let _weight = cells
-            .get("weight")
-            .and_then(|s| parse_int_measurement(s));
 
         let entry = CombineEntry {
             first_name,
@@ -333,11 +327,11 @@ mod tests {
         "#;
 
         let data = parse_html(html, 2026).unwrap();
-        assert_eq!(data.combine_results[0].position, "EDGE"); // DE -> EDGE
+        assert_eq!(data.combine_results[0].position, "DE"); // DE -> DE
         assert_eq!(data.combine_results[1].position, "LB"); // ILB -> LB
         assert_eq!(data.combine_results[2].position, "S"); // FS -> S
         assert_eq!(data.combine_results[3].position, "DT"); // NT -> DT
-        assert_eq!(data.combine_results[4].position, "IOL"); // OG -> IOL
+        assert_eq!(data.combine_results[4].position, "OG"); // OG -> OG
     }
 
     #[test]
@@ -425,5 +419,25 @@ mod tests {
 
         let data = parse_html(html, 2026).unwrap();
         assert_eq!(data.combine_results.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_html_empty_table() {
+        let html = r#"
+        <html><body>
+        <table id="combine"><thead><tr><th>Player</th></tr></thead><tbody></tbody></table>
+        </body></html>
+        "#;
+
+        let data = parse_html(html, 2026).unwrap();
+        assert_eq!(data.combine_results.len(), 0);
+        assert_eq!(data.meta.player_count, 0);
+    }
+
+    #[test]
+    fn test_parse_html_no_table_returns_error() {
+        let html = "<html><body>No table here</body></html>";
+        let result = parse_html(html, 2026);
+        assert!(result.is_err());
     }
 }
