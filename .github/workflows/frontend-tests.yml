@@ -1,0 +1,72 @@
+name: Frontend Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'front-end/**'
+      - '.github/workflows/frontend-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'front-end/**'
+      - '.github/workflows/frontend-tests.yml'
+
+concurrency:
+  group: frontend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-check:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front-end/package-lock.json
+
+      - name: Install dependencies
+        working-directory: front-end
+        run: npm ci
+
+      - name: Run type check
+        working-directory: front-end
+        run: npm run check
+
+      - name: Run linter
+        working-directory: front-end
+        run: npm run lint
+
+      - name: Check formatting
+        working-directory: front-end
+        run: npx prettier --check .
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front-end/package-lock.json
+
+      - name: Install dependencies
+        working-directory: front-end
+        run: npm ci
+
+      - name: Run tests
+        working-directory: front-end
+        run: npm run test
