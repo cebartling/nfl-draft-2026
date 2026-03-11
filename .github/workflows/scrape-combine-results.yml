@@ -19,36 +19,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Cache Cargo registry and build artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            back-end/target
-          key: ${{ runner.os }}-cargo-combine-scraper-${{ hashFiles('back-end/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-combine-scraper-
-
-      - name: Build scraper
-        working-directory: back-end
-        run: cargo build --release -p combine-data-scraper
+      - name: Install dependencies
+        working-directory: scrapers
+        run: bun install
 
       - name: Scrape and merge combine data
-        working-directory: back-end
+        working-directory: scrapers
         run: |
-          ./target/release/combine-data-scraper scrape \
+          bun run src/cli.ts combine \
             --merge \
             --year 2026 \
-            --output data/combine_2026.json
+            --output ../back-end/data/combine_2026.json
 
       - name: Validate JSON output
-        working-directory: back-end
         run: |
-          for f in data/combine_2026_pfr.json data/combine_2026_mockdraftable.json data/combine_2026.json; do
+          for f in back-end/data/combine_2026.json; do
             if [ -f "$f" ]; then
               if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
                 echo "ERROR: $f is not valid JSON" >&2
@@ -72,8 +60,6 @@ jobs:
           delete-branch: true
           labels: automated,data-update
           add-paths: |
-            back-end/data/combine_2026_pfr.json
-            back-end/data/combine_2026_mockdraftable.json
             back-end/data/combine_2026.json
 
       - name: Enable auto-merge

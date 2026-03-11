@@ -22,39 +22,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Cache Cargo registry and build artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            back-end/target
-          key: ${{ runner.os }}-cargo-scraper-${{ hashFiles('back-end/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-scraper-
+      - name: Install dependencies
+        working-directory: scrapers
+        run: bun install
 
-      - name: Build scraper
-        working-directory: back-end
-        run: cargo build --release -p draft-order-scraper
+      - name: Install Playwright browsers
+        working-directory: scrapers
+        run: bunx playwright install chromium --with-deps
 
       - name: Run scraper
-        working-directory: back-end
+        working-directory: scrapers
         run: |
-          ./target/release/draft-order-scraper \
+          bun run src/cli.ts draft-order \
             --year 2026 \
-            --output data/draft_order_2026.json
+            --output ../back-end/data/draft_order_2026.json
 
       - name: Validate JSON output
-        working-directory: back-end
         run: |
-          if ! python3 -m json.tool data/draft_order_2026.json > /dev/null 2>&1; then
-            echo "ERROR: data/draft_order_2026.json is not valid JSON" >&2
+          if ! python3 -m json.tool back-end/data/draft_order_2026.json > /dev/null 2>&1; then
+            echo "ERROR: draft_order_2026.json is not valid JSON" >&2
             exit 1
           fi
-          echo "Validated: data/draft_order_2026.json"
+          echo "Validated: back-end/data/draft_order_2026.json"
 
       - name: Create pull request
         id: create-pr

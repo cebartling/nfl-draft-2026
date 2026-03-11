@@ -6,9 +6,6 @@ members = [
     "crates/db",
     "crates/websocket",
     "crates/seed-data",
-    "crates/draft-order-scraper",
-    "crates/prospect-rankings-scraper",
-    "crates/combine-data-scraper",
 ]
 
 [workspace.package]

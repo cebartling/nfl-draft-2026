@@ -81,9 +81,6 @@ jobs:
           cargo test -p domain
           cargo test -p seed-data --lib
           cargo test -p websocket
-          cargo test -p combine-data-scraper
-          cargo test -p prospect-rankings-scraper
-          cargo test -p draft-order-scraper
 
   acceptance-tests:
     name: Acceptance Tests

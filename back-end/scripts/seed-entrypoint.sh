@@ -37,9 +37,9 @@ if [ ! -f "$RANKINGS_FILE" ]; then
     RANKINGS_FILE="/app/data/rankings/tankathon_2026.json"
     echo "Using Tankathon rankings as fallback."
   else
-    echo "No scraped rankings found, generating template..."
-    /app/prospect-rankings-scraper --template --output "$RANKINGS_FILE"
-    echo "Template rankings generated."
+    echo "No scraped rankings found. Please run the scrapers first:"
+    echo "  cd scrapers && bun run src/cli.ts rankings --template --output ../back-end/data/rankings/rankings_2026.json"
+    exit 1
   fi
 fi
 
