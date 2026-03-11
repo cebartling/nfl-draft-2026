@@ -26,6 +26,9 @@ jobs:
         working-directory: scrapers
         run: bun install
 
+      - name: Install Playwright browsers
+        run: cd scrapers && bunx playwright install chromium --with-deps
+
       - name: Scrape and merge combine data
         working-directory: scrapers
         run: |
