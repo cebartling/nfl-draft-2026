@@ -128,6 +128,7 @@ impl CombinePercentile {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn with_percentiles(
         mut self,
         sample_size: i32,

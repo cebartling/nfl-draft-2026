@@ -8,9 +8,10 @@ use uuid::Uuid;
 use crate::errors::{DomainError, DomainResult};
 
 /// Source of combine/athletic testing data
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CombineSource {
+    #[default]
     Combine,
     ProDay,
 }
@@ -36,12 +37,6 @@ impl FromStr for CombineSource {
                 s
             ))),
         }
-    }
-}
-
-impl Default for CombineSource {
-    fn default() -> Self {
-        CombineSource::Combine
     }
 }
 

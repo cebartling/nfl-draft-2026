@@ -80,7 +80,13 @@ export default [
 	{
 		files: ['**/*.ts', '**/*.tsx'],
 		// Exclude config files that aren't in tsconfig.json
-		ignores: ['*.config.ts', '*.config.js', 'playwright.config.ts', 'vitest.setup.ts', 'scripts/**'],
+		ignores: [
+			'*.config.ts',
+			'*.config.js',
+			'playwright.config.ts',
+			'vitest.setup.ts',
+			'scripts/**',
+		],
 		languageOptions: {
 			parser: ts.parser,
 			parserOptions: {
