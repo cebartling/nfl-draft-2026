@@ -70,7 +70,7 @@ pub fn parse_combine_file(path: &str) -> Result<CombineFileData> {
     parse_combine_json(&json)
 }
 
-fn has_any_measurement(entry: &CombineFileEntry) -> bool {
+pub fn entry_has_any_measurement(entry: &CombineFileEntry) -> bool {
     entry.forty_yard_dash.is_some()
         || entry.bench_press.is_some()
         || entry.vertical_jump.is_some()
@@ -102,7 +102,7 @@ pub async fn load_combine_data(
 
     for entry in &data.combine_results {
         // Skip entries where every measurement is null
-        if !has_any_measurement(entry) {
+        if !entry_has_any_measurement(entry) {
             skipped_no_data += 1;
             continue;
         }
@@ -272,6 +272,49 @@ pub async fn load_combine_data(
         skipped,
         skipped_no_data,
         player_not_found,
+        errors,
+    })
+}
+
+pub fn load_combine_data_dry_run(data: &CombineFileData) -> Result<CombineLoadStats> {
+    let mut valid = 0;
+    let mut skipped_no_data = 0;
+    let mut errors: Vec<String> = Vec::new();
+
+    for entry in &data.combine_results {
+        // Check if entry has any measurements
+        if !entry_has_any_measurement(entry) {
+            skipped_no_data += 1;
+            continue;
+        }
+
+        // Validate source string parses to a valid CombineSource
+        if let Err(e) = entry.source.parse::<CombineSource>() {
+            errors.push(format!(
+                "Invalid source '{}' for {} {}: {}",
+                entry.source, entry.first_name, entry.last_name, e
+            ));
+            continue;
+        }
+
+        valid += 1;
+    }
+
+    println!("\nDry Run Summary:");
+    println!("  Valid entries:        {}", valid);
+    println!("  Skipped (no data):   {}", skipped_no_data);
+    if !errors.is_empty() {
+        println!("  Errors:              {}", errors.len());
+        for err in &errors {
+            println!("    - {}", err);
+        }
+    }
+
+    Ok(CombineLoadStats {
+        loaded: valid,
+        skipped: 0,
+        skipped_no_data,
+        player_not_found: 0,
         errors,
     })
 }
