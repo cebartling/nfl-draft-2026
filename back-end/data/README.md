@@ -10,14 +10,14 @@ This directory contains NFL Draft data used to seed the database. Files are eith
 |------|--------|-------------|
 | `players_2026.json` | Manual / scraped | Top 150+ prospects for the 2026 NFL Draft class |
 | `combine_2026.json` | `bun run scrape combine --merge` | Real scraped combine data (used by seed handler via `include_str!`) |
-| `combine_2026_pfr.json` | `combine-data-scraper scrape --source pfr` | PFR-only combine data (merge input) |
-| `combine_2026_mockdraftable.json` | `combine-data-scraper scrape --source mockdraftable` | Mockdraftable-only combine data (merge input) |
-| `combine_percentiles.json` | `combine-data-scraper template` | Combine percentile baselines from NFL averages |
+| `combine_2026_pfr.json` | `bun run scrape combine --source pfr` | PFR-only combine data (merge input) |
+| `combine_2026_mockdraftable.json` | `bun run scrape combine --source mockdraftable` | Mockdraftable-only combine data (merge input) |
+| `combine_percentiles.json` | `bun run scrape combine --template` | Combine percentile baselines from NFL averages |
 | `draft_order_2026.json` | Scraped | Draft pick order for 2026 |
 | `teams_nfl.json` | Manual | All 32 NFL teams |
 | `team_needs_2026.json` | Manual | Team positional needs |
 | `team_seasons_2025.json` | Manual | 2025 season records |
-| `rankings/` | `prospect-rankings-scraper` | Prospect big board rankings by source |
+| `rankings/` | `bun run scrape rankings` | Prospect big board rankings by source |
 
 ## Data Sources
 

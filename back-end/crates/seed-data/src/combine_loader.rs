@@ -39,14 +39,17 @@ pub struct CombineFileEntry {
 pub struct CombineLoadStats {
     pub loaded: usize,
     pub skipped: usize,
+    pub skipped_no_data: usize,
     pub player_not_found: usize,
     pub errors: Vec<String>,
 }
 
 impl CombineLoadStats {
     pub fn print_summary(&self) {
-        println!("  Loaded:          {}", self.loaded);
-        println!("  Skipped:         {}", self.skipped);
+        println!("\nCombine Load Summary:");
+        println!("  Loaded:           {}", self.loaded);
+        println!("  Skipped (exists): {}", self.skipped);
+        println!("  Skipped (no data): {}", self.skipped_no_data);
         println!("  Player not found: {}", self.player_not_found);
         if !self.errors.is_empty() {
             println!("  Errors: {}", self.errors.len());
@@ -67,6 +70,20 @@ pub fn parse_combine_file(path: &str) -> Result<CombineFileData> {
     parse_combine_json(&json)
 }
 
+fn has_any_measurement(entry: &CombineFileEntry) -> bool {
+    entry.forty_yard_dash.is_some()
+        || entry.bench_press.is_some()
+        || entry.vertical_jump.is_some()
+        || entry.broad_jump.is_some()
+        || entry.three_cone_drill.is_some()
+        || entry.twenty_yard_shuttle.is_some()
+        || entry.arm_length.is_some()
+        || entry.hand_size.is_some()
+        || entry.wingspan.is_some()
+        || entry.ten_yard_split.is_some()
+        || entry.twenty_yard_split.is_some()
+}
+
 pub async fn load_combine_data(
     data: &CombineFileData,
     player_repo: &dyn PlayerRepository,
@@ -74,6 +91,7 @@ pub async fn load_combine_data(
 ) -> Result<CombineLoadStats> {
     let mut loaded = 0;
     let mut skipped = 0;
+    let mut skipped_no_data = 0;
     let mut player_not_found = 0;
     let mut errors: Vec<String> = Vec::new();
 
@@ -83,6 +101,12 @@ pub async fn load_combine_data(
     })?;
 
     for entry in &data.combine_results {
+        // Skip entries where every measurement is null
+        if !has_any_measurement(entry) {
+            skipped_no_data += 1;
+            continue;
+        }
+
         // Find player by name match
         let player = all_players.iter().find(|p| {
             p.first_name.eq_ignore_ascii_case(&entry.first_name)
@@ -246,6 +270,7 @@ pub async fn load_combine_data(
     Ok(CombineLoadStats {
         loaded,
         skipped,
+        skipped_no_data,
         player_not_found,
         errors,
     })

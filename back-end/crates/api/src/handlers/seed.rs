@@ -474,7 +474,7 @@ pub async fn seed_combine_percentiles(
     }))
 }
 
-/// Seed the database with embedded mock combine data for 2026 prospects
+/// Seed the database with embedded 2026 NFL Combine results
 #[utoipa::path(
     post,
     path = "/api/v1/admin/seed-combine-data",
