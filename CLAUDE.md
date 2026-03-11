@@ -54,9 +54,16 @@ back-end/         # Rust backend (Cargo workspace)
 │   ├── domain/   # Business logic, services, domain models
 │   ├── db/       # Database layer (SQLx repositories)
 │   └── websocket/ # WebSocket connection management
+├── data/         # Scraped JSON data files (consumed by seed-data)
 └── migrations/   # SQLx database migrations
 
-frontend/         # SvelteKit application (to be added)
+front-end/        # SvelteKit application
+
+scrapers/         # TypeScript/Bun data scrapers (draft order, rankings, combine)
+├── src/          # CLI, commands, scrapers, shared utilities, types
+└── tests/        # Vitest test suite
+
+scripts/          # Shell scripts (scraping, testing, app lifecycle)
 
 documentation/    # Architecture and planning docs
 

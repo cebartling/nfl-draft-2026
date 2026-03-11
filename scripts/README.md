@@ -95,9 +95,15 @@ Delegates validation to the Claude CLI, which rebuilds Docker containers, runs b
 
 ## Data Scraping
 
+All scraping scripts invoke the TypeScript/Bun scrapers in the `scrapers/` directory. See `documentation/data-pipeline.md` for detailed pipeline documentation.
+
+**Prerequisites:** [Bun](https://bun.sh/) runtime installed.
+
+---
+
 ### `scrape-draft-order.sh`
 
-Builds and runs the `draft-order-scraper` crate to scrape NFL draft order data from Tankathon.
+Scrapes NFL draft order data from Tankathon using the TypeScript/Bun scraper.
 
 **Usage:**
 
@@ -121,13 +127,11 @@ Builds and runs the `draft-order-scraper` crate to scrape NFL draft order data f
 
 **Output:** `back-end/data/draft_order_{YEAR}.json`
 
-**Prerequisites:** Rust toolchain with `cargo`.
-
 ---
 
 ### `scrape-prospect-rankings.sh`
 
-Builds and runs the `prospect-rankings-scraper` crate against multiple sources (Tankathon, WalterFootball), then merges results into a consensus ranking.
+Scrapes prospect rankings from multiple sources (Tankathon, WalterFootball), then merges results into a consensus ranking using the TypeScript/Bun scraper.
 
 **Usage:**
 
@@ -159,4 +163,19 @@ Builds and runs the `prospect-rankings-scraper` crate against multiple sources (
 
 **Fault tolerance:** Each source scrape runs independently. If one source fails, the script continues with the remaining sources. The merge step runs as long as at least one source succeeded.
 
-**Prerequisites:** Rust toolchain with `cargo`.
+---
+
+### `scrape-combine-results.sh`
+
+Scrapes NFL Combine results from Pro Football Reference and Mockdraftable, merging data from both sources by default.
+
+**Usage:**
+
+```bash
+./scripts/scrape-combine-results.sh                # Merge PFR + Mockdraftable
+./scripts/scrape-combine-results.sh --source pfr   # PFR only
+```
+
+**Output:** `back-end/data/combine_{YEAR}.json`
+
+**Merge behavior:** PFR is the primary source. Mockdraftable backfills any null fields for players found in both sources. Players unique to either source are included.
