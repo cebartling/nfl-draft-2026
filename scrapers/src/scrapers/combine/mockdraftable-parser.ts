@@ -1,14 +1,13 @@
 import type { CombineData, CombineEntry } from "../../types/combine.js";
 import { normalizePosition } from "../../shared/position-normalizer.js";
 import { makeCombineEntry } from "../../shared/combine-helpers.js";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { splitName } from "../../shared/name-normalizer.js";
 
 /**
  * Extract the `window.INITIAL_STATE` JSON blob from page HTML.
  * Uses brace-matched extraction.
  */
-export function extractInitialState(html: string): any {
+export function extractInitialState(html: string): unknown {
   const marker = "window.INITIAL_STATE";
   const markerPos = html.indexOf(marker);
   if (markerPos === -1) {
@@ -24,16 +23,29 @@ export function extractInitialState(html: string): any {
   const jsonStart = markerPos + braceStart;
   const rest = html.slice(jsonStart);
 
-  // Brace-matched extraction
+  // Brace-matched extraction (respects string literals)
   let depth = 0;
   let end = 0;
+  let inString = false;
   for (let i = 0; i < rest.length; i++) {
-    if (rest[i] === "{") depth++;
-    else if (rest[i] === "}") {
-      depth--;
-      if (depth === 0) {
-        end = i + 1;
-        break;
+    const ch = rest[i];
+    if (inString) {
+      if (ch === "\\" ) {
+        i++; // skip escaped character
+      } else if (ch === '"') {
+        inString = false;
+      }
+    } else {
+      if (ch === '"') {
+        inString = true;
+      } else if (ch === "{") {
+        depth++;
+      } else if (ch === "}") {
+        depth--;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
       }
     }
   }
@@ -98,18 +110,12 @@ const NAME_MAP: Record<string, string> = {
 
 const INT_FIELDS = new Set(["bench_press", "broad_jump"]);
 
-function setMeasurement(entry: any, field: string, value: number): void {
+function setMeasurement(entry: Record<string, string | number | null>, field: string, value: number): void {
   if (INT_FIELDS.has(field)) {
     entry[field] = Math.round(value);
   } else {
     entry[field] = value;
   }
-}
-
-function splitName(fullName: string): [string, string] {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length <= 1) return [fullName.trim(), ""];
-  return [parts[0], parts.slice(1).join(" ")];
 }
 
 /**
@@ -118,13 +124,18 @@ function splitName(fullName: string): [string, string] {
  * 1. Dict-keyed players (real Mockdraftable): players is object keyed by slug
  * 2. Array-format players: players is array with firstName/lastName
  */
-export function parseInitialState(json: any, year: number): CombineData {
+export function parseInitialState(json: unknown, year: number): CombineData {
+  if (json == null || typeof json !== "object") {
+    return buildResult([], year);
+  }
+
   const entries: CombineEntry[] = [];
+  const obj = json as Record<string, unknown>;
 
   // Try dict-of-players format first
-  const players = json.players;
+  const players = obj.players;
   if (players && typeof players === "object" && !Array.isArray(players)) {
-    const values = Object.values(players) as any[];
+    const values = Object.values(players) as Record<string, unknown>[];
     const isPlayerDict = values.length > 0 && (values[0].name != null || values[0].id != null);
 
     if (isPlayerDict) {
@@ -163,16 +174,18 @@ function buildResult(entries: CombineEntry[], year: number): CombineData {
   };
 }
 
-function parseDictPlayer(player: any, year: number): CombineEntry | null {
-  const fullName = player.name ?? "";
+function parseDictPlayer(player: Record<string, unknown>, year: number): CombineEntry | null {
+  const fullName = (player.name as string) ?? "";
   if (!fullName) return null;
 
   const [firstName, lastName] = splitName(fullName);
 
   // Position from positions.primary or positions.all[0]
   let position = "";
-  if (player.positions) {
-    position = player.positions.primary ?? player.positions.all?.[0] ?? "";
+  const positions = player.positions as Record<string, unknown> | undefined;
+  if (positions) {
+    const all = positions.all as string[] | undefined;
+    position = (positions.primary as string) ?? all?.[0] ?? "";
   }
   position = normalizePosition(position);
 
@@ -180,7 +193,7 @@ function parseDictPlayer(player: any, year: number): CombineEntry | null {
 
   // Parse measurements by numeric key
   if (Array.isArray(player.measurements)) {
-    for (const m of player.measurements) {
+    for (const m of player.measurements as Record<string, unknown>[]) {
       const key = m.measurableKey;
       const value = m.measurement;
       if (typeof key === "number" && typeof value === "number") {
@@ -193,28 +206,32 @@ function parseDictPlayer(player: any, year: number): CombineEntry | null {
   return entry;
 }
 
-function parseArrayPlayer(player: any, year: number): CombineEntry | null {
-  const firstName = (player.firstName ?? player.first_name ?? "").trim();
-  const lastName = (player.lastName ?? player.last_name ?? "").trim();
+function parseArrayPlayer(player: unknown, year: number): CombineEntry | null {
+  if (player == null || typeof player !== "object") return null;
+  const p = player as Record<string, unknown>;
+
+  const firstName = ((p.firstName ?? p.first_name ?? "") as string).trim();
+  const lastName = ((p.lastName ?? p.last_name ?? "") as string).trim();
 
   if (!firstName && !lastName) return null;
 
   // Position can be string or object
   let position = "";
-  const pos = player.position;
+  const pos = p.position;
   if (typeof pos === "string") {
     position = pos;
   } else if (pos && typeof pos === "object") {
-    position = pos.abbreviation ?? pos.name ?? "";
+    const posObj = pos as Record<string, unknown>;
+    position = (posObj.abbreviation ?? posObj.name ?? "") as string;
   }
   position = normalizePosition(position);
 
   const entry = makeCombineEntry(firstName, lastName, position, year);
 
   // Parse measurements by name
-  const measurements = player.measurements ?? player.measurables;
+  const measurements = (p.measurements ?? p.measurables) as unknown[] | undefined;
   if (Array.isArray(measurements)) {
-    for (const m of measurements) {
+    for (const m of measurements as Record<string, unknown>[]) {
       const name = m.measurementType ?? m.name ?? m.type;
       const value = m.measurement ?? m.value;
 
@@ -222,7 +239,7 @@ function parseArrayPlayer(player: any, year: number): CombineEntry | null {
       if (typeof name === "string") {
         nameStr = name;
       } else if (name && typeof name === "object") {
-        nameStr = name.name ?? "";
+        nameStr = ((name as Record<string, unknown>).name ?? "") as string;
       }
 
       if (nameStr && typeof value === "number") {
@@ -235,25 +252,28 @@ function parseArrayPlayer(player: any, year: number): CombineEntry | null {
   return entry;
 }
 
-function findPlayersArray(json: any): any[] | null {
+function findPlayersArray(json: unknown, maxDepth: number = 10): unknown[] | null {
+  if (maxDepth <= 0 || json == null || typeof json !== "object") return null;
+
+  const obj = json as Record<string, unknown>;
   for (const key of ["players", "results", "searchResults", "prospects"]) {
-    if (Array.isArray(json[key]) && json[key].length > 0 && looksLikePlayers(json[key])) {
-      return json[key];
+    if (Array.isArray(obj[key]) && obj[key].length > 0 && looksLikePlayers(obj[key])) {
+      return obj[key];
     }
   }
 
-  if (json && typeof json === "object") {
-    for (const v of Object.values(json)) {
-      const found = findPlayersArray(v);
-      if (found) return found;
-    }
+  for (const v of Object.values(obj)) {
+    const found = findPlayersArray(v, maxDepth - 1);
+    if (found) return found;
   }
 
   return null;
 }
 
-function looksLikePlayers(arr: any[]): boolean {
+function looksLikePlayers(arr: unknown[]): boolean {
   const first = arr[0];
-  return first?.firstName != null || first?.first_name != null ||
-         first?.lastName != null || first?.last_name != null;
+  if (first == null || typeof first !== "object") return false;
+  const obj = first as Record<string, unknown>;
+  return obj.firstName != null || obj.first_name != null ||
+         obj.lastName != null || obj.last_name != null;
 }
