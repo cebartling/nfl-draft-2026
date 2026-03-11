@@ -1,5 +1,6 @@
 import type { CombineData } from "../../types/combine.js";
 import { makeCombineEntry } from "../../shared/combine-helpers.js";
+import { normalizePosition } from "../../shared/position-normalizer.js";
 
 const PROSPECTS: [string, string, string][] = [
   ["Arvell", "Reese", "LB"],
@@ -55,7 +56,7 @@ const PROSPECTS: [string, string, string][] = [
 ];
 
 export function generateTemplateCombine(year: number): CombineData {
-  const entries = PROSPECTS.map(([first, last, pos]) => makeCombineEntry(first, last, pos, year));
+  const entries = PROSPECTS.map(([first, last, pos]) => makeCombineEntry(first, last, normalizePosition(pos), year));
 
   return {
     meta: {

@@ -23,7 +23,7 @@ describe("generateTemplateRankings", () => {
     expect(positions.has("CB")).toBe(true);
     expect(positions.has("OT")).toBe(true);
     expect(positions.has("DT")).toBe(true);
-    expect(positions.has("EDGE")).toBe(true);
+    expect(positions.has("DE")).toBe(true);
   });
 
   it("has all non-empty fields for every prospect", () => {

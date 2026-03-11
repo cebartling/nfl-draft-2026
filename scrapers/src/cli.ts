@@ -5,7 +5,9 @@ const command = args[0];
 
 function getArg(name: string, defaultValue: string): string {
   const idx = args.indexOf(name);
-  return idx !== -1 && idx + 1 < args.length ? args[idx + 1] : defaultValue;
+  if (idx === -1 || idx + 1 >= args.length) return defaultValue;
+  const value = args[idx + 1];
+  return value.startsWith("--") ? defaultValue : value;
 }
 
 function hasFlag(name: string): boolean {

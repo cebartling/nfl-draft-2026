@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import type { CombineData, CombineEntry } from "../../types/combine.js";
 import { normalizePosition } from "../../shared/position-normalizer.js";
+import { splitName } from "../../shared/name-normalizer.js";
 
 function parseTime(s: string): number | null {
   const trimmed = s.trim();
@@ -14,12 +15,6 @@ function parseIntMeasurement(s: string): number | null {
   if (!trimmed || trimmed === "-") return null;
   const num = parseInt(trimmed, 10);
   return isNaN(num) ? null : num;
-}
-
-function splitName(fullName: string): [string, string] {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length <= 1) return [fullName.trim(), ""];
-  return [parts[0], parts.slice(1).join(" ")];
 }
 
 /**

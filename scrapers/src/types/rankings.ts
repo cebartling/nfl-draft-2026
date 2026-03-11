@@ -6,8 +6,8 @@ export const RankingEntrySchema = z.object({
   last_name: z.string(),
   position: z.string(),
   school: z.string(),
-  height_inches: z.number().int().nullable().optional(),
-  weight_pounds: z.number().int().nullable().optional(),
+  height_inches: z.number().int().nullable(),
+  weight_pounds: z.number().int().nullable(),
 });
 
 export type RankingEntry = z.infer<typeof RankingEntrySchema>;

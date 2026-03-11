@@ -1,4 +1,5 @@
 import type { RankingData, RankingEntry } from "../../types/rankings.js";
+import { normalizePosition } from "../../shared/position-normalizer.js";
 
 const PROSPECTS: [string, string, string, string][] = [
   ["Arvell", "Reese", "LB", "Ohio State"],
@@ -194,7 +195,7 @@ export function generateTemplateRankings(year: number): RankingData {
     rank: i + 1,
     first_name: first,
     last_name: last,
-    position: pos,
+    position: normalizePosition(pos),
     school,
     height_inches: null,
     weight_pounds: null,

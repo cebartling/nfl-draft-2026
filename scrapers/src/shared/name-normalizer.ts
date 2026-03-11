@@ -30,3 +30,9 @@ export function normalizeLastName(name: string): string {
 export function nameKey(first: string, last: string): string {
   return `${cleanName(first)} ${normalizeLastName(last)}`;
 }
+
+export function splitName(fullName: string): [string, string] {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length <= 1) return [fullName.trim(), ""];
+  return [parts[0], parts.slice(1).join(" ")];
+}
