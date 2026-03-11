@@ -25,18 +25,33 @@ async function main() {
       break;
     }
 
+    case "rankings": {
+      const { runRankingsCommand } = await import("./commands/rankings.js");
+      await runRankingsCommand({
+        year: parseInt(getArg("--year", "2026"), 10),
+        output: getArg("--output", "../back-end/data/prospect_rankings_2026.json"),
+        template: hasFlag("--template"),
+        source: getArg("--source", "tankathon"),
+        merge: hasFlag("--merge"),
+        allowTemplateFallback: hasFlag("--allow-template-fallback"),
+      });
+      break;
+    }
+
     default:
       console.error("Usage: bun run scrape <command> [options]");
       console.error("");
       console.error("Commands:");
       console.error("  draft-order    Scrape NFL draft order from Tankathon");
+      console.error("  rankings       Scrape prospect rankings");
       console.error("  combine        Scrape NFL Combine data (coming soon)");
-      console.error("  rankings       Scrape prospect rankings (coming soon)");
       console.error("");
       console.error("Options:");
       console.error("  --year <year>       Draft year (default: 2026)");
       console.error("  --output <path>     Output file path");
       console.error("  --template          Generate template without scraping");
+      console.error("  --source <name>     Source for rankings (tankathon|drafttek|walterfootball)");
+      console.error("  --merge             Merge rankings from all sources");
       process.exit(1);
   }
 }
