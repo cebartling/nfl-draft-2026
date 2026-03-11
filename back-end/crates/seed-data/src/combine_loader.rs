@@ -96,9 +96,10 @@ pub async fn load_combine_data(
     let mut errors: Vec<String> = Vec::new();
 
     // Load all players for name matching
-    let all_players = player_repo.find_all().await.map_err(|e| {
-        anyhow::anyhow!("Failed to load players: {}", e)
-    })?;
+    let all_players = player_repo
+        .find_all()
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to load players: {}", e))?;
 
     for entry in &data.combine_results {
         // Skip entries where every measurement is null
@@ -160,7 +161,10 @@ pub async fn load_combine_data(
             results = match results.with_forty_yard_dash(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: forty_yard_dash: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: forty_yard_dash: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -169,7 +173,10 @@ pub async fn load_combine_data(
             results = match results.with_bench_press(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: bench_press: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: bench_press: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -178,7 +185,10 @@ pub async fn load_combine_data(
             results = match results.with_vertical_jump(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: vertical_jump: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: vertical_jump: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -187,7 +197,10 @@ pub async fn load_combine_data(
             results = match results.with_broad_jump(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: broad_jump: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: broad_jump: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -196,7 +209,10 @@ pub async fn load_combine_data(
             results = match results.with_three_cone_drill(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: three_cone_drill: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: three_cone_drill: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -205,7 +221,10 @@ pub async fn load_combine_data(
             results = match results.with_twenty_yard_shuttle(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: twenty_yard_shuttle: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: twenty_yard_shuttle: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -214,7 +233,10 @@ pub async fn load_combine_data(
             results = match results.with_arm_length(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: arm_length: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: arm_length: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -223,7 +245,10 @@ pub async fn load_combine_data(
             results = match results.with_hand_size(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: hand_size: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: hand_size: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -232,7 +257,10 @@ pub async fn load_combine_data(
             results = match results.with_wingspan(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: wingspan: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: wingspan: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -241,7 +269,10 @@ pub async fn load_combine_data(
             results = match results.with_ten_yard_split(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: ten_yard_split: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: ten_yard_split: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };
@@ -250,7 +281,10 @@ pub async fn load_combine_data(
             results = match results.with_twenty_yard_split(v) {
                 Ok(r) => r,
                 Err(e) => {
-                    errors.push(format!("{} {}: twenty_yard_split: {}", entry.first_name, entry.last_name, e));
+                    errors.push(format!(
+                        "{} {}: twenty_yard_split: {}",
+                        entry.first_name, entry.last_name, e
+                    ));
                     continue;
                 }
             };

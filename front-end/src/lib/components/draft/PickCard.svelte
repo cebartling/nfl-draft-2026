@@ -16,7 +16,7 @@
 
 <div
 	data-pick={pick.overall_pick}
-	data-current={highlight ? "true" : undefined}
+	data-current={highlight ? 'true' : undefined}
 	class="flex items-center px-3 py-2 border-b border-gray-200 bg-white transition-all {highlight
 		? 'ring-2 ring-blue-500 bg-blue-50'
 		: 'hover:bg-gray-50'}"
@@ -44,7 +44,9 @@
 				src={getTeamLogoPath(team.abbreviation)}
 				alt={`${team.abbreviation} logo`}
 				class="w-5 h-5 object-contain"
-				onerror={() => { logoError = true; }}
+				onerror={() => {
+					logoError = true;
+				}}
 			/>
 		{/if}
 		<span class="text-sm font-semibold text-gray-900">{team.abbreviation}</span>
@@ -54,7 +56,8 @@
 	<div class="flex-1 min-w-0 mr-3">
 		{#if player}
 			<span data-testid="pick-player-name" class="text-sm font-semibold text-gray-900">
-				{player.first_name} {player.last_name}
+				{player.first_name}
+				{player.last_name}
 			</span>
 			<span data-testid="pick-player-position" class="text-xs text-gray-500 ml-1">
 				{player.position}

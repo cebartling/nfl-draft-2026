@@ -60,23 +60,17 @@ describe('parseErrorMessage', () => {
 
 	it('should match "network" pattern', () => {
 		const result = parseErrorMessage(new Error('network error'));
-		expect(result).toBe(
-			'Unable to connect to the server. Please check your internet connection.'
-		);
+		expect(result).toBe('Unable to connect to the server. Please check your internet connection.');
 	});
 
 	it('should match "fetch" pattern', () => {
 		const result = parseErrorMessage('Failed to fetch');
-		expect(result).toBe(
-			'Unable to connect to the server. Please check your internet connection.'
-		);
+		expect(result).toBe('Unable to connect to the server. Please check your internet connection.');
 	});
 
 	it('should match "connection" pattern', () => {
 		const result = parseErrorMessage(new Error('connection refused'));
-		expect(result).toBe(
-			'Unable to connect to the server. Please check your internet connection.'
-		);
+		expect(result).toBe('Unable to connect to the server. Please check your internet connection.');
 	});
 
 	it('should match "timeout" pattern', () => {
@@ -120,9 +114,7 @@ describe('parseErrorMessage', () => {
 		// which is checked first. Verify the more specific path isn't reachable unless patterns change.
 		// The "Response validation failed" check is a fallback after pattern matching.
 		// Test the fallback with a message that only matches the special case:
-		const result = parseErrorMessage(
-			new Error('Response validation failed for /api/sessions')
-		);
+		const result = parseErrorMessage(new Error('Response validation failed for /api/sessions'));
 		// This matches the "validation failed" pattern first
 		expect(result).toBe('The data provided is invalid. Please check your input.');
 	});

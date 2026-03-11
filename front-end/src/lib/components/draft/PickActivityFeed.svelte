@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { draftState } from '$stores';
 
-	const reversedNotifications = $derived(
-		[...draftState.pickNotifications].reverse()
-	);
+	const reversedNotifications = $derived([...draftState.pickNotifications].reverse());
 </script>
 
 {#if draftState.pickNotifications.length > 0}

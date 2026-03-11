@@ -1169,7 +1169,11 @@ async fn handle_combine(action: CombineActions) -> Result<()> {
                         i, entry.first_name, entry.last_name
                     ));
                     empty_source_count += 1;
-                } else if entry.source.parse::<domain::models::CombineSource>().is_err() {
+                } else if entry
+                    .source
+                    .parse::<domain::models::CombineSource>()
+                    .is_err()
+                {
                     errors.push(format!(
                         "Entry {} ({} {}): invalid source '{}'",
                         i, entry.first_name, entry.last_name, entry.source
@@ -1189,9 +1193,18 @@ async fn handle_combine(action: CombineActions) -> Result<()> {
             }
 
             println!("\nValidation Summary:");
-            println!("  Total entries:              {}", data.combine_results.len());
-            println!("  With measurements:          {}", entries_with_measurements);
-            println!("  Without measurements:       {}", entries_without_measurements);
+            println!(
+                "  Total entries:              {}",
+                data.combine_results.len()
+            );
+            println!(
+                "  With measurements:          {}",
+                entries_with_measurements
+            );
+            println!(
+                "  Without measurements:       {}",
+                entries_without_measurements
+            );
             if empty_source_count > 0 {
                 println!("  Empty source strings:       {}", empty_source_count);
             }

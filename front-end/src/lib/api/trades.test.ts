@@ -130,10 +130,7 @@ describe('tradesApi', () => {
 
 			const result = await tradesApi.getBySession('session-1');
 
-			expect(mockGet).toHaveBeenCalledWith(
-				'/sessions/session-1/trades',
-				expect.any(Object)
-			);
+			expect(mockGet).toHaveBeenCalledWith('/sessions/session-1/trades', expect.any(Object));
 			expect(result).toEqual(mockProposals);
 		});
 

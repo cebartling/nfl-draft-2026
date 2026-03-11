@@ -26,7 +26,7 @@
 
 	const tabs = [
 		{ id: 'draft-board', label: 'Draft Board' },
-		{ id: 'available-players', label: 'Available Players' }
+		{ id: 'available-players', label: 'Available Players' },
 	];
 
 	async function loadAvailablePlayers() {
@@ -34,10 +34,7 @@
 		players_loading = true;
 		try {
 			const teamId = draftState.controlledTeamIds[0];
-			availablePlayers = await draftsApi.getAvailablePlayers(
-				draftState.session.draft_id,
-				teamId
-			);
+			availablePlayers = await draftsApi.getAvailablePlayers(draftState.session.draft_id, teamId);
 			playersLoaded = true;
 		} catch (error) {
 			logger.error('Failed to load available players:', error);
@@ -147,7 +144,12 @@
 		<Tabs {tabs} {activeTab} onTabChange={(id) => (activeTab = id)} />
 
 		<!-- Tab Panels -->
-		<div id="tabpanel-draft-board" role="tabpanel" aria-labelledby="tab-draft-board" hidden={activeTab !== 'draft-board'}>
+		<div
+			id="tabpanel-draft-board"
+			role="tabpanel"
+			aria-labelledby="tab-draft-board"
+			hidden={activeTab !== 'draft-board'}
+		>
 			{#if activeTab === 'draft-board'}
 				<div class="bg-white rounded-lg shadow p-4">
 					<h2 class="text-xl font-bold text-gray-800 mb-4">Draft Board</h2>
@@ -156,7 +158,12 @@
 			{/if}
 		</div>
 
-		<div id="tabpanel-available-players" role="tabpanel" aria-labelledby="tab-available-players" hidden={activeTab !== 'available-players'}>
+		<div
+			id="tabpanel-available-players"
+			role="tabpanel"
+			aria-labelledby="tab-available-players"
+			hidden={activeTab !== 'available-players'}
+		>
 			{#if activeTab === 'available-players'}
 				<div class="bg-white rounded-lg shadow p-4">
 					{#if players_loading}
@@ -178,7 +185,12 @@
 </div>
 
 <!-- Player Detail Modal -->
-<Modal open={detailPlayer !== null} onClose={handleCloseDetails} width="xl" title={`${detailPlayer?.first_name ?? ''} ${detailPlayer?.last_name ?? ''}`}>
+<Modal
+	open={detailPlayer !== null}
+	onClose={handleCloseDetails}
+	width="xl"
+	title={`${detailPlayer?.first_name ?? ''} ${detailPlayer?.last_name ?? ''}`}
+>
 	{#if detailPlayer}
 		<PlayerDetails player={detailPlayer} />
 	{/if}

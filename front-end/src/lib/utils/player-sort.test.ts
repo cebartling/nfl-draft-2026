@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { sortByScoutingGrade } from './player-sort';
 import type { Player } from '$lib/types';
 
-function makePlayer(overrides: Partial<Player> & { id: string; first_name: string; last_name: string }): Player {
+function makePlayer(
+	overrides: Partial<Player> & { id: string; first_name: string; last_name: string }
+): Player {
 	return {
 		position: 'QB',
 		college: 'Test U',

@@ -127,8 +127,10 @@ pub async fn get_combine_percentiles(
         None => state.combine_percentile_repo.find_all().await?,
     };
 
-    let response: Vec<CombinePercentileResponse> =
-        results.into_iter().map(CombinePercentileResponse::from).collect();
+    let response: Vec<CombinePercentileResponse> = results
+        .into_iter()
+        .map(CombinePercentileResponse::from)
+        .collect();
 
     Ok(Json(response))
 }
@@ -191,19 +193,14 @@ pub async fn seed_percentiles(
             }
         };
 
-        let percentile = match domain::models::CombinePercentile::new(
-            item.position.clone(),
-            measurement,
-        ) {
-            Ok(p) => p,
-            Err(e) => {
-                errors.push(format!(
-                    "Invalid position '{}': {}",
-                    item.position, e
-                ));
-                continue;
-            }
-        };
+        let percentile =
+            match domain::models::CombinePercentile::new(item.position.clone(), measurement) {
+                Ok(p) => p,
+                Err(e) => {
+                    errors.push(format!("Invalid position '{}': {}", item.position, e));
+                    continue;
+                }
+            };
 
         let percentile = match percentile
             .with_percentiles(
@@ -311,7 +308,9 @@ mod tests {
             domain::models::Measurement::FortyYardDash,
         )
         .unwrap()
-        .with_percentiles(100, 4.2, 4.3, 4.35, 4.4, 4.45, 4.5, 4.55, 4.6, 4.65, 4.7, 5.0)
+        .with_percentiles(
+            100, 4.2, 4.3, 4.35, 4.4, 4.45, 4.5, 4.55, 4.6, 4.65, 4.7, 5.0,
+        )
         .unwrap();
 
         let resp = CombinePercentileResponse::from(p);

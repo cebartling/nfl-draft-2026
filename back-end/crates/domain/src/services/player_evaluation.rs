@@ -625,14 +625,46 @@ mod tests {
                 let percentile = match measurement {
                     "height" => Some(make_percentile(position, "height", 70.0, 72.0, 75.0)),
                     "weight" => Some(make_percentile(position, "weight", 185.0, 200.0, 215.0)),
-                    "forty_yard_dash" => Some(make_percentile(position, "forty_yard_dash", 4.35, 4.48, 4.62)),
-                    "vertical_jump" => Some(make_percentile(position, "vertical_jump", 30.0, 36.0, 41.0)),
-                    "broad_jump" => Some(make_percentile(position, "broad_jump", 110.0, 120.0, 130.0)),
-                    "three_cone_drill" => Some(make_percentile(position, "three_cone_drill", 6.7, 7.0, 7.3)),
-                    "twenty_yard_shuttle" => Some(make_percentile(position, "twenty_yard_shuttle", 4.1, 4.3, 4.5)),
-                    "bench_press" => Some(make_percentile(position, "bench_press", 10.0, 16.0, 22.0)),
-                    "ten_yard_split" => Some(make_percentile(position, "ten_yard_split", 1.48, 1.55, 1.62)),
-                    "twenty_yard_split" => Some(make_percentile(position, "twenty_yard_split", 2.5, 2.6, 2.7)),
+                    "forty_yard_dash" => Some(make_percentile(
+                        position,
+                        "forty_yard_dash",
+                        4.35,
+                        4.48,
+                        4.62,
+                    )),
+                    "vertical_jump" => {
+                        Some(make_percentile(position, "vertical_jump", 30.0, 36.0, 41.0))
+                    }
+                    "broad_jump" => {
+                        Some(make_percentile(position, "broad_jump", 110.0, 120.0, 130.0))
+                    }
+                    "three_cone_drill" => {
+                        Some(make_percentile(position, "three_cone_drill", 6.7, 7.0, 7.3))
+                    }
+                    "twenty_yard_shuttle" => Some(make_percentile(
+                        position,
+                        "twenty_yard_shuttle",
+                        4.1,
+                        4.3,
+                        4.5,
+                    )),
+                    "bench_press" => {
+                        Some(make_percentile(position, "bench_press", 10.0, 16.0, 22.0))
+                    }
+                    "ten_yard_split" => Some(make_percentile(
+                        position,
+                        "ten_yard_split",
+                        1.48,
+                        1.55,
+                        1.62,
+                    )),
+                    "twenty_yard_split" => Some(make_percentile(
+                        position,
+                        "twenty_yard_split",
+                        2.5,
+                        2.6,
+                        2.7,
+                    )),
                     _ => None,
                 };
                 Ok(percentile)
@@ -646,7 +678,11 @@ mod tests {
 
         // Score should be > 0 and <= 100, and the RAS path was used
         assert!(score > 0.0, "BPA score should be positive, got {}", score);
-        assert!(score <= 100.0, "BPA score should be at most 100, got {}", score);
+        assert!(
+            score <= 100.0,
+            "BPA score should be at most 100, got {}",
+            score
+        );
     }
 
     #[test]
@@ -709,8 +745,16 @@ mod tests {
         );
 
         // Score should be > 0 and <= 100
-        assert!(score > 0.0, "Preloaded BPA score should be positive, got {}", score);
-        assert!(score <= 100.0, "Preloaded BPA score should be at most 100, got {}", score);
+        assert!(
+            score > 0.0,
+            "Preloaded BPA score should be positive, got {}",
+            score
+        );
+        assert!(
+            score <= 100.0,
+            "Preloaded BPA score should be at most 100, got {}",
+            score
+        );
     }
 
     #[test]

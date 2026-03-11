@@ -4,10 +4,7 @@ import type { Player } from '$lib/types';
  * Sort players by scouting grade (graded first, descending),
  * with alphabetical tiebreaker (last name, then first name).
  */
-export function sortByScoutingGrade(
-	players: Player[],
-	grades: Map<string, number>
-): Player[] {
+export function sortByScoutingGrade(players: Player[], grades: Map<string, number>): Player[] {
 	return [...players].sort((a, b) => {
 		const gradeA = grades.get(a.id);
 		const gradeB = grades.get(b.id);

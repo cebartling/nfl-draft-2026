@@ -115,9 +115,9 @@ describe('draftsApi', () => {
 		it('should propagate errors when draft already exists', async () => {
 			mockPost.mockRejectedValueOnce(new Error('Draft for year 2026 already exists'));
 
-			await expect(
-				draftsApi.create({ name: 'Test Draft', year: 2026, rounds: 7 })
-			).rejects.toThrow('Draft for year 2026 already exists');
+			await expect(draftsApi.create({ name: 'Test Draft', year: 2026, rounds: 7 })).rejects.toThrow(
+				'Draft for year 2026 already exists'
+			);
 		});
 	});
 

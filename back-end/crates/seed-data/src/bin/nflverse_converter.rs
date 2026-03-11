@@ -10,7 +10,10 @@ use seed_data::nflverse_converter::{convert_csv_file, write_combine_json};
 /// Then run this tool to convert it:
 ///   cargo run -p seed-data --bin nflverse_converter -- --input data/nflverse_combine.csv
 #[derive(Parser, Debug)]
-#[command(name = "nflverse-converter", about = "Convert nflverse combine CSV to project JSON format")]
+#[command(
+    name = "nflverse-converter",
+    about = "Convert nflverse combine CSV to project JSON format"
+)]
 struct Args {
     /// Path to the downloaded nflverse combine CSV file
     #[arg(short, long)]

@@ -17,7 +17,13 @@ pub fn create_router(state: AppState) -> Router {
 
 pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Router {
     let seed_api_key_header = "X-Seed-Api-Key".parse().unwrap();
-    let allowed_methods = [Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS];
+    let allowed_methods = [
+        Method::GET,
+        Method::POST,
+        Method::PUT,
+        Method::DELETE,
+        Method::OPTIONS,
+    ];
     let allowed_headers = [CONTENT_TYPE, AUTHORIZATION, seed_api_key_header];
 
     let cors = if cors_origins.is_empty() {
@@ -36,10 +42,8 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             .allow_methods(allowed_methods)
             .allow_headers(allowed_headers)
     } else {
-        let origins: Vec<HeaderValue> = cors_origins
-            .iter()
-            .filter_map(|o| o.parse().ok())
-            .collect();
+        let origins: Vec<HeaderValue> =
+            cors_origins.iter().filter_map(|o| o.parse().ok()).collect();
 
         CorsLayer::new()
             .allow_origin(AllowOrigin::list(origins))

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { formatDate, formatDateTime, formatRelativeTime, getPositionColor, formatHeight } from './formatters';
+import {
+	formatDate,
+	formatDateTime,
+	formatRelativeTime,
+	getPositionColor,
+	formatHeight,
+} from './formatters';
 
 describe('formatDate', () => {
 	it('should format a valid ISO string', () => {
@@ -150,9 +156,9 @@ describe('getPositionColor', () => {
 
 describe('formatHeight', () => {
 	it('should format inches to feet and inches', () => {
-		expect(formatHeight(74)).toBe("6'2\"");
-		expect(formatHeight(72)).toBe("6'0\"");
-		expect(formatHeight(60)).toBe("5'0\"");
+		expect(formatHeight(74)).toBe('6\'2"');
+		expect(formatHeight(72)).toBe('6\'0"');
+		expect(formatHeight(60)).toBe('5\'0"');
 	});
 
 	it('should return N/A for null or undefined', () => {

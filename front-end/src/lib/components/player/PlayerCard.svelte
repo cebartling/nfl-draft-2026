@@ -41,7 +41,11 @@
 >
 	<div class="flex items-center gap-4">
 		{#if player.scouting_grade != null}
-			<span class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(player.scouting_grade)}">
+			<span
+				class="inline-flex items-center justify-center w-12 px-2 py-1 rounded text-sm font-bold {getGradeColor(
+					player.scouting_grade
+				)}"
+			>
 				{player.scouting_grade.toFixed(1)}
 			</span>
 		{/if}
@@ -57,15 +61,23 @@
 		{#if player.rankings && player.rankings.length > 0}
 			<div class="flex items-center gap-1.5">
 				{#each player.rankings as badge (badge.source_name)}
-					<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700" title="{badge.source_name}: #{badge.rank}">
+					<span
+						class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+						title="{badge.source_name}: #{badge.rank}"
+					>
 						{badge.abbreviation}:&nbsp;#{badge.rank}
 					</span>
 				{/each}
 			</div>
 		{/if}
 		{#if player.feldman_freak}
-			<Tooltip text="Feldman Freak #{player.feldman_freak.rank}: {player.feldman_freak.description}" width="w-96">
-				<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+			<Tooltip
+				text="Feldman Freak #{player.feldman_freak.rank}: {player.feldman_freak.description}"
+				width="w-96"
+			>
+				<span
+					class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300"
+				>
 					FREAK #{player.feldman_freak.rank}
 				</span>
 			</Tooltip>
@@ -85,7 +97,12 @@
 				title="View player details"
 			>
 				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					/>
 				</svg>
 			</button>
 		{/if}

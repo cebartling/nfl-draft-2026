@@ -262,10 +262,7 @@ mod tests {
         let data = parse_freaks_json(sample_json()).unwrap();
         assert_eq!(data.meta.year, 2026);
         assert_eq!(data.meta.source, "Bruce Feldman's Freaks List");
-        assert_eq!(
-            data.meta.article_url,
-            "https://example.com/freaks"
-        );
+        assert_eq!(data.meta.article_url, "https://example.com/freaks");
         assert_eq!(data.freaks.len(), 2);
         assert_eq!(data.freaks[0].rank, 1);
         assert_eq!(data.freaks[0].first_name, "Kenyon");

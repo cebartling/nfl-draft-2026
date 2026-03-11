@@ -54,11 +54,41 @@ describe('getPositionsForGroup', () => {
 });
 
 describe('filterProspects', () => {
-	const qb = makePlayer({ id: 'p1', first_name: 'Patrick', last_name: 'Mahomes', position: 'QB', college: 'Texas Tech' });
-	const wr = makePlayer({ id: 'p2', first_name: 'Ja\'Marr', last_name: 'Chase', position: 'WR', college: 'LSU' });
-	const cb = makePlayer({ id: 'p3', first_name: 'Sauce', last_name: 'Gardner', position: 'CB', college: 'Cincinnati' });
-	const k = makePlayer({ id: 'p4', first_name: 'Tyler', last_name: 'Bass', position: 'K', college: 'Georgia Southern' });
-	const de = makePlayer({ id: 'p5', first_name: 'Myles', last_name: 'Garrett', position: 'DE', college: 'Texas A&M' });
+	const qb = makePlayer({
+		id: 'p1',
+		first_name: 'Patrick',
+		last_name: 'Mahomes',
+		position: 'QB',
+		college: 'Texas Tech',
+	});
+	const wr = makePlayer({
+		id: 'p2',
+		first_name: "Ja'Marr",
+		last_name: 'Chase',
+		position: 'WR',
+		college: 'LSU',
+	});
+	const cb = makePlayer({
+		id: 'p3',
+		first_name: 'Sauce',
+		last_name: 'Gardner',
+		position: 'CB',
+		college: 'Cincinnati',
+	});
+	const k = makePlayer({
+		id: 'p4',
+		first_name: 'Tyler',
+		last_name: 'Bass',
+		position: 'K',
+		college: 'Georgia Southern',
+	});
+	const de = makePlayer({
+		id: 'p5',
+		first_name: 'Myles',
+		last_name: 'Garrett',
+		position: 'DE',
+		college: 'Texas A&M',
+	});
 
 	const allPlayers = [qb, wr, cb, k, de];
 	const playerMap = buildPlayerMap(allPlayers);

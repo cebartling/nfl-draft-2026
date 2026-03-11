@@ -1,8 +1,8 @@
 pub mod combine_percentile;
 pub mod combine_results;
 pub mod draft;
-pub mod feldman_freak;
 pub mod draft_strategy;
+pub mod feldman_freak;
 pub mod player;
 pub mod prospect_ranking;
 pub mod ranking_source;
@@ -14,9 +14,9 @@ pub mod trade;
 
 pub use combine_percentile::CombinePercentileDb;
 pub use combine_results::CombineResultsDb;
-pub use feldman_freak::FeldmanFreakDb;
 pub use draft::{DraftDb, DraftPickDb};
 pub use draft_strategy::DraftStrategyDb;
+pub use feldman_freak::FeldmanFreakDb;
 pub use player::PlayerDb;
 pub use prospect_ranking::ProspectRankingDb;
 pub use ranking_source::RankingSourceDb;

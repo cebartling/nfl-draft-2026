@@ -79,9 +79,13 @@ mod tests {
     #[test]
     fn test_new_feldman_freak() {
         let player_id = Uuid::new_v4();
-        let freak =
-            FeldmanFreak::new(player_id, 2026, 1, "Vertical jumped 41.5 inches".to_string())
-                .unwrap();
+        let freak = FeldmanFreak::new(
+            player_id,
+            2026,
+            1,
+            "Vertical jumped 41.5 inches".to_string(),
+        )
+        .unwrap();
 
         assert_eq!(freak.player_id, player_id);
         assert_eq!(freak.year, 2026);
@@ -93,11 +97,15 @@ mod tests {
     #[test]
     fn test_with_article_url() {
         let player_id = Uuid::new_v4();
-        let freak =
-            FeldmanFreak::new(player_id, 2026, 1, "Vertical jumped 41.5 inches".to_string())
-                .unwrap()
-                .with_article_url("https://example.com/freaks".to_string())
-                .unwrap();
+        let freak = FeldmanFreak::new(
+            player_id,
+            2026,
+            1,
+            "Vertical jumped 41.5 inches".to_string(),
+        )
+        .unwrap()
+        .with_article_url("https://example.com/freaks".to_string())
+        .unwrap();
 
         assert_eq!(
             freak.article_url,

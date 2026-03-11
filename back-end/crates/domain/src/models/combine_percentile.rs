@@ -198,7 +198,9 @@ mod tests {
     fn test_with_percentiles() {
         let cp = CombinePercentile::new("WR".to_string(), Measurement::FortyYardDash)
             .unwrap()
-            .with_percentiles(500, 4.2, 4.3, 4.35, 4.4, 4.42, 4.45, 4.5, 4.55, 4.6, 4.7, 5.0)
+            .with_percentiles(
+                500, 4.2, 4.3, 4.35, 4.4, 4.42, 4.45, 4.5, 4.55, 4.6, 4.7, 5.0,
+            )
             .unwrap();
         assert_eq!(cp.sample_size, 500);
         assert_eq!(cp.p50, 4.45);

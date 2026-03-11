@@ -131,9 +131,7 @@ describe('DraftState', () => {
 				controlled_team_ids: ['team-1'],
 				current_pick_number: 1,
 			});
-			state.picks = [
-				makePick({ overall_pick: 1, team_id: 'team-1' }),
-			];
+			state.picks = [makePick({ overall_pick: 1, team_id: 'team-1' })];
 			expect(state.isCurrentPickUserControlled).toBe(true);
 		});
 
@@ -142,9 +140,7 @@ describe('DraftState', () => {
 				controlled_team_ids: ['team-1'],
 				current_pick_number: 1,
 			});
-			state.picks = [
-				makePick({ overall_pick: 1, team_id: 'team-2' }),
-			];
+			state.picks = [makePick({ overall_pick: 1, team_id: 'team-2' })];
 			expect(state.isCurrentPickUserControlled).toBe(false);
 		});
 
@@ -153,9 +149,7 @@ describe('DraftState', () => {
 				controlled_team_ids: [],
 				current_pick_number: 1,
 			});
-			state.picks = [
-				makePick({ overall_pick: 1, team_id: 'team-1' }),
-			];
+			state.picks = [makePick({ overall_pick: 1, team_id: 'team-1' })];
 			expect(state.isCurrentPickUserControlled).toBe(false);
 		});
 	});
@@ -189,9 +183,7 @@ describe('DraftState', () => {
 
 		it('should return null when no pick matches current number', () => {
 			state.session = makeSession({ current_pick_number: 99 });
-			state.picks = [
-				makePick({ overall_pick: 1 }),
-			];
+			state.picks = [makePick({ overall_pick: 1 })];
 			expect(state.currentPick).toBeNull();
 		});
 	});
@@ -234,9 +226,7 @@ describe('DraftState', () => {
 
 		it('should not go backwards if messages arrive out of order', () => {
 			state.session = makeSession({ current_pick_number: 15 });
-			state.picks = [
-				makePick({ id: 'pick-10', overall_pick: 10, team_id: 'team-1' }),
-			];
+			state.picks = [makePick({ id: 'pick-10', overall_pick: 10, team_id: 'team-1' })];
 
 			// Late message for an earlier pick
 			state.updatePickFromWS({
@@ -251,9 +241,7 @@ describe('DraftState', () => {
 
 		it('should do nothing when pick_id not found', () => {
 			state.session = makeSession({ current_pick_number: 1 });
-			state.picks = [
-				makePick({ id: 'pick-1', overall_pick: 1 }),
-			];
+			state.picks = [makePick({ id: 'pick-1', overall_pick: 1 })];
 
 			state.updatePickFromWS({
 				pick_id: 'nonexistent',
@@ -266,9 +254,7 @@ describe('DraftState', () => {
 		});
 
 		it('should work without a session', () => {
-			state.picks = [
-				makePick({ id: 'pick-1', overall_pick: 1 }),
-			];
+			state.picks = [makePick({ id: 'pick-1', overall_pick: 1 })];
 
 			state.updatePickFromWS({
 				pick_id: 'pick-1',

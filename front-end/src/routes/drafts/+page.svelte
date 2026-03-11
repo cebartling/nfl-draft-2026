@@ -51,7 +51,7 @@
 		const statusMap: Record<string, string> = {
 			pending: 'NotStarted',
 			active: 'InProgress',
-			completed: 'Completed'
+			completed: 'Completed',
 		};
 		const mappedStatus = statusMap[filterStatus] ?? filterStatus;
 		return sortedDrafts.filter((d) => d.status === mappedStatus);
@@ -227,7 +227,7 @@
 													draft_id: draft.id,
 													time_per_pick_seconds: 120,
 													auto_pick_enabled: true,
-													chart_type: 'JimmyJohnson'
+													chart_type: 'JimmyJohnson',
 												});
 												await goto(`/sessions/${session.id}`);
 											} catch (err) {

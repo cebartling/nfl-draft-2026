@@ -88,10 +88,7 @@ pub async fn get_player_ras(
         .await?;
 
     let combine = combine_list.first().ok_or_else(|| {
-        ApiError::NotFound(format!(
-            "No combine results found for player {}",
-            player_id
-        ))
+        ApiError::NotFound(format!("No combine results found for player {}", player_id))
     })?;
 
     // Calculate RAS
