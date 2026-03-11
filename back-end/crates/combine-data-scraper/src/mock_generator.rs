@@ -1,41 +1,12 @@
 use rand::Rng;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MockCombineEntry {
-    pub first_name: String,
-    pub last_name: String,
-    pub position: String,
-    pub source: String,
-    pub year: i32,
-    pub forty_yard_dash: Option<f64>,
-    pub bench_press: Option<i32>,
-    pub vertical_jump: Option<f64>,
-    pub broad_jump: Option<i32>,
-    pub three_cone_drill: Option<f64>,
-    pub twenty_yard_shuttle: Option<f64>,
-    pub arm_length: Option<f64>,
-    pub hand_size: Option<f64>,
-    pub wingspan: Option<f64>,
-    pub ten_yard_split: Option<f64>,
-    pub twenty_yard_split: Option<f64>,
-}
+use crate::models::{CombineData, CombineEntry, CombineMeta};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MockCombineData {
-    pub meta: MockCombineMeta,
-    pub combine_results: Vec<MockCombineEntry>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MockCombineMeta {
-    pub source: String,
-    pub description: String,
-    pub year: i32,
-    pub generated_at: String,
-    pub player_count: usize,
-    pub entry_count: usize,
-}
+/// Type aliases for backward compatibility
+pub type MockCombineEntry = CombineEntry;
+pub type MockCombineData = CombineData;
+pub type MockCombineMeta = CombineMeta;
 
 #[derive(Debug, Deserialize)]
 pub struct ProspectEntry {
