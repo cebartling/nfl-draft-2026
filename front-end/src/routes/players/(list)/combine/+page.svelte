@@ -6,10 +6,7 @@
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import CombineResultsTable from '$components/player/CombineResultsTable.svelte';
 	import CombineComparisonPanel from '$components/player/CombineComparisonPanel.svelte';
-	import {
-		buildPercentilesMap,
-		type PercentilesMap,
-	} from '$lib/utils/combine-percentile';
+	import { buildPercentilesMap, type PercentilesMap } from '$lib/utils/combine-percentile';
 	import type { CombineResultsWithPlayer } from '$lib/types';
 	import type { Position } from '$lib/types';
 

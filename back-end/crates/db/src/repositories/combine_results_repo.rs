@@ -631,10 +631,7 @@ mod tests {
 
         assert!(all.len() >= 2);
         // Should be ordered by year DESC
-        let our_results: Vec<_> = all
-            .iter()
-            .filter(|r| r.player_id == player.id)
-            .collect();
+        let our_results: Vec<_> = all.iter().filter(|r| r.player_id == player.id).collect();
         assert_eq!(our_results.len(), 2);
         assert_eq!(our_results[0].year, 2026);
         assert_eq!(our_results[1].year, 2025);

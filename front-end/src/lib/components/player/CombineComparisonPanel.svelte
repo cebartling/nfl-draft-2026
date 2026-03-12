@@ -40,7 +40,11 @@
 		return decimals === 0 ? value.toString() : value.toFixed(decimals);
 	}
 
-	function isBest(value: number | null | undefined, key: string, allValues: (number | null | undefined)[]): boolean {
+	function isBest(
+		value: number | null | undefined,
+		key: string,
+		allValues: (number | null | undefined)[]
+	): boolean {
 		if (value == null) return false;
 		const valid = allValues.filter((v): v is number => v != null);
 		if (valid.length < 2) return false;
@@ -72,7 +76,8 @@
 					{#each players as player (player.id)}
 						<th class="text-center py-2 px-3 min-w-[120px]">
 							<div class="font-semibold text-gray-900">
-								{player.player_first_name} {player.player_last_name}
+								{player.player_first_name}
+								{player.player_last_name}
 							</div>
 							<Badge variant={getPositionColor(player.position)} size="sm">
 								{player.position}

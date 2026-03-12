@@ -1,7 +1,11 @@
 <script lang="ts">
 	import type { CombineResultsWithPlayer } from '$lib/types';
 	import { getPositionColor } from '$lib/utils/formatters';
-	import { getPercentileForValue, getPercentileColor, type PercentilesMap } from '$lib/utils/combine-percentile';
+	import {
+		getPercentileForValue,
+		getPercentileColor,
+		type PercentilesMap,
+	} from '$lib/utils/combine-percentile';
 	import Badge from '$components/ui/Badge.svelte';
 
 	interface Props {
@@ -31,7 +35,11 @@
 		return sortDirection === 'asc' ? ' ↑' : ' ↓';
 	}
 
-	function cellColor(value: number | null | undefined, position: string, measurement: string): string {
+	function cellColor(
+		value: number | null | undefined,
+		position: string,
+		measurement: string
+	): string {
 		const pct = getPercentileForValue(value, position, measurement, percentilesMap);
 		return getPercentileColor(pct);
 	}
