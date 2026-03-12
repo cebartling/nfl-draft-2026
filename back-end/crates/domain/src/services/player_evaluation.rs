@@ -411,6 +411,7 @@ mod tests {
             async fn find_by_player_year_source(&self, player_id: Uuid, year: i32, source: &str) -> DomainResult<Option<CombineResults>>;
             async fn update(&self, results: &CombineResults) -> DomainResult<CombineResults>;
             async fn delete(&self, id: Uuid) -> DomainResult<()>;
+            async fn find_all(&self) -> DomainResult<Vec<CombineResults>>;
         }
     }
 

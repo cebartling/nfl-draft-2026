@@ -682,3 +682,106 @@ async fn test_duplicate_player_year_error() {
 
     common::cleanup_database(&pool).await;
 }
+
+#[tokio::test]
+async fn test_list_all_combine_results() {
+    let (base_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    common::cleanup_database(&pool).await;
+
+    // Create two players
+    let player1_response = client
+        .post(&format!("{}/api/v1/players", base_url))
+        .json(&json!({
+            "first_name": "Alpha",
+            "last_name": "Player",
+            "position": "QB",
+            "college": "Alabama",
+            "draft_year": 2026
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to create player 1");
+    let player1: serde_json::Value = player1_response.json().await.unwrap();
+    let player1_id = player1["id"].as_str().unwrap();
+
+    let player2_response = client
+        .post(&format!("{}/api/v1/players", base_url))
+        .json(&json!({
+            "first_name": "Beta",
+            "last_name": "Player",
+            "position": "WR",
+            "college": "Ohio State",
+            "draft_year": 2026
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to create player 2");
+    let player2: serde_json::Value = player2_response.json().await.unwrap();
+    let player2_id = player2["id"].as_str().unwrap();
+
+    // Create combine results for both players
+    client
+        .post(&format!("{}/api/v1/combine-results", base_url))
+        .json(&json!({
+            "player_id": player1_id,
+            "year": 2026,
+            "forty_yard_dash": 4.52,
+            "bench_press": 20
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to create combine results 1");
+
+    client
+        .post(&format!("{}/api/v1/combine-results", base_url))
+        .json(&json!({
+            "player_id": player2_id,
+            "year": 2026,
+            "forty_yard_dash": 4.38,
+            "vertical_jump": 40.5
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to create combine results 2");
+
+    // GET /api/v1/combine-results — list all with player info
+    let list_response = client
+        .get(&format!("{}/api/v1/combine-results", base_url))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to list combine results");
+
+    assert_eq!(list_response.status(), 200);
+
+    let results: Vec<serde_json::Value> = list_response.json().await.unwrap();
+    assert!(results.len() >= 2);
+
+    // Verify response includes player info
+    let alpha = results
+        .iter()
+        .find(|r| r["player_first_name"].as_str() == Some("Alpha"))
+        .expect("Should find Alpha Player in results");
+
+    assert_eq!(alpha["player_last_name"].as_str(), Some("Player"));
+    assert_eq!(alpha["position"].as_str(), Some("QB"));
+    assert_eq!(alpha["college"].as_str(), Some("Alabama"));
+    assert_eq!(alpha["forty_yard_dash"].as_f64(), Some(4.52));
+
+    let beta = results
+        .iter()
+        .find(|r| r["player_first_name"].as_str() == Some("Beta"))
+        .expect("Should find Beta Player in results");
+
+    assert_eq!(beta["position"].as_str(), Some("WR"));
+    assert_eq!(beta["college"].as_str(), Some("Ohio State"));
+    assert_eq!(beta["forty_yard_dash"].as_f64(), Some(4.38));
+
+    common::cleanup_database(&pool).await;
+}

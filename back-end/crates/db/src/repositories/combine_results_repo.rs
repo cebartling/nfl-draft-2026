@@ -246,6 +246,28 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
 
         Ok(())
     }
+
+    async fn find_all(&self) -> DomainResult<Vec<CombineResults>> {
+        let results = sqlx::query_as!(
+            CombineResultsDb,
+            r#"
+            SELECT id, player_id, year, source, forty_yard_dash, bench_press, vertical_jump,
+                   broad_jump, three_cone_drill, twenty_yard_shuttle,
+                   arm_length, hand_size, wingspan, ten_yard_split, twenty_yard_split,
+                   created_at, updated_at
+            FROM combine_results
+            ORDER BY year DESC, source ASC
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        results
+            .into_iter()
+            .map(|r: CombineResultsDb| r.to_domain().map_err(Into::into))
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -581,6 +603,41 @@ mod tests {
         let result = repo.create(&duplicate).await;
 
         assert!(result.is_err());
+
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+    }
+
+    #[tokio::test]
+    async fn test_find_all() {
+        let pool = setup_test_pool().await;
+        cleanup_combine_results(&pool).await;
+        cleanup_players(&pool).await;
+
+        let player = create_test_player(&pool).await;
+        let repo = SqlxCombineResultsRepository::new(pool.clone());
+
+        // Create two combine results for same player, different years
+        let results1 = CombineResults::new(player.id, 2025).unwrap();
+        let results2 = CombineResults::new(player.id, 2026)
+            .unwrap()
+            .with_forty_yard_dash(4.52)
+            .unwrap();
+
+        repo.create(&results1).await.unwrap();
+        repo.create(&results2).await.unwrap();
+
+        let all = repo.find_all().await.unwrap();
+
+        assert!(all.len() >= 2);
+        // Should be ordered by year DESC
+        let our_results: Vec<_> = all
+            .iter()
+            .filter(|r| r.player_id == player.id)
+            .collect();
+        assert_eq!(our_results.len(), 2);
+        assert_eq!(our_results[0].year, 2026);
+        assert_eq!(our_results[1].year, 2025);
 
         cleanup_combine_results(&pool).await;
         cleanup_players(&pool).await;

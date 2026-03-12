@@ -8,4 +8,5 @@ export { sessionsApi, type CreateSessionParams } from './sessions';
 export { tradesApi, type ProposeTradeParams } from './trades';
 export { rankingsApi } from './rankings';
 export { freaksApi } from './freaks';
+export { combineApi } from './combine';
 export { wsClient, WebSocketClient, WebSocketState } from './websocket';

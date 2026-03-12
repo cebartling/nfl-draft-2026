@@ -30,6 +30,7 @@
 	let isLoadingRas = $state(false);
 	let isLoadingRankings = $state(false);
 	let rankingsLoaded = $state(false);
+	let combineLoaded = $state(false);
 	let rasLoaded = $state(false);
 
 	// Use embedded rankings from consolidated endpoint if available
@@ -87,15 +88,17 @@
 
 	// Load combine results when switching to combine tab
 	$effect(() => {
-		if (activeTab === 'combine' && combineResults === null && !isLoadingCombine) {
+		if (activeTab === 'combine' && !combineLoaded && !isLoadingCombine) {
 			isLoadingCombine = true;
 			playersApi
 				.getCombineResults(player.id)
 				.then((results) => {
 					combineResults = results;
+					combineLoaded = true;
 				})
 				.catch((err) => {
 					logger.error('Failed to load combine results:', err);
+					combineLoaded = true;
 				})
 				.finally(() => {
 					isLoadingCombine = false;

@@ -286,7 +286,7 @@ describe('playersApi', () => {
 				twenty_yard_shuttle: 4.2,
 			};
 
-			mockGet.mockResolvedValueOnce(mockResults);
+			mockGet.mockResolvedValueOnce([mockResults]);
 
 			const result = await playersApi.getCombineResults(playerId);
 
@@ -300,6 +300,14 @@ describe('playersApi', () => {
 		it('should return null for 404 (no combine results)', async () => {
 			const mockError = new client.ApiClientError('Not found', 404);
 			mockGet.mockRejectedValueOnce(mockError);
+
+			const result = await playersApi.getCombineResults('123');
+
+			expect(result).toBeNull();
+		});
+
+		it('should return null for empty array', async () => {
+			mockGet.mockResolvedValueOnce([]);
 
 			const result = await playersApi.getCombineResults('123');
 
@@ -322,7 +330,7 @@ describe('playersApi', () => {
 				// Other fields undefined
 			};
 
-			mockGet.mockResolvedValueOnce(mockResults);
+			mockGet.mockResolvedValueOnce([mockResults]);
 
 			const result = await playersApi.getCombineResults(playerId);
 

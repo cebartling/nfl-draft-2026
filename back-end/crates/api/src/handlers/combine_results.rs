@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -5,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use domain::models::{CombineResults, CombineSource};
+use domain::models::{CombineResults, CombineSource, Position};
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -83,6 +85,77 @@ impl From<CombineResults> for CombineResultsResponse {
             twenty_yard_split: results.twenty_yard_split,
         }
     }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CombineResultsWithPlayerResponse {
+    pub id: Uuid,
+    pub player_id: Uuid,
+    pub player_first_name: String,
+    pub player_last_name: String,
+    pub position: Position,
+    pub college: Option<String>,
+    pub year: i32,
+    pub source: String,
+    pub forty_yard_dash: Option<f64>,
+    pub bench_press: Option<i32>,
+    pub vertical_jump: Option<f64>,
+    pub broad_jump: Option<i32>,
+    pub three_cone_drill: Option<f64>,
+    pub twenty_yard_shuttle: Option<f64>,
+    pub arm_length: Option<f64>,
+    pub hand_size: Option<f64>,
+    pub wingspan: Option<f64>,
+    pub ten_yard_split: Option<f64>,
+    pub twenty_yard_split: Option<f64>,
+}
+
+/// GET /api/v1/combine-results - List all combine results with player info
+#[utoipa::path(
+    get,
+    path = "/api/v1/combine-results",
+    responses(
+        (status = 200, description = "List of all combine results with player info", body = Vec<CombineResultsWithPlayerResponse>)
+    ),
+    tag = "combine-results"
+)]
+pub async fn list_combine_results(
+    State(state): State<AppState>,
+) -> ApiResult<Json<Vec<CombineResultsWithPlayerResponse>>> {
+    let combine_results = state.combine_results_repo.find_all().await?;
+    let players = state.player_repo.find_all().await?;
+
+    let player_map: HashMap<Uuid, _> = players.into_iter().map(|p| (p.id, p)).collect();
+
+    let response: Vec<CombineResultsWithPlayerResponse> = combine_results
+        .into_iter()
+        .filter_map(|cr| {
+            let player = player_map.get(&cr.player_id)?;
+            Some(CombineResultsWithPlayerResponse {
+                id: cr.id,
+                player_id: cr.player_id,
+                player_first_name: player.first_name.clone(),
+                player_last_name: player.last_name.clone(),
+                position: player.position.clone(),
+                college: player.college.clone(),
+                year: cr.year,
+                source: cr.source.to_string(),
+                forty_yard_dash: cr.forty_yard_dash,
+                bench_press: cr.bench_press,
+                vertical_jump: cr.vertical_jump,
+                broad_jump: cr.broad_jump,
+                three_cone_drill: cr.three_cone_drill,
+                twenty_yard_shuttle: cr.twenty_yard_shuttle,
+                arm_length: cr.arm_length,
+                hand_size: cr.hand_size,
+                wingspan: cr.wingspan,
+                ten_yard_split: cr.ten_yard_split,
+                twenty_yard_split: cr.twenty_yard_split,
+            })
+        })
+        .collect();
+
+    Ok(Json(response))
 }
 
 /// POST /api/v1/combine-results - Create new combine results
