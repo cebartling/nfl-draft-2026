@@ -51,9 +51,11 @@ fn fnv1a_hash(data: &[u8]) -> u64 {
 - **Fit grade**: Hash-derived probability: 70% chance of "B" (consensus fit), 15% "A" (bump up), 15% "C" (bump down)
 - **Concern flags**: ~5% chance each for injury and character concerns, derived from hash
 
-#### Determinism guarantee
+#### Determinism scope
 
-The hash input is a string combining team abbreviation and player UUID. Since UUIDs are generated deterministically from player names during seeding (via `uuid::Uuid::new_v4()` which uses the system RNG — but the same player always gets the same UUID within a single seed run), the full chain is deterministic within a single seed operation.
+The hash input is a string combining team abbreviation and player UUID. Player UUIDs are generated via `uuid::Uuid::new_v4()` (system RNG), so they are **not** deterministic across separate seed operations. However, within a single seed run, each player is assigned a UUID once, and all scouting reports for that player use the same UUID — making the FNV-1a output deterministic within that run.
+
+**Important limitation**: Re-seeding the database (clearing and reloading) assigns new UUIDs to players, which produces different scouting report grades. Determinism holds within a seed run but not across database resets.
 
 ## Consequences
 
