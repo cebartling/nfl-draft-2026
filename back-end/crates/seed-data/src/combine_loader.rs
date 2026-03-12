@@ -1,8 +1,13 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use domain::models::{CombineResults, CombineSource};
+use domain::models::{CombineResults, CombineSource, Player};
 use domain::repositories::{CombineResultsRepository, PlayerRepository};
+
+use crate::position_mapper::map_position;
+use crate::rankings_loader::normalize_name;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CombineFileData {
@@ -41,16 +46,18 @@ pub struct CombineLoadStats {
     pub skipped: usize,
     pub skipped_no_data: usize,
     pub player_not_found: usize,
+    pub players_discovered: usize,
     pub errors: Vec<String>,
 }
 
 impl CombineLoadStats {
     pub fn print_summary(&self) {
         println!("\nCombine Load Summary:");
-        println!("  Loaded:           {}", self.loaded);
-        println!("  Skipped (exists): {}", self.skipped);
-        println!("  Skipped (no data): {}", self.skipped_no_data);
-        println!("  Player not found: {}", self.player_not_found);
+        println!("  Loaded:              {}", self.loaded);
+        println!("  Skipped (exists):    {}", self.skipped);
+        println!("  Skipped (no data):   {}", self.skipped_no_data);
+        println!("  Player not found:    {}", self.player_not_found);
+        println!("  Players discovered:  {}", self.players_discovered);
         if !self.errors.is_empty() {
             println!("  Errors: {}", self.errors.len());
             for err in &self.errors {
@@ -93,13 +100,24 @@ pub async fn load_combine_data(
     let mut skipped = 0;
     let mut skipped_no_data = 0;
     let mut player_not_found = 0;
+    let mut players_discovered = 0;
     let mut errors: Vec<String> = Vec::new();
 
-    // Load all players for name matching
+    // Load all players and build a normalized name lookup map
     let all_players = player_repo
         .find_all()
         .await
         .map_err(|e| anyhow::anyhow!("Failed to load players: {}", e))?;
+
+    let mut player_map: HashMap<(String, String), Player> = all_players
+        .into_iter()
+        .map(|p| {
+            (
+                (normalize_name(&p.first_name), normalize_name(&p.last_name)),
+                p,
+            )
+        })
+        .collect();
 
     for entry in &data.combine_results {
         // Skip entries where every measurement is null
@@ -108,23 +126,70 @@ pub async fn load_combine_data(
             continue;
         }
 
-        // Find player by name match
-        let player = all_players.iter().find(|p| {
-            p.first_name.eq_ignore_ascii_case(&entry.first_name)
-                && p.last_name.eq_ignore_ascii_case(&entry.last_name)
-        });
+        // Find player by normalized name match
+        let lookup_key = (
+            normalize_name(&entry.first_name),
+            normalize_name(&entry.last_name),
+        );
 
-        let player = match player {
-            Some(p) => p,
-            None => {
-                player_not_found += 1;
-                continue;
-            }
+        let player_id = if let Some(existing) = player_map.get(&lookup_key) {
+            existing.id
+        } else {
+            // Auto-discover: create a new player from combine entry
+            let position = match map_position(&entry.position) {
+                Ok(p) => p,
+                Err(e) => {
+                    let msg = format!(
+                        "Skipping {} {} - unknown position '{}': {}",
+                        entry.first_name, entry.last_name, entry.position, e
+                    );
+                    tracing::warn!("{}", msg);
+                    player_not_found += 1;
+                    errors.push(msg);
+                    continue;
+                }
+            };
+
+            let new_player = Player::new(
+                entry.first_name.clone(),
+                entry.last_name.clone(),
+                position,
+                entry.year,
+            )
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to create player {} {}: {}",
+                    entry.first_name,
+                    entry.last_name,
+                    e
+                )
+            })?;
+
+            let player_id = new_player.id;
+            player_repo.create(&new_player).await.map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to insert player {} {}: {}",
+                    entry.first_name,
+                    entry.last_name,
+                    e
+                )
+            })?;
+
+            println!(
+                "  New prospect discovered from combine: {} {} ({}) [created]",
+                entry.first_name, entry.last_name, entry.position
+            );
+            players_discovered += 1;
+
+            // Add to map to avoid duplicates
+            player_map.insert(lookup_key, new_player);
+
+            player_id
         };
 
         // Check if combine results already exist for this player/year/source
         let existing = combine_repo
-            .find_by_player_year_source(player.id, entry.year, &entry.source)
+            .find_by_player_year_source(player_id, entry.year, &entry.source)
             .await;
 
         if let Ok(Some(_)) = existing {
@@ -145,7 +210,7 @@ pub async fn load_combine_data(
         };
 
         // Build combine results
-        let mut results = match CombineResults::new(player.id, entry.year) {
+        let mut results = match CombineResults::new(player_id, entry.year) {
             Ok(r) => r.with_source(source),
             Err(e) => {
                 errors.push(format!(
@@ -306,6 +371,7 @@ pub async fn load_combine_data(
         skipped,
         skipped_no_data,
         player_not_found,
+        players_discovered,
         errors,
     })
 }
@@ -349,6 +415,7 @@ pub fn load_combine_data_dry_run(data: &CombineFileData) -> Result<CombineLoadSt
         skipped: 0,
         skipped_no_data,
         player_not_found: 0,
+        players_discovered: 0,
         errors,
     })
 }

@@ -3,7 +3,7 @@
     "source": "merged",
     "description": "2026 NFL Combine results (merged from multiple sources)",
     "year": 2026,
-    "generated_at": "2026-03-11T12:11:06.673Z",
+    "generated_at": "2026-03-12T05:53:15.924Z",
     "player_count": 67,
     "entry_count": 67
   },
@@ -29,7 +29,7 @@
     {
       "first_name": "Rueben",
       "last_name": "Bain Jr.",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -83,7 +83,7 @@
     {
       "first_name": "David",
       "last_name": "Bailey",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -263,7 +263,7 @@
     {
       "first_name": "Keldric",
       "last_name": "Faulk",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -353,7 +353,7 @@
     {
       "first_name": "Cashius",
       "last_name": "Howell",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -497,7 +497,7 @@
     {
       "first_name": "TJ",
       "last_name": "Parker",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -551,7 +551,7 @@
     {
       "first_name": "Akheem",
       "last_name": "Mesidor",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -713,7 +713,7 @@
     {
       "first_name": "R. Mason",
       "last_name": "Thomas",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
@@ -767,7 +767,7 @@
     {
       "first_name": "Zion",
       "last_name": "Young",
-      "position": "EDGE",
+      "position": "DE",
       "source": "combine",
       "year": 2026,
       "forty_yard_dash": null,
