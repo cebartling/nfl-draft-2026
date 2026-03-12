@@ -49,6 +49,11 @@ pub struct PercentileLoadStats {
     pub errors: Vec<String>,
 }
 
+pub fn parse_percentile_file(path: &str) -> Result<PercentileFileData> {
+    let json = std::fs::read_to_string(path)?;
+    parse_percentile_json(&json)
+}
+
 pub fn parse_percentile_json(json: &str) -> Result<PercentileFileData> {
     let data: PercentileFileData = serde_json::from_str(json)?;
     Ok(data)
