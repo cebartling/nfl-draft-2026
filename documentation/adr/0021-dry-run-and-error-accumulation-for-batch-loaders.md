@@ -84,7 +84,7 @@ Each loader follows this pattern consistently:
 ### Neutral
 
 - **No transaction rollback on partial failure**: Each entry is committed individually. A transactional approach (load all or rollback) would provide stronger consistency but would lose all progress on any single failure. The current approach matches the operational reality of iterating on data quality
-- **Stats structures vary per loader**: Each loader has its own stats struct with domain-specific fields (e.g., `players_discovered` for combine, `scouting_reports_created` for rankings). This is more expressive than a generic struct but means each loader has its own type
+- **Stats structures vary per loader**: Each loader has its own stats struct with domain-specific fields (e.g., `players_discovered` for combine, `prospects_discovered` for rankings). This is more expressive than a generic struct but means each loader has its own type
 
 ## Alternatives Considered
 
