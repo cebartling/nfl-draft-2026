@@ -7,12 +7,13 @@
 	import CombineResultsTable from '$components/player/CombineResultsTable.svelte';
 	import CombineComparisonPanel from '$components/player/CombineComparisonPanel.svelte';
 	import { buildPercentilesMap, type PercentilesMap } from '$lib/utils/combine-percentile';
-	import type { CombineResultsWithPlayer } from '$lib/types';
+	import type { CombineResultsWithPlayer, RasScore } from '$lib/types';
 	import type { Position } from '$lib/types';
 
 	let loading = $state(true);
 	let allResults = $state<CombineResultsWithPlayer[]>([]);
 	let percentilesMap = $state<PercentilesMap>(new Map());
+	let rasScoresMap = $state<Map<string, RasScore>>(new Map());
 	let searchQuery = $state('');
 	let selectedGroup = $state<string>('all');
 	let selectedPosition = $state<string>('all');
@@ -24,12 +25,14 @@
 
 	onMount(async () => {
 		try {
-			const [results, percentiles] = await Promise.all([
+			const [results, percentiles, rasScores] = await Promise.all([
 				combineApi.listAll(),
 				combineApi.getPercentiles(),
+				combineApi.listRasScores(),
 			]);
 			allResults = results;
 			percentilesMap = buildPercentilesMap(percentiles);
+			rasScoresMap = new Map(rasScores.map((r) => [r.player_id, r]));
 		} catch (error) {
 			logger.error('Failed to load combine results:', error);
 		} finally {
@@ -82,6 +85,19 @@
 
 		// Sort
 		results = [...results].sort((a, b) => {
+			// Special handling for RAS column sorting
+			if (sortColumn === 'ras_score') {
+				const aRas = rasScoresMap.get(a.player_id)?.overall_score ?? null;
+				const bRas = rasScoresMap.get(b.player_id)?.overall_score ?? null;
+
+				if (aRas == null && bRas == null) return 0;
+				if (aRas == null) return 1;
+				if (bRas == null) return -1;
+
+				const cmp = aRas - bRas;
+				return sortDirection === 'asc' ? cmp : -cmp;
+			}
+
 			const aVal = (a as Record<string, unknown>)[sortColumn];
 			const bVal = (b as Record<string, unknown>)[sortColumn];
 
@@ -305,6 +321,7 @@
 			<CombineComparisonPanel
 				players={selectedPlayers()}
 				{percentilesMap}
+				{rasScoresMap}
 				onClose={() => {
 					showComparison = false;
 				}}
@@ -321,6 +338,7 @@
 				<CombineResultsTable
 					results={filteredResults()}
 					{percentilesMap}
+					{rasScoresMap}
 					{sortColumn}
 					{sortDirection}
 					selectedIds={selectedPlayerIds}

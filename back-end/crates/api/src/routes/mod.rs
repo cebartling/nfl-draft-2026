@@ -157,6 +157,7 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             get(handlers::combine_results::list_combine_results)
                 .post(handlers::combine_results::create_combine_results),
         )
+        .route("/combine-results/ras", get(handlers::ras::get_all_ras))
         .route(
             "/combine-results/{id}",
             get(handlers::combine_results::get_combine_results)

@@ -3,8 +3,10 @@ import { apiClient } from './client';
 import {
 	CombineResultsWithPlayerSchema,
 	CombinePercentileSchema,
+	RasScoreSchema,
 	type CombineResultsWithPlayer,
 	type CombinePercentile,
+	type RasScore,
 } from '$lib/types';
 
 /**
@@ -23,5 +25,12 @@ export const combineApi = {
 	 */
 	async getPercentiles(): Promise<CombinePercentile[]> {
 		return apiClient.get('/combine-percentiles', z.array(CombinePercentileSchema));
+	},
+
+	/**
+	 * Get RAS scores for all players with combine data
+	 */
+	async listRasScores(): Promise<RasScore[]> {
+		return apiClient.get('/combine-results/ras', z.array(RasScoreSchema));
 	},
 };

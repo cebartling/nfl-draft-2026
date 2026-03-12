@@ -369,3 +369,97 @@ async fn test_ras_player_not_found() {
         .unwrap();
     assert_eq!(resp.status(), 404);
 }
+
+#[tokio::test]
+async fn test_get_all_ras_scores_empty() {
+    let (base_url, _pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    let resp = client
+        .get(format!("{}/api/v1/combine-results/ras", base_url))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let ras_scores: Vec<serde_json::Value> = resp.json().await.unwrap();
+    assert!(
+        ras_scores.is_empty(),
+        "Should return empty array when no combine data exists"
+    );
+}
+
+#[tokio::test]
+async fn test_get_all_ras_scores_with_data() {
+    let (base_url, _pool) = common::spawn_app_with_seed_key("test-key").await;
+    let client = common::create_client();
+
+    seed_percentiles(&client, &base_url).await;
+    let player_id = create_player(&client, &base_url).await;
+    create_combine_results(&client, &base_url, player_id).await;
+
+    let resp = client
+        .get(format!("{}/api/v1/combine-results/ras", base_url))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let ras_scores: Vec<serde_json::Value> = resp.json().await.unwrap();
+    assert_eq!(ras_scores.len(), 1, "Should return one RAS score");
+
+    let ras = &ras_scores[0];
+    assert_eq!(ras["player_id"], player_id.to_string());
+    assert!(
+        ras["overall_score"].is_number(),
+        "Expected overall_score to be a number"
+    );
+    let overall = ras["overall_score"].as_f64().unwrap();
+    assert!(
+        overall >= 0.0 && overall <= 10.0,
+        "RAS should be 0-10, got {}",
+        overall
+    );
+}
+
+#[tokio::test]
+async fn test_get_all_ras_scores_insufficient_measurements() {
+    let (base_url, _pool) = common::spawn_app_with_seed_key("test-key").await;
+    let client = common::create_client();
+
+    seed_percentiles(&client, &base_url).await;
+    let player_id = create_player(&client, &base_url).await;
+
+    // Create combine results with only one measurement
+    let resp = client
+        .post(format!("{}/api/v1/combine-results", base_url))
+        .json(&json!({
+            "player_id": player_id,
+            "year": 2026,
+            "forty_yard_dash": 4.38
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    let resp = client
+        .get(format!("{}/api/v1/combine-results/ras", base_url))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let ras_scores: Vec<serde_json::Value> = resp.json().await.unwrap();
+    assert_eq!(ras_scores.len(), 1);
+
+    let ras = &ras_scores[0];
+    assert!(
+        ras["overall_score"].is_null(),
+        "Should have null overall score with insufficient measurements"
+    );
+    assert!(
+        ras["explanation"].is_string(),
+        "Should have explanation for insufficient measurements"
+    );
+}

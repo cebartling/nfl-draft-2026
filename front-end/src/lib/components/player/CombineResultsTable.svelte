@@ -1,16 +1,18 @@
 <script lang="ts">
-	import type { CombineResultsWithPlayer } from '$lib/types';
+	import type { CombineResultsWithPlayer, RasScore } from '$lib/types';
 	import { getPositionColor } from '$lib/utils/formatters';
 	import {
 		getPercentileForValue,
 		getPercentileColor,
 		type PercentilesMap,
 	} from '$lib/utils/combine-percentile';
+	import { getScoreColor } from '$lib/utils/ras-format';
 	import Badge from '$components/ui/Badge.svelte';
 
 	interface Props {
 		results: CombineResultsWithPlayer[];
 		percentilesMap: PercentilesMap;
+		rasScoresMap: Map<string, RasScore>;
 		sortColumn: string;
 		sortDirection: 'asc' | 'desc';
 		selectedIds: Set<string>;
@@ -22,6 +24,7 @@
 	let {
 		results,
 		percentilesMap,
+		rasScoresMap,
 		sortColumn,
 		sortDirection,
 		selectedIds,
@@ -52,6 +55,11 @@
 	function formatInt(value: number | null | undefined): string {
 		if (value == null) return '—';
 		return value.toString();
+	}
+
+	function formatRas(score: number | null | undefined): string {
+		if (score == null) return 'N/A';
+		return score.toFixed(1);
 	}
 </script>
 
@@ -85,6 +93,13 @@
 					onclick={() => onSort('source')}
 				>
 					Source{sortArrow('source')}
+				</th>
+				<th
+					class="px-3 py-3 text-right font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
+					onclick={() => onSort('ras_score')}
+					title="Relative Athletic Score (0-10)"
+				>
+					RAS{sortArrow('ras_score')}
 				</th>
 				<th
 					class="px-3 py-3 text-right font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
@@ -126,6 +141,7 @@
 		</thead>
 		<tbody class="bg-white divide-y divide-gray-200">
 			{#each results as result (result.id)}
+				{@const rasScore = rasScoresMap.get(result.player_id)}
 				<tr
 					class="hover:bg-gray-50 cursor-pointer transition-colors {selectedIds.has(result.id)
 						? 'bg-blue-50'
@@ -165,6 +181,13 @@
 						>
 							{result.source === 'combine' ? 'Combine' : 'Pro Day'}
 						</span>
+					</td>
+					<td
+						class="px-3 py-2 text-right font-mono font-semibold {getScoreColor(
+							rasScore?.overall_score ?? null
+						)}"
+					>
+						{formatRas(rasScore?.overall_score)}
 					</td>
 					<td
 						class="px-3 py-2 text-right font-mono {cellColor(
