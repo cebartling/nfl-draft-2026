@@ -29,14 +29,15 @@ We compute RAS scores **lazily at query time** rather than materializing them in
 The computation lives in `back-end/crates/domain/src/services/ras_scoring.rs`:
 
 1. **Per-request**: The API handler fetches a player's combine results and the position's percentile baselines, then calls the RAS scoring service
-2. **Bulk endpoint**: A `/api/players/ras/bulk` endpoint computes scores for multiple players in a single request, fetching all combine results and percentiles in two queries to avoid N+1
+2. **Bulk endpoint**: A `GET /api/v1/combine-results/ras` endpoint computes scores for all players with combine data in a single request, fetching all combine results, percentiles, and players in three queries to avoid N+1
 3. **Minimum threshold**: If a player has fewer than 6 measurements with matching percentile baselines, the overall score is `null` and an explanation string describes what's missing
 4. **Sub-scores**: Each sub-score (Size, Speed, etc.) is computed independently and can be `null` if none of its constituent measurements are available
 
 ```rust
 // Scoring is a pure function over data — no database writes
-pub fn compute_ras_score(
-    combine: &CombineResults,
+pub fn calculate_ras_with_percentiles(
+    player: &Player,
+    combine_results: &CombineResults,
     percentiles: &[CombinePercentile],
 ) -> RasScore { ... }
 ```
@@ -93,5 +94,5 @@ Frontend formatting utilities are extracted as pure functions for testability.
 
 - `back-end/crates/domain/src/services/ras_scoring.rs` — scoring computation
 - `back-end/crates/domain/src/models/ras_score.rs` — score model with sub-scores
-- `back-end/crates/api/src/handlers/players.rs` — bulk RAS endpoint
+- `back-end/crates/api/src/handlers/ras.rs` — RAS endpoint handlers (single and bulk)
 - `back-end/crates/seed-data/src/percentile_loader.rs` — percentile baseline loading
