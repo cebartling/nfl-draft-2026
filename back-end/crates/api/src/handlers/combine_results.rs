@@ -136,7 +136,7 @@ pub async fn list_combine_results(
                 player_id: cr.player_id,
                 player_first_name: player.first_name.clone(),
                 player_last_name: player.last_name.clone(),
-                position: player.position.clone(),
+                position: player.position,
                 college: player.college.clone(),
                 year: cr.year,
                 source: cr.source.to_string(),
