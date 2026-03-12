@@ -22,7 +22,10 @@ function parseIntMeasurement(s: string): number | null {
  * PFR uses `<table id="combine">` with `data-stat` attributes on cells.
  */
 export function parsePfrHtml(html: string, year: number): CombineData {
-  const $ = cheerio.load(html);
+  // PFR wraps large stat tables in HTML comments for deferred rendering.
+  // Strip comment markers so cheerio can find them.
+  const cleaned = html.replace(/<!--/g, "").replace(/-->/g, "");
+  const $ = cheerio.load(cleaned);
 
   const table = $("table#combine");
   if (table.length === 0) {

@@ -1,8 +1,8 @@
 use seed_data::{
     combine_loader, draft_order_loader, draft_order_validator, feldman_freak_loader,
-    feldman_freak_validator, loader, rankings_loader, rankings_validator, scouting_report_loader,
-    scouting_report_validator, team_loader, team_need_loader, team_need_validator,
-    team_season_loader, team_season_validator, team_validator, validator,
+    feldman_freak_validator, loader, percentile_loader, rankings_loader, rankings_validator,
+    scouting_report_loader, scouting_report_validator, team_loader, team_need_loader,
+    team_need_validator, team_season_loader, team_season_validator, team_validator, validator,
 };
 
 use anyhow::Result;
@@ -10,10 +10,10 @@ use clap::{Parser, Subcommand};
 use db::{
     create_pool,
     repositories::{
-        SqlxCombineResultsRepository, SqlxDraftPickRepository, SqlxDraftRepository,
-        SqlxFeldmanFreakRepository, SqlxPlayerRepository, SqlxProspectRankingRepository,
-        SqlxRankingSourceRepository, SqlxScoutingReportRepository, SqlxTeamNeedRepository,
-        SqlxTeamRepository, SqlxTeamSeasonRepository,
+        SqlxCombinePercentileRepository, SqlxCombineResultsRepository, SqlxDraftPickRepository,
+        SqlxDraftRepository, SqlxFeldmanFreakRepository, SqlxPlayerRepository,
+        SqlxProspectRankingRepository, SqlxRankingSourceRepository, SqlxScoutingReportRepository,
+        SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -81,6 +81,12 @@ enum EntityCommands {
     Combine {
         #[command(subcommand)]
         action: CombineActions,
+    },
+
+    /// Manage combine percentile reference data
+    Percentiles {
+        #[command(subcommand)]
+        action: PercentilesActions,
     },
 }
 
@@ -328,6 +334,23 @@ enum RankingsActions {
     },
 }
 
+#[derive(Subcommand)]
+enum PercentilesActions {
+    /// Load combine percentiles from JSON file into the database
+    Load {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/combine_percentiles.json")]
+        file: String,
+    },
+
+    /// Validate JSON file without loading
+    Validate {
+        /// Path to the JSON data file
+        #[arg(short, long, default_value = "data/combine_percentiles.json")]
+        file: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -350,6 +373,7 @@ async fn main() -> Result<()> {
         EntityCommands::Rankings { action } => handle_rankings(action).await?,
         EntityCommands::Freaks { action } => handle_freaks(action).await?,
         EntityCommands::Combine { action } => handle_combine(action).await?,
+        EntityCommands::Percentiles { action } => handle_percentiles(action).await?,
     }
 
     Ok(())
@@ -1282,6 +1306,63 @@ async fn handle_combine(action: CombineActions) -> Result<()> {
                 .await?;
 
             println!("Deleted {} combine results", result.rows_affected());
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_percentiles(action: PercentilesActions) -> Result<()> {
+    match action {
+        PercentilesActions::Validate { file } => {
+            println!("Validating: {}", file);
+            let data = percentile_loader::parse_percentile_file(&file)?;
+            println!(
+                "Loaded {} percentile entries from file (source: {})",
+                data.percentiles.len(),
+                data.meta.source
+            );
+
+            let mut positions = std::collections::HashSet::new();
+            let mut measurements = std::collections::HashSet::new();
+            for entry in &data.percentiles {
+                positions.insert(entry.position.clone());
+                measurements.insert(entry.measurement.clone());
+            }
+
+            println!("\nSummary:");
+            println!("  Positions:    {} unique", positions.len());
+            println!("  Measurements: {} unique", measurements.len());
+            println!("  Total entries: {}", data.percentiles.len());
+            println!("\n  Result: VALID");
+        }
+
+        PercentilesActions::Load { file } => {
+            println!("Loading combine percentiles from: {}", file);
+
+            let data = percentile_loader::parse_percentile_file(&file)?;
+            println!(
+                "Parsed {} percentile entries from file (source: {})",
+                data.percentiles.len(),
+                data.meta.source
+            );
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+            let repo = SqlxCombinePercentileRepository::new(pool);
+
+            let stats = percentile_loader::load_percentiles(&data, &repo).await?;
+
+            println!("\nLoad Results:");
+            println!("  Upserted: {}", stats.upserted);
+            if !stats.errors.is_empty() {
+                println!("  Errors: {}", stats.errors.len());
+                for e in &stats.errors {
+                    println!("    - {}", e);
+                }
+                std::process::exit(1);
+            }
         }
     }
 

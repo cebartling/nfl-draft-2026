@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { combineApi } from './combine';
 import * as client from './client';
-import type { CombineResultsWithPlayer, CombinePercentile } from '$lib/types';
+import type { CombineResultsWithPlayer, CombinePercentile, RasScore } from '$lib/types';
 
 describe('combineApi', () => {
 	let mockGet: ReturnType<typeof vi.fn>;
@@ -87,6 +87,41 @@ describe('combineApi', () => {
 			mockGet.mockResolvedValueOnce([]);
 
 			const result = await combineApi.getPercentiles();
+
+			expect(result).toEqual([]);
+		});
+	});
+
+	describe('listRasScores', () => {
+		it('should fetch RAS scores for all players with combine data', async () => {
+			const mockRasScores: RasScore[] = [
+				{
+					player_id: '10',
+					overall_score: 7.5,
+					size_score: 6.0,
+					speed_score: 8.0,
+					strength_score: 5.5,
+					explosion_score: 7.0,
+					agility_score: 8.5,
+					measurements_used: 10,
+					measurements_total: 10,
+					individual_scores: [],
+					explanation: null,
+				},
+			];
+
+			mockGet.mockResolvedValueOnce(mockRasScores);
+
+			const result = await combineApi.listRasScores();
+
+			expect(mockGet).toHaveBeenCalledWith('/combine-results/ras', expect.any(Object));
+			expect(result).toEqual(mockRasScores);
+		});
+
+		it('should handle empty RAS scores', async () => {
+			mockGet.mockResolvedValueOnce([]);
+
+			const result = await combineApi.listRasScores();
 
 			expect(result).toEqual([]);
 		});

@@ -205,4 +205,36 @@ describe("parsePfrHtml", () => {
     expect(data.combine_results.length).toBe(0);
     expect(data.meta.player_count).toBe(0);
   });
+
+  it("parses table wrapped in HTML comments (PFR deferred rendering)", () => {
+    const html = `
+    <html><body>
+    <div id="all_combine">
+    <!--
+    <table id="combine"><tbody>
+        <tr>
+            <th data-stat="player">Cam Ward</th>
+            <td data-stat="pos">QB</td>
+            <td data-stat="forty_yd">4.72</td>
+            <td data-stat="vertical">32.0</td>
+            <td data-stat="bench_reps">18</td>
+        </tr>
+        <tr>
+            <th data-stat="player">Travis Hunter</th>
+            <td data-stat="pos">CB</td>
+            <td data-stat="forty_yd">4.38</td>
+            <td data-stat="vertical">40.5</td>
+            <td data-stat="bench_reps">-</td>
+        </tr>
+    </tbody></table>
+    -->
+    </div>
+    </body></html>`;
+    const data = parsePfrHtml(html, 2026);
+    expect(data.combine_results.length).toBe(2);
+    expect(data.combine_results[0].first_name).toBe("Cam");
+    expect(data.combine_results[0].forty_yard_dash).toBe(4.72);
+    expect(data.combine_results[1].first_name).toBe("Travis");
+    expect(data.combine_results[1].bench_press).toBeNull();
+  });
 });

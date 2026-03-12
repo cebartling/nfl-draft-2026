@@ -87,6 +87,36 @@ Each ADR follows this structure:
   - Three-tier testing model: backend acceptance, frontend E2E, full-stack acceptance
   - Bug category matrix across tiers
 
+- [ADR-0015: Cooperative Cancellation for Auto-Pick Run](./0015-cooperative-cancellation-for-auto-pick-run.md)
+  - AtomicBool-based cooperative cancellation with timeout-bounded pause
+  - Amends ADR-0009 to allow pausing during auto-pick execution
+
+### Data Pipeline Decisions
+
+- [ADR-0016: Multi-Source Data Merge Strategy](./0016-multi-source-data-merge-strategy.md)
+  - Backfill-only merge where primary source is authoritative, secondaries fill gaps
+  - Prevents data degradation while maximizing coverage
+
+- [ADR-0017: Template Fallback with Overwrite Protection](./0017-template-fallback-with-overwrite-protection.md)
+  - Safety guard preventing template data from overwriting curated scraped data
+  - Template fallback keeps development functional during source outages
+
+- [ADR-0018: Lazy RAS Score Computation](./0018-lazy-ras-score-computation.md)
+  - RAS scores computed on-demand at query time, not materialized at seed time
+  - Avoids staleness when percentile baselines are updated
+
+- [ADR-0019: Deterministic Synthetic Data Generation](./0019-deterministic-synthetic-data-generation.md)
+  - FNV-1a hashing for cross-platform reproducible scouting report generation
+  - Avoids Rust DefaultHasher's non-determinism guarantee
+
+- [ADR-0020: Dual-Language Position Normalization](./0020-dual-language-position-normalization.md)
+  - Independent but aligned TypeScript and Rust position mapping implementations
+  - Pragmatic trade-off of DRY vs. cross-language build complexity
+
+- [ADR-0021: Dry-Run and Error Accumulation for Batch Loaders](./0021-dry-run-and-error-accumulation-for-batch-loaders.md)
+  - Every loader supports validation-without-writes and accumulates errors
+  - Surfaces all data issues in a single run instead of fail-fast
+
 ## Decision Status
 
 ### Accepted
