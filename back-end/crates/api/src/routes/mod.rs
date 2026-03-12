@@ -154,7 +154,8 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
         // Combine Results
         .route(
             "/combine-results",
-            post(handlers::combine_results::create_combine_results),
+            get(handlers::combine_results::list_combine_results)
+                .post(handlers::combine_results::create_combine_results),
         )
         .route(
             "/combine-results/{id}",

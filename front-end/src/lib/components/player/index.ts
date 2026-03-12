@@ -5,3 +5,5 @@ export { default as PlayerDetails } from './PlayerDetails.svelte';
 export { default as ProspectRankingsTable } from './ProspectRankingsTable.svelte';
 export { default as RasScoreCard } from './RasScoreCard.svelte';
 export { default as ScoutingReportForm } from './ScoutingReportForm.svelte';
+export { default as CombineResultsTable } from './CombineResultsTable.svelte';
+export { default as CombineComparisonPanel } from './CombineComparisonPanel.svelte';

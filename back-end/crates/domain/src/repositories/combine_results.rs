@@ -36,4 +36,7 @@ pub trait CombineResultsRepository: Send + Sync {
 
     /// Delete combine results
     async fn delete(&self, id: Uuid) -> DomainResult<()>;
+
+    /// Find all combine results
+    async fn find_all(&self) -> DomainResult<Vec<CombineResults>>;
 }

@@ -86,3 +86,6 @@ back-end/.combine_last_scraped
 
 # Dolt database files (added by bd init)
 .dolt/
+
+# Beads
+.beads/dolt-monitor.pid.lock

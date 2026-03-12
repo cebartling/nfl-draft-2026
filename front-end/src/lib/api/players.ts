@@ -70,11 +70,15 @@ export const playersApi = {
 	},
 
 	/**
-	 * Get combine results for a player
+	 * Get combine results for a player (returns first result or null)
 	 */
 	async getCombineResults(playerId: string): Promise<CombineResults | null> {
 		try {
-			return await apiClient.get(`/players/${playerId}/combine-results`, CombineResultsSchema);
+			const results = await apiClient.get(
+				`/players/${playerId}/combine-results`,
+				z.array(CombineResultsSchema)
+			);
+			return results.length > 0 ? results[0] : null;
 		} catch (error) {
 			// Return null if no combine results found (404)
 			if (hasStatus(error) && error.status === 404) {

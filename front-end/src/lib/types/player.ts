@@ -133,6 +133,52 @@ export const CombineResultsSchema = z.object({
 });
 export type CombineResults = z.infer<typeof CombineResultsSchema>;
 
+// CombineResultsWithPlayer — matches backend CombineResultsWithPlayerResponse
+export const CombineResultsWithPlayerSchema = z.object({
+	id: UUIDSchema,
+	player_id: UUIDSchema,
+	player_first_name: z.string(),
+	player_last_name: z.string(),
+	position: PositionSchema,
+	college: z.string().nullable().optional(),
+	year: z.number(),
+	source: z.string(),
+	forty_yard_dash: z.number().nullable().optional(),
+	bench_press: z.number().nullable().optional(),
+	vertical_jump: z.number().nullable().optional(),
+	broad_jump: z.number().nullable().optional(),
+	three_cone_drill: z.number().nullable().optional(),
+	twenty_yard_shuttle: z.number().nullable().optional(),
+	arm_length: z.number().nullable().optional(),
+	hand_size: z.number().nullable().optional(),
+	wingspan: z.number().nullable().optional(),
+	ten_yard_split: z.number().nullable().optional(),
+	twenty_yard_split: z.number().nullable().optional(),
+});
+export type CombineResultsWithPlayer = z.infer<typeof CombineResultsWithPlayerSchema>;
+
+// CombinePercentile — matches backend CombinePercentileResponse
+export const CombinePercentileSchema = z.object({
+	id: UUIDSchema,
+	position: z.string(),
+	measurement: z.string(),
+	sample_size: z.number(),
+	min_value: z.number(),
+	p10: z.number(),
+	p20: z.number(),
+	p30: z.number(),
+	p40: z.number(),
+	p50: z.number(),
+	p60: z.number(),
+	p70: z.number(),
+	p80: z.number(),
+	p90: z.number(),
+	max_value: z.number(),
+	years_start: z.number(),
+	years_end: z.number(),
+});
+export type CombinePercentile = z.infer<typeof CombinePercentileSchema>;
+
 // Individual measurement score within RAS
 export const MeasurementScoreSchema = z.object({
 	measurement: z.string(),
