@@ -78,6 +78,7 @@
 		<button
 			type="button"
 			onclick={onClose}
+			aria-label="Close comparison panel"
 			class="text-gray-400 hover:text-gray-600 text-xl leading-none"
 		>
 			×
@@ -85,12 +86,14 @@
 	</div>
 
 	<div class="overflow-x-auto">
-		<table class="min-w-full text-sm">
+		<table class="min-w-full text-sm" aria-label="Player comparison">
 			<thead>
 				<tr class="border-b border-gray-200">
-					<th class="text-left py-2 px-3 font-medium text-gray-500">Measurement</th>
+					<th scope="col" class="text-left py-2 px-3 font-medium text-gray-500"
+						>Measurement</th
+					>
 					{#each players as player (player.id)}
-						<th class="text-center py-2 px-3 min-w-[120px]">
+						<th scope="col" class="text-center py-2 px-3 min-w-[120px]">
 							<div class="font-semibold text-gray-900">
 								{player.player_first_name}
 								{player.player_last_name}
