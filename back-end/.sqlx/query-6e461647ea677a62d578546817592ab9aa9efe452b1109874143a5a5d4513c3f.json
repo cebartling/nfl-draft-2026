@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO drafts (id, year, status, rounds, picks_per_round) VALUES ($1, 2026, $2, 1, 2::INTEGER)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6e461647ea677a62d578546817592ab9aa9efe452b1109874143a5a5d4513c3f"
+}

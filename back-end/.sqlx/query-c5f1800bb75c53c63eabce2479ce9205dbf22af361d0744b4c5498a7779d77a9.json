@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, player_id, team_id, grade, notes, fit_grade, injury_concern, character_concern\n        FROM scouting_reports\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "grade",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "fit_grade",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "injury_concern",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "character_concern",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "c5f1800bb75c53c63eabce2479ce9205dbf22af361d0744b4c5498a7779d77a9"
+}

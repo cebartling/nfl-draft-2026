@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM pick_trade_details",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "7ea010f4c6b285dfe349f8abff91b3c066190bc7d71489c39246c82af40eeac9"
+}

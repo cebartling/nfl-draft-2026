@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT status, from_team_value, to_team_value, value_difference FROM pick_trades WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "from_team_value",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "to_team_value",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "value_difference",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6f93e4840a653bc017d49a84c693f63523a9407a8399a464ce9b931180ac7845"
+}

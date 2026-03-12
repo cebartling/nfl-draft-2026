@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM ranking_sources",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "29ee7e16b9d3fc246d4acaf232285b0d4ecc55eff39777faf9fe1f5a0af243f9"
+}

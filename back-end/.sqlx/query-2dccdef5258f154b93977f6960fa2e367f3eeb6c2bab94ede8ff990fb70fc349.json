@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM feldman_freaks",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "2dccdef5258f154b93977f6960fa2e367f3eeb6c2bab94ede8ff990fb70fc349"
+}

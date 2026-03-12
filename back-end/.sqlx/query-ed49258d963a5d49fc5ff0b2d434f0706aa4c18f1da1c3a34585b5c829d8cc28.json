@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT sr.id, sr.grade, p.position\n        FROM scouting_reports sr\n        JOIN players p ON sr.player_id = p.id\n        WHERE sr.team_id = $1 AND p.position = 'QB'\n        ORDER BY sr.grade DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "grade",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "position",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ed49258d963a5d49fc5ff0b2d434f0706aa4c18f1da1c3a34585b5c829d8cc28"
+}

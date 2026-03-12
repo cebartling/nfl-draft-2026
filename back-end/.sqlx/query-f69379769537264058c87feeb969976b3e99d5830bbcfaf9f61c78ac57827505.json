@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ranking_sources (id, name) VALUES ($1, 'Test Source')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f69379769537264058c87feeb969976b3e99d5830bbcfaf9f61c78ac57827505"
+}

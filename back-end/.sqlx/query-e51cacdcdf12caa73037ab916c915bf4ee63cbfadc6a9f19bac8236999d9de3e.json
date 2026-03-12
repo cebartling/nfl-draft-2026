@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM draft_picks",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "e51cacdcdf12caa73037ab916c915bf4ee63cbfadc6a9f19bac8236999d9de3e"
+}

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT forty_yard_dash, bench_press, vertical_jump FROM combine_results WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "forty_yard_dash",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 1,
+        "name": "bench_press",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "vertical_jump",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "2f0bf7429790177e87a1a5feb145f8814fbcd8438f4cdb31dca03473e379817e"
+}

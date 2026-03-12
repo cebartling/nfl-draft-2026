@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT team_id, grade, fit_grade\n        FROM scouting_reports\n        WHERE player_id = $1\n        ORDER BY grade DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "grade",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "fit_grade",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "1c58495cd26909f539621e694eb033702e2f47c1943d560a9a7d1b9ebee7d5fb"
+}

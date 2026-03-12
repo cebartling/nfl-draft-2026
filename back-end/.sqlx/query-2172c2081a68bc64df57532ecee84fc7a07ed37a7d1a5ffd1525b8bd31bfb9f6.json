@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO draft_events (session_id, event_type, event_data) VALUES ($1, 'SessionStarted', $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2172c2081a68bc64df57532ecee84fc7a07ed37a7d1a5ffd1525b8bd31bfb9f6"
+}

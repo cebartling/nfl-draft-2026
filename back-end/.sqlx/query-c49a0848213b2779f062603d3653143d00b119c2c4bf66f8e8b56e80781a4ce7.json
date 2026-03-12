@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO draft_picks (id, draft_id, round, pick_number, overall_pick, team_id, original_team_id, is_compensatory, notes)\n           VALUES ($1, $2, 1, 1, 1, $3, $4, true, 'Traded from Team Beta')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c49a0848213b2779f062603d3653143d00b119c2c4bf66f8e8b56e80781a4ce7"
+}
