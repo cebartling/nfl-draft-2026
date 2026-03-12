@@ -130,6 +130,11 @@ pub async fn get_all_ras(State(state): State<AppState>) -> ApiResult<Json<Vec<Ra
             let ras =
                 RasScoringService::calculate_ras_with_percentiles(player, cr, &all_percentiles);
             ras_scores.push(RasScoreResponse::from(ras));
+        } else {
+            tracing::warn!(
+                player_id = %cr.player_id,
+                "Combine result references player_id not found in players table"
+            );
         }
     }
 
