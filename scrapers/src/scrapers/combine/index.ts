@@ -4,3 +4,5 @@ export { mergeCombineData } from "./merge.js";
 export { generateTemplateCombine } from "./template.js";
 export { scrapePfr, combineUrl as pfrCombineUrl } from "./pfr.js";
 export { scrapeMockdraftable, combineUrl as mockdraftableCombineUrl } from "./mockdraftable.js";
+export { scrapeNflverse, combineUrl as nflverseCombineUrl } from "./nflverse.js";
+export { parseNflverseCsv } from "./nflverse-parser.js";

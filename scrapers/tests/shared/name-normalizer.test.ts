@@ -11,12 +11,19 @@ describe("cleanName", () => {
   });
 
   it("collapses whitespace", () => {
-    expect(cleanName("  De'Von  ")).toBe("de'von");
+    expect(cleanName("  De Von  ")).toBe("de von");
   });
 
-  it("converts curly quotes to straight quotes", () => {
-    expect(cleanName("De\u2019Von")).toBe("de'von");
-    expect(cleanName("De\u2018Von")).toBe("de'von");
+  it("strips apostrophes for matching", () => {
+    expect(cleanName("De\u2019Von")).toBe("devon");
+    expect(cleanName("De\u2018Von")).toBe("devon");
+    expect(cleanName("D'Angelo")).toBe("dangelo");
+    expect(cleanName("O'Brien")).toBe("obrien");
+  });
+
+  it("strips hyphens for matching", () => {
+    expect(cleanName("McNeil-Warren")).toBe("mcneilwarren");
+    expect(cleanName("Jean-Baptiste")).toBe("jeanbaptiste");
   });
 });
 
@@ -41,8 +48,12 @@ describe("normalizeLastName", () => {
     expect(normalizeLastName("Hunter")).toBe("hunter");
   });
 
-  it("lowercases and strips periods", () => {
-    expect(normalizeLastName("O'Brien")).toBe("o'brien");
+  it("lowercases and strips periods and apostrophes", () => {
+    expect(normalizeLastName("O'Brien")).toBe("obrien");
+  });
+
+  it("strips hyphens", () => {
+    expect(normalizeLastName("McNeil-Warren")).toBe("mcneilwarren");
   });
 });
 

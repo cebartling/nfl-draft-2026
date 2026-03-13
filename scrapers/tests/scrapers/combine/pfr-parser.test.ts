@@ -206,6 +206,47 @@ describe("parsePfrHtml", () => {
     expect(data.meta.player_count).toBe(0);
   });
 
+  it("returns empty results for table with no data rows (only headers)", () => {
+    const html = `
+    <html><body>
+    <table id="combine">
+    <thead><tr><th>Player</th><th>Pos</th></tr></thead>
+    <tbody>
+        <tr class="thead"><th>Player</th><th>Pos</th></tr>
+    </tbody>
+    </table>
+    </body></html>`;
+    const data = parsePfrHtml(html, 2026);
+    expect(data.combine_results.length).toBe(0);
+  });
+
+  it("handles multiple comment-wrapped sections", () => {
+    const html = `
+    <html><body>
+    <div id="all_combine">
+    <!--
+    <table id="combine"><tbody>
+        <tr>
+            <th data-stat="player">Player One</th>
+            <td data-stat="pos">QB</td>
+            <td data-stat="forty_yd">4.72</td>
+        </tr>
+    </tbody></table>
+    -->
+    </div>
+    <div id="all_other">
+    <!--
+    <table id="other_table"><tbody>
+        <tr><td>Some other data</td></tr>
+    </tbody></table>
+    -->
+    </div>
+    </body></html>`;
+    const data = parsePfrHtml(html, 2026);
+    expect(data.combine_results.length).toBe(1);
+    expect(data.combine_results[0].first_name).toBe("Player");
+  });
+
   it("parses table wrapped in HTML comments (PFR deferred rendering)", () => {
     const html = `
     <html><body>

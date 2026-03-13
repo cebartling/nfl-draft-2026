@@ -28,5 +28,18 @@ export async function scrapePfr(year: number): Promise<CombineData> {
   const html = await response.text();
   console.error(`Fetched ${html.length} bytes of HTML`);
 
-  return parsePfrHtml(html, year);
+  const data = parsePfrHtml(html, year);
+  console.error(`Extracted ${data.combine_results.length} combine entries from PFR`);
+
+  if (data.combine_results.length === 0 && html.length > 1000) {
+    // HTML was non-trivial but we got no entries — likely a parsing issue
+    const hasTable = html.includes('id="combine"');
+    throw new Error(
+      `PFR returned ${html.length} bytes of HTML but parser extracted 0 entries. ` +
+        `table#combine ${hasTable ? "was" : "was NOT"} found in HTML. ` +
+        "The page structure may have changed.",
+    );
+  }
+
+  return data;
 }

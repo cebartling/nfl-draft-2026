@@ -3,7 +3,8 @@ const SUFFIXES = new Set(["jr", "sr", "ii", "iii", "iv"]);
 export function cleanName(name: string): string {
   return name
     .replace(/\./g, "")
-    .replace(/[\u2019\u2018]/g, "'")
+    .replace(/[\u2019\u2018']/g, "")
+    .replace(/-/g, "")
     .trim()
     .split(/\s+/)
     .join(" ")
@@ -13,7 +14,8 @@ export function cleanName(name: string): string {
 export function normalizeLastName(name: string): string {
   const cleaned = name
     .replace(/\./g, "")
-    .replace(/[\u2019\u2018]/g, "'");
+    .replace(/[\u2019\u2018']/g, "")
+    .replace(/-/g, "");
 
   const parts = cleaned.trim().split(/\s+/);
 

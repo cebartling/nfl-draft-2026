@@ -105,6 +105,30 @@ describe("mergeCombineData", () => {
     expect(merged.hand_size).toBe(9.75);
   });
 
+  it("handles apostrophe name variations in merge", () => {
+    const primary = makeData("pfr", [
+      makeCombineEntry("D'Angelo", "Smith", "WR", 2026, { forty_yard_dash: 4.42 }),
+    ]);
+    const secondary = makeData("md", [
+      makeCombineEntry("DAngelo", "Smith", "WR", 2026, { arm_length: 32.0 }),
+    ]);
+    const result = mergeCombineData(primary, [secondary]);
+    expect(result.combine_results.length).toBe(1);
+    expect(result.combine_results[0].arm_length).toBe(32.0);
+  });
+
+  it("handles hyphenated name variations in merge", () => {
+    const primary = makeData("nflverse", [
+      makeCombineEntry("Quinshon", "Judkins-McNeil", "RB", 2026, { forty_yard_dash: 4.55 }),
+    ]);
+    const secondary = makeData("pfr", [
+      makeCombineEntry("Quinshon", "JudkinsMcNeil", "RB", 2026, { arm_length: 33.5 }),
+    ]);
+    const result = mergeCombineData(primary, [secondary]);
+    expect(result.combine_results.length).toBe(1);
+    expect(result.combine_results[0].arm_length).toBe(33.5);
+  });
+
   it("validates against Zod schema", () => {
     const primary = makeData("pfr", [
       makeCombineEntry("Cam", "Ward", "QB", 2026, { forty_yard_dash: 4.72 }),
