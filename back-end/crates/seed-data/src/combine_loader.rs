@@ -366,6 +366,26 @@ pub async fn load_combine_data(
         }
     }
 
+    // Post-insert verification: count rows in database for this year
+    let db_count = combine_repo
+        .count_by_year(data.meta.year)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to verify combine results count: {}", e))?;
+
+    println!("\nPost-insert verification:");
+    println!("  Combine results in DB for year {}: {}", data.meta.year, db_count);
+    println!(
+        "  Expected at least: {} (loaded) + any pre-existing",
+        loaded
+    );
+
+    if db_count < loaded as i64 {
+        errors.push(format!(
+            "VERIFICATION FAILED: Only {} rows in DB for year {}, but {} were reported as loaded",
+            db_count, data.meta.year, loaded
+        ));
+    }
+
     Ok(CombineLoadStats {
         loaded,
         skipped,

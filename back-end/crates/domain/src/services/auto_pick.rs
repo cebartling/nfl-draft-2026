@@ -257,6 +257,7 @@ mod tests {
             async fn update(&self, results: &CombineResults) -> DomainResult<CombineResults>;
             async fn delete(&self, id: Uuid) -> DomainResult<()>;
             async fn find_all(&self) -> DomainResult<Vec<CombineResults>>;
+            async fn count_by_year(&self, year: i32) -> DomainResult<i64>;
         }
     }
 

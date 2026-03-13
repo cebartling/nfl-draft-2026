@@ -39,4 +39,7 @@ pub trait CombineResultsRepository: Send + Sync {
 
     /// Find all combine results
     async fn find_all(&self) -> DomainResult<Vec<CombineResults>>;
+
+    /// Count combine results for a given year
+    async fn count_by_year(&self, year: i32) -> DomainResult<i64>;
 }

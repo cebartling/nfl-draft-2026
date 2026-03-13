@@ -247,6 +247,22 @@ impl CombineResultsRepository for SqlxCombineResultsRepository {
         Ok(())
     }
 
+    async fn count_by_year(&self, year: i32) -> DomainResult<i64> {
+        let row = sqlx::query_scalar!(
+            r#"
+            SELECT COUNT(*) as "count!"
+            FROM combine_results
+            WHERE year = $1
+            "#,
+            year
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        Ok(row)
+    }
+
     async fn find_all(&self) -> DomainResult<Vec<CombineResults>> {
         let results = sqlx::query_as!(
             CombineResultsDb,
