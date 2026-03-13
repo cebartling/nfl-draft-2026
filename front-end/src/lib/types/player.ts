@@ -39,7 +39,7 @@ export const PlayerSchema = z.object({
 	first_name: z.string(),
 	last_name: z.string(),
 	position: PositionSchema,
-	college: z.string().optional(),
+	college: z.string().nullable().optional(),
 	height_inches: z.number().nullable().optional(),
 	weight_pounds: z.number().nullable().optional(),
 	draft_year: z.number(),
