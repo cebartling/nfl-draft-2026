@@ -38,10 +38,15 @@ export async function scrapeNflCombineResults(year: number): Promise<CombineData
 
   if (data.combine_results.length === 0 && html.length > 1000) {
     const hasTable = html.includes("datatable");
+    if (!hasTable) {
+      throw new Error(
+        `nflcombineresults.com returned ${html.length} bytes of HTML but no data table was found. ` +
+          "The page structure may have changed.",
+      );
+    }
     throw new Error(
-      `nflcombineresults.com returned ${html.length} bytes of HTML but parser extracted 0 entries. ` +
-        `Data table ${hasTable ? "was" : "was NOT"} found in HTML. ` +
-        "The page structure may have changed.",
+      `nflcombineresults.com returned a data table but no entries matched year ${year}. ` +
+        "The site may not have data for this year yet.",
     );
   }
 
