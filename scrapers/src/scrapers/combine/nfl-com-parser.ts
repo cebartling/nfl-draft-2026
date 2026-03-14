@@ -28,12 +28,20 @@ export interface NflComCombineProfile {
 
 /**
  * Parse NFL.com API combine profiles into CombineData.
+ * Skips profiles with missing or malformed person data.
  */
 export function parseNflComApi(profiles: NflComCombineProfile[], year: number): CombineData {
-  const entries: CombineEntry[] = profiles.map((p) => {
+  const entries: CombineEntry[] = [];
+
+  for (const p of profiles) {
+    // Guard against malformed API responses missing the person object
+    if (!p.person || !p.person.firstName || !p.person.lastName) {
+      continue;
+    }
+
     const position = p.position ? normalizePosition(p.position) : "";
 
-    return {
+    entries.push({
       first_name: p.person.firstName,
       last_name: p.person.lastName,
       position,
@@ -50,8 +58,8 @@ export function parseNflComApi(profiles: NflComCombineProfile[], year: number): 
       wingspan: p.wingspan ?? null,
       ten_yard_split: p.tenYardSplit?.seconds ?? null,
       twenty_yard_split: p.twentyYardSplit?.seconds ?? null,
-    };
-  });
+    });
+  }
 
   return {
     meta: {

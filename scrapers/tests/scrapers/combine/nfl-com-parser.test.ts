@@ -412,4 +412,55 @@ describe("parseNflComApi", () => {
     expect(data.combine_results[0].position).toBe("DE");
     expect(data.combine_results[1].position).toBe("");
   });
+
+  it("skips profiles with missing person object", () => {
+    const profiles = [
+      {
+        person: { firstName: "Valid", lastName: "Player", displayName: "Valid Player" },
+        fortyYardDash: { seconds: 4.5 },
+        benchPress: null,
+        verticalJump: null,
+        broadJump: null,
+        threeConeDrill: null,
+        twentyYardShuttle: null,
+        armLength: null,
+        handSize: null,
+        wingspan: null,
+        tenYardSplit: null,
+        twentyYardSplit: null,
+      },
+      {
+        person: null,
+        fortyYardDash: { seconds: 4.6 },
+        benchPress: null,
+        verticalJump: null,
+        broadJump: null,
+        threeConeDrill: null,
+        twentyYardShuttle: null,
+        armLength: null,
+        handSize: null,
+        wingspan: null,
+        tenYardSplit: null,
+        twentyYardSplit: null,
+      } as unknown as (typeof profiles)[0],
+      {
+        person: { firstName: "", lastName: "NoFirst", displayName: "NoFirst" },
+        fortyYardDash: null,
+        benchPress: null,
+        verticalJump: null,
+        broadJump: null,
+        threeConeDrill: null,
+        twentyYardShuttle: null,
+        armLength: null,
+        handSize: null,
+        wingspan: null,
+        tenYardSplit: null,
+        twentyYardSplit: null,
+      },
+    ];
+    const data = parseNflComApi(profiles, 2026);
+    // Only the first profile with valid person data should be included
+    expect(data.combine_results.length).toBe(1);
+    expect(data.combine_results[0].first_name).toBe("Valid");
+  });
 });
