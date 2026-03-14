@@ -21,8 +21,8 @@ const HEADER_MAP: Record<string, keyof CombineEntry> = {
   "20yd shuttle": "twenty_yard_shuttle",
 };
 
-/** Headers to explicitly skip (they contain substrings of mapped headers). */
-const SKIP_HEADERS = new Set(["60yd shuttle", "60 yard shuttle", "wonderlic", "college", "school", "height", "weight"]);
+/** Header substrings to skip (prevents false matches with measurement patterns). */
+const SKIP_PATTERNS = ["60yd", "60 yard", "wonderlic", "college", "school", "height", "weight"];
 
 const INTEGER_FIELDS = new Set(["bench_press", "broad_jump"]);
 
@@ -77,7 +77,7 @@ function findColumnMapping(headers: string[]): ColumnMap {
       continue;
     }
     // Skip headers that are known non-measurement columns
-    if (SKIP_HEADERS.has(norm)) continue;
+    if (SKIP_PATTERNS.some((p) => norm.includes(p))) continue;
 
     // Check against header map
     for (const [pattern, field] of Object.entries(HEADER_MAP)) {
@@ -154,9 +154,8 @@ export function parseNflCombineResultsHtml(html: string, year: number): CombineD
 
     const [firstName, lastName] = splitName(playerText);
 
-    // Get position
-    const posColIdx = posIdx >= 0 ? posIdx : nameColIdx + 2;
-    const posText = posColIdx < cells.length ? cells[posColIdx] : "";
+    // Get position — only use detected column, don't guess
+    const posText = posIdx >= 0 && posIdx < cells.length ? cells[posIdx] : "";
     const position = normalizePosition(posText);
 
     const entry: CombineEntry = {

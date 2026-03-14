@@ -375,4 +375,41 @@ describe("parseNflComApi", () => {
     expect(data.combine_results.length).toBe(0);
     expect(data.meta.player_count).toBe(0);
   });
+
+  it("normalizes position when provided in profile", () => {
+    const profiles = [
+      {
+        person: { firstName: "Test", lastName: "Player", displayName: "Test Player" },
+        position: "EDGE",
+        fortyYardDash: { seconds: 4.5 },
+        benchPress: null,
+        verticalJump: null,
+        broadJump: null,
+        threeConeDrill: null,
+        twentyYardShuttle: null,
+        armLength: null,
+        handSize: null,
+        wingspan: null,
+        tenYardSplit: null,
+        twentyYardSplit: null,
+      },
+      {
+        person: { firstName: "Another", lastName: "Player", displayName: "Another Player" },
+        fortyYardDash: null,
+        benchPress: null,
+        verticalJump: null,
+        broadJump: null,
+        threeConeDrill: null,
+        twentyYardShuttle: null,
+        armLength: null,
+        handSize: null,
+        wingspan: null,
+        tenYardSplit: null,
+        twentyYardSplit: null,
+      },
+    ];
+    const data = parseNflComApi(profiles, 2026);
+    expect(data.combine_results[0].position).toBe("DE");
+    expect(data.combine_results[1].position).toBe("");
+  });
 });

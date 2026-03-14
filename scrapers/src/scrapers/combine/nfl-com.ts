@@ -146,7 +146,8 @@ export async function scrapeNflCom(year: number): Promise<CombineData> {
  * Merge fields from source into target, only backfilling null values.
  */
 function mergeProfile(target: ApiProfile, source: ApiProfile): void {
-  if (!target.fortyYardDash && source.fortyYardDash) target.fortyYardDash = source.fortyYardDash;
+  if (target.fortyYardDash == null && source.fortyYardDash != null)
+    target.fortyYardDash = source.fortyYardDash;
   if (target.benchPress == null && source.benchPress != null) target.benchPress = source.benchPress;
   if (target.verticalJump == null && source.verticalJump != null)
     target.verticalJump = source.verticalJump;
@@ -158,7 +159,8 @@ function mergeProfile(target: ApiProfile, source: ApiProfile): void {
   if (target.armLength == null && source.armLength != null) target.armLength = source.armLength;
   if (target.handSize == null && source.handSize != null) target.handSize = source.handSize;
   if (target.wingspan == null && source.wingspan != null) target.wingspan = source.wingspan;
-  if (!target.tenYardSplit && source.tenYardSplit) target.tenYardSplit = source.tenYardSplit;
-  if (!target.twentyYardSplit && source.twentyYardSplit)
+  if (target.tenYardSplit == null && source.tenYardSplit != null)
+    target.tenYardSplit = source.tenYardSplit;
+  if (target.twentyYardSplit == null && source.twentyYardSplit != null)
     target.twentyYardSplit = source.twentyYardSplit;
 }

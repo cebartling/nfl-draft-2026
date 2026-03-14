@@ -1,4 +1,4 @@
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser } from "playwright";
 
 let browser: Browser | null = null;
 
@@ -21,7 +21,7 @@ export async function fetchRenderedPage(
   timeoutMs: number = 30000,
 ): Promise<string> {
   const b = await launchBrowser();
-  const page: Page = await b.newPage();
+  const page = await b.newPage();
 
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });

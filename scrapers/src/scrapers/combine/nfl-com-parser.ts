@@ -11,6 +11,7 @@ export interface NflComCombineProfile {
     lastName: string;
     displayName: string;
   };
+  position?: string;
   fortyYardDash: { seconds: number } | null;
   benchPress: number | null;
   verticalJump: number | null;
@@ -30,9 +31,7 @@ export interface NflComCombineProfile {
  */
 export function parseNflComApi(profiles: NflComCombineProfile[], year: number): CombineData {
   const entries: CombineEntry[] = profiles.map((p) => {
-    // Determine position from the profile if available
-    // The API doesn't always include position directly; use displayName as fallback
-    const position = typeof p.position === "string" ? normalizePosition(p.position) : "";
+    const position = p.position ? normalizePosition(p.position) : "";
 
     return {
       first_name: p.person.firstName,
