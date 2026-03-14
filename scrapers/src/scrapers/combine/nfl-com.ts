@@ -2,6 +2,8 @@ import type { CombineData } from "../../types/combine.js";
 import { parseNflComApi, type NflComCombineProfile } from "./nfl-com-parser.js";
 import { launchBrowser, closeBrowser } from "../../shared/browser.js";
 
+// Year is unused — the page URL is static; the API handles year filtering separately.
+// Parameter kept for signature consistency with other combineUrl functions.
 export function combineUrl(_year: number): string {
   return "https://www.nfl.com/combine/tracker/live-results/";
 }
@@ -36,17 +38,19 @@ async function getAuthToken(): Promise<string> {
   const browser = await launchBrowser();
   const page = await browser.newPage();
 
-  let authToken = "";
-
-  page.on("response", async (resp) => {
-    if (resp.url().includes("/identity/v3/token")) {
-      try {
-        const data = await resp.json();
-        authToken = data.accessToken || "";
-      } catch {
-        // ignore parse errors
+  const tokenPromise = new Promise<string>((resolve) => {
+    page.on("response", async (resp) => {
+      if (resp.url().includes("/identity/v3/token")) {
+        try {
+          const data = await resp.json();
+          if (data.accessToken) {
+            resolve(data.accessToken);
+          }
+        } catch {
+          // ignore parse errors
+        }
       }
-    }
+    });
   });
 
   try {
@@ -55,21 +59,14 @@ async function getAuthToken(): Promise<string> {
       timeout: 60000,
     });
 
-    // Wait for the auth token to be captured
-    const maxWait = 15000;
-    const start = Date.now();
-    while (!authToken && Date.now() - start < maxWait) {
-      await page.waitForTimeout(500);
-    }
+    // Race between token capture and timeout
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Failed to obtain NFL.com auth token within 15s")), 15000),
+    );
+    return await Promise.race([tokenPromise, timeout]);
   } finally {
     await page.close();
   }
-
-  if (!authToken) {
-    throw new Error("Failed to obtain NFL.com auth token");
-  }
-
-  return authToken;
 }
 
 /**
