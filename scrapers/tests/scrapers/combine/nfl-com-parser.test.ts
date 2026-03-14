@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   parseNflComHtml,
   parseNflComApi,
+  type NflComCombineProfile,
 } from "../../../src/scrapers/combine/nfl-com-parser.js";
 import { CombineDataSchema } from "../../../src/types/combine.js";
 
@@ -414,7 +415,7 @@ describe("parseNflComApi", () => {
   });
 
   it("skips profiles with missing person object", () => {
-    const profiles = [
+    const profiles: NflComCombineProfile[] = [
       {
         person: { firstName: "Valid", lastName: "Player", displayName: "Valid Player" },
         fortyYardDash: { seconds: 4.5 },
@@ -442,7 +443,7 @@ describe("parseNflComApi", () => {
         wingspan: null,
         tenYardSplit: null,
         twentyYardSplit: null,
-      } as unknown as (typeof profiles)[0],
+      } as unknown as NflComCombineProfile,
       {
         person: { firstName: "", lastName: "NoFirst", displayName: "NoFirst" },
         fortyYardDash: null,
