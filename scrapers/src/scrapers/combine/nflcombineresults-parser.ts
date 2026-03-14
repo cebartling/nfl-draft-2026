@@ -6,7 +6,6 @@ import { splitName } from "../../shared/name-normalizer.js";
 /** Header text patterns mapped to CombineEntry field names. */
 const HEADER_MAP: Record<string, keyof CombineEntry> = {
   "40 yard": "forty_yard_dash",
-  "40yard": "forty_yard_dash",
   "forty": "forty_yard_dash",
   "bench press": "bench_press",
   "bench": "bench_press",
@@ -147,7 +146,10 @@ export function parseNflCombineResultsHtml(html: string, year: number): CombineD
       if (isNaN(rowYear) || rowYear !== year) return;
     }
 
-    // Get player name
+    // Get player name from the detected Name column.
+    // Fallback: if no Name header detected, assume column 1 when Year column exists
+    // (Year is column 0), otherwise column 0. This matches the known
+    // nflcombineresults.com layout: [Year, Name, College, POS, ...drills].
     const nameColIdx = nameIdx >= 0 ? nameIdx : yearIdx >= 0 ? 1 : 0;
     const playerText = cells[nameColIdx];
     if (!playerText) return;
