@@ -1,35 +1,164 @@
 import type { CombineData } from "../../types/combine.js";
-import { parseNflComHtml } from "./nfl-com-parser.js";
-import { fetchRenderedPage, closeBrowser } from "../../shared/browser.js";
+import { parseNflComApi, type NflComCombineProfile } from "./nfl-com-parser.js";
+import { launchBrowser, closeBrowser } from "../../shared/browser.js";
 
 export function combineUrl(_year: number): string {
   return "https://www.nfl.com/combine/tracker/live-results/";
 }
 
+const API_BASE = "https://api.nfl.com/football/v2/combine/rankings";
+
 /**
- * Scrape NFL.com combine tracker using Playwright (client-side rendered page).
+ * Rank attributes available on the NFL.com combine API.
+ * Each returns a different subset of players (those who completed that drill).
  */
-export async function scrapeNflCom(year: number): Promise<CombineData> {
-  const url = combineUrl(year);
-  console.error(`Fetching NFL.com combine data from: ${url}`);
-  console.error("Using Playwright to render client-side content...");
+const RANK_ATTRIBUTES = [
+  "FORTY_YARD_DASH",
+  "VERTICAL_JUMP",
+  "BROAD_JUMP",
+  "BENCH_PRESS",
+  "THREE_CONE_DRILL",
+  "TWENTY_YARD_SHUTTLE",
+];
+
+/** API profile with id for deduplication. */
+type ApiProfile = NflComCombineProfile & { id: string };
+
+interface ApiResponse {
+  combineProfiles: ApiProfile[];
+  pagination: { limit: number; token: string | null };
+}
+
+/**
+ * Obtain an auth token from NFL.com by loading the page and capturing the identity API response.
+ */
+async function getAuthToken(): Promise<string> {
+  const browser = await launchBrowser();
+  const page = await browser.newPage();
+
+  let authToken = "";
+
+  page.on("response", async (resp) => {
+    if (resp.url().includes("/identity/v3/token")) {
+      try {
+        const data = await resp.json();
+        authToken = data.accessToken || "";
+      } catch {
+        // ignore parse errors
+      }
+    }
+  });
 
   try {
-    const html = await fetchRenderedPage(url, "table", 30000);
-    console.error(`Rendered page: ${html.length} bytes of HTML`);
+    await page.goto("https://www.nfl.com/combine/tracker/live-results/", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
 
-    const data = parseNflComHtml(html, year);
-    console.error(`Extracted ${data.combine_results.length} combine entries from NFL.com`);
+    // Wait for the auth token to be captured
+    const maxWait = 15000;
+    const start = Date.now();
+    while (!authToken && Date.now() - start < maxWait) {
+      await page.waitForTimeout(500);
+    }
+  } finally {
+    await page.close();
+  }
 
-    if (data.combine_results.length === 0 && html.length > 1000) {
-      throw new Error(
-        `NFL.com returned ${html.length} bytes of HTML but parser extracted 0 entries. ` +
-          "The page structure may have changed.",
-      );
+  if (!authToken) {
+    throw new Error("Failed to obtain NFL.com auth token");
+  }
+
+  return authToken;
+}
+
+/**
+ * Fetch combine profiles from the NFL.com API for a specific rank attribute.
+ */
+async function fetchRankings(
+  token: string,
+  year: number,
+  rankAttribute: string,
+): Promise<ApiProfile[]> {
+  const url = `${API_BASE}?limit=500&rankAttribute=${rankAttribute}&sortOrder=ASC&year=${year}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    },
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`NFL.com API returned HTTP ${response.status} for ${rankAttribute}`);
+  }
+
+  const data: ApiResponse = await response.json();
+  return data.combineProfiles || [];
+}
+
+/**
+ * Scrape NFL.com combine data via internal API.
+ * Uses Playwright only to obtain the auth token, then fetches all rank attributes
+ * via standard HTTP to collect maximum player coverage.
+ */
+export async function scrapeNflCom(year: number): Promise<CombineData> {
+  console.error("Obtaining NFL.com auth token via Playwright...");
+
+  try {
+    const token = await getAuthToken();
+    console.error("Auth token obtained successfully");
+
+    // Fetch all rank attributes to get maximum player coverage
+    const allProfiles = new Map<string, ApiProfile>();
+
+    for (const attr of RANK_ATTRIBUTES) {
+      try {
+        const profiles = await fetchRankings(token, year, attr);
+        console.error(`  ${attr}: ${profiles.length} players`);
+
+        for (const profile of profiles) {
+          const existing = allProfiles.get(profile.id);
+          if (existing) {
+            // Merge: backfill null fields from this response
+            mergeProfile(existing, profile);
+          } else {
+            allProfiles.set(profile.id, { ...profile });
+          }
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`  ${attr}: failed (${message})`);
+      }
     }
 
-    return data;
+    console.error(`  Total unique players: ${allProfiles.size}`);
+
+    const profiles = Array.from(allProfiles.values());
+    return parseNflComApi(profiles, year);
   } finally {
     await closeBrowser();
   }
+}
+
+/**
+ * Merge fields from source into target, only backfilling null values.
+ */
+function mergeProfile(target: ApiProfile, source: ApiProfile): void {
+  if (!target.fortyYardDash && source.fortyYardDash) target.fortyYardDash = source.fortyYardDash;
+  if (target.benchPress == null && source.benchPress != null) target.benchPress = source.benchPress;
+  if (target.verticalJump == null && source.verticalJump != null)
+    target.verticalJump = source.verticalJump;
+  if (target.broadJump == null && source.broadJump != null) target.broadJump = source.broadJump;
+  if (target.threeConeDrill == null && source.threeConeDrill != null)
+    target.threeConeDrill = source.threeConeDrill;
+  if (target.twentyYardShuttle == null && source.twentyYardShuttle != null)
+    target.twentyYardShuttle = source.twentyYardShuttle;
+  if (target.armLength == null && source.armLength != null) target.armLength = source.armLength;
+  if (target.handSize == null && source.handSize != null) target.handSize = source.handSize;
+  if (target.wingspan == null && source.wingspan != null) target.wingspan = source.wingspan;
+  if (!target.tenYardSplit && source.tenYardSplit) target.tenYardSplit = source.tenYardSplit;
+  if (!target.twentyYardSplit && source.twentyYardSplit)
+    target.twentyYardSplit = source.twentyYardSplit;
 }

@@ -24,10 +24,15 @@ export async function fetchRenderedPage(
   const page: Page = await b.newPage();
 
   try {
-    await page.goto(url, { waitUntil: "networkidle", timeout: timeoutMs });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
 
     if (waitSelector) {
       await page.waitForSelector(waitSelector, { timeout: timeoutMs });
+    }
+
+    // Give JS-rendered content a moment to populate after selector appears
+    if (waitSelector) {
+      await page.waitForTimeout(2000);
     }
 
     return await page.content();

@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { parseNflComHtml } from "../../../src/scrapers/combine/nfl-com-parser.js";
+import {
+  parseNflComHtml,
+  parseNflComApi,
+} from "../../../src/scrapers/combine/nfl-com-parser.js";
 import { CombineDataSchema } from "../../../src/types/combine.js";
 
-// NFL.com combine tracker renders a table with class "nfl-o-table"
-// Columns: Player, POS, School, HT, WT, 40YD, BENCH, VERT, BROAD, 3CONE, SHUTTLE, ARM, HAND, WING
+// --- HTML parser tests ---
+
 const SAMPLE_HTML = `
 <html><body>
 <table class="nfl-o-table">
@@ -214,9 +217,8 @@ describe("parseNflComHtml", () => {
     expect(data.combine_results[0].bench_press).toBe(12);
   });
 
-  it("sets ten_yard_split and twenty_yard_split to null (not provided by NFL.com)", () => {
+  it("sets ten_yard_split and twenty_yard_split to null (not provided by NFL.com HTML)", () => {
     const data = parseNflComHtml(SAMPLE_HTML, 2026);
-    // NFL.com typically does not include split times
     expect(data.combine_results[0].ten_yard_split).toBeNull();
     expect(data.combine_results[0].twenty_yard_split).toBeNull();
   });
@@ -234,5 +236,143 @@ describe("parseNflComHtml", () => {
     </body></html>`;
     const data = parseNflComHtml(html, 2026);
     expect(data.combine_results.length).toBe(1);
+  });
+});
+
+// --- API parser tests ---
+
+const SAMPLE_PROFILES = [
+  {
+    person: { firstName: "Brenen", lastName: "Thompson", displayName: "Brenen Thompson" },
+    fortyYardDash: { seconds: 4.26 },
+    benchPress: null,
+    verticalJump: null,
+    broadJump: null,
+    threeConeDrill: null,
+    twentyYardShuttle: null,
+    armLength: 29.375,
+    handSize: 9,
+    wingspan: null,
+    tenYardSplit: { seconds: 1.54 },
+    twentyYardSplit: null,
+  },
+  {
+    person: { firstName: "Cam", lastName: "Ward", displayName: "Cam Ward" },
+    fortyYardDash: { seconds: 4.72 },
+    benchPress: 18,
+    verticalJump: 32.0,
+    broadJump: 108,
+    threeConeDrill: 7.05,
+    twentyYardShuttle: 4.3,
+    armLength: 32.5,
+    handSize: 9.75,
+    wingspan: null,
+    tenYardSplit: { seconds: 1.65 },
+    twentyYardSplit: null,
+  },
+  {
+    person: { firstName: "Travis", lastName: "Hunter", displayName: "Travis Hunter" },
+    fortyYardDash: { seconds: 4.38 },
+    benchPress: null,
+    verticalJump: 40.5,
+    broadJump: 130,
+    threeConeDrill: null,
+    twentyYardShuttle: 4.05,
+    armLength: null,
+    handSize: null,
+    wingspan: null,
+    tenYardSplit: { seconds: 1.5 },
+    twentyYardSplit: null,
+  },
+];
+
+describe("parseNflComApi", () => {
+  it("extracts all profiles", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    expect(data.combine_results.length).toBe(3);
+  });
+
+  it("parses player names from person object", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    expect(data.combine_results[0].first_name).toBe("Brenen");
+    expect(data.combine_results[0].last_name).toBe("Thompson");
+    expect(data.combine_results[1].first_name).toBe("Cam");
+    expect(data.combine_results[1].last_name).toBe("Ward");
+  });
+
+  it("parses nested fortyYardDash object correctly", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    expect(data.combine_results[0].forty_yard_dash).toBe(4.26);
+    expect(data.combine_results[1].forty_yard_dash).toBe(4.72);
+  });
+
+  it("parses nested tenYardSplit object correctly", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    expect(data.combine_results[0].ten_yard_split).toBe(1.54);
+    expect(data.combine_results[1].ten_yard_split).toBe(1.65);
+  });
+
+  it("parses flat numeric fields correctly", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    const cam = data.combine_results[1];
+    expect(cam.bench_press).toBe(18);
+    expect(cam.vertical_jump).toBe(32.0);
+    expect(cam.broad_jump).toBe(108);
+    expect(cam.three_cone_drill).toBe(7.05);
+    expect(cam.twenty_yard_shuttle).toBe(4.3);
+    expect(cam.arm_length).toBe(32.5);
+    expect(cam.hand_size).toBe(9.75);
+  });
+
+  it("handles null values correctly", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    const brenen = data.combine_results[0];
+    expect(brenen.bench_press).toBeNull();
+    expect(brenen.vertical_jump).toBeNull();
+    expect(brenen.broad_jump).toBeNull();
+    expect(brenen.wingspan).toBeNull();
+    expect(brenen.twenty_yard_split).toBeNull();
+  });
+
+  it("rounds bench_press and broad_jump to integers", () => {
+    const profiles = [
+      {
+        person: { firstName: "Test", lastName: "Player", displayName: "Test Player" },
+        fortyYardDash: null,
+        benchPress: 18.7,
+        verticalJump: null,
+        broadJump: 108.3,
+        threeConeDrill: null,
+        twentyYardShuttle: null,
+        armLength: null,
+        handSize: null,
+        wingspan: null,
+        tenYardSplit: null,
+        twentyYardSplit: null,
+      },
+    ];
+    const data = parseNflComApi(profiles, 2026);
+    expect(data.combine_results[0].bench_press).toBe(19);
+    expect(data.combine_results[0].broad_jump).toBe(108);
+  });
+
+  it("sets meta fields correctly", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    expect(data.meta.source).toBe("nfl_com");
+    expect(data.meta.year).toBe(2026);
+    expect(data.meta.player_count).toBe(3);
+    expect(data.meta.entry_count).toBe(3);
+  });
+
+  it("validates against Zod schema", () => {
+    const data = parseNflComApi(SAMPLE_PROFILES, 2026);
+    const result = CombineDataSchema.safeParse(data);
+    expect(result.success).toBe(true);
+  });
+
+  it("returns empty results for empty profiles array", () => {
+    const data = parseNflComApi([], 2026);
+    expect(data.combine_results.length).toBe(0);
+    expect(data.meta.player_count).toBe(0);
   });
 });

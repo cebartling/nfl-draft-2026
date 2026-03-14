@@ -3,12 +3,78 @@ import type { CombineData, CombineEntry } from "../../types/combine.js";
 import { normalizePosition } from "../../shared/position-normalizer.js";
 import { splitName } from "../../shared/name-normalizer.js";
 
+// --- API JSON parsing ---
+
+export interface NflComCombineProfile {
+  person: {
+    firstName: string;
+    lastName: string;
+    displayName: string;
+  };
+  fortyYardDash: { seconds: number } | null;
+  benchPress: number | null;
+  verticalJump: number | null;
+  broadJump: number | null;
+  threeConeDrill: number | null;
+  twentyYardShuttle: number | null;
+  armLength: number | null;
+  handSize: number | null;
+  wingspan: number | null;
+  tenYardSplit: { seconds: number } | null;
+  twentyYardSplit: { seconds: number } | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Parse NFL.com API combine profiles into CombineData.
+ */
+export function parseNflComApi(profiles: NflComCombineProfile[], year: number): CombineData {
+  const entries: CombineEntry[] = profiles.map((p) => {
+    // Determine position from the profile if available
+    // The API doesn't always include position directly; use displayName as fallback
+    const position = typeof p.position === "string" ? normalizePosition(p.position) : "";
+
+    return {
+      first_name: p.person.firstName,
+      last_name: p.person.lastName,
+      position,
+      source: "combine",
+      year,
+      forty_yard_dash: p.fortyYardDash?.seconds ?? null,
+      bench_press: p.benchPress != null ? Math.round(p.benchPress) : null,
+      vertical_jump: p.verticalJump ?? null,
+      broad_jump: p.broadJump != null ? Math.round(p.broadJump) : null,
+      three_cone_drill: p.threeConeDrill ?? null,
+      twenty_yard_shuttle: p.twentyYardShuttle ?? null,
+      arm_length: p.armLength ?? null,
+      hand_size: p.handSize ?? null,
+      wingspan: p.wingspan ?? null,
+      ten_yard_split: p.tenYardSplit?.seconds ?? null,
+      twenty_yard_split: p.twentyYardSplit?.seconds ?? null,
+    };
+  });
+
+  return {
+    meta: {
+      source: "nfl_com",
+      description: `${year} NFL Combine results from NFL.com API`,
+      year,
+      generated_at: new Date().toISOString(),
+      player_count: entries.length,
+      entry_count: entries.length,
+    },
+    combine_results: entries,
+  };
+}
+
+// --- HTML parsing (fallback for rendered pages) ---
+
 /** Header text patterns mapped to CombineEntry field names. */
 const HEADER_MAP: Record<string, keyof CombineEntry> = {
   "40yd": "forty_yard_dash",
   "40-yd": "forty_yard_dash",
   "40 yard": "forty_yard_dash",
-  "forty": "forty_yard_dash",
+  forty: "forty_yard_dash",
   bench: "bench_press",
   vert: "vertical_jump",
   vertical: "vertical_jump",
@@ -46,7 +112,10 @@ function parseIntMeasurement(s: string): number | null {
 }
 
 function normalizeHeader(text: string): string {
-  return text.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "");
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "");
 }
 
 function findColumnMapping(
@@ -126,7 +195,8 @@ export function parseNflComHtml(html: string, year: number): CombineData {
   const entries: CombineEntry[] = [];
 
   // Process data rows from tbody, or all tr after first if no tbody
-  const rows = table.find("tbody tr").length > 0 ? table.find("tbody tr") : table.find("tr").slice(1);
+  const rows =
+    table.find("tbody tr").length > 0 ? table.find("tbody tr") : table.find("tr").slice(1);
 
   rows.each((_, row) => {
     const cells: string[] = [];
