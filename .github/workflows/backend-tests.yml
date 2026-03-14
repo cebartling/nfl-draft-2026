@@ -132,6 +132,7 @@ jobs:
       - name: Run acceptance tests
         working-directory: back-end
         env:
+          SQLX_OFFLINE: false
           TEST_DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
           DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
         run: cargo test -p api --tests -- --test-threads=1
@@ -139,6 +140,7 @@ jobs:
       - name: Run db crate integration tests
         working-directory: back-end
         env:
+          SQLX_OFFLINE: false
           TEST_DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
           DATABASE_URL: postgresql://nfl_draft_user:nfl_draft_pass@localhost:5432/nfl_draft_test
         run: cargo test -p db -- --test-threads=1

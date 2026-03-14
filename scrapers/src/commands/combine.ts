@@ -3,6 +3,8 @@ import { generateTemplateCombine } from "../scrapers/combine/template.js";
 import { scrapePfr } from "../scrapers/combine/pfr.js";
 import { scrapeMockdraftable } from "../scrapers/combine/mockdraftable.js";
 import { scrapeNflverse } from "../scrapers/combine/nflverse.js";
+import { scrapeNflCom } from "../scrapers/combine/nfl-com.js";
+import { scrapeNflCombineResults } from "../scrapers/combine/nflcombineresults.js";
 import { mergeCombineData } from "../scrapers/combine/merge.js";
 import { validateCombineData } from "../shared/combine-validator.js";
 import type { CombineData } from "../types/combine.js";
@@ -93,8 +95,14 @@ async function scrapeSource(source: string, year: number): Promise<CombineData> 
       return await scrapeMockdraftable(year);
     case "nflverse":
       return await scrapeNflverse(year);
+    case "nfl-com":
+      return await scrapeNflCom(year);
+    case "nflcombineresults":
+      return await scrapeNflCombineResults(year);
     default:
-      throw new Error(`Unknown source: ${source}. Use pfr, mockdraftable, or nflverse`);
+      throw new Error(
+        `Unknown source: ${source}. Use pfr, mockdraftable, nflverse, nfl-com, or nflcombineresults`,
+      );
   }
 }
 
@@ -107,7 +115,7 @@ async function scrapeAndMerge(
 
   // Primary: nflverse (most reliable, structured CSV)
   try {
-    console.error("\n[1/3] Scraping nflverse (primary)...");
+    console.error("\n[1/5] Scraping nflverse (primary)...");
     primary = await scrapeNflverse(year);
     console.error(`  Got ${primary.combine_results.length} players from nflverse`);
   } catch (err) {
@@ -115,9 +123,29 @@ async function scrapeAndMerge(
     console.error(`nflverse failed: ${message}`);
   }
 
-  // Secondary: PFR (backfills arm_length, hand_size, wingspan, splits)
+  // Secondary: NFL.com (official source, Playwright-based)
   try {
-    console.error("\n[2/3] Scraping Pro Football Reference...");
+    console.error("\n[2/5] Scraping NFL.com Combine Tracker...");
+    const nflCom = await scrapeNflCom(year);
+    if (nflCom.combine_results.length > 0) {
+      if (primary) {
+        secondaries.push(nflCom);
+        console.error(`  Got ${nflCom.combine_results.length} players from NFL.com (secondary)`);
+      } else {
+        primary = nflCom;
+        console.error(
+          `  Got ${nflCom.combine_results.length} players from NFL.com (promoted to primary)`,
+        );
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`NFL.com failed: ${message}`);
+  }
+
+  // Tertiary: PFR (backfills arm_length, hand_size, wingspan, splits)
+  try {
+    console.error("\n[3/5] Scraping Pro Football Reference...");
     const pfr = await scrapePfr(year);
     if (pfr.combine_results.length > 0) {
       if (primary) {
@@ -133,9 +161,31 @@ async function scrapeAndMerge(
     console.error(`PFR failed: ${message}`);
   }
 
-  // Tertiary: Mockdraftable
+  // Quaternary: nflcombineresults.com
   try {
-    console.error("\n[3/3] Scraping Mockdraftable...");
+    console.error("\n[4/5] Scraping nflcombineresults.com...");
+    const ncr = await scrapeNflCombineResults(year);
+    if (ncr.combine_results.length > 0) {
+      if (primary) {
+        secondaries.push(ncr);
+        console.error(
+          `  Got ${ncr.combine_results.length} players from nflcombineresults.com (secondary)`,
+        );
+      } else {
+        primary = ncr;
+        console.error(
+          `  Got ${ncr.combine_results.length} players from nflcombineresults.com (promoted to primary)`,
+        );
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`nflcombineresults.com failed: ${message}`);
+  }
+
+  // Quinary: Mockdraftable
+  try {
+    console.error("\n[5/5] Scraping Mockdraftable...");
     const md = await scrapeMockdraftable(year);
     if (md.combine_results.length > 0) {
       if (primary) {

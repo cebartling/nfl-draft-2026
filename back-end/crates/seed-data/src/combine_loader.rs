@@ -373,7 +373,10 @@ pub async fn load_combine_data(
         .map_err(|e| anyhow::anyhow!("Failed to verify combine results count: {}", e))?;
 
     println!("\nPost-insert verification:");
-    println!("  Combine results in DB for year {}: {}", data.meta.year, db_count);
+    println!(
+        "  Combine results in DB for year {}: {}",
+        data.meta.year, db_count
+    );
     println!(
         "  Expected at least: {} (loaded) + any pre-existing",
         loaded
