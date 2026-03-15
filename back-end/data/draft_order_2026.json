@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-03-11",
+    "last_updated": "2026-03-15",
     "sources": [
       "Tankathon.com"
     ],
@@ -834,10 +834,10 @@
       "round": 3,
       "pick_in_round": 28,
       "overall_pick": 92,
-      "team_abbreviation": "SF",
+      "team_abbreviation": "DAL",
       "original_team_abbreviation": "SF",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From SF"
     },
     {
       "round": 3,
@@ -1932,10 +1932,10 @@
       "round": 6,
       "pick_in_round": 33,
       "overall_pick": 214,
-      "team_abbreviation": "PIT",
+      "team_abbreviation": "IND",
       "original_team_abbreviation": "PIT",
       "is_compensatory": true,
-      "notes": "Compensatory pick"
+      "notes": "From PIT; Compensatory pick"
     },
     {
       "round": 6,
@@ -1968,10 +1968,10 @@
       "round": 7,
       "pick_in_round": 2,
       "overall_pick": 218,
-      "team_abbreviation": "TEN",
+      "team_abbreviation": "DAL",
       "original_team_abbreviation": "TEN",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From TEN"
     },
     {
       "round": 7,
@@ -2031,7 +2031,7 @@
       "round": 7,
       "pick_in_round": 9,
       "overall_pick": 225,
-      "team_abbreviation": "DAL",
+      "team_abbreviation": "TEN",
       "original_team_abbreviation": "KC",
       "is_compensatory": false,
       "notes": "From KC"
@@ -2076,10 +2076,10 @@
       "round": 7,
       "pick_in_round": 14,
       "overall_pick": 230,
-      "team_abbreviation": "IND",
+      "team_abbreviation": "PIT",
       "original_team_abbreviation": "IND",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From IND"
     },
     {
       "round": 7,
