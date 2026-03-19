@@ -10,6 +10,18 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rudel hooks claude session-end",
+            "async": true
+          }
+        ]
+      }
     ]
   }
 }
