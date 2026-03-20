@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { PickCard } from '$components/draft';
 	import { LoadingSpinner, Badge } from '$components/ui';
-	import type { DraftPick, Player, Team } from '$types';
-	import { teamsApi, playersApi } from '$api';
+	import type { DraftPick, Player, Team, RankingBadge, FeldmanFreak } from '$types';
+	import { teamsApi, playersApi, rankingsApi, freaksApi } from '$api';
 	import { draftState } from '$stores';
 	import { logger } from '$lib/utils/logger';
 	import { tick } from 'svelte';
@@ -15,6 +15,8 @@
 
 	let teams = $state<Map<string, Team>>(new Map());
 	let players = $state<Map<string, Player>>(new Map());
+	let rankingsMap = $state<Map<string, RankingBadge[]>>(new Map());
+	let freaksMap = $state<Map<string, FeldmanFreak>>(new Map());
 	let initialLoadDone = $state(false);
 	let collapsedRounds = $state<Set<number>>(new Set());
 	let initializedCollapse = $state(false);
@@ -56,6 +58,18 @@
 			collapsedRounds = new Set(rounds.filter((r) => r !== 1));
 			initializedCollapse = true;
 		}
+	});
+
+	// Pre-load rankings and freaks once on mount (independent of picks)
+	$effect(() => {
+		Promise.all([rankingsApi.loadAllPlayerRankings(), freaksApi.loadByYear(2026)])
+			.then(([rankings, freaks]) => {
+				rankingsMap = rankings;
+				freaksMap = freaks;
+			})
+			.catch((err) => {
+				logger.error('Failed to load rankings/freaks for draft board:', err);
+			});
 	});
 
 	/**
@@ -195,6 +209,8 @@
 									{pick}
 									{player}
 									{team}
+									rankings={pick.player_id ? (rankingsMap.get(pick.player_id) ?? []) : []}
+									freak={pick.player_id ? (freaksMap.get(pick.player_id) ?? null) : null}
 									highlight={pick.overall_pick === draftState.currentPickNumber}
 								/>
 							{/if}
