@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-03-19",
+    "last_updated": "2026-03-20",
     "sources": [
       "Tankathon.com"
     ],
@@ -1644,7 +1644,7 @@
       "round": 6,
       "pick_in_round": 1,
       "overall_pick": 182,
-      "team_abbreviation": "LV",
+      "team_abbreviation": "BUF",
       "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
       "notes": "From NYJ"
