@@ -191,7 +191,10 @@ impl AutoPickService {
                             })
                             .collect()
                     }
-                    Err(_) => HashMap::new(),
+                    Err(e) => {
+                        tracing::warn!("Failed to fetch prospect rankings for BPA scoring: {}. All players will receive neutral ranking score (50.0).", e);
+                        HashMap::new()
+                    }
                 }
             } else {
                 HashMap::new()
@@ -202,7 +205,10 @@ impl AutoPickService {
             if let Some(freak_repo) = &self.feldman_freak_repo {
                 match freak_repo.find_by_year(2026).await {
                     Ok(freaks) => freaks.into_iter().map(|f| f.player_id).collect(),
-                    Err(_) => HashSet::new(),
+                    Err(e) => {
+                        tracing::warn!("Failed to fetch Feldman Freaks for BPA scoring: {}. No athleticism bonuses will be applied.", e);
+                        HashSet::new()
+                    }
                 }
             } else {
                 HashSet::new()
@@ -794,5 +800,176 @@ mod tests {
             top_score.bpa_score,
             late_score.bpa_score
         );
+    }
+
+    #[tokio::test]
+    async fn test_pos_bonus_does_not_override_elite_bpa() {
+        // Given: rank-1 LB (elite, BPA ~80) vs rank-100 QB (mediocre, BPA ~60)
+        // Both have no team needs.
+        // Then: LB should be selected — position bonus (+2.5 for QB) must NOT override
+        // a 20+ point BPA advantage. This verifies the additive formula is correct.
+
+        let team_id = Uuid::new_v4();
+        let draft_id = Uuid::new_v4();
+        let lb_id = Uuid::new_v4();
+        let qb_id = Uuid::new_v4();
+
+        let lb = create_test_player(lb_id, Position::LB);
+        let qb = create_test_player(qb_id, Position::QB);
+        let players = vec![lb.clone(), qb.clone()];
+
+        let mut scouting_mock = MockScoutingReportRepo::new();
+        let mut combine_mock = MockCombineResultsRepo::new();
+        let mut strategy_mock = MockDraftStrategyRepo::new();
+        let mut need_mock = MockTeamNeedRepo::new();
+        let mut ranking_mock = MockProspectRankingRepo::new();
+        let mut freak_mock = MockFeldmanFreakRepo::new();
+
+        let strategy = DraftStrategy::default_strategy(team_id, draft_id);
+        strategy_mock
+            .expect_find_by_team_and_draft()
+            .returning(move |_, _| Ok(Some(strategy.clone())));
+
+        // LB grade 9.5 (elite), QB grade 7.0 (mediocre)
+        let lb_report = ScoutingReport::new(lb_id, team_id, 9.5).unwrap();
+        let qb_report = ScoutingReport::new(qb_id, team_id, 7.0).unwrap();
+        scouting_mock
+            .expect_find_by_team_id()
+            .returning(move |_| Ok(vec![lb_report.clone(), qb_report.clone()]));
+
+        combine_mock
+            .expect_find_by_player_id()
+            .returning(|_| Ok(vec![]));
+
+        need_mock.expect_find_by_team_id().returning(|_| Ok(vec![]));
+
+        let scraped = NaiveDate::from_ymd_opt(2026, 3, 1).unwrap();
+        let source_id = Uuid::new_v4();
+        let rankings = vec![
+            PlayerRankingWithSource {
+                player_id: lb_id,
+                source_name: "TestSource".to_string(),
+                source_id,
+                rank: 1,
+                scraped_at: scraped,
+            },
+            PlayerRankingWithSource {
+                player_id: qb_id,
+                source_name: "TestSource".to_string(),
+                source_id,
+                rank: 100,
+                scraped_at: scraped,
+            },
+        ];
+        ranking_mock
+            .expect_find_all_with_source()
+            .returning(move || Ok(rankings.clone()));
+
+        freak_mock
+            .expect_find_by_year()
+            .returning(|_| Ok(vec![]));
+
+        let player_eval = Arc::new(PlayerEvaluationService::new(
+            Arc::new(scouting_mock),
+            Arc::new(combine_mock),
+        ));
+        let strategy_svc = Arc::new(DraftStrategyService::new(
+            Arc::new(strategy_mock),
+            Arc::new(need_mock),
+        ));
+        let auto_pick = AutoPickService::new(player_eval, strategy_svc)
+            .with_ranking_repo(Arc::new(ranking_mock))
+            .with_feldman_freak_repo(Arc::new(freak_mock));
+
+        let (selected_id, scores) = auto_pick
+            .decide_pick(team_id, draft_id, 1, &players)
+            .await
+            .unwrap();
+
+        // Elite LB (rank 1, grade 9.5) must beat mediocre QB (rank 100, grade 7.0)
+        // even though QB has a position bonus. BPA signal must dominate.
+        assert_eq!(
+            selected_id, lb_id,
+            "rank-1 elite LB should beat rank-100 mediocre QB despite QB position bonus"
+        );
+
+        let lb_score = scores.iter().find(|s| s.player_id == lb_id).unwrap();
+        let qb_score = scores.iter().find(|s| s.player_id == qb_id).unwrap();
+        assert!(
+            lb_score.final_score > qb_score.final_score,
+            "LB final_score {} should exceed QB final_score {}",
+            lb_score.final_score,
+            qb_score.final_score
+        );
+    }
+
+    #[tokio::test]
+    async fn test_auto_pick_works_gracefully_when_ranking_repo_fails() {
+        // When the ranking repository returns an error, auto-pick should still
+        // complete successfully using neutral ranking scores (50.0) for all players.
+
+        let team_id = Uuid::new_v4();
+        let draft_id = Uuid::new_v4();
+        let qb_id = Uuid::new_v4();
+        let rb_id = Uuid::new_v4();
+
+        let qb = create_test_player(qb_id, Position::QB);
+        let rb = create_test_player(rb_id, Position::RB);
+        let players = vec![qb.clone(), rb.clone()];
+
+        let mut scouting_mock = MockScoutingReportRepo::new();
+        let mut combine_mock = MockCombineResultsRepo::new();
+        let mut strategy_mock = MockDraftStrategyRepo::new();
+        let mut need_mock = MockTeamNeedRepo::new();
+        let mut ranking_mock = MockProspectRankingRepo::new();
+        let mut freak_mock = MockFeldmanFreakRepo::new();
+
+        let strategy = DraftStrategy::default_strategy(team_id, draft_id);
+        strategy_mock
+            .expect_find_by_team_and_draft()
+            .returning(move |_, _| Ok(Some(strategy.clone())));
+
+        let qb_report = ScoutingReport::new(qb_id, team_id, 9.0).unwrap();
+        let rb_report = ScoutingReport::new(rb_id, team_id, 7.0).unwrap();
+        scouting_mock
+            .expect_find_by_team_id()
+            .returning(move |_| Ok(vec![qb_report.clone(), rb_report.clone()]));
+
+        combine_mock
+            .expect_find_by_player_id()
+            .returning(|_| Ok(vec![]));
+
+        need_mock.expect_find_by_team_id().returning(|_| Ok(vec![]));
+
+        // Ranking repo fails — should be handled gracefully
+        ranking_mock
+            .expect_find_all_with_source()
+            .returning(|| Err(DomainError::ValidationError("DB error".to_string())));
+
+        freak_mock
+            .expect_find_by_year()
+            .returning(|_| Ok(vec![]));
+
+        let player_eval = Arc::new(PlayerEvaluationService::new(
+            Arc::new(scouting_mock),
+            Arc::new(combine_mock),
+        ));
+        let strategy_svc = Arc::new(DraftStrategyService::new(
+            Arc::new(strategy_mock),
+            Arc::new(need_mock),
+        ));
+        let auto_pick = AutoPickService::new(player_eval, strategy_svc)
+            .with_ranking_repo(Arc::new(ranking_mock))
+            .with_feldman_freak_repo(Arc::new(freak_mock));
+
+        // Should not panic or return an error — graceful degradation
+        let result = auto_pick
+            .decide_pick(team_id, draft_id, 1, &players)
+            .await;
+
+        assert!(result.is_ok(), "auto-pick should succeed even when ranking repo fails");
+        let (selected_id, _) = result.unwrap();
+        // QB has higher scouting grade so should still win (neutral ranking score = 50 for both)
+        assert_eq!(selected_id, qb_id);
     }
 }

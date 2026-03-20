@@ -31,8 +31,12 @@ impl PlayerEvaluationService {
         self
     }
 
-    /// Calculate BPA score for a player from a specific team's perspective
-    /// Formula: BPA = (scouting_grade × 0.60) + (combine_score × 0.20) + (fit_score × 0.15) - concern_penalty
+    /// Calculate BPA score for a player from a specific team's perspective.
+    /// Uses the legacy single-player formula: (scouting × 0.60) + (combine × 0.20) + (fit × 0.15) - penalty.
+    ///
+    /// NOTE: For batch auto-pick scoring prefer `calculate_bpa_score_preloaded`, which uses
+    /// updated weights (scouting × 0.45, combine × 0.20, ranking × 0.20, fit × 0.10) and
+    /// incorporates consensus ranking and Feldman Freak signals.
     pub async fn calculate_bpa_score(&self, player: &Player, team_id: Uuid) -> DomainResult<f64> {
         // Get scouting report for this team
         let scouting_report = self
