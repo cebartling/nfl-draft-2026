@@ -246,11 +246,16 @@ impl AutoPickService {
                 .strategy_service
                 .get_position_value(strategy, player.position);
 
-            // Calculate final score using round-adjusted weights
+            // Calculate final score using round-adjusted weights.
+            // position_value is an additive bonus (not a multiplier) to avoid
+            // positional bias overriding BPA signal. QB gets +2.5, RB gets -0.75.
+            // This preserves the premium for franchise-QB positions without making
+            // it impossible for elite non-QB prospects to be selected early.
             let (bpa_w, need_w) = Self::effective_weights(round, strategy);
             let weighted_bpa = bpa_score * bpa_w;
             let weighted_need = need_score * need_w;
-            let final_score = (weighted_bpa + weighted_need) * position_value;
+            let pos_bonus = (position_value - 1.0) * 5.0;
+            let final_score = weighted_bpa + weighted_need + pos_bonus;
 
             let ranking_score = consensus_ranking_score.unwrap_or(50.0);
             let rationale = Self::build_rationale(
