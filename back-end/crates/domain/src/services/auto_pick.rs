@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
 use crate::models::Player;
+use crate::repositories::{FeldmanFreakRepository, ProspectRankingRepository};
 use crate::services::{DraftStrategyService, PlayerEvaluationService, RasScoringService};
 
 /// Result of player scoring with detailed breakdown
@@ -13,6 +14,7 @@ pub struct PlayerScore {
     pub bpa_score: f64,
     pub need_score: f64,
     pub position_value: f64,
+    pub ranking_score: f64,
     pub final_score: f64,
     pub rationale: String,
 }
@@ -21,6 +23,8 @@ pub struct PlayerScore {
 pub struct AutoPickService {
     player_eval_service: Arc<PlayerEvaluationService>,
     strategy_service: Arc<DraftStrategyService>,
+    ranking_repo: Option<Arc<dyn ProspectRankingRepository>>,
+    feldman_freak_repo: Option<Arc<dyn FeldmanFreakRepository>>,
 }
 
 impl AutoPickService {
@@ -31,7 +35,21 @@ impl AutoPickService {
         Self {
             player_eval_service,
             strategy_service,
+            ranking_repo: None,
+            feldman_freak_repo: None,
         }
+    }
+
+    /// Wire in the prospect ranking repository for consensus ranking signal
+    pub fn with_ranking_repo(mut self, repo: Arc<dyn ProspectRankingRepository>) -> Self {
+        self.ranking_repo = Some(repo);
+        self
+    }
+
+    /// Wire in the Feldman Freak repository for athleticism bonus
+    pub fn with_feldman_freak_repo(mut self, repo: Arc<dyn FeldmanFreakRepository>) -> Self {
+        self.feldman_freak_repo = Some(repo);
+        self
     }
 
     /// Decide which player to pick based on team strategy
@@ -79,8 +97,8 @@ impl AutoPickService {
     }
 
     /// Score all players and return sorted by final score (descending).
-    /// Pre-fetches team needs, scouting reports, combine results, and percentile data
-    /// to avoid N+1 query patterns.
+    /// Pre-fetches team needs, scouting reports, combine results, percentile data,
+    /// prospect rankings, and Feldman Freaks to avoid N+1 query patterns.
     async fn score_all_players(
         &self,
         team_id: Uuid,
@@ -128,6 +146,49 @@ impl AutoPickService {
             }
         }
 
+        // Pre-fetch prospect rankings (1 query) → normalize to 0-100 consensus score per player
+        // Normalization: rank 1 → 100, rank 300+ → 0; average across sources when multiple exist.
+        let ranking_scores: HashMap<Uuid, f64> =
+            if let Some(ranking_repo) = &self.ranking_repo {
+                match ranking_repo.find_all_with_source().await {
+                    Ok(all_rankings) => {
+                        // Group ranks by player_id
+                        let mut ranks_by_player: HashMap<Uuid, Vec<f64>> = HashMap::new();
+                        for r in all_rankings {
+                            ranks_by_player
+                                .entry(r.player_id)
+                                .or_default()
+                                .push(r.rank as f64);
+                        }
+                        ranks_by_player
+                            .into_iter()
+                            .map(|(player_id, ranks)| {
+                                let avg_rank =
+                                    ranks.iter().sum::<f64>() / ranks.len() as f64;
+                                let score = (100.0
+                                    - ((avg_rank - 1.0) * 100.0 / 300.0))
+                                    .clamp(0.0, 100.0);
+                                (player_id, score)
+                            })
+                            .collect()
+                    }
+                    Err(_) => HashMap::new(),
+                }
+            } else {
+                HashMap::new()
+            };
+
+        // Pre-fetch Feldman Freaks for the current draft year (1 query) → HashSet for O(1) lookup
+        let feldman_freak_ids: HashSet<Uuid> =
+            if let Some(freak_repo) = &self.feldman_freak_repo {
+                match freak_repo.find_by_year(2026).await {
+                    Ok(freaks) => freaks.into_iter().map(|f| f.player_id).collect(),
+                    Err(_) => HashSet::new(),
+                }
+            } else {
+                HashSet::new()
+            };
+
         let mut scores = Vec::new();
 
         for player in players {
@@ -144,12 +205,17 @@ impl AutoPickService {
                 .map(|v| v.as_slice())
                 .unwrap_or(&[]);
 
+            let consensus_ranking_score = ranking_scores.get(&player.id).copied();
+            let is_feldman_freak = feldman_freak_ids.contains(&player.id);
+
             // Calculate BPA score with pre-loaded data (0 additional queries)
             let bpa_score = self.player_eval_service.calculate_bpa_score_preloaded(
                 player,
                 scouting_report,
                 combine,
                 percentiles,
+                consensus_ranking_score,
+                is_feldman_freak,
             );
 
             // Calculate need score from pre-fetched needs (0 additional queries)
@@ -166,11 +232,14 @@ impl AutoPickService {
             let weighted_need = need_score * (strategy.need_weight as f64 / 100.0);
             let final_score = (weighted_bpa + weighted_need) * position_value;
 
+            let ranking_score = consensus_ranking_score.unwrap_or(50.0);
             let rationale = Self::build_rationale(
                 player,
                 bpa_score,
                 need_score,
                 position_value,
+                ranking_score,
+                is_feldman_freak,
                 final_score,
                 strategy,
             );
@@ -180,6 +249,7 @@ impl AutoPickService {
                 bpa_score,
                 need_score,
                 position_value,
+                ranking_score,
                 final_score,
                 rationale,
             });
@@ -200,16 +270,21 @@ impl AutoPickService {
         bpa_score: f64,
         need_score: f64,
         position_value: f64,
+        ranking_score: f64,
+        is_feldman_freak: bool,
         final_score: f64,
         strategy: &crate::models::DraftStrategy,
     ) -> String {
+        let freak_tag = if is_feldman_freak { " [Freak]" } else { "" };
         format!(
-            "{} {} ({:?}): BPA={:.1}, Need={:.1}, PosValue={:.2}, Final={:.1} ({}% BPA / {}% Need)",
+            "{} {} ({:?}){}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosValue={:.2}, Final={:.1} ({}% BPA / {}% Need)",
             player.first_name,
             player.last_name,
             player.position,
+            freak_tag,
             bpa_score,
             need_score,
+            ranking_score,
             position_value,
             final_score,
             strategy.bpa_weight,
@@ -222,10 +297,12 @@ impl AutoPickService {
 mod tests {
     use super::*;
     use crate::models::{CombineResults, DraftStrategy, Position, ScoutingReport, TeamNeed};
+    use crate::models::PlayerRankingWithSource;
     use crate::repositories::{
-        CombineResultsRepository, DraftStrategyRepository, ScoutingReportRepository,
-        TeamNeedRepository,
+        CombineResultsRepository, DraftStrategyRepository, FeldmanFreakRepository,
+        ProspectRankingRepository, ScoutingReportRepository, TeamNeedRepository,
     };
+    use chrono::NaiveDate;
     use mockall::mock;
     use mockall::predicate::*;
 
@@ -286,6 +363,33 @@ mod tests {
             async fn update(&self, need: &TeamNeed) -> DomainResult<TeamNeed>;
             async fn delete(&self, id: Uuid) -> DomainResult<()>;
             async fn delete_by_team_id(&self, team_id: Uuid) -> DomainResult<()>;
+        }
+    }
+
+    mock! {
+        ProspectRankingRepo {}
+
+        #[async_trait::async_trait]
+        impl ProspectRankingRepository for ProspectRankingRepo {
+            async fn create_batch(&self, rankings: &[crate::models::ProspectRanking]) -> DomainResult<usize>;
+            async fn find_by_player_with_source(&self, player_id: Uuid) -> DomainResult<Vec<PlayerRankingWithSource>>;
+            async fn find_all_with_source(&self) -> DomainResult<Vec<PlayerRankingWithSource>>;
+            async fn find_by_player(&self, player_id: Uuid) -> DomainResult<Vec<crate::models::ProspectRanking>>;
+            async fn find_by_source(&self, source_id: Uuid) -> DomainResult<Vec<crate::models::ProspectRanking>>;
+            async fn delete_by_source(&self, source_id: Uuid) -> DomainResult<u64>;
+        }
+    }
+
+    mock! {
+        FeldmanFreakRepo {}
+
+        #[async_trait::async_trait]
+        impl FeldmanFreakRepository for FeldmanFreakRepo {
+            async fn create(&self, freak: &crate::models::FeldmanFreak) -> DomainResult<crate::models::FeldmanFreak>;
+            async fn find_by_player(&self, player_id: Uuid) -> DomainResult<Option<crate::models::FeldmanFreak>>;
+            async fn find_by_year(&self, year: i32) -> DomainResult<Vec<crate::models::FeldmanFreak>>;
+            async fn find_all(&self) -> DomainResult<Vec<crate::models::FeldmanFreak>>;
+            async fn delete_by_year(&self, year: i32) -> DomainResult<u64>;
         }
     }
 
@@ -510,5 +614,110 @@ mod tests {
         assert!(qb_score.final_score > rb_score.final_score);
         assert_eq!(qb_score.position_value, 1.5);
         assert_eq!(rb_score.position_value, 0.85);
+    }
+
+    #[tokio::test]
+    async fn test_rank1_player_beats_rank300_with_equal_scouting() {
+        // Given: two QBs with identical scouting grades
+        // And: player A is ranked #1 overall, player B is ranked #300
+        // Then: player A should be selected (consensus ranking signal distinguishes them)
+
+        let team_id = Uuid::new_v4();
+        let draft_id = Uuid::new_v4();
+
+        let top_id = Uuid::new_v4();
+        let late_id = Uuid::new_v4();
+
+        let top_qb = create_test_player(top_id, Position::QB);
+        let late_qb = create_test_player(late_id, Position::QB);
+
+        let players = vec![top_qb.clone(), late_qb.clone()];
+
+        let mut scouting_mock = MockScoutingReportRepo::new();
+        let mut combine_mock = MockCombineResultsRepo::new();
+        let mut strategy_mock = MockDraftStrategyRepo::new();
+        let mut need_mock = MockTeamNeedRepo::new();
+        let mut ranking_mock = MockProspectRankingRepo::new();
+        let mut freak_mock = MockFeldmanFreakRepo::new();
+
+        let strategy = DraftStrategy::default_strategy(team_id, draft_id);
+        strategy_mock
+            .expect_find_by_team_and_draft()
+            .returning(move |_, _| Ok(Some(strategy.clone())));
+
+        // Both players have identical scouting grade 8.0
+        let top_report = ScoutingReport::new(top_id, team_id, 8.0).unwrap();
+        let late_report = ScoutingReport::new(late_id, team_id, 8.0).unwrap();
+        scouting_mock
+            .expect_find_by_team_id()
+            .returning(move |_| Ok(vec![top_report.clone(), late_report.clone()]));
+
+        combine_mock
+            .expect_find_by_player_id()
+            .returning(|_| Ok(vec![]));
+
+        need_mock.expect_find_by_team_id().returning(|_| Ok(vec![]));
+
+        // top_id ranked #1, late_id ranked #300
+        let scraped = NaiveDate::from_ymd_opt(2026, 3, 1).unwrap();
+        let source_id = Uuid::new_v4();
+        let rankings = vec![
+            PlayerRankingWithSource {
+                player_id: top_id,
+                source_name: "TestSource".to_string(),
+                source_id,
+                rank: 1,
+                scraped_at: scraped,
+            },
+            PlayerRankingWithSource {
+                player_id: late_id,
+                source_name: "TestSource".to_string(),
+                source_id,
+                rank: 300,
+                scraped_at: scraped,
+            },
+        ];
+        ranking_mock
+            .expect_find_all_with_source()
+            .returning(move || Ok(rankings.clone()));
+
+        freak_mock
+            .expect_find_by_year()
+            .returning(|_| Ok(vec![]));
+
+        let player_eval = Arc::new(PlayerEvaluationService::new(
+            Arc::new(scouting_mock),
+            Arc::new(combine_mock),
+        ));
+        let strategy_svc = Arc::new(DraftStrategyService::new(
+            Arc::new(strategy_mock),
+            Arc::new(need_mock),
+        ));
+        let auto_pick = AutoPickService::new(player_eval, strategy_svc)
+            .with_ranking_repo(Arc::new(ranking_mock))
+            .with_feldman_freak_repo(Arc::new(freak_mock));
+
+        let (selected_id, scores) = auto_pick
+            .decide_pick(team_id, draft_id, &players)
+            .await
+            .unwrap();
+
+        // Rank-1 player should win despite identical scouting grades
+        assert_eq!(selected_id, top_id);
+
+        let top_score = scores.iter().find(|s| s.player_id == top_id).unwrap();
+        let late_score = scores.iter().find(|s| s.player_id == late_id).unwrap();
+        assert!(
+            top_score.ranking_score > late_score.ranking_score,
+            "rank-1 should have higher ranking_score than rank-300: {} vs {}",
+            top_score.ranking_score,
+            late_score.ranking_score
+        );
+        assert!(
+            top_score.bpa_score > late_score.bpa_score,
+            "rank-1 should have higher BPA than rank-300 with equal scouting: {} vs {}",
+            top_score.bpa_score,
+            late_score.bpa_score
+        );
     }
 }

@@ -105,8 +105,11 @@ impl AppState {
             team_need_repo.clone(),
         ));
 
-        let auto_pick_service =
-            Arc::new(AutoPickService::new(player_eval_service, strategy_service));
+        let auto_pick_service = Arc::new(
+            AutoPickService::new(player_eval_service, strategy_service)
+                .with_ranking_repo(prospect_ranking_repo.clone())
+                .with_feldman_freak_repo(feldman_freak_repo.clone()),
+        );
 
         let draft_engine = Arc::new(
             DraftEngine::new(
