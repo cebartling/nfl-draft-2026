@@ -22,7 +22,6 @@
 	let players_loading = $state(true);
 	let activeTab = $state('draft-board');
 	let availablePlayers = $state<AvailablePlayer[]>([]);
-	let playersLoaded = $state(false);
 
 	const tabs = [
 		{ id: 'draft-board', label: 'Draft Board' },
@@ -35,7 +34,6 @@
 		try {
 			const teamId = draftState.controlledTeamIds[0];
 			availablePlayers = await draftsApi.getAvailablePlayers(draftState.session.draft_id, teamId);
-			playersLoaded = true;
 		} catch (error) {
 			logger.error('Failed to load available players:', error);
 			toastState.error('Failed to load available players');
@@ -44,10 +42,15 @@
 		}
 	}
 
-	// Load available players once the session becomes available
+	// Re-fetch available players whenever the completed pick count changes (own picks or AI/WebSocket picks)
+	const completedPickCount = $derived(draftState.picks.filter((p) => p.player_id !== null).length);
+	let fetchedForPickCount = -1; // plain var (not $state) to avoid dependency cycle
+
 	$effect(() => {
 		const session = draftState.session;
-		if (session && !playersLoaded) {
+		const count = completedPickCount;
+		if (session && count !== fetchedForPickCount) {
+			fetchedForPickCount = count;
 			loadAvailablePlayers();
 		}
 	});
@@ -73,7 +76,8 @@
 			const updatedSession = await sessionsApi.advancePick(sessionId);
 			draftState.session = updatedSession;
 
-			// Reload picks to reflect the manual pick
+			// Reload picks to reflect the manual pick — this updates completedPickCount,
+			// which triggers the reactive $effect to re-fetch available players
 			await draftState.loadDraft(draftState.session.draft_id);
 
 			// Trigger AI auto-picks for subsequent AI teams
@@ -82,7 +86,7 @@
 				try {
 					const result = await sessionsApi.autoPickRun(sessionId);
 					draftState.session = result.session;
-					// Reload picks to reflect AI picks
+					// Reload picks to reflect AI picks — also updates completedPickCount
 					await draftState.loadDraft(draftState.session.draft_id);
 				} catch (err) {
 					logger.error('Auto-pick run failed:', err);
@@ -91,9 +95,6 @@
 					draftState.isAutoPickRunning = false;
 				}
 			}
-
-			// Refresh available players so the list reflects all picks just made
-			await loadAvailablePlayers();
 
 			toastState.success('Pick submitted');
 		} catch (error: unknown) {
@@ -105,7 +106,7 @@
 					: 'Failed to make pick';
 			toastState.error(message);
 			selectedPlayer = null;
-			// Refresh the list to remove stale players
+			// Pick count didn't change on failure, so force a refresh manually
 			await loadAvailablePlayers();
 		} finally {
 			making_pick = false;
