@@ -54,10 +54,28 @@ impl AutoPickService {
 
     /// Decide which player to pick based on team strategy
     /// Returns the selected player ID and the scoring breakdown
+    /// Compute effective BPA/need weights for a given round.
+    ///
+    /// Early rounds are BPA-dominant (round 1 = ~90% BPA); later rounds shift
+    /// to team needs (round 7 = ~10% BPA). The team's strategic preference
+    /// provides a small additional offset so philosophy still matters.
+    ///
+    /// Formula: base = clamp(90 - (round-1) × 13, 10, 90)
+    ///          offset = (strategy.bpa_weight - 60) × 0.15   (max ±6 points)
+    ///          effective_bpa = clamp(base + offset, 5, 95)
+    fn effective_weights(round: i32, strategy: &crate::models::DraftStrategy) -> (f64, f64) {
+        let base_bpa = (90.0 - (round as f64 - 1.0) * 13.0).clamp(10.0, 90.0);
+        let strategy_offset = (strategy.bpa_weight as f64 - 60.0) * 0.15;
+        let effective_bpa = (base_bpa + strategy_offset).clamp(5.0, 95.0);
+        let effective_need = 100.0 - effective_bpa;
+        (effective_bpa / 100.0, effective_need / 100.0)
+    }
+
     pub async fn decide_pick(
         &self,
         team_id: Uuid,
         draft_id: Uuid,
+        round: i32,
         available_players: &[Player],
     ) -> DomainResult<(Uuid, Vec<PlayerScore>)> {
         if available_players.is_empty() {
@@ -74,7 +92,7 @@ impl AutoPickService {
 
         // Score all available players
         let scored_players = self
-            .score_all_players(team_id, available_players, &strategy)
+            .score_all_players(team_id, round, available_players, &strategy)
             .await?;
 
         if scored_players.is_empty() {
@@ -102,6 +120,7 @@ impl AutoPickService {
     async fn score_all_players(
         &self,
         team_id: Uuid,
+        round: i32,
         players: &[Player],
         strategy: &crate::models::DraftStrategy,
     ) -> DomainResult<Vec<PlayerScore>> {
@@ -227,9 +246,10 @@ impl AutoPickService {
                 .strategy_service
                 .get_position_value(strategy, player.position);
 
-            // Calculate final score
-            let weighted_bpa = bpa_score * (strategy.bpa_weight as f64 / 100.0);
-            let weighted_need = need_score * (strategy.need_weight as f64 / 100.0);
+            // Calculate final score using round-adjusted weights
+            let (bpa_w, need_w) = Self::effective_weights(round, strategy);
+            let weighted_bpa = bpa_score * bpa_w;
+            let weighted_need = need_score * need_w;
             let final_score = (weighted_bpa + weighted_need) * position_value;
 
             let ranking_score = consensus_ranking_score.unwrap_or(50.0);
@@ -241,7 +261,8 @@ impl AutoPickService {
                 ranking_score,
                 is_feldman_freak,
                 final_score,
-                strategy,
+                round,
+                bpa_w,
             );
 
             scores.push(PlayerScore {
@@ -273,11 +294,12 @@ impl AutoPickService {
         ranking_score: f64,
         is_feldman_freak: bool,
         final_score: f64,
-        strategy: &crate::models::DraftStrategy,
+        round: i32,
+        bpa_w: f64,
     ) -> String {
         let freak_tag = if is_feldman_freak { " [Freak]" } else { "" };
         format!(
-            "{} {} ({:?}){}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosValue={:.2}, Final={:.1} ({}% BPA / {}% Need)",
+            "{} {} ({:?}){}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosValue={:.2}, Final={:.1} (R{}: {:.0}% BPA / {:.0}% Need)",
             player.first_name,
             player.last_name,
             player.position,
@@ -287,8 +309,9 @@ impl AutoPickService {
             ranking_score,
             position_value,
             final_score,
-            strategy.bpa_weight,
-            strategy.need_weight
+            round,
+            bpa_w * 100.0,
+            (1.0 - bpa_w) * 100.0,
         )
     }
 }
@@ -463,7 +486,7 @@ mod tests {
         let auto_pick = AutoPickService::new(player_eval, strategy_svc);
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, &players)
+            .decide_pick(team_id, draft_id, 1, &players)
             .await
             .unwrap();
 
@@ -474,10 +497,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_need_heavy_picks_team_need() {
-        // Given: 30% BPA, 70% need strategy
-        // And: QB grade 9.5 available (no need)
-        // And: RB grade 7.0 available (priority 1 need)
-        // Then: RB should be selected (need dominates)
+        // Given: need-heavy strategy (30/70) in round 5
+        // And: QB grade 9.5 available (team has no QB need)
+        // And: RB grade 7.0 available (team has priority-1 RB need)
+        // Then: RB should be selected — in round 5 effective weights are ~34% BPA / ~66% Need
+        // (round-based formula dominates; the team's need-heavy preference reinforces it)
 
         let team_id = Uuid::new_v4();
         let draft_id = Uuid::new_v4();
@@ -535,11 +559,11 @@ mod tests {
         let auto_pick = AutoPickService::new(player_eval, strategy_svc);
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, &players)
+            .decide_pick(team_id, draft_id, 5, &players)
             .await
             .unwrap();
 
-        // RB should be selected (higher need score dominates)
+        // RB should be selected (need dominates in round 5)
         assert_eq!(selected_id, rb_id);
         assert_eq!(scores.len(), 2);
     }
@@ -601,7 +625,7 @@ mod tests {
         let auto_pick = AutoPickService::new(player_eval, strategy_svc);
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, &players)
+            .decide_pick(team_id, draft_id, 1, &players)
             .await
             .unwrap();
 
@@ -614,6 +638,52 @@ mod tests {
         assert!(qb_score.final_score > rb_score.final_score);
         assert_eq!(qb_score.position_value, 1.5);
         assert_eq!(rb_score.position_value, 0.85);
+    }
+
+    #[test]
+    fn test_effective_weights_round_progression() {
+        use crate::models::DraftStrategy;
+
+        let team_id = Uuid::new_v4();
+        let draft_id = Uuid::new_v4();
+        let strategy = DraftStrategy::default_strategy(team_id, draft_id); // 60/40
+
+        let (bpa_r1, need_r1) = AutoPickService::effective_weights(1, &strategy);
+        let (bpa_r4, _) = AutoPickService::effective_weights(4, &strategy);
+        let (bpa_r7, need_r7) = AutoPickService::effective_weights(7, &strategy);
+
+        // Round 1: BPA-dominant (≥ 85%)
+        assert!(bpa_r1 >= 0.85, "R1 bpa_w should be ≥ 85%, got {:.1}%", bpa_r1 * 100.0);
+        // Round 7: Need-dominant (≥ 85%)
+        assert!(need_r7 >= 0.85, "R7 need_w should be ≥ 85%, got {:.1}%", need_r7 * 100.0);
+        // Monotonically decreasing BPA weight
+        assert!(bpa_r1 > bpa_r4, "BPA weight should decrease R1→R4");
+        assert!(bpa_r4 > bpa_r7, "BPA weight should decrease R4→R7");
+        // All weights sum to 1.0
+        assert!((bpa_r1 + need_r1 - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_effective_weights_bpa_heavy_team_stays_higher() {
+        use crate::models::DraftStrategy;
+        let team_id = Uuid::new_v4();
+        let draft_id = Uuid::new_v4();
+        let mut bpa_strat = DraftStrategy::default_strategy(team_id, draft_id);
+        bpa_strat.bpa_weight = 80;
+        bpa_strat.need_weight = 20;
+        let mut need_strat = DraftStrategy::default_strategy(team_id, draft_id);
+        need_strat.bpa_weight = 40;
+        need_strat.need_weight = 60;
+
+        for round in 1..=7 {
+            let (bpa_bpa, _) = AutoPickService::effective_weights(round, &bpa_strat);
+            let (bpa_need, _) = AutoPickService::effective_weights(round, &need_strat);
+            assert!(
+                bpa_bpa > bpa_need,
+                "BPA-focused team should have higher BPA weight at round {}: {:.1}% vs {:.1}%",
+                round, bpa_bpa * 100.0, bpa_need * 100.0
+            );
+        }
     }
 
     #[tokio::test]
@@ -698,7 +768,7 @@ mod tests {
             .with_feldman_freak_repo(Arc::new(freak_mock));
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, &players)
+            .decide_pick(team_id, draft_id, 1, &players)
             .await
             .unwrap();
 
