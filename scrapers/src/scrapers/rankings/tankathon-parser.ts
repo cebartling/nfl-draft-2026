@@ -13,19 +13,27 @@ export function parseTankathonRankingsHtml(html: string, year: number): RankingD
   let rankings: RankingEntry[] = [];
 
   // Strategy 1: mock-row CSS selectors
+  // Current DOM structure (2026):
+  //   div.mock-row-pick-number  → rank
+  //   div.mock-row-name         → full name
+  //   div.mock-row-school-position → "POSITION | School" (e.g. "LB/EDGE | Ohio State")
   const mockRows = $("div.mock-row.nfl");
   if (mockRows.length > 0) {
     mockRows.each((_, row) => {
-      const rankText = $(row).find(".rank").text().trim();
-      const name = $(row).find(".mock-name").text().trim();
-      const posText = $(row).find(".position").text().trim();
-      const school = $(row).find(".school").text().trim();
+      const rankText = $(row).find(".mock-row-pick-number").text().trim();
+      const name = $(row).find(".mock-row-name").text().trim();
+      const posSchool = $(row).find(".mock-row-school-position").text().trim();
 
       const rank = parseInt(rankText, 10);
       if (isNaN(rank)) return;
 
+      // "LB/EDGE | Ohio State " → ["LB/EDGE", "Ohio State"]
+      const parts = posSchool.split("|");
+      const rawPos = (parts[0] ?? "").trim().split("/")[0]; // take first of slash positions
+      const school = (parts[1] ?? "").trim();
+
       const [firstName, lastName] = splitName(name);
-      const position = normalizePosition(posText);
+      const position = normalizePosition(rawPos);
 
       rankings.push({
         rank,

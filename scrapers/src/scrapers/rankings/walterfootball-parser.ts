@@ -2,55 +2,57 @@ import * as cheerio from "cheerio";
 import type { RankingData, RankingEntry } from "../../types/rankings.js";
 import { normalizePosition } from "../../shared/position-normalizer.js";
 
-/**
- * Parse "N. Name, Position, School" from WalterFootball bold elements.
- * Format: "1. Travis Hunter, CB, Colorado"
- */
-function parseProspectLine(text: string): RankingEntry | null {
-  // Match: rank. name, position, school
-  const match = text.match(/^(\d+)\.\s*(.+?),\s*([A-Za-z/]+),\s*(.+)$/);
-  if (!match) return null;
-
-  const rank = parseInt(match[1], 10);
-  const fullName = match[2].trim();
-  const rawPosition = match[3].trim();
-  const school = match[4].trim();
-
-  // Handle slash positions: take first one (e.g., "OT/G" → "OT")
-  const position = normalizePosition(rawPosition.split("/")[0]);
-
-  // Split name into first/last
-  const nameParts = fullName.split(/\s+/);
-  if (nameParts.length === 0) return null;
-
-  const firstName = nameParts[0];
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
-
-  return {
-    rank,
-    first_name: firstName,
-    last_name: lastName,
-    position,
-    school,
-    height_inches: null,
-    weight_pounds: null,
-  };
-}
 
 export function parseWalterFootballHtml(html: string, year: number): RankingData {
   const $ = cheerio.load(html);
   const rankings: RankingEntry[] = [];
 
-  // WalterFootball uses <b> and <strong> tags for prospect entries
-  $("b, strong").each((_, el) => {
-    // Get text content, stripping any <a> tags but keeping their text
-    const text = $(el).text().trim();
-
-    const entry = parseProspectLine(text);
-    if (entry) {
-      rankings.push(entry);
-    }
+  // WalterFootball uses alternating <b> pairs (current 2026 structure):
+  //   <b>1.</b>  <b>Jeremiyah Love,   RB, Notre Dame.</b>
+  //   <b>2.</b>  <b>David Bailey,     DE, Texas Tech.</b>
+  // Collect all <b> texts, then scan for a rank-only tag followed by a name/pos/school tag.
+  const bTexts: string[] = [];
+  $("b").each((_, el) => {
+    bTexts.push($(el).text().trim());
   });
+
+  for (let i = 0; i < bTexts.length - 1; i++) {
+    const maybeRank = bTexts[i];
+    const maybePlayer = bTexts[i + 1];
+
+    // Rank tag: "1." or "10." etc.
+    if (!/^\d+\.$/.test(maybeRank)) continue;
+    const rank = parseInt(maybeRank, 10);
+    if (isNaN(rank)) continue;
+
+    // Player tag: "Name,   Position, School." (with variable whitespace)
+    // Collapse whitespace first
+    const normalized = maybePlayer.replace(/\s+/g, " ").replace(/\.$/, "").trim();
+    // Match: "Full Name, Position, School"
+    const m = normalized.match(/^(.+?),\s*([A-Za-z/]+),\s*(.+)$/);
+    if (!m) continue;
+
+    const fullName = m[1].trim();
+    const rawPosition = m[2].trim();
+    const school = m[3].trim();
+
+    const nameParts = fullName.split(/\s+/);
+    const firstName = nameParts[0] ?? "";
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+    const position = normalizePosition(rawPosition.split("/")[0]);
+
+    rankings.push({
+      rank,
+      first_name: firstName,
+      last_name: lastName,
+      position,
+      school,
+      height_inches: null,
+      weight_pounds: null,
+    });
+
+    i++; // skip the player tag we just consumed
+  }
 
   return {
     meta: {
