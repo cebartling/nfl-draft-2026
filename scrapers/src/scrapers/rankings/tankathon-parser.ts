@@ -17,7 +17,14 @@ export function parseTankathonRankingsHtml(html: string, year: number): RankingD
   //   div.mock-row-pick-number  → rank
   //   div.mock-row-name         → full name
   //   div.mock-row-school-position → "POSITION | School" (e.g. "LB/EDGE | Ohio State")
-  const mockRows = $("div.mock-row.nfl");
+  //
+  // NOTE: Tankathon renders the same players in multiple board sections
+  // (main overall, by-school-overall, by-school-offense-defense). We must
+  // exclude rows inside by-school sections to avoid duplicates.
+  const allMockRows = $("div.mock-row.nfl");
+  const mockRows = allMockRows.filter((_, row) => {
+    return $(row).parents("[class*=by-school], [class*=offense-defense]").length === 0;
+  });
   if (mockRows.length > 0) {
     mockRows.each((_, row) => {
       const rankText = $(row).find(".mock-row-pick-number").text().trim();

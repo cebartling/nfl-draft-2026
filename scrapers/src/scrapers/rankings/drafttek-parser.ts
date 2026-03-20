@@ -58,7 +58,10 @@ export function parseDraftTekHtml(html: string, year: number): RankingData {
     const rank = parseInt(rankText, 10);
     if (isNaN(rank)) return;
 
-    const [firstName, lastName] = splitName(nameText);
+    // Some DraftTek cells omit the space between initials and last name
+    // e.g. "T.J.Hall" → "T.J. Hall" so splitName works correctly
+    const normalizedName = nameText.replace(/(\.[A-Z][a-z])/g, (m) => ". " + m.slice(1)).trim();
+    const [firstName, lastName] = splitName(normalizedName);
     const position = normalizePosition(posText);
     const heightInches = parseHeight($(cells[5]).text());
     const weightPounds = parseWeight($(cells[6]).text());
