@@ -151,9 +151,8 @@ impl PlayerEvaluationService {
         let fit_component = Self::calculate_fit_score(scouting_report) * 0.10;
         let concern_penalty = Self::calculate_concern_penalty(scouting_report);
 
-        let bpa_score =
-            scouting_component + combine_component + ranking_component + fit_component
-                - concern_penalty;
+        let bpa_score = scouting_component + combine_component + ranking_component + fit_component
+            - concern_penalty;
 
         bpa_score.clamp(0.0, 100.0)
     }
