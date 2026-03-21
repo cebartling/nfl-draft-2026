@@ -2,16 +2,22 @@ import { describe, it, expect } from "vitest";
 import { parseWalterFootballHtml } from "../../../src/scrapers/rankings/walterfootball-parser.js";
 import { RankingDataSchema } from "../../../src/types/rankings.js";
 
+// 2026 WalterFootball structure: alternating <b> pairs
+//   <b>1.</b>  (rank-only tag matching /^\d+\.$/)
+//   <b>Name, Position, School.</b>  (player info tag)
 const SAMPLE_HTML = `
 <html><body>
 <div>
-  <b>1. Travis Hunter, CB, Colorado</b><br>
+  <b>1.</b>
+  <b>Travis Hunter, CB, Colorado.</b><br>
   Some scouting notes about this player.
   <br><br>
-  <b>2. Shedeur Sanders, QB, Colorado</b><br>
+  <b>2.</b>
+  <b>Shedeur Sanders, QB, Colorado.</b><br>
   More scouting notes.
   <br><br>
-  <b>3. Rueben Bain Jr., DE, Miami</b><br>
+  <b>3.</b>
+  <b>Rueben Bain Jr., DE, Miami.</b><br>
   Notes here.
 </div>
 </body></html>
@@ -65,11 +71,12 @@ describe("parseWalterFootballHtml", () => {
     }
   });
 
-  it("handles linked names in <a> tags", () => {
+  it("handles linked names in <a> tags within the player tag", () => {
     const html = `
     <html><body>
     <div>
-      <b>1. <a href="/player">Travis Hunter</a>, CB, Colorado</b><br>
+      <b>1.</b>
+      <b><a href="/player">Travis Hunter</a>, CB, Colorado.</b><br>
     </div>
     </body></html>`;
     const data = parseWalterFootballHtml(html, 2026);
@@ -82,33 +89,40 @@ describe("parseWalterFootballHtml", () => {
     const html = `
     <html><body>
     <div>
-      <b>1. Francis Mauigoa, OT/G, Miami</b><br>
+      <b>1.</b>
+      <b>Francis Mauigoa, OT/G, Miami.</b><br>
     </div>
     </body></html>`;
     const data = parseWalterFootballHtml(html, 2026);
     expect(data.rankings[0].position).toBe("OT");
   });
 
-  it("handles <strong> tags as well as <b>", () => {
-    const html = `
-    <html><body>
-    <div>
-      <strong>1. Travis Hunter, CB, Colorado</strong><br>
-    </div>
-    </body></html>`;
-    const data = parseWalterFootballHtml(html, 2026);
-    expect(data.rankings.length).toBe(1);
-  });
-
-  it("skips non-prospect bold text", () => {
+  it("skips non-prospect bold text before the alternating pairs", () => {
     const html = `
     <html><body>
     <div>
       <b>NFL Draft Big Board 2026</b><br>
-      <b>1. Travis Hunter, CB, Colorado</b><br>
+      <b>1.</b>
+      <b>Travis Hunter, CB, Colorado.</b><br>
     </div>
     </body></html>`;
     const data = parseWalterFootballHtml(html, 2026);
     expect(data.rankings.length).toBe(1);
+    expect(data.rankings[0].rank).toBe(1);
+  });
+
+  it("collapses extra whitespace in player tag", () => {
+    const html = `
+    <html><body>
+    <div>
+      <b>1.</b>
+      <b>Jeremiyah   Love,   RB,   Notre Dame.</b><br>
+    </div>
+    </body></html>`;
+    const data = parseWalterFootballHtml(html, 2026);
+    expect(data.rankings.length).toBe(1);
+    expect(data.rankings[0].first_name).toBe("Jeremiyah");
+    expect(data.rankings[0].last_name).toBe("Love");
+    expect(data.rankings[0].school).toBe("Notre Dame");
   });
 });

@@ -1,17 +1,23 @@
 <script lang="ts">
-	import { Badge } from '$components/ui';
-	import type { DraftPick, Player, Team } from '$types';
+	import { Badge, Tooltip } from '$components/ui';
+	import type { DraftPick, Player, Team, RankingBadge, FeldmanFreak } from '$types';
 	import { getTeamLogoPath } from '$lib/utils/logo';
+	import { getPositionColor } from '$lib/utils/formatters';
 
 	interface Props {
 		pick: DraftPick;
 		player: Player | null;
 		team: Team;
+		rankings?: RankingBadge[];
+		freak?: FeldmanFreak | null;
 		highlight?: boolean;
 	}
 
-	let { pick, player, team, highlight = false }: Props = $props();
+	let { pick, player, team, rankings = [], freak = null, highlight = false }: Props = $props();
 	let logoError = $state(false);
+
+	// Best rank across all sources — show as the prominent "overall" number
+	const bestRank = $derived(rankings.length > 0 ? Math.min(...rankings.map((r) => r.rank)) : null);
 </script>
 
 <div
@@ -27,7 +33,7 @@
 	</span>
 
 	<!-- Round/Pick info + badges -->
-	<div class="flex items-center gap-1 w-40 shrink-0 mr-3">
+	<div class="flex items-center gap-1 w-36 shrink-0 mr-3">
 		<span class="text-xs text-gray-500">R{pick.round} P{pick.pick_number}</span>
 		{#if pick.is_compensatory}
 			<Badge variant="warning" size="sm">COMP</Badge>
@@ -55,24 +61,57 @@
 	<!-- Player -->
 	<div class="flex-1 min-w-0 mr-3">
 		{#if player}
-			<span data-testid="pick-player-name" class="text-sm font-semibold text-gray-900">
-				{player.first_name}
-				{player.last_name}
-			</span>
-			<span data-testid="pick-player-position" class="text-xs text-gray-500 ml-1">
-				{player.position}
-			</span>
-			<span data-testid="pick-player-college" class="text-xs text-gray-500 ml-1">
-				{player.college || 'N/A'}
-			</span>
+			<div class="flex items-center gap-2 flex-wrap">
+				<Badge variant={getPositionColor(player.position)} size="sm">
+					{player.position}
+				</Badge>
+				<span data-testid="pick-player-name" class="text-sm font-semibold text-gray-900">
+					{player.first_name}
+					{player.last_name}
+				</span>
+				<span data-testid="pick-player-college" class="text-xs text-gray-500">
+					{player.college || 'N/A'}
+				</span>
+			</div>
 		{:else}
 			<span class="text-sm text-gray-400 italic">&mdash;</span>
 		{/if}
 	</div>
 
+	<!-- Rankings & Freak badges (only for completed picks) -->
+	{#if player}
+		<div class="flex items-center gap-1.5 shrink-0">
+			{#if bestRank !== null}
+				<span
+					class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-800"
+					title="Best consensus rank: #{bestRank}"
+				>
+					#{bestRank}
+				</span>
+			{/if}
+			{#each rankings as badge (badge.source_name)}
+				<span
+					class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+					title="{badge.source_name}: #{badge.rank}"
+				>
+					{badge.abbreviation}:#{badge.rank}
+				</span>
+			{/each}
+			{#if freak}
+				<Tooltip text="Feldman Freak #{freak.rank}: {freak.description}" width="w-80">
+					<span
+						class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300"
+					>
+						FREAK #{freak.rank}
+					</span>
+				</Tooltip>
+			{/if}
+		</div>
+	{/if}
+
 	<!-- Notes -->
 	{#if pick.notes}
-		<span class="text-xs text-gray-400 italic truncate max-w-48 shrink-0">
+		<span class="text-xs text-gray-400 italic truncate max-w-32 shrink-0 ml-2">
 			{pick.notes}
 		</span>
 	{/if}

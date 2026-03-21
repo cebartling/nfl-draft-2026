@@ -95,6 +95,33 @@ impl ProspectRankingRepository for SqlxProspectRankingRepository {
         Ok(results.into_iter().map(row_to_domain).collect())
     }
 
+    async fn find_for_players_with_source(
+        &self,
+        player_ids: &[Uuid],
+    ) -> DomainResult<Vec<PlayerRankingWithSource>> {
+        if player_ids.is_empty() {
+            return Ok(vec![]);
+        }
+        // Use runtime query (no macro) so no SQLx offline cache entry is required.
+        // WHERE player_id = ANY($1) filters at the DB level — only rankings for the
+        // given available players are fetched, avoiding loading all-time rankings.
+        let results = sqlx::query_as::<_, PlayerRankingWithSourceRow>(
+            r#"
+            SELECT pr.player_id, rs.name as source_name, rs.id as source_id, pr.rank, pr.scraped_at
+            FROM prospect_rankings pr
+            JOIN ranking_sources rs ON pr.ranking_source_id = rs.id
+            WHERE pr.player_id = ANY($1::uuid[])
+            ORDER BY rs.name, pr.rank
+            "#,
+        )
+        .bind(player_ids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        Ok(results.into_iter().map(row_to_domain).collect())
+    }
+
     async fn find_all_with_source(&self) -> DomainResult<Vec<PlayerRankingWithSource>> {
         let results = sqlx::query_as!(
             PlayerRankingWithSourceRow,

@@ -2,11 +2,15 @@ import { describe, it, expect } from "vitest";
 import { parseDraftTekHtml } from "../../../src/scrapers/rankings/drafttek-parser.js";
 import { RankingDataSchema } from "../../../src/types/rankings.js";
 
+// 2026 DraftTek table.player-info column layout:
+//   0=Rank, 1=CNG(change), 2=Prospect, 3=College, 4=POS, 5=Ht, 6=Wt, 7=CLS, 8=BIO
+// All table selectors (player-info, bpa, pointed) share this layout.
 const SAMPLE_HTML = `
 <html><body>
 <table class="bpa">
   <tr>
     <td>1</td>
+    <td>+2</td>
     <td>Travis Hunter</td>
     <td>Colorado</td>
     <td>CB</td>
@@ -16,6 +20,7 @@ const SAMPLE_HTML = `
   </tr>
   <tr>
     <td>2</td>
+    <td></td>
     <td>Shedeur Sanders</td>
     <td>Colorado</td>
     <td>QB</td>
@@ -25,6 +30,7 @@ const SAMPLE_HTML = `
   </tr>
   <tr>
     <td>3</td>
+    <td>-1</td>
     <td>Rueben Bain Jr.</td>
     <td>Miami</td>
     <td>DE</td>
@@ -90,6 +96,7 @@ describe("parseDraftTekHtml", () => {
     <table class="bpa">
       <tr>
         <td>1</td>
+        <td></td>
         <td>Test Player</td>
         <td>Alabama</td>
         <td>WR</td>
@@ -110,6 +117,7 @@ describe("parseDraftTekHtml", () => {
     <table class="bpa">
       <tr>
         <td>Rank</td>
+        <td>CNG</td>
         <td>Name</td>
         <td>College</td>
         <td>Position</td>
@@ -119,6 +127,7 @@ describe("parseDraftTekHtml", () => {
       </tr>
       <tr>
         <td>1</td>
+        <td>+1</td>
         <td>Travis Hunter</td>
         <td>Colorado</td>
         <td>CB</td>
@@ -132,12 +141,13 @@ describe("parseDraftTekHtml", () => {
     expect(data.rankings.length).toBe(1);
   });
 
-  it("handles alternate table selectors", () => {
+  it("handles alternate table selector (table.player-info)", () => {
     const html = `
     <html><body>
-    <table>
-      <tr class="pointed">
+    <table class="player-info">
+      <tr>
         <td>1</td>
+        <td>+2</td>
         <td>Travis Hunter</td>
         <td>Colorado</td>
         <td>CB</td>
@@ -149,5 +159,47 @@ describe("parseDraftTekHtml", () => {
     </body></html>`;
     const data = parseDraftTekHtml(html, 2026);
     expect(data.rankings.length).toBe(1);
+    expect(data.rankings[0].first_name).toBe("Travis");
+  });
+
+  it("handles alternate table selector (table tr.pointed)", () => {
+    const html = `
+    <html><body>
+    <table>
+      <tr class="pointed">
+        <td>1</td>
+        <td>+2</td>
+        <td>Travis Hunter</td>
+        <td>Colorado</td>
+        <td>CB</td>
+        <td>6-1</td>
+        <td>185</td>
+        <td>Jr</td>
+      </tr>
+    </table>
+    </body></html>`;
+    const data = parseDraftTekHtml(html, 2026);
+    expect(data.rankings.length).toBe(1);
+  });
+
+  it("fixes missing space in initials (T.J.Hall → T.J. Hall)", () => {
+    const html = `
+    <html><body>
+    <table class="bpa">
+      <tr>
+        <td>1</td>
+        <td></td>
+        <td>T.J.Hall</td>
+        <td>Michigan</td>
+        <td>DE</td>
+        <td>6-4</td>
+        <td>260</td>
+        <td>Jr</td>
+      </tr>
+    </table>
+    </body></html>`;
+    const data = parseDraftTekHtml(html, 2026);
+    expect(data.rankings[0].first_name).toBe("T.J.");
+    expect(data.rankings[0].last_name).toBe("Hall");
   });
 });

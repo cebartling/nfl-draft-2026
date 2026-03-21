@@ -2,26 +2,28 @@ import { describe, it, expect } from "vitest";
 import { parseTankathonRankingsHtml } from "../../../src/scrapers/rankings/tankathon-parser.js";
 import { RankingDataSchema } from "../../../src/types/rankings.js";
 
+// 2026 Tankathon DOM structure:
+//   div.mock-row.nfl
+//     div.mock-row-pick-number → rank
+//     div.mock-row-name        → full name
+//     div.mock-row-school-position → "POSITION | School"
 const SAMPLE_HTML = `
 <html><body>
 <div id="big-board">
   <div class="mock-row nfl">
-    <div class="rank">1</div>
-    <div class="mock-name">Travis Hunter</div>
-    <div class="position">CB</div>
-    <div class="school">Colorado</div>
+    <div class="mock-row-pick-number">1</div>
+    <div class="mock-row-name">Travis Hunter</div>
+    <div class="mock-row-school-position">CB | Colorado </div>
   </div>
   <div class="mock-row nfl">
-    <div class="rank">2</div>
-    <div class="mock-name">Shedeur Sanders</div>
-    <div class="position">QB</div>
-    <div class="school">Colorado</div>
+    <div class="mock-row-pick-number">2</div>
+    <div class="mock-row-name">Shedeur Sanders</div>
+    <div class="mock-row-school-position">QB | Colorado </div>
   </div>
   <div class="mock-row nfl">
-    <div class="rank">3</div>
-    <div class="mock-name">Rueben Bain Jr.</div>
-    <div class="position">EDGE</div>
-    <div class="school">Miami</div>
+    <div class="mock-row-pick-number">3</div>
+    <div class="mock-row-name">Rueben Bain Jr.</div>
+    <div class="mock-row-school-position">EDGE | Miami </div>
   </div>
 </div>
 </body></html>
@@ -89,26 +91,61 @@ describe("parseTankathonRankingsHtml", () => {
     expect(data.rankings[0].first_name).toBe("Travis");
   });
 
-  it("handles DL → DT, IOL → OG, ATH → WR position mapping", () => {
+  it("handles DL → DT, IOL → OG position mapping", () => {
     const html = `
     <html><body>
     <div id="big-board">
       <div class="mock-row nfl">
-        <div class="rank">1</div>
-        <div class="mock-name">Player One</div>
-        <div class="position">DL</div>
-        <div class="school">Alabama</div>
+        <div class="mock-row-pick-number">1</div>
+        <div class="mock-row-name">Player One</div>
+        <div class="mock-row-school-position">DL | Alabama </div>
       </div>
       <div class="mock-row nfl">
-        <div class="rank">2</div>
-        <div class="mock-name">Player Two</div>
-        <div class="position">IOL</div>
-        <div class="school">Ohio State</div>
+        <div class="mock-row-pick-number">2</div>
+        <div class="mock-row-name">Player Two</div>
+        <div class="mock-row-school-position">IOL | Ohio State </div>
       </div>
     </div>
     </body></html>`;
     const data = parseTankathonRankingsHtml(html, 2026);
     expect(data.rankings[0].position).toBe("DT");
     expect(data.rankings[1].position).toBe("OG");
+  });
+
+  it("excludes rows inside by-school sections to avoid duplicates", () => {
+    const html = `
+    <html><body>
+    <div id="big-board">
+      <div class="mock-row nfl">
+        <div class="mock-row-pick-number">1</div>
+        <div class="mock-row-name">Travis Hunter</div>
+        <div class="mock-row-school-position">CB | Colorado </div>
+      </div>
+    </div>
+    <div class="by-school-section">
+      <div class="mock-row nfl">
+        <div class="mock-row-pick-number">1</div>
+        <div class="mock-row-name">Travis Hunter</div>
+        <div class="mock-row-school-position">CB | Colorado </div>
+      </div>
+    </div>
+    </body></html>`;
+    const data = parseTankathonRankingsHtml(html, 2026);
+    expect(data.rankings.length).toBe(1);
+  });
+
+  it("takes first position when slash-separated (LB/EDGE → LB)", () => {
+    const html = `
+    <html><body>
+    <div id="big-board">
+      <div class="mock-row nfl">
+        <div class="mock-row-pick-number">1</div>
+        <div class="mock-row-name">Sonny Styles</div>
+        <div class="mock-row-school-position">LB/EDGE | Ohio State </div>
+      </div>
+    </div>
+    </body></html>`;
+    const data = parseTankathonRankingsHtml(html, 2026);
+    expect(data.rankings[0].position).toBe("LB");
   });
 });

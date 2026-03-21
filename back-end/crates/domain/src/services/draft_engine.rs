@@ -368,7 +368,13 @@ impl DraftEngine {
 
             // Use auto-pick service to decide
             let (selected_player_id, _scores) = auto_pick_service
-                .decide_pick(pick.team_id, pick.draft_id, &available_players)
+                .decide_pick(
+                    pick.team_id,
+                    pick.draft_id,
+                    draft.year,
+                    pick.round,
+                    &available_players,
+                )
                 .await?;
 
             // Make the pick — retry if player was already drafted (race condition)

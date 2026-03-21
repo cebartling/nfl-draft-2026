@@ -19,6 +19,21 @@ pub trait ProspectRankingRepository: Send + Sync {
     /// Find all rankings across all sources with source names pre-joined
     async fn find_all_with_source(&self) -> DomainResult<Vec<PlayerRankingWithSource>>;
 
+    /// Find rankings for a specific set of player IDs with source names pre-joined.
+    /// Default implementation fetches all and filters in memory.
+    /// Override in concrete implementations for DB-level efficiency.
+    async fn find_for_players_with_source(
+        &self,
+        player_ids: &[Uuid],
+    ) -> DomainResult<Vec<PlayerRankingWithSource>> {
+        let id_set: std::collections::HashSet<Uuid> = player_ids.iter().copied().collect();
+        let all = self.find_all_with_source().await?;
+        Ok(all
+            .into_iter()
+            .filter(|r| id_set.contains(&r.player_id))
+            .collect())
+    }
+
     /// Find all rankings for a player (across all sources)
     async fn find_by_player(&self, player_id: Uuid) -> DomainResult<Vec<ProspectRanking>>;
 

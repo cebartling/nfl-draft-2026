@@ -31,8 +31,12 @@ impl PlayerEvaluationService {
         self
     }
 
-    /// Calculate BPA score for a player from a specific team's perspective
-    /// Formula: BPA = (scouting_grade × 0.60) + (combine_score × 0.20) + (fit_score × 0.15) - concern_penalty
+    /// Calculate BPA score for a player from a specific team's perspective.
+    /// Uses the legacy single-player formula: (scouting × 0.60) + (combine × 0.20) + (fit × 0.15) - penalty.
+    ///
+    /// NOTE: For batch auto-pick scoring prefer `calculate_bpa_score_preloaded`, which uses
+    /// updated weights (scouting × 0.45, combine × 0.20, ranking × 0.20, fit × 0.10) and
+    /// incorporates consensus ranking and Feldman Freak signals.
     pub async fn calculate_bpa_score(&self, player: &Player, team_id: Uuid) -> DomainResult<f64> {
         // Get scouting report for this team
         let scouting_report = self
@@ -108,32 +112,47 @@ impl PlayerEvaluationService {
     /// `scouting_report`: the team's scouting report for this player (None → skip player)
     /// `combine_results`: the player's combine results (may be empty)
     /// `percentiles`: pre-fetched percentile data for RAS scoring
+    /// `consensus_ranking_score`: normalized 0-100 ranking score (None = 50.0 neutral)
+    /// `is_feldman_freak`: apply +5 athleticism bonus to combine/RAS component
+    ///
+    /// Formula: (scouting × 0.45) + (combine × 0.20) + (ranking × 0.20) + (fit × 0.10) - concern_penalty
     pub fn calculate_bpa_score_preloaded(
         &self,
         player: &Player,
         scouting_report: &ScoutingReport,
         combine_results: Option<&CombineResults>,
         percentiles: &[crate::models::CombinePercentile],
+        consensus_ranking_score: Option<f64>,
+        is_feldman_freak: bool,
     ) -> f64 {
         // Calculate combine component: prefer RAS if available
-        let combine_score = match (&self.ras_service, combine_results) {
+        let raw_combine = match (&self.ras_service, combine_results) {
             (Some(_), Some(combine)) if !percentiles.is_empty() => {
                 let ras_score =
                     RasScoringService::calculate_ras_with_percentiles(player, combine, percentiles);
                 ras_score.overall_score.map(|s| s * 10.0)
             }
             _ => None,
-        };
-        let combine_component = combine_score
-            .or_else(|| combine_results.map(|c| self.calculate_combine_score(c, &player.position)))
-            .unwrap_or(50.0)
-            * 0.20;
+        }
+        .or_else(|| combine_results.map(|c| self.calculate_combine_score(c, &player.position)))
+        .unwrap_or(50.0);
 
-        let scouting_component = Self::normalize_scouting_grade(scouting_report.grade) * 0.60;
-        let fit_component = Self::calculate_fit_score(scouting_report) * 0.15;
+        // Feldman Freak athleticism bonus: +5 to combine/RAS score, capped at 100
+        let combine_score = if is_feldman_freak {
+            (raw_combine + 5.0).min(100.0)
+        } else {
+            raw_combine
+        };
+
+        let scouting_component = Self::normalize_scouting_grade(scouting_report.grade) * 0.45;
+        let combine_component = combine_score * 0.20;
+        // Consensus ranking: None → neutral 50.0 (no ranking data = no penalty or bonus)
+        let ranking_component = consensus_ranking_score.unwrap_or(50.0) * 0.20;
+        let fit_component = Self::calculate_fit_score(scouting_report) * 0.10;
         let concern_penalty = Self::calculate_concern_penalty(scouting_report);
 
-        let bpa_score = scouting_component + combine_component + fit_component - concern_penalty;
+        let bpa_score = scouting_component + combine_component + ranking_component + fit_component
+            - concern_penalty;
 
         bpa_score.clamp(0.0, 100.0)
     }
@@ -744,6 +763,8 @@ mod tests {
             &scouting_report,
             Some(&combine),
             &percentiles,
+            None,
+            false,
         );
 
         // Score should be > 0 and <= 100

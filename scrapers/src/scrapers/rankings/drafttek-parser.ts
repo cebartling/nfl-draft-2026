@@ -10,10 +10,13 @@ const KNOWN_POSITIONS = new Set([
 ]);
 
 /**
- * Try multiple table selectors in order (matching Rust implementation).
+ * Try multiple table selectors in order.
+ * Current DraftTek structure (2026): table.player-info with columns:
+ *   0=Rank, 1=CNG(change), 2=Prospect, 3=College, 4=POS, 5=Ht, 6=Wt, 7=CLS, 8=BIO
  */
 function findRows($: cheerio.CheerioAPI): cheerio.Cheerio<cheerio.Element> {
   const selectors = [
+    "table.player-info tr",
     "table.bpa tr",
     "table tr.pointed",
     "table[class*='draft'] tr",
@@ -41,12 +44,13 @@ export function parseDraftTekHtml(html: string, year: number): RankingData {
 
   rows.each((_, row) => {
     const cells = $(row).find("td");
-    if (cells.length < 6) return;
+    if (cells.length < 7) return;
 
+    // table.player-info columns: 0=Rank, 1=CNG, 2=Prospect, 3=College, 4=POS, 5=Ht, 6=Wt
     const rankText = $(cells[0]).text().trim();
-    const nameText = $(cells[1]).text().trim();
-    const school = $(cells[2]).text().trim();
-    const posText = $(cells[3]).text().trim().toUpperCase();
+    const nameText = $(cells[2]).text().trim();
+    const school = $(cells[3]).text().trim();
+    const posText = $(cells[4]).text().trim().toUpperCase();
 
     // Skip header rows — position must be a known football position
     if (!KNOWN_POSITIONS.has(posText)) return;
@@ -54,10 +58,13 @@ export function parseDraftTekHtml(html: string, year: number): RankingData {
     const rank = parseInt(rankText, 10);
     if (isNaN(rank)) return;
 
-    const [firstName, lastName] = splitName(nameText);
+    // Some DraftTek cells omit the space between initials and last name
+    // e.g. "T.J.Hall" → "T.J. Hall" so splitName works correctly
+    const normalizedName = nameText.replace(/(\.[A-Z][a-z])/g, (m) => ". " + m.slice(1)).trim();
+    const [firstName, lastName] = splitName(normalizedName);
     const position = normalizePosition(posText);
-    const heightInches = parseHeight($(cells[4]).text());
-    const weightPounds = parseWeight($(cells[5]).text());
+    const heightInches = parseHeight($(cells[5]).text());
+    const weightPounds = parseWeight($(cells[6]).text());
 
     rankings.push({
       rank,
