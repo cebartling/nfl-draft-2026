@@ -60,9 +60,12 @@
 		}
 	});
 
-	// Pre-load rankings and freaks once on mount (independent of picks)
+	// Pre-load rankings and freaks once the draft year is available (independent of picks)
 	$effect(() => {
-		Promise.all([rankingsApi.loadAllPlayerRankings(), freaksApi.loadByYear(2026)])
+		const year = draftState.draft?.year;
+		if (!year) return;
+
+		Promise.all([rankingsApi.loadAllPlayerRankings(), freaksApi.loadByYear(year)])
 			.then(([rankings, freaks]) => {
 				rankingsMap = rankings;
 				freaksMap = freaks;
