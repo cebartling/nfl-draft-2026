@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-03-20",
+    "last_updated": "2026-03-21",
     "sources": [
       "Tankathon.com"
     ],
@@ -1032,10 +1032,10 @@
       "round": 4,
       "pick_in_round": 14,
       "overall_pick": 114,
-      "team_abbreviation": "ATL",
+      "team_abbreviation": "PHI",
       "original_team_abbreviation": "ATL",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From ATL"
     },
     {
       "round": 4,
@@ -1104,10 +1104,10 @@
       "round": 4,
       "pick_in_round": 22,
       "overall_pick": 122,
-      "team_abbreviation": "PHI",
+      "team_abbreviation": "ATL",
       "original_team_abbreviation": "PHI",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From PHI"
     },
     {
       "round": 4,
@@ -1779,10 +1779,10 @@
       "round": 6,
       "pick_in_round": 16,
       "overall_pick": 197,
-      "team_abbreviation": "ATL",
+      "team_abbreviation": "PHI",
       "original_team_abbreviation": "ATL",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From ATL"
     },
     {
       "round": 6,
@@ -1941,10 +1941,10 @@
       "round": 6,
       "pick_in_round": 34,
       "overall_pick": 215,
-      "team_abbreviation": "PHI",
+      "team_abbreviation": "ATL",
       "original_team_abbreviation": "PHI",
       "is_compensatory": true,
-      "notes": "Compensatory pick"
+      "notes": "From PHI; Compensatory pick"
     },
     {
       "round": 6,
