@@ -43,7 +43,8 @@
 	}
 
 	// Re-fetch available players whenever the completed pick count changes (own picks or AI/WebSocket picks)
-	const completedPickCount = $derived(draftState.picks.filter((p) => p.player_id !== null).length);
+	// Use != null (loose check) to treat both null and undefined as "not completed"
+	const completedPickCount = $derived(draftState.picks.filter((p) => p.player_id != null).length);
 	let fetchedForPickCount = -1; // plain var (not $state) to avoid dependency cycle
 
 	$effect(() => {

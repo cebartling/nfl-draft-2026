@@ -64,7 +64,7 @@ impl AutoPickService {
     /// provides a small additional offset so philosophy still matters.
     ///
     /// Formula: base = clamp(90 - (round-1) × 13, 10, 90)
-    ///          offset = (strategy.bpa_weight - 60) × 0.15   (max ±6 points)
+    ///          offset = (strategy.bpa_weight - 60) × 0.15   (range: -9 to +6 for bpa_weight in [0,100])
     ///          effective_bpa = clamp(base + offset, 5, 95)
     fn effective_weights(round: i32, strategy: &crate::models::DraftStrategy) -> (f64, f64) {
         let base_bpa = (90.0 - (round as f64 - 1.0) * 13.0).clamp(10.0, 90.0);
@@ -171,7 +171,8 @@ impl AutoPickService {
         }
 
         // Pre-fetch prospect rankings for available players (1 query) → normalize to 0-100
-        // Normalization: rank 1 → 100, rank 300+ → 0; average across sources when multiple exist.
+        // Normalization: rank 1 → 100, rank 300 → 0 (exactly); average across sources when multiple exist.
+        // Denominator 299 = (300 - 1) ensures rank 300 maps to exactly 0.0.
         let player_ids: Vec<Uuid> = players.iter().map(|p| p.id).collect();
         let ranking_scores: HashMap<Uuid, f64> =
             if let Some(ranking_repo) = &self.ranking_repo {
@@ -191,7 +192,7 @@ impl AutoPickService {
                                 let avg_rank =
                                     ranks.iter().sum::<f64>() / ranks.len() as f64;
                                 let score = (100.0
-                                    - ((avg_rank - 1.0) * 100.0 / 300.0))
+                                    - ((avg_rank - 1.0) * 100.0 / 299.0))
                                     .clamp(0.0, 100.0);
                                 (player_id, score)
                             })
