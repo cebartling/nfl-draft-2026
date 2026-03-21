@@ -13,7 +13,10 @@ pub struct PlayerScore {
     pub player_id: Uuid,
     pub bpa_score: f64,
     pub need_score: f64,
-    pub position_value: f64,
+    /// Raw position factor from team strategy (e.g. 1.5 for QB, 0.85 for RB).
+    /// Used to compute `pos_bonus = (position_factor - 1.0) * 5.0` which is added
+    /// to the final score as a small preference signal, not a multiplier.
+    pub position_factor: f64,
     pub ranking_score: f64,
     pub final_score: f64,
     pub rationale: String,
@@ -75,6 +78,7 @@ impl AutoPickService {
         &self,
         team_id: Uuid,
         draft_id: Uuid,
+        draft_year: i32,
         round: i32,
         available_players: &[Player],
     ) -> DomainResult<(Uuid, Vec<PlayerScore>)> {
@@ -92,7 +96,7 @@ impl AutoPickService {
 
         // Score all available players
         let scored_players = self
-            .score_all_players(team_id, round, available_players, &strategy)
+            .score_all_players(team_id, draft_year, round, available_players, &strategy)
             .await?;
 
         if scored_players.is_empty() {
@@ -120,6 +124,7 @@ impl AutoPickService {
     async fn score_all_players(
         &self,
         team_id: Uuid,
+        draft_year: i32,
         round: i32,
         players: &[Player],
         strategy: &crate::models::DraftStrategy,
@@ -165,11 +170,12 @@ impl AutoPickService {
             }
         }
 
-        // Pre-fetch prospect rankings (1 query) → normalize to 0-100 consensus score per player
+        // Pre-fetch prospect rankings for available players (1 query) → normalize to 0-100
         // Normalization: rank 1 → 100, rank 300+ → 0; average across sources when multiple exist.
+        let player_ids: Vec<Uuid> = players.iter().map(|p| p.id).collect();
         let ranking_scores: HashMap<Uuid, f64> =
             if let Some(ranking_repo) = &self.ranking_repo {
-                match ranking_repo.find_all_with_source().await {
+                match ranking_repo.find_for_players_with_source(&player_ids).await {
                     Ok(all_rankings) => {
                         // Group ranks by player_id
                         let mut ranks_by_player: HashMap<Uuid, Vec<f64>> = HashMap::new();
@@ -203,7 +209,7 @@ impl AutoPickService {
         // Pre-fetch Feldman Freaks for the current draft year (1 query) → HashSet for O(1) lookup
         let feldman_freak_ids: HashSet<Uuid> =
             if let Some(freak_repo) = &self.feldman_freak_repo {
-                match freak_repo.find_by_year(2026).await {
+                match freak_repo.find_by_year(draft_year).await {
                     Ok(freaks) => freaks.into_iter().map(|f| f.player_id).collect(),
                     Err(e) => {
                         tracing::warn!("Failed to fetch Feldman Freaks for BPA scoring: {}. No athleticism bonuses will be applied.", e);
@@ -247,20 +253,18 @@ impl AutoPickService {
             let need_score =
                 DraftStrategyService::calculate_need_score_from_needs(player, &team_needs);
 
-            // Get position value multiplier (pure computation)
-            let position_value = self
+            // Get position factor from team strategy (pure computation).
+            // Used as additive bonus: pos_bonus = (position_factor - 1.0) * 5.0.
+            // QB gets +2.5, RB gets -0.75. Additive (not multiplicative) so elite
+            // non-QB prospects can still be selected early over mediocre QBs.
+            let position_factor = self
                 .strategy_service
                 .get_position_value(strategy, player.position);
 
-            // Calculate final score using round-adjusted weights.
-            // position_value is an additive bonus (not a multiplier) to avoid
-            // positional bias overriding BPA signal. QB gets +2.5, RB gets -0.75.
-            // This preserves the premium for franchise-QB positions without making
-            // it impossible for elite non-QB prospects to be selected early.
             let (bpa_w, need_w) = Self::effective_weights(round, strategy);
             let weighted_bpa = bpa_score * bpa_w;
             let weighted_need = need_score * need_w;
-            let pos_bonus = (position_value - 1.0) * 5.0;
+            let pos_bonus = (position_factor - 1.0) * 5.0;
             let final_score = weighted_bpa + weighted_need + pos_bonus;
 
             let ranking_score = consensus_ranking_score.unwrap_or(50.0);
@@ -268,7 +272,7 @@ impl AutoPickService {
                 player,
                 bpa_score,
                 need_score,
-                position_value,
+                position_factor,
                 ranking_score,
                 is_feldman_freak,
                 final_score,
@@ -280,7 +284,7 @@ impl AutoPickService {
                 player_id: player.id,
                 bpa_score,
                 need_score,
-                position_value,
+                position_factor,
                 ranking_score,
                 final_score,
                 rationale,
@@ -301,7 +305,7 @@ impl AutoPickService {
         player: &Player,
         bpa_score: f64,
         need_score: f64,
-        position_value: f64,
+        position_factor: f64,
         ranking_score: f64,
         is_feldman_freak: bool,
         final_score: f64,
@@ -310,7 +314,7 @@ impl AutoPickService {
     ) -> String {
         let freak_tag = if is_feldman_freak { " [Freak]" } else { "" };
         format!(
-            "{} {} ({:?}){}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosValue={:.2}, Final={:.1} (R{}: {:.0}% BPA / {:.0}% Need)",
+            "{} {} ({:?}){}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosFactor={:.2}, Final={:.1} (R{}: {:.0}% BPA / {:.0}% Need)",
             player.first_name,
             player.last_name,
             player.position,
@@ -318,7 +322,7 @@ impl AutoPickService {
             bpa_score,
             need_score,
             ranking_score,
-            position_value,
+            position_factor,
             final_score,
             round,
             bpa_w * 100.0,
@@ -408,6 +412,7 @@ mod tests {
             async fn create_batch(&self, rankings: &[crate::models::ProspectRanking]) -> DomainResult<usize>;
             async fn find_by_player_with_source(&self, player_id: Uuid) -> DomainResult<Vec<PlayerRankingWithSource>>;
             async fn find_all_with_source(&self) -> DomainResult<Vec<PlayerRankingWithSource>>;
+            async fn find_for_players_with_source(&self, player_ids: &[Uuid]) -> DomainResult<Vec<PlayerRankingWithSource>>;
             async fn find_by_player(&self, player_id: Uuid) -> DomainResult<Vec<crate::models::ProspectRanking>>;
             async fn find_by_source(&self, source_id: Uuid) -> DomainResult<Vec<crate::models::ProspectRanking>>;
             async fn delete_by_source(&self, source_id: Uuid) -> DomainResult<u64>;
@@ -497,7 +502,7 @@ mod tests {
         let auto_pick = AutoPickService::new(player_eval, strategy_svc);
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, 1, &players)
+            .decide_pick(team_id, draft_id, 2026, 1, &players)
             .await
             .unwrap();
 
@@ -570,7 +575,7 @@ mod tests {
         let auto_pick = AutoPickService::new(player_eval, strategy_svc);
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, 5, &players)
+            .decide_pick(team_id, draft_id, 2026, 5, &players)
             .await
             .unwrap();
 
@@ -636,19 +641,19 @@ mod tests {
         let auto_pick = AutoPickService::new(player_eval, strategy_svc);
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, 1, &players)
+            .decide_pick(team_id, draft_id, 2026, 1, &players)
             .await
             .unwrap();
 
         // QB should be selected (higher position value: 1.5 vs 0.85)
         assert_eq!(selected_id, qb_id);
 
-        // Verify position values affected final scores
+        // Verify position factors affected final scores
         let qb_score = scores.iter().find(|s| s.player_id == qb_id).unwrap();
         let rb_score = scores.iter().find(|s| s.player_id == rb_id).unwrap();
         assert!(qb_score.final_score > rb_score.final_score);
-        assert_eq!(qb_score.position_value, 1.5);
-        assert_eq!(rb_score.position_value, 0.85);
+        assert_eq!(qb_score.position_factor, 1.5);
+        assert_eq!(rb_score.position_factor, 0.85);
     }
 
     #[test]
@@ -759,8 +764,8 @@ mod tests {
             },
         ];
         ranking_mock
-            .expect_find_all_with_source()
-            .returning(move || Ok(rankings.clone()));
+            .expect_find_for_players_with_source()
+            .returning(move |_| Ok(rankings.clone()));
 
         freak_mock
             .expect_find_by_year()
@@ -779,7 +784,7 @@ mod tests {
             .with_feldman_freak_repo(Arc::new(freak_mock));
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, 1, &players)
+            .decide_pick(team_id, draft_id, 2026, 1, &players)
             .await
             .unwrap();
 
@@ -862,8 +867,8 @@ mod tests {
             },
         ];
         ranking_mock
-            .expect_find_all_with_source()
-            .returning(move || Ok(rankings.clone()));
+            .expect_find_for_players_with_source()
+            .returning(move |_| Ok(rankings.clone()));
 
         freak_mock
             .expect_find_by_year()
@@ -882,7 +887,7 @@ mod tests {
             .with_feldman_freak_repo(Arc::new(freak_mock));
 
         let (selected_id, scores) = auto_pick
-            .decide_pick(team_id, draft_id, 1, &players)
+            .decide_pick(team_id, draft_id, 2026, 1, &players)
             .await
             .unwrap();
 
@@ -943,8 +948,8 @@ mod tests {
 
         // Ranking repo fails — should be handled gracefully
         ranking_mock
-            .expect_find_all_with_source()
-            .returning(|| Err(DomainError::ValidationError("DB error".to_string())));
+            .expect_find_for_players_with_source()
+            .returning(|_| Err(DomainError::ValidationError("DB error".to_string())));
 
         freak_mock
             .expect_find_by_year()
@@ -964,7 +969,7 @@ mod tests {
 
         // Should not panic or return an error — graceful degradation
         let result = auto_pick
-            .decide_pick(team_id, draft_id, 1, &players)
+            .decide_pick(team_id, draft_id, 2026, 1, &players)
             .await;
 
         assert!(result.is_ok(), "auto-pick should succeed even when ranking repo fails");
