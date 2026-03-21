@@ -174,52 +174,48 @@ impl AutoPickService {
         // Normalization: rank 1 → 100, rank 300 → 0 (exactly); average across sources when multiple exist.
         // Denominator 299 = (300 - 1) ensures rank 300 maps to exactly 0.0.
         let player_ids: Vec<Uuid> = players.iter().map(|p| p.id).collect();
-        let ranking_scores: HashMap<Uuid, f64> =
-            if let Some(ranking_repo) = &self.ranking_repo {
-                match ranking_repo.find_for_players_with_source(&player_ids).await {
-                    Ok(all_rankings) => {
-                        // Group ranks by player_id
-                        let mut ranks_by_player: HashMap<Uuid, Vec<f64>> = HashMap::new();
-                        for r in all_rankings {
-                            ranks_by_player
-                                .entry(r.player_id)
-                                .or_default()
-                                .push(r.rank as f64);
-                        }
+        let ranking_scores: HashMap<Uuid, f64> = if let Some(ranking_repo) = &self.ranking_repo {
+            match ranking_repo.find_for_players_with_source(&player_ids).await {
+                Ok(all_rankings) => {
+                    // Group ranks by player_id
+                    let mut ranks_by_player: HashMap<Uuid, Vec<f64>> = HashMap::new();
+                    for r in all_rankings {
                         ranks_by_player
-                            .into_iter()
-                            .map(|(player_id, ranks)| {
-                                let avg_rank =
-                                    ranks.iter().sum::<f64>() / ranks.len() as f64;
-                                let score = (100.0
-                                    - ((avg_rank - 1.0) * 100.0 / 299.0))
-                                    .clamp(0.0, 100.0);
-                                (player_id, score)
-                            })
-                            .collect()
+                            .entry(r.player_id)
+                            .or_default()
+                            .push(r.rank as f64);
                     }
-                    Err(e) => {
-                        tracing::warn!("Failed to fetch prospect rankings for BPA scoring: {}. All players will receive neutral ranking score (50.0).", e);
-                        HashMap::new()
-                    }
+                    ranks_by_player
+                        .into_iter()
+                        .map(|(player_id, ranks)| {
+                            let avg_rank = ranks.iter().sum::<f64>() / ranks.len() as f64;
+                            let score =
+                                (100.0 - ((avg_rank - 1.0) * 100.0 / 299.0)).clamp(0.0, 100.0);
+                            (player_id, score)
+                        })
+                        .collect()
                 }
-            } else {
-                HashMap::new()
-            };
+                Err(e) => {
+                    tracing::warn!("Failed to fetch prospect rankings for BPA scoring: {}. All players will receive neutral ranking score (50.0).", e);
+                    HashMap::new()
+                }
+            }
+        } else {
+            HashMap::new()
+        };
 
         // Pre-fetch Feldman Freaks for the current draft year (1 query) → HashSet for O(1) lookup
-        let feldman_freak_ids: HashSet<Uuid> =
-            if let Some(freak_repo) = &self.feldman_freak_repo {
-                match freak_repo.find_by_year(draft_year).await {
-                    Ok(freaks) => freaks.into_iter().map(|f| f.player_id).collect(),
-                    Err(e) => {
-                        tracing::warn!("Failed to fetch Feldman Freaks for BPA scoring: {}. No athleticism bonuses will be applied.", e);
-                        HashSet::new()
-                    }
+        let feldman_freak_ids: HashSet<Uuid> = if let Some(freak_repo) = &self.feldman_freak_repo {
+            match freak_repo.find_by_year(draft_year).await {
+                Ok(freaks) => freaks.into_iter().map(|f| f.player_id).collect(),
+                Err(e) => {
+                    tracing::warn!("Failed to fetch Feldman Freaks for BPA scoring: {}. No athleticism bonuses will be applied.", e);
+                    HashSet::new()
                 }
-            } else {
-                HashSet::new()
-            };
+            }
+        } else {
+            HashSet::new()
+        };
 
         let mut scores = Vec::new();
 
@@ -335,8 +331,8 @@ impl AutoPickService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{CombineResults, DraftStrategy, Position, ScoutingReport, TeamNeed};
     use crate::models::PlayerRankingWithSource;
+    use crate::models::{CombineResults, DraftStrategy, Position, ScoutingReport, TeamNeed};
     use crate::repositories::{
         CombineResultsRepository, DraftStrategyRepository, FeldmanFreakRepository,
         ProspectRankingRepository, ScoutingReportRepository, TeamNeedRepository,
@@ -670,9 +666,17 @@ mod tests {
         let (bpa_r7, need_r7) = AutoPickService::effective_weights(7, &strategy);
 
         // Round 1: BPA-dominant (≥ 85%)
-        assert!(bpa_r1 >= 0.85, "R1 bpa_w should be ≥ 85%, got {:.1}%", bpa_r1 * 100.0);
+        assert!(
+            bpa_r1 >= 0.85,
+            "R1 bpa_w should be ≥ 85%, got {:.1}%",
+            bpa_r1 * 100.0
+        );
         // Round 7: Need-dominant (≥ 85%)
-        assert!(need_r7 >= 0.85, "R7 need_w should be ≥ 85%, got {:.1}%", need_r7 * 100.0);
+        assert!(
+            need_r7 >= 0.85,
+            "R7 need_w should be ≥ 85%, got {:.1}%",
+            need_r7 * 100.0
+        );
         // Monotonically decreasing BPA weight
         assert!(bpa_r1 > bpa_r4, "BPA weight should decrease R1→R4");
         assert!(bpa_r4 > bpa_r7, "BPA weight should decrease R4→R7");
@@ -698,7 +702,9 @@ mod tests {
             assert!(
                 bpa_bpa > bpa_need,
                 "BPA-focused team should have higher BPA weight at round {}: {:.1}% vs {:.1}%",
-                round, bpa_bpa * 100.0, bpa_need * 100.0
+                round,
+                bpa_bpa * 100.0,
+                bpa_need * 100.0
             );
         }
     }
@@ -768,9 +774,7 @@ mod tests {
             .expect_find_for_players_with_source()
             .returning(move |_| Ok(rankings.clone()));
 
-        freak_mock
-            .expect_find_by_year()
-            .returning(|_| Ok(vec![]));
+        freak_mock.expect_find_by_year().returning(|_| Ok(vec![]));
 
         let player_eval = Arc::new(PlayerEvaluationService::new(
             Arc::new(scouting_mock),
@@ -871,9 +875,7 @@ mod tests {
             .expect_find_for_players_with_source()
             .returning(move |_| Ok(rankings.clone()));
 
-        freak_mock
-            .expect_find_by_year()
-            .returning(|_| Ok(vec![]));
+        freak_mock.expect_find_by_year().returning(|_| Ok(vec![]));
 
         let player_eval = Arc::new(PlayerEvaluationService::new(
             Arc::new(scouting_mock),
@@ -952,9 +954,7 @@ mod tests {
             .expect_find_for_players_with_source()
             .returning(|_| Err(DomainError::ValidationError("DB error".to_string())));
 
-        freak_mock
-            .expect_find_by_year()
-            .returning(|_| Ok(vec![]));
+        freak_mock.expect_find_by_year().returning(|_| Ok(vec![]));
 
         let player_eval = Arc::new(PlayerEvaluationService::new(
             Arc::new(scouting_mock),
@@ -973,7 +973,10 @@ mod tests {
             .decide_pick(team_id, draft_id, 2026, 1, &players)
             .await;
 
-        assert!(result.is_ok(), "auto-pick should succeed even when ranking repo fails");
+        assert!(
+            result.is_ok(),
+            "auto-pick should succeed even when ranking repo fails"
+        );
         let (selected_id, _) = result.unwrap();
         // QB has higher scouting grade so should still win (neutral ranking score = 50 for both)
         assert_eq!(selected_id, qb_id);

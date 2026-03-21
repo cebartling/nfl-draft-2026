@@ -89,9 +89,7 @@
 		<table class="min-w-full text-sm" aria-label="Player comparison">
 			<thead>
 				<tr class="border-b border-gray-200">
-					<th scope="col" class="text-left py-2 px-3 font-medium text-gray-500"
-						>Measurement</th
-					>
+					<th scope="col" class="text-left py-2 px-3 font-medium text-gray-500">Measurement</th>
 					{#each players as player (player.id)}
 						<th scope="col" class="text-center py-2 px-3 min-w-[120px]">
 							<div class="font-semibold text-gray-900">

@@ -17,9 +17,7 @@
 	let logoError = $state(false);
 
 	// Best rank across all sources — show as the prominent "overall" number
-	const bestRank = $derived(
-		rankings.length > 0 ? Math.min(...rankings.map((r) => r.rank)) : null
-	);
+	const bestRank = $derived(rankings.length > 0 ? Math.min(...rankings.map((r) => r.rank)) : null);
 </script>
 
 <div
