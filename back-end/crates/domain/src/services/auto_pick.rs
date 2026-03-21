@@ -298,6 +298,7 @@ impl AutoPickService {
         Ok(scores)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build_rationale(
         player: &Player,
         bpa_score: f64,
