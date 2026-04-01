@@ -4,7 +4,7 @@
     "source": "walterfootball",
     "source_url": "https://walterfootball.com/nfldraftbigboard2026.php",
     "draft_year": 2026,
-    "scraped_at": "2026-03-30",
+    "scraped_at": "2026-04-01",
     "total_prospects": 150
   },
   "rankings": [
@@ -73,19 +73,19 @@
     },
     {
       "rank": 8,
-      "first_name": "Ty",
-      "last_name": "Simpson",
-      "position": "QB",
-      "school": "Alabama",
+      "first_name": "Kenyon",
+      "last_name": "Sadiq",
+      "position": "TE",
+      "school": "Oregon",
       "height_inches": null,
       "weight_pounds": null
     },
     {
       "rank": 9,
-      "first_name": "Kenyon",
-      "last_name": "Sadiq",
-      "position": "TE",
-      "school": "Oregon",
+      "first_name": "Ty",
+      "last_name": "Simpson",
+      "position": "QB",
+      "school": "Alabama",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -100,10 +100,10 @@
     },
     {
       "rank": 11,
-      "first_name": "Jermod",
-      "last_name": "McCoy",
-      "position": "CB",
-      "school": "Tennessee",
+      "first_name": "Spencer",
+      "last_name": "Fano",
+      "position": "OT",
+      "school": "Utah",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -118,10 +118,10 @@
     },
     {
       "rank": 13,
-      "first_name": "Spencer",
-      "last_name": "Fano",
+      "first_name": "Kayden",
+      "last_name": "Proctor",
       "position": "OT",
-      "school": "Utah",
+      "school": "Alabama",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -145,10 +145,10 @@
     },
     {
       "rank": 16,
-      "first_name": "Kayden",
-      "last_name": "Proctor",
-      "position": "OT",
-      "school": "Alabama",
+      "first_name": "Jermod",
+      "last_name": "McCoy",
+      "position": "CB",
+      "school": "Tennessee",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -190,10 +190,10 @@
     },
     {
       "rank": 21,
-      "first_name": "Caleb",
-      "last_name": "Banks",
-      "position": "DT",
-      "school": "Florida",
+      "first_name": "Denzel",
+      "last_name": "Boston",
+      "position": "WR",
+      "school": "Washington",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -217,10 +217,10 @@
     },
     {
       "rank": 24,
-      "first_name": "Denzel",
-      "last_name": "Boston",
-      "position": "WR",
-      "school": "Washington",
+      "first_name": "Caleb",
+      "last_name": "Banks",
+      "position": "DT",
+      "school": "Florida",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -469,10 +469,10 @@
     },
     {
       "rank": 52,
-      "first_name": "Keylan",
-      "last_name": "Rutledge",
-      "position": "OG",
-      "school": "Georgia Tech",
+      "first_name": "Jacob",
+      "last_name": "Rodriguez",
+      "position": "LB",
+      "school": "Texas Tech",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -523,7 +523,7 @@
     },
     {
       "rank": 58,
-      "first_name": "Kobi",
+      "first_name": "Jaâ€™Kobi",
       "last_name": "Lane",
       "position": "WR",
       "school": "USC",
@@ -649,10 +649,10 @@
     },
     {
       "rank": 72,
-      "first_name": "Jacob",
-      "last_name": "Rodriguez",
-      "position": "LB",
-      "school": "Texas Tech",
+      "first_name": "Keylan",
+      "last_name": "Rutledge",
+      "position": "OG",
+      "school": "Georgia Tech",
       "height_inches": null,
       "weight_pounds": null
     },
@@ -1252,7 +1252,7 @@
     },
     {
       "rank": 139,
-      "first_name": "LeÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢Veon",
+      "first_name": "LeÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢Veon",
       "last_name": "Moss",
       "position": "RB",
       "school": "Texas A&M",
