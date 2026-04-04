@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-04-03",
+    "last_updated": "2026-04-04",
     "sources": [
       "Tankathon.com"
     ],
@@ -1275,7 +1275,7 @@
       "round": 5,
       "pick_in_round": 1,
       "overall_pick": 141,
-      "team_abbreviation": "CLE",
+      "team_abbreviation": "HOU",
       "original_team_abbreviation": "LV",
       "is_compensatory": false,
       "notes": "From LV"
