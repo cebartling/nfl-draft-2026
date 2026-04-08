@@ -84,6 +84,9 @@ back-end/data/rankings/.rankings_last_scraped
 # Combine scraper local state
 back-end/.combine_last_scraped
 
+# The Beast 2026 scraped output (contains Brugler/The Athletic prose; do not redistribute)
+back-end/data/the_beast_2026.json
+
 # Dolt database files (added by bd init)
 .dolt/
 
