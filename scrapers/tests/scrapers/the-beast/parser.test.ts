@@ -214,3 +214,49 @@ describe("parseBeastText (integration)", () => {
     expect(data.prospects[1].nfl_comparison).toBe("Daniel Jones");
   });
 });
+
+// Regression: the live PDF Punters section is followed by a "LONG SNAPPERS"
+// section and then a "TOP 100" page, neither of which my POSITION_SECTIONS list
+// contains. Without explicit boundary headings, the Punters section text runs
+// to the end of the document and parsePositionSummaryTable scoops up Long
+// Snapper rows and Top 100 rows as bogus punters. The bug surfaced as
+// "BEAST: Ohio State" badges in the player UI for prospects whose grade_tier
+// got set to a school name lifted from the Top 100 page.
+const SPECIALISTS_FIXTURE = readFileSync(
+  join(__dirname, "../../fixtures/the-beast/specialists-sample.txt"),
+  "utf-8",
+);
+
+describe("parseBeastText specialists section bounds", () => {
+  it("does NOT spill Long Snappers or Top 100 rows into Punters", () => {
+    const data = parseBeastText(SPECIALISTS_FIXTURE, 2026, "2026-04-08");
+    const punters = data.prospects.filter((p) => p.position === "P");
+    // Fixture defines exactly 3 punters; everything else (long snappers,
+    // Top 100) must be excluded from the Punters bucket.
+    expect(punters.length).toBe(3);
+    expect(punters.map((p) => p.last_name)).toEqual(["Eckley", "Thorson", "Doman"]);
+    // No punter should have a school that looks like a position-rank token
+    // (e.g. "EDGE1", "RB1") — that's a smoking gun for Top 100 spillover.
+    for (const p of punters) {
+      expect(p.school).not.toMatch(/^(EDGE|QB|RB|WR|TE|OT|OG|G|C|DT|LB|CB|S|K|P|LS)\d+$/);
+    }
+    // No punter should have a grade_tier that looks like a school name
+    // (the Top 100 row layout puts the school in the grade column position).
+    for (const p of punters) {
+      if (p.grade_tier) {
+        expect(p.grade_tier).toMatch(/(\d+(?:st|nd|rd|th)|FA|^free)/i);
+      }
+    }
+  });
+
+  it("does not classify Top 100 prospects as Punters", () => {
+    const data = parseBeastText(SPECIALISTS_FIXTURE, 2026, "2026-04-08");
+    const punters = data.prospects.filter((p) => p.position === "P");
+    const lastNames = new Set(punters.map((p) => p.last_name));
+    // Arvell Reese (EDGE), Jeremiyah Love (RB), Fernando Mendoza (QB) appear
+    // in the Top 100 page of the fixture. None should leak into Punters.
+    expect(lastNames.has("Reese")).toBe(false);
+    expect(lastNames.has("Love")).toBe(false);
+    expect(lastNames.has("Mendoza")).toBe(false);
+  });
+});

@@ -58,6 +58,15 @@ export const POSITION_SECTIONS: Array<{
 const POSITION_CODE_PATTERN = "(?:QB|RB|WR|TE|OT|OG|G|C|EDGE|DE|DT|LB|CB|S|K|P)";
 
 /**
+ * Headings that terminate a position section without producing one of their
+ * own. Without these, the trailing position section (Punters) runs to end-of-
+ * document and the position-summary table parser scoops up Long Snapper rows
+ * and the entire TOP 100 page as bogus punters. We don't ingest LS or Top 100
+ * as separate sections — they exist only to bound the previous section.
+ */
+const BOUNDARY_HEADINGS: string[] = ["LONG SNAPPERS", "TOP 100"];
+
+/**
  * Convert The Beast's 4-digit height encoding to total inches.
  * Format: `FIIE` = F feet, II inches (two digits), E eighths.
  *   `6046` -> 6'0 4/8" -> 72 + 0 + 0.5 = 72.5 -> rounds down to 72? we keep integer inches
@@ -129,28 +138,46 @@ export function parseBirthday(value: string | undefined): string | null {
 /**
  * Split full text into position sections by header lines.
  * Returns a Map of position code -> section text.
+ *
+ * Section bounds also respect BOUNDARY_HEADINGS (e.g. "LONG SNAPPERS",
+ * "TOP 100") so that the trailing position section doesn't bleed into
+ * unrelated content at the end of the document.
  */
 export function splitIntoSections(text: string): Map<string, string> {
   const sections = new Map<string, string>();
   const lines = text.split(/\r?\n/);
 
-  // Find the line index where each known section header appears (first occurrence).
-  // Header lines are typically left-aligned all-caps tokens. We require the header to
-  // be the only meaningful content on its line to avoid matching e.g. body prose.
-  const sectionStarts: Array<{ idx: number; positionCode: string; heading: string }> = [];
+  // Find the line index of every header — both real position sections and
+  // boundary headings. Boundary headings get an empty positionCode so they
+  // are recognized by `splitIntoSections` as terminators only, not consumers.
+  type Marker = { idx: number; positionCode: string };
+  const markers: Marker[] = [];
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
+
+    let matchedSection = false;
     for (const section of POSITION_SECTIONS) {
       if (line === section.heading) {
-        sectionStarts.push({ idx: i, positionCode: section.positionCode, heading: section.heading });
+        markers.push({ idx: i, positionCode: section.positionCode });
+        matchedSection = true;
+        break;
+      }
+    }
+    if (matchedSection) continue;
+
+    for (const boundary of BOUNDARY_HEADINGS) {
+      if (line === boundary) {
+        markers.push({ idx: i, positionCode: "" });
         break;
       }
     }
   }
 
-  for (let s = 0; s < sectionStarts.length; s++) {
-    const start = sectionStarts[s];
-    const end = sectionStarts[s + 1]?.idx ?? lines.length;
+  for (let s = 0; s < markers.length; s++) {
+    const start = markers[s];
+    if (!start.positionCode) continue; // boundary-only marker; nothing to emit
+    const end = markers[s + 1]?.idx ?? lines.length;
     sections.set(start.positionCode, lines.slice(start.idx + 1, end).join("\n"));
   }
 
