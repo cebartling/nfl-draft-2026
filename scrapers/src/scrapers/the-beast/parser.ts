@@ -442,9 +442,14 @@ export function parseHeaderTable(bodyText: string): {
   // Match patterns within the values line. We use regex anchors against well-known
   // shapes since the column layout is fixed but whitespace is variable.
 
-  // Grade tier: "1st round", "2nd round", "4th-5th", "7th-FA", "FA"
-  const gradeMatch = valuesLine.match(/(\d+(?:st|nd|rd|th)(?:[- ](?:round|FA|\d+(?:st|nd|rd|th)))?|FA)/);
-  if (gradeMatch) result.gradeTier = gradeMatch[1].replace(/^(\d+(?:st|nd|rd|th)) round$/, "$1 round");
+  // Grade tier: "1st round", "2nd round", "4th-5th round", "1st-2nd round",
+  // "7th-FA", "FA", "Free Agent". The trailing " round" is optional and
+  // appears for ranged tiers in the per-prospect header table (it does not
+  // appear in the position summary table).
+  const gradeMatch = valuesLine.match(
+    /(Free Agent|FA|\d+(?:st|nd|rd|th)(?:[- ](?:\d+(?:st|nd|rd|th)|FA))?(?: round)?)/,
+  );
+  if (gradeMatch) result.gradeTier = gradeMatch[1];
 
   // Year class: 4JR, 5SR, 6SR, 7SR, 4SR
   const yearMatch = valuesLine.match(/\b(\d[A-Z]{2})\b/);
@@ -728,9 +733,19 @@ export function parseProfile(
 /**
  * Parse the entire layout-preserving text dump of The Beast 2026 PDF.
  * Returns a BeastData payload ready for JSON serialization.
+ *
+ * Pre-processing: strip form-feed characters (\f, U+000C). pdftotext inserts a
+ * form feed at every PDF page boundary, which lands as the FIRST character of
+ * the heading line for the first prospect on each new page (e.g.
+ * "\fEDGE4 Keldric Faulk Auburn"). JS regex `^` in multiline mode does not
+ * reset on \f, so without this strip those headings silently fail to match
+ * `^EDGE\d+\s+...` and ~50 prospects drop out of the parser output across
+ * the full PDF. Form feeds carry no semantic meaning for our parser, so
+ * removing them globally is safe.
  */
 export function parseBeastText(text: string, draftYear: number, scrapedAt: string): BeastData {
-  const sections = splitIntoSections(text);
+  const cleaned = text.replace(/\f/g, "");
+  const sections = splitIntoSections(cleaned);
   const prospects: BeastProspect[] = [];
 
   for (const section of POSITION_SECTIONS) {

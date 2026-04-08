@@ -1,0 +1,122 @@
+EDGE RUSHERS
+                                                                                                            HAND       ARM     WING
+    NAME                       SCHOOL                  GRADE     YEAR      HEIGHT WEIGHT    40-YD (10-YD)    SIZE    LENGTH      SPAN             AGE
+ 1 ARVELL REESE                Ohio State                 1st     4JR      6033       243    4.55 (1.58)     9 1/2      33     79 1/4       21.45
+
+ 2 DAVID BAILEY                Texas Tech              1st-2nd    5SR      6022       246    4.51 (1.55)     9 5/8    33 1/2   80 3/4       22.34
+
+ 3 RUEBEN BAIN JR.             Miami                   1st-2nd    4JR      6027       259    DNP (DNP)       9 7/8    33 1/4   81 1/2       21.84
+
+
+
+EDGE1 Arvell Reese Ohio State
+       GRADE                OVR. RANK          YEAR           BIRTHDAY              AGE               HT               WT                JERSEY
+     1st round                  1              4JR          May 25, 2004           21.45             6'3"            243 lbs.            No. 18
+
+
+
+BACKGROUND
+
+Placeholder background prose for fixture testing.
+
+STATISTICS AND MEASUREMENTS
+
+YEAR (GP/GS)      NOTES
+2025: (12/12)     1st team All-Big Ten
+
+STRENGTHS
+●    Placeholder strength
+
+WEAKNESSES
+●    Placeholder weakness
+
+SUMMARY
+
+Placeholder summary. He projects as a low-level NFL starter, reminiscent of Generic Comp.
+
+
+
+EDGE2 David Bailey Texas Tech
+       GRADE                OVR. RANK          YEAR           BIRTHDAY              AGE               HT               WT                JERSEY
+     1st-2nd round              22             5SR          Jan 03, 2003           22.34             6'2"            246 lbs.            No. 99
+
+
+
+BACKGROUND
+
+Placeholder.
+
+STATISTICS AND MEASUREMENTS
+
+YEAR (GP/GS)      NOTES
+2025: (12/12)     -
+
+STRENGTHS
+●    A
+
+WEAKNESSES
+●    B
+
+SUMMARY
+
+Placeholder summary.
+
+
+
+EDGE3 Rueben Bain Jr. Miami
+       GRADE                OVR. RANK          YEAR           BIRTHDAY              AGE               HT               WT                JERSEY
+     1st-2nd round              30             4JR          Aug 12, 2004           21.84             6'2"            259 lbs.            No. 8
+
+
+
+BACKGROUND
+
+Placeholder.
+
+STATISTICS AND MEASUREMENTS
+
+YEAR (GP/GS)      NOTES
+2025: (12/12)     -
+
+STRENGTHS
+●    A
+
+WEAKNESSES
+●    B
+
+SUMMARY
+
+Placeholder summary.
+
+Back to table of contents                                                                                                                  336
+EDGE4 Keldric Faulk Auburn
+       GRADE                OVR. RANK          YEAR           BIRTHDAY              AGE               HT               WT                JERSEY
+     1st-2nd round              15             3JR          Sep 07, 2005           20.62             6'6"            274 lbs.            No. 15
+
+
+
+BACKGROUND
+
+Placeholder.
+
+STATISTICS AND MEASUREMENTS
+
+YEAR (GP/GS)      NOTES
+2025: (12/12)     -
+
+STRENGTHS
+●    A
+
+WEAKNESSES
+●    B
+
+SUMMARY
+
+Placeholder.
+
+
+
+DEFENSIVE TACKLES
+                                                                                                                    HAND       ARM     WING
+    NAME                       SCHOOL                  GRADE     YEAR      HEIGHT WEIGHT    40-YD (10-YD)    SIZE    LENGTH      SPAN             AGE
+ 1 KAYDEN MCDONALD             Ohio State              1st-2nd    3JR      6022       326     DNP (DNP)        10    32 3/8    78 1/2       21.12

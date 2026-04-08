@@ -227,6 +227,55 @@ const SPECIALISTS_FIXTURE = readFileSync(
   "utf-8",
 );
 
+// Regression: pdftotext inserts a form-feed character (\f, U+000C) at PDF
+// page boundaries, which lands as the first character of the heading line
+// for the FIRST prospect on each new page. JS regex `^` in multiline mode
+// does not reset on \f, so my heading regex `^EDGE\d+\s+...` failed to match
+// `\fEDGE4 Keldric Faulk Auburn` and that prospect (and 50 others across the
+// PDF) silently dropped out of the parser output.
+const PAGE_BREAK_FIXTURE_RAW = readFileSync(
+  join(__dirname, "../../fixtures/the-beast/page-break-sample.txt"),
+  "utf-8",
+);
+// Inject the form-feed character before EDGE4 to simulate the pdftotext page
+// break that the original PDF emits. Keeping the fixture file plain text.
+const PAGE_BREAK_FIXTURE = PAGE_BREAK_FIXTURE_RAW.replace(
+  "EDGE4 Keldric Faulk Auburn",
+  "\fEDGE4 Keldric Faulk Auburn",
+);
+
+describe("parseBeastText page break handling", () => {
+  it("parses prospects whose heading is preceded by a form-feed (page break)", () => {
+    const data = parseBeastText(PAGE_BREAK_FIXTURE, 2026, "2026-04-08");
+    const edge = data.prospects.filter((p) => p.position === "DE");
+    const ranks = new Set(edge.map((p) => p.position_rank));
+    expect(ranks.has(1)).toBe(true);
+    expect(ranks.has(2)).toBe(true);
+    expect(ranks.has(3)).toBe(true);
+    // EDGE4 is the regression case — its heading line begins with a form feed.
+    expect(ranks.has(4)).toBe(true);
+
+    const faulk = edge.find((p) => p.position_rank === 4);
+    expect(faulk).toBeDefined();
+    expect(faulk!.first_name).toBe("Keldric");
+    expect(faulk!.last_name).toBe("Faulk");
+    expect(faulk!.school).toBe("Auburn");
+    expect(faulk!.grade_tier).toBe("1st-2nd round");
+    expect(faulk!.year_class).toBe("3JR");
+  });
+
+  it("does not let a form-feed-prefixed heading bleed into the previous prospect's body", () => {
+    const data = parseBeastText(PAGE_BREAK_FIXTURE, 2026, "2026-04-08");
+    const edge3 = data.prospects.find(
+      (p) => p.position === "DE" && p.position_rank === 3,
+    );
+    expect(edge3).toBeDefined();
+    // EDGE3's body should NOT contain Keldric Faulk's prose
+    expect(edge3!.summary ?? "").not.toMatch(/Keldric/);
+    expect(edge3!.background ?? "").not.toMatch(/Keldric/);
+  });
+});
+
 describe("parseBeastText specialists section bounds", () => {
   it("does NOT spill Long Snappers or Top 100 rows into Punters", () => {
     const data = parseBeastText(SPECIALISTS_FIXTURE, 2026, "2026-04-08");
