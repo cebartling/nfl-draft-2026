@@ -1,0 +1,148 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO prospect_profiles (\n                id, player_id, source, grade_tier, overall_rank, position_rank,\n                year_class, birthday, jersey_number, height_raw, nfl_comparison,\n                background, summary, strengths, weaknesses, college_stats,\n                scraped_at, created_at, updated_at\n            )\n            VALUES (\n                $1, $2, $3, $4, $5, $6,\n                $7, $8, $9, $10, $11,\n                $12, $13, $14, $15, $16,\n                $17, $18, $19\n            )\n            ON CONFLICT (player_id, source) DO UPDATE SET\n                grade_tier = EXCLUDED.grade_tier,\n                overall_rank = EXCLUDED.overall_rank,\n                position_rank = EXCLUDED.position_rank,\n                year_class = EXCLUDED.year_class,\n                birthday = EXCLUDED.birthday,\n                jersey_number = EXCLUDED.jersey_number,\n                height_raw = EXCLUDED.height_raw,\n                nfl_comparison = EXCLUDED.nfl_comparison,\n                background = EXCLUDED.background,\n                summary = EXCLUDED.summary,\n                strengths = EXCLUDED.strengths,\n                weaknesses = EXCLUDED.weaknesses,\n                college_stats = EXCLUDED.college_stats,\n                scraped_at = EXCLUDED.scraped_at,\n                updated_at = NOW()\n            RETURNING\n                id, player_id, source, grade_tier, overall_rank, position_rank,\n                year_class, birthday, jersey_number, height_raw, nfl_comparison,\n                background, summary,\n                strengths as \"strengths: serde_json::Value\",\n                weaknesses as \"weaknesses: serde_json::Value\",\n                college_stats as \"college_stats: serde_json::Value\",\n                scraped_at, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "source",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "grade_tier",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "overall_rank",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "position_rank",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "year_class",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "birthday",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 8,
+        "name": "jersey_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "height_raw",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "nfl_comparison",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "background",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "strengths: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 14,
+        "name": "weaknesses: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "college_stats: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 16,
+        "name": "scraped_at",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 17,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Varchar",
+        "Date",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Jsonb",
+        "Jsonb",
+        "Date",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ff20e4f608bae3b296ea6dbd8a09abdbc2de2c341b75a23b08f909aa239f6688"
+}
