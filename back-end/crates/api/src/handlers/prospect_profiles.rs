@@ -1,4 +1,4 @@
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::Json;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -8,6 +8,17 @@ use uuid::Uuid;
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
+
+#[derive(Debug, Deserialize)]
+pub struct ListProfilesQuery {
+    /// Source slug, e.g. `the-beast-2026`. Defaults to the-beast-2026.
+    #[serde(default = "default_source")]
+    pub source: String,
+}
+
+fn default_source() -> String {
+    "the-beast-2026".to_string()
+}
 
 /// Public-facing shape of a `ProspectProfile`. Mirrors the domain model with
 /// `serde_json::Value` for the JSONB columns so the frontend can render flexibly.
@@ -54,6 +65,47 @@ impl From<domain::models::ProspectProfile> for ProspectProfileResponse {
             scraped_at: p.scraped_at,
         }
     }
+}
+
+/// Compact profile shape used by the bulk list endpoint. Drops the heavy
+/// prose fields (background/summary/strengths/weaknesses) to keep the
+/// player-list payload small while still surfacing the grade tier and
+/// overall rank for badge rendering.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ProspectProfileSummary {
+    pub player_id: Uuid,
+    pub source: String,
+    pub grade_tier: Option<String>,
+    pub overall_rank: Option<i32>,
+    pub position_rank: i32,
+    pub nfl_comparison: Option<String>,
+}
+
+impl From<&domain::models::ProspectProfile> for ProspectProfileSummary {
+    fn from(p: &domain::models::ProspectProfile) -> Self {
+        Self {
+            player_id: p.player_id,
+            source: p.source.clone(),
+            grade_tier: p.grade_tier.clone(),
+            overall_rank: p.overall_rank,
+            position_rank: p.position_rank,
+            nfl_comparison: p.nfl_comparison.clone(),
+        }
+    }
+}
+
+/// GET /api/v1/prospect-profiles?source=the-beast-2026
+///
+/// Returns lightweight summaries for every profile from a given source. Used
+/// by the player list and prospects rankings page to render grade-tier badges
+/// without paying the cost of fetching prose for every prospect.
+pub async fn list_prospect_profiles(
+    State(state): State<AppState>,
+    Query(q): Query<ListProfilesQuery>,
+) -> ApiResult<Json<Vec<ProspectProfileSummary>>> {
+    let profiles = state.prospect_profile_repo.find_by_source(&q.source).await?;
+    let response: Vec<ProspectProfileSummary> = profiles.iter().map(Into::into).collect();
+    Ok(Json(response))
 }
 
 /// GET /api/v1/players/{player_id}/profile

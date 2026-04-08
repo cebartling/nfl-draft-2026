@@ -3,6 +3,7 @@
 	import { getPositionColor, formatHeight } from '$lib/utils/formatters';
 	import type { Player, FeldmanFreak, RankingBadge } from '$types';
 	import type { ProspectRanking } from '$lib/utils/prospect-ranking';
+	import type { ProspectProfileSummary } from '$lib/api';
 
 	interface Props {
 		players: Player[];
@@ -10,6 +11,8 @@
 		playerRankings: Map<string, RankingBadge[]>;
 		consensusRankings: Map<string, ProspectRanking>;
 		playerFreaks?: Map<string, FeldmanFreak>;
+		/** Optional Beast 2026 profile lookup, keyed by player id. */
+		beastProfiles?: Map<string, ProspectProfileSummary>;
 		onSelectPlayer?: (player: Player) => void;
 	}
 
@@ -19,6 +22,7 @@
 		playerRankings,
 		consensusRankings,
 		playerFreaks,
+		beastProfiles,
 		onSelectPlayer,
 	}: Props = $props();
 
@@ -77,6 +81,12 @@
 				>
 					Big Board Rankings
 				</th>
+				<th
+					scope="col"
+					class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
+				>
+					<span class="sr-only">Actions</span>
+				</th>
 			</tr>
 		</thead>
 		<tbody class="bg-white divide-y divide-gray-200">
@@ -84,6 +94,7 @@
 				{@const ranking = consensusRankings.get(player.id)}
 				{@const badges = playerRankings.get(player.id) ?? []}
 				{@const freak = playerFreaks?.get(player.id)}
+				{@const beast = beastProfiles?.get(player.id)}
 				<tr
 					class="hover:bg-gray-50 {onSelectPlayer ? 'cursor-pointer' : ''}"
 					onclick={() => onSelectPlayer?.(player)}
@@ -126,6 +137,20 @@
 									{badge.abbreviation}:&nbsp;#{badge.rank}
 								</span>
 							{/each}
+							{#if beast?.grade_tier}
+								<Tooltip
+									text="The Beast 2026 (Dane Brugler) grade tier{beast.overall_rank
+										? ` · OVR #${beast.overall_rank}`
+										: ''}"
+									width="w-72"
+								>
+									<span
+										class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-900 border border-orange-300"
+									>
+										BEAST: {beast.grade_tier}
+									</span>
+								</Tooltip>
+							{/if}
 							{#if freak}
 								<Tooltip text="Feldman Freak #{freak.rank}: {freak.description}" width="w-96">
 									<span
@@ -136,6 +161,34 @@
 								</Tooltip>
 							{/if}
 						</div>
+					</td>
+					<td class="px-4 py-3 whitespace-nowrap text-right">
+						{#if onSelectPlayer}
+							<button
+								type="button"
+								class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm"
+								onclick={(e) => {
+									e.stopPropagation();
+									onSelectPlayer?.(player);
+								}}
+								aria-label="View profile for {player.first_name} {player.last_name}"
+							>
+								View profile
+								<svg
+									class="w-4 h-4 ml-1"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 5l7 7-7 7"
+									/>
+								</svg>
+							</button>
+						{/if}
 					</td>
 				</tr>
 			{/each}

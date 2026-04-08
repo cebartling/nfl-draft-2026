@@ -21,6 +21,10 @@ fn abbreviate_source_name(name: &str) -> String {
         "TK".to_string()
     } else if lower.contains("walter") {
         "WF".to_string()
+    } else if lower.contains("drafttek") {
+        "DT".to_string()
+    } else if lower.contains("beast") {
+        "BST".to_string()
     } else if lower.contains("espn") {
         "ESPN".to_string()
     } else if lower.contains("nfl") {
@@ -90,6 +94,26 @@ mod tests {
         assert_eq!(source.name, "Tankathon");
         assert!(source.url.is_none());
         assert!(source.description.is_none());
+    }
+
+    #[test]
+    fn test_abbreviation_known_sources() {
+        assert_eq!(
+            RankingSource::new("Tankathon".to_string()).unwrap().abbreviation,
+            "TK"
+        );
+        assert_eq!(
+            RankingSource::new("the-beast-2026".to_string()).unwrap().abbreviation,
+            "BST"
+        );
+        assert_eq!(
+            RankingSource::new("WalterFootball".to_string()).unwrap().abbreviation,
+            "WF"
+        );
+        assert_eq!(
+            RankingSource::new("DraftTek".to_string()).unwrap().abbreviation,
+            "DT"
+        );
     }
 
     #[test]
