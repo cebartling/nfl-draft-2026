@@ -2,7 +2,8 @@ use seed_data::{
     combine_loader, draft_order_loader, draft_order_validator, feldman_freak_loader,
     feldman_freak_validator, loader, percentile_loader, rankings_loader, rankings_validator,
     scouting_report_loader, scouting_report_validator, team_loader, team_need_loader,
-    team_need_validator, team_season_loader, team_season_validator, team_validator, validator,
+    team_need_validator, team_season_loader, team_season_validator, team_validator,
+    the_beast_loader, validator,
 };
 
 use anyhow::Result;
@@ -12,8 +13,9 @@ use db::{
     repositories::{
         SqlxCombinePercentileRepository, SqlxCombineResultsRepository, SqlxDraftPickRepository,
         SqlxDraftRepository, SqlxFeldmanFreakRepository, SqlxPlayerRepository,
-        SqlxProspectRankingRepository, SqlxRankingSourceRepository, SqlxScoutingReportRepository,
-        SqlxTeamNeedRepository, SqlxTeamRepository, SqlxTeamSeasonRepository,
+        SqlxProspectProfileRepository, SqlxProspectRankingRepository, SqlxRankingSourceRepository,
+        SqlxScoutingReportRepository, SqlxTeamNeedRepository, SqlxTeamRepository,
+        SqlxTeamSeasonRepository,
     },
 };
 use domain::repositories::PlayerRepository;
@@ -87,6 +89,26 @@ enum EntityCommands {
     Percentiles {
         #[command(subcommand)]
         action: PercentilesActions,
+    },
+
+    /// Manage Dane Brugler's The Beast 2026 prospect profiles
+    TheBeast {
+        #[command(subcommand)]
+        action: TheBeastActions,
+    },
+}
+
+#[derive(Subcommand)]
+enum TheBeastActions {
+    /// Load The Beast 2026 JSON file (output of the Bun scraper) into the database
+    Load {
+        /// Path to the JSON data file produced by `bun run scrape the-beast`
+        #[arg(short, long, default_value = "data/the_beast_2026.json")]
+        file: String,
+
+        /// Simulate loading without writing to the database
+        #[arg(long)]
+        dry_run: bool,
     },
 }
 
@@ -374,6 +396,7 @@ async fn main() -> Result<()> {
         EntityCommands::Freaks { action } => handle_freaks(action).await?,
         EntityCommands::Combine { action } => handle_combine(action).await?,
         EntityCommands::Percentiles { action } => handle_percentiles(action).await?,
+        EntityCommands::TheBeast { action } => handle_the_beast(action).await?,
     }
 
     Ok(())
@@ -1362,6 +1385,58 @@ async fn handle_percentiles(action: PercentilesActions) -> Result<()> {
                     println!("    - {}", e);
                 }
                 std::process::exit(1);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_the_beast(action: TheBeastActions) -> Result<()> {
+    match action {
+        TheBeastActions::Load { file, dry_run } => {
+            if dry_run {
+                println!("DRY RUN - Validating and simulating load: {}", file);
+            } else {
+                println!("Loading The Beast 2026 from: {}", file);
+            }
+
+            let data = the_beast_loader::parse_beast_file(&file)?;
+            println!(
+                "Parsed {} prospects from file (draft year {}, source: {})",
+                data.prospects.len(),
+                data.meta.draft_year,
+                data.meta.source
+            );
+
+            if dry_run {
+                let stats = the_beast_loader::load_beast_dry_run(&data)?;
+                stats.print_summary();
+            } else {
+                let database_url = std::env::var("DATABASE_URL")
+                    .expect("DATABASE_URL must be set in environment or .env file");
+                let pool = create_pool(&database_url).await?;
+                let player_repo = SqlxPlayerRepository::new(pool.clone());
+                let profile_repo = SqlxProspectProfileRepository::new(pool.clone());
+                let combine_repo = SqlxCombineResultsRepository::new(pool.clone());
+                let ranking_source_repo = SqlxRankingSourceRepository::new(pool.clone());
+                let prospect_ranking_repo = SqlxProspectRankingRepository::new(pool.clone());
+
+                let stats = the_beast_loader::load_beast(
+                    &data,
+                    &pool,
+                    &player_repo,
+                    &profile_repo,
+                    &combine_repo,
+                    &ranking_source_repo,
+                    &prospect_ranking_repo,
+                )
+                .await?;
+                stats.print_summary();
+
+                if !stats.errors.is_empty() && stats.profiles_upserted == 0 {
+                    std::process::exit(1);
+                }
             }
         }
     }

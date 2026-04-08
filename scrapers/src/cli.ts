@@ -54,6 +54,17 @@ async function main() {
       break;
     }
 
+    case "the-beast": {
+      const { runTheBeastCommand } = await import("./commands/the-beast.js");
+      await runTheBeastCommand({
+        pdf: getArg("--pdf", "../documentation/content/the-beast-2026/the-beast-2026.pdf"),
+        password: getArg("--password", process.env.THE_BEAST_PASSWORD ?? ""),
+        output: getArg("--output", "../back-end/data/the_beast_2026.json"),
+        year: parseInt(getArg("--year", "2026"), 10),
+      });
+      break;
+    }
+
     default:
       console.error("Usage: bun run scrape <command> [options]");
       console.error("");
@@ -61,6 +72,7 @@ async function main() {
       console.error("  draft-order    Scrape NFL draft order from Tankathon");
       console.error("  rankings       Scrape prospect rankings");
       console.error("  combine        Scrape NFL Combine data");
+      console.error("  the-beast      Scrape Dane Brugler's The Beast 2026 PDF");
       console.error("");
       console.error("Options:");
       console.error("  --year <year>       Draft year (default: 2026)");

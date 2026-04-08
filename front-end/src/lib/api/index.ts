@@ -9,4 +9,5 @@ export { tradesApi, type ProposeTradeParams } from './trades';
 export { rankingsApi } from './rankings';
 export { freaksApi } from './freaks';
 export { combineApi } from './combine';
+export { prospectProfilesApi, type ProspectProfile } from './prospectProfiles';
 export { wsClient, WebSocketClient, WebSocketState } from './websocket';

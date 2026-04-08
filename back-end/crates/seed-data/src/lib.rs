@@ -13,6 +13,7 @@ pub mod rankings_validator;
 pub mod scouting_report_loader;
 pub mod scouting_report_validator;
 pub mod team_loader;
+pub mod the_beast_loader;
 pub mod team_need_loader;
 pub mod team_need_validator;
 pub mod team_season_loader;
