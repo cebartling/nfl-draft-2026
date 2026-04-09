@@ -139,7 +139,10 @@ impl BeastLoadStats {
         println!("  Combine rows upserted:    {}", self.combine_rows_upserted);
         println!("  Pro day rows upserted:    {}", self.prodays_upserted);
         println!("  Rankings inserted:        {}", self.rankings_inserted);
-        println!("  Skipped (invalid pos):    {}", self.skipped_invalid_position);
+        println!(
+            "  Skipped (invalid pos):    {}",
+            self.skipped_invalid_position
+        );
         println!("  Errors:                   {}", self.errors.len());
         if !self.errors.is_empty() {
             for err in self.errors.iter().take(20) {
@@ -224,9 +227,8 @@ pub async fn load_beast(
         .collect();
     println!("Found {} existing players for matching", player_map.len());
 
-    let scraped_at = NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d").map_err(|e| {
-        anyhow::anyhow!("Invalid scraped_at '{}': {}", data.meta.scraped_at, e)
-    })?;
+    let scraped_at = NaiveDate::parse_from_str(&data.meta.scraped_at, "%Y-%m-%d")
+        .map_err(|e| anyhow::anyhow!("Invalid scraped_at '{}': {}", data.meta.scraped_at, e))?;
 
     // Collected ranking rows for the Top 100 batch insert at the end.
     let mut rankings_to_insert: Vec<ProspectRanking> = Vec::new();

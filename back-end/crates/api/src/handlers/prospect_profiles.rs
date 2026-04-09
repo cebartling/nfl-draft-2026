@@ -103,7 +103,10 @@ pub async fn list_prospect_profiles(
     State(state): State<AppState>,
     Query(q): Query<ListProfilesQuery>,
 ) -> ApiResult<Json<Vec<ProspectProfileSummary>>> {
-    let profiles = state.prospect_profile_repo.find_by_source(&q.source).await?;
+    let profiles = state
+        .prospect_profile_repo
+        .find_by_source(&q.source)
+        .await?;
     let response: Vec<ProspectProfileSummary> = profiles.iter().map(Into::into).collect();
     Ok(Json(response))
 }
@@ -121,7 +124,10 @@ pub async fn get_player_profile(
         .find_latest_by_player(player_id)
         .await?
         .ok_or_else(|| {
-            ApiError::NotFound(format!("No prospect profile found for player {}", player_id))
+            ApiError::NotFound(format!(
+                "No prospect profile found for player {}",
+                player_id
+            ))
         })?;
 
     Ok(Json(profile.into()))

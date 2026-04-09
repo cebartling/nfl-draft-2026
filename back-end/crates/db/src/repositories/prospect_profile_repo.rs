@@ -192,13 +192,10 @@ impl ProspectProfileRepository for SqlxProspectProfileRepository {
     }
 
     async fn delete_by_source(&self, source: &str) -> DomainResult<u64> {
-        let result = sqlx::query!(
-            r#"DELETE FROM prospect_profiles WHERE source = $1"#,
-            source
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(DbError::DatabaseError)?;
+        let result = sqlx::query!(r#"DELETE FROM prospect_profiles WHERE source = $1"#, source)
+            .execute(&self.pool)
+            .await
+            .map_err(DbError::DatabaseError)?;
 
         Ok(result.rows_affected())
     }

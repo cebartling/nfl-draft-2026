@@ -106,9 +106,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 				{#if profile.strengths.length}
 					<div>
-						<h3 class="text-sm font-bold text-green-800 uppercase tracking-wide mb-2">
-							Strengths
-						</h3>
+						<h3 class="text-sm font-bold text-green-800 uppercase tracking-wide mb-2">Strengths</h3>
 						<ul class="space-y-1 text-sm text-gray-700">
 							{#each profile.strengths as item (item)}
 								<li class="flex gap-2">

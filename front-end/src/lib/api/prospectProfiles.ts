@@ -65,11 +65,11 @@ export const prospectProfilesApi = {
 	 * Returns a Map keyed by player_id for O(1) lookup at render time.
 	 */
 	async loadSummariesBySource(
-		source = 'the-beast-2026',
+		source = 'the-beast-2026'
 	): Promise<Map<string, ProspectProfileSummary>> {
 		const list = await apiClient.get(
 			`/prospect-profiles?source=${encodeURIComponent(source)}`,
-			z.array(ProspectProfileSummarySchema),
+			z.array(ProspectProfileSummarySchema)
 		);
 		const map = new Map<string, ProspectProfileSummary>();
 		for (const entry of list) {

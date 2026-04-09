@@ -174,12 +174,7 @@
 								aria-label="View profile for {player.first_name} {player.last_name}"
 							>
 								View profile
-								<svg
-									class="w-4 h-4 ml-1"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
+								<svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"

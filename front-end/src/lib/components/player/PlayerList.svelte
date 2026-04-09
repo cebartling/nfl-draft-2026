@@ -14,13 +14,7 @@
 		beastProfiles?: Map<string, ProspectProfileSummary>;
 	}
 
-	let {
-		players,
-		title,
-		onSelectPlayer,
-		onViewDetails,
-		beastProfiles,
-	}: Props = $props();
+	let { players, title, onSelectPlayer, onViewDetails, beastProfiles }: Props = $props();
 
 	let searchQuery = $state('');
 	let selectedPosition = $state<Position | 'all'>('all');

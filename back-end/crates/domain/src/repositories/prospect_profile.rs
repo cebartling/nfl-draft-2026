@@ -13,10 +13,8 @@ pub trait ProspectProfileRepository: Send + Sync {
 
     /// Look up the latest profile for a given player. If multiple sources
     /// exist, returns the most recently scraped one.
-    async fn find_latest_by_player(
-        &self,
-        player_id: Uuid,
-    ) -> DomainResult<Option<ProspectProfile>>;
+    async fn find_latest_by_player(&self, player_id: Uuid)
+        -> DomainResult<Option<ProspectProfile>>;
 
     /// Look up a specific profile by (player_id, source).
     async fn find_by_player_and_source(

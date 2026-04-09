@@ -99,19 +99,27 @@ mod tests {
     #[test]
     fn test_abbreviation_known_sources() {
         assert_eq!(
-            RankingSource::new("Tankathon".to_string()).unwrap().abbreviation,
+            RankingSource::new("Tankathon".to_string())
+                .unwrap()
+                .abbreviation,
             "TK"
         );
         assert_eq!(
-            RankingSource::new("the-beast-2026".to_string()).unwrap().abbreviation,
+            RankingSource::new("the-beast-2026".to_string())
+                .unwrap()
+                .abbreviation,
             "BST"
         );
         assert_eq!(
-            RankingSource::new("WalterFootball".to_string()).unwrap().abbreviation,
+            RankingSource::new("WalterFootball".to_string())
+                .unwrap()
+                .abbreviation,
             "WF"
         );
         assert_eq!(
-            RankingSource::new("DraftTek".to_string()).unwrap().abbreviation,
+            RankingSource::new("DraftTek".to_string())
+                .unwrap()
+                .abbreviation,
             "DT"
         );
     }

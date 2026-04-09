@@ -212,9 +212,7 @@ mod tests {
     fn test_invalid_position_rank() {
         let player_id = Uuid::new_v4();
         let date = NaiveDate::from_ymd_opt(2026, 4, 2).unwrap();
-        assert!(
-            ProspectProfile::new(player_id, "the-beast-2026".to_string(), 0, date).is_err()
-        );
+        assert!(ProspectProfile::new(player_id, "the-beast-2026".to_string(), 0, date).is_err());
     }
 
     #[test]

@@ -47,8 +47,10 @@ impl ProspectProfileDb {
             nfl_comparison: p.nfl_comparison.clone(),
             background: p.background.clone(),
             summary: p.summary.clone(),
-            strengths: serde_json::to_value(&p.strengths).unwrap_or_else(|_| JsonValue::Array(vec![])),
-            weaknesses: serde_json::to_value(&p.weaknesses).unwrap_or_else(|_| JsonValue::Array(vec![])),
+            strengths: serde_json::to_value(&p.strengths)
+                .unwrap_or_else(|_| JsonValue::Array(vec![])),
+            weaknesses: serde_json::to_value(&p.weaknesses)
+                .unwrap_or_else(|_| JsonValue::Array(vec![])),
             college_stats: p.college_stats.clone(),
             scraped_at: p.scraped_at,
             created_at: p.created_at,
@@ -57,12 +59,12 @@ impl ProspectProfileDb {
     }
 
     pub fn to_domain(&self) -> DbResult<ProspectProfile> {
-        let strengths: Vec<String> = serde_json::from_value(self.strengths.clone())
-            .map_err(|e| {
+        let strengths: Vec<String> =
+            serde_json::from_value(self.strengths.clone()).map_err(|e| {
                 DbError::MappingError(format!("Failed to parse strengths JSONB: {}", e))
             })?;
-        let weaknesses: Vec<String> = serde_json::from_value(self.weaknesses.clone())
-            .map_err(|e| {
+        let weaknesses: Vec<String> =
+            serde_json::from_value(self.weaknesses.clone()).map_err(|e| {
                 DbError::MappingError(format!("Failed to parse weaknesses JSONB: {}", e))
             })?;
 
@@ -89,4 +91,3 @@ impl ProspectProfileDb {
         })
     }
 }
-

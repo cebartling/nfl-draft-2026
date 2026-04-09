@@ -93,10 +93,7 @@ impl AutoPickService {
 
     /// Wire in the prospect profile repository so The Beast 2026 grade tiers
     /// can nudge BPA scores. When this is unset, no Beast bonus is applied.
-    pub fn with_prospect_profile_repo(
-        mut self,
-        repo: Arc<dyn ProspectProfileRepository>,
-    ) -> Self {
+    pub fn with_prospect_profile_repo(mut self, repo: Arc<dyn ProspectProfileRepository>) -> Self {
         self.prospect_profile_repo = Some(repo);
         self
     }
@@ -254,24 +251,25 @@ impl AutoPickService {
         // We pull every profile from the Beast source once and look up by player id below; this
         // avoids one query per player. The tier string is later converted to a small additive
         // bonus via `beast_grade_tier_bonus` and added on top of the BPA score.
-        let beast_grade_by_player: HashMap<Uuid, String> =
-            if let Some(profile_repo) = &self.prospect_profile_repo {
-                match profile_repo.find_by_source(BEAST_SOURCE).await {
-                    Ok(profiles) => profiles
-                        .into_iter()
-                        .filter_map(|p| p.grade_tier.map(|t| (p.player_id, t)))
-                        .collect(),
-                    Err(e) => {
-                        tracing::warn!(
+        let beast_grade_by_player: HashMap<Uuid, String> = if let Some(profile_repo) =
+            &self.prospect_profile_repo
+        {
+            match profile_repo.find_by_source(BEAST_SOURCE).await {
+                Ok(profiles) => profiles
+                    .into_iter()
+                    .filter_map(|p| p.grade_tier.map(|t| (p.player_id, t)))
+                    .collect(),
+                Err(e) => {
+                    tracing::warn!(
                             "Failed to fetch Beast 2026 profiles for BPA scoring: {}. No Beast tier bonuses will be applied.",
                             e
                         );
-                        HashMap::new()
-                    }
+                    HashMap::new()
                 }
-            } else {
-                HashMap::new()
-            };
+            }
+        } else {
+            HashMap::new()
+        };
 
         // Pre-fetch Feldman Freaks for the current draft year (1 query) → HashSet for O(1) lookup
         let feldman_freak_ids: HashSet<Uuid> = if let Some(freak_repo) = &self.feldman_freak_repo {
