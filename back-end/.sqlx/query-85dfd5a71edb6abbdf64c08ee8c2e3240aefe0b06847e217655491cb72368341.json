@@ -1,0 +1,130 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, player_id, source, grade_tier, overall_rank, position_rank,\n                year_class, birthday, jersey_number, height_raw, nfl_comparison,\n                background, summary,\n                strengths as \"strengths: serde_json::Value\",\n                weaknesses as \"weaknesses: serde_json::Value\",\n                college_stats as \"college_stats: serde_json::Value\",\n                scraped_at, created_at, updated_at\n            FROM prospect_profiles\n            WHERE player_id = $1\n            ORDER BY scraped_at DESC, updated_at DESC\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "player_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "source",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "grade_tier",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "overall_rank",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "position_rank",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "year_class",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "birthday",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 8,
+        "name": "jersey_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "height_raw",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "nfl_comparison",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "background",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "strengths: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 14,
+        "name": "weaknesses: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "college_stats: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 16,
+        "name": "scraped_at",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 17,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "85dfd5a71edb6abbdf64c08ee8c2e3240aefe0b06847e217655491cb72368341"
+}

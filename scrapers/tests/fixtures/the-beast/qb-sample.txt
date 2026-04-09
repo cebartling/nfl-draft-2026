@@ -1,0 +1,96 @@
+QUARTERBACKS
+                                                                                                            HAND       ARM     WING
+    NAME                       SCHOOL                  GRADE     YEAR      HEIGHT WEIGHT    40-YD (10-YD)    SIZE    LENGTH      SPAN             AGE
+ 1 FERNANDO MENDOZA            Indiana                    1st     4JR      6046      236     DNP (DNP)       9 1/2    31 7/8    76 3/4       22.56
+
+ 2 TY SIMPSON                  Alabama                   2nd      4JR       6011      211    DNP (DNP)      9 3/8     31 1/2    76 1/2       23.34
+
+ 3 GARRETT NUSSMEIER           LSU                       3rd      5SR       6015     203     DNP (DNP)       9 1/8   30 3/8     75 1/4       24.21
+
+
+QB1 Fernando Mendoza Indiana
+       GRADE                OVR. RANK          YEAR           BIRTHDAY              AGE               HT               WT                JERSEY
+     1st round                  3              4JR          Oct 01, 2003           22.56             6'5"            236 lbs.            No. 15
+
+
+
+BACKGROUND
+
+Placeholder background prose for fixture testing.
+This sentence ensures the parser handles multi-line prose blocks.
+
+STATISTICS AND MEASUREMENTS
+
+YEAR (GP/GS)      CP-ATT        CP% YDS          TD INT CAR YDS        AVG TD     NOTES
+2022: (0/0)       0-0           0.0    0         0    0    0    0      0.0    0    Cal; Redshirted
+
+2023: (9/8)       153-243       63.0 1,708 14 10           49   86     1.8    2   Cal; First start
+
+2024: (11/11)     265-386       68.7 3,004 16 6            87   105    1.2    2   Cal; transfer portal
+
+2025: (16/16)     273-379       72.0 3,535 41 6            90   276    3.1    7   Indiana; Heisman
+Total: (36/35)    691-1008 68.6 8,247 71 22                226 467     2.1    11
+
+
+            HT     WT       HAND ARM       WING      40-YD 20-YD 10-YD VJ          BJ      SS   3C     NOTES
+COMBINE 6046 236 9 1/2 31 7/8 76 3/4 DNP                   DNP       DNP     DNP DNP DNP DNP No workout
+
+PRO DAY     DNP    236 DNP       DNP       DNP       DNP   DNP       DNP     DNP DNP DNP DNP -
+
+STRENGTHS
+
+●    Placeholder strength one
+●    Placeholder strength two
+●    Placeholder strength three
+
+WEAKNESSES
+
+●    Placeholder weakness one
+●    Placeholder weakness two
+
+SUMMARY
+
+Placeholder summary prose. He projects as a mid-level NFL starter and a more mobile version of Bernie Kosar.
+
+
+
+QB2 Ty Simpson Alabama
+       GRADE                OVR. RANK          YEAR           BIRTHDAY              AGE               HT               WT                JERSEY
+     2nd round                 42              4JR          Dec 21, 2002           23.34             6'1"            211 lbs.            No. 15
+
+
+
+BACKGROUND
+
+Placeholder background.
+
+STATISTICS AND MEASUREMENTS
+
+YEAR (GP/GS)      CP-ATT       CP% YDS      TD INT CAR YDS         AVG TD     NOTES
+2025: (15/15)     305-473 64.5 3,567 28 5            90     93     1.0   2    SEC
+
+
+            HT     WT       HAND ARM      WING   40-YD 20-YD 10-YD VJ         BJ      SS   3C    NOTES
+COMBINE 6011 211 9 3/8 30 7/8 76 1/2 DNP                  DNP     DNP    DNP DNP DNP DNP Position drills
+
+PRO DAY     6010 212 9 3/8 31 1/2 75 5/8 DNP              DNP     DNP    DNP DNP DNP DNP -
+
+STRENGTHS
+
+●    Placeholder strength A
+●    Placeholder strength B
+
+WEAKNESSES
+
+●    Placeholder weakness A
+●    Placeholder weakness B
+●    Placeholder weakness C
+
+SUMMARY
+
+Placeholder summary. He projects as a low-level NFL starter, reminiscent of Daniel Jones with lesser physical traits.
+
+
+
+RUNNING BACKS
+

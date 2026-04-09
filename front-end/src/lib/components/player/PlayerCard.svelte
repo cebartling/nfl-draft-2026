@@ -7,9 +7,19 @@
 		player: AvailablePlayer;
 		onSelect?: (player: AvailablePlayer) => void;
 		onViewDetails?: (player: AvailablePlayer) => void;
+		/** Optional Brugler Beast 2026 grade tier (e.g. "1st round", "4th-5th"). */
+		beastTier?: string | null;
+		/** Optional Beast overall rank, when published in the Top 100. */
+		beastOverallRank?: number | null;
 	}
 
-	let { player, onSelect, onViewDetails }: Props = $props();
+	let {
+		player,
+		onSelect,
+		onViewDetails,
+		beastTier = null,
+		beastOverallRank = null,
+	}: Props = $props();
 
 	function getGradeColor(grade: number): string {
 		if (grade >= 80) return 'text-green-700 bg-green-100';
@@ -69,6 +79,20 @@
 					</span>
 				{/each}
 			</div>
+		{/if}
+		{#if beastTier}
+			<Tooltip
+				text="The Beast 2026 (Dane Brugler) grade tier{beastOverallRank
+					? ` · OVR #${beastOverallRank}`
+					: ''}"
+				width="w-72"
+			>
+				<span
+					class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-900 border border-orange-300"
+				>
+					BEAST: {beastTier}
+				</span>
+			</Tooltip>
 		{/if}
 		{#if player.feldman_freak}
 			<Tooltip

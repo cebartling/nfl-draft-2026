@@ -18,6 +18,7 @@ pub mod team_need_validator;
 pub mod team_season_loader;
 pub mod team_season_validator;
 pub mod team_validator;
+pub mod the_beast_loader;
 pub mod validator;
 
 /// Standard number of rounds in an NFL draft

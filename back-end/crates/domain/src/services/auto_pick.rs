@@ -4,8 +4,42 @@ use uuid::Uuid;
 
 use crate::errors::{DomainError, DomainResult};
 use crate::models::Player;
-use crate::repositories::{FeldmanFreakRepository, ProspectRankingRepository};
+use crate::repositories::{
+    FeldmanFreakRepository, ProspectProfileRepository, ProspectRankingRepository,
+};
 use crate::services::{DraftStrategyService, PlayerEvaluationService, RasScoringService};
+
+/// Slug of the Brugler "Beast" source as written by `the_beast_loader`.
+/// We hardcode it here so the AutoPick service knows which profiles carry
+/// the grade tier signal it should weight.
+const BEAST_SOURCE: &str = "the-beast-2026";
+
+/// Convert a Brugler grade tier string to a bonus value added on top of the
+/// 0–100 BPA score. Tiers near the top of the draft get the largest bonus,
+/// trailing off to 0 for "FA" / unknown tiers.
+///
+/// The values are intentionally small (max +5.0) so that Brugler's tier acts
+/// as a tiebreaker / nudge, not a dominant signal.
+pub fn beast_grade_tier_bonus(tier: &str) -> f64 {
+    let normalized = tier.trim().to_lowercase();
+    if normalized.starts_with("1st") {
+        5.0
+    } else if normalized.starts_with("2nd") {
+        4.0
+    } else if normalized.starts_with("3rd") {
+        3.0
+    } else if normalized.starts_with("4th-5th") || normalized.starts_with("4th") {
+        2.0
+    } else if normalized.starts_with("5th-6th") || normalized.starts_with("5th") {
+        1.5
+    } else if normalized.starts_with("6th-7th") || normalized.starts_with("6th") {
+        1.0
+    } else if normalized.starts_with("7th-fa") || normalized.starts_with("7th") {
+        0.5
+    } else {
+        0.0
+    }
+}
 
 /// Result of player scoring with detailed breakdown
 #[derive(Debug, Clone)]
@@ -28,6 +62,7 @@ pub struct AutoPickService {
     strategy_service: Arc<DraftStrategyService>,
     ranking_repo: Option<Arc<dyn ProspectRankingRepository>>,
     feldman_freak_repo: Option<Arc<dyn FeldmanFreakRepository>>,
+    prospect_profile_repo: Option<Arc<dyn ProspectProfileRepository>>,
 }
 
 impl AutoPickService {
@@ -40,6 +75,7 @@ impl AutoPickService {
             strategy_service,
             ranking_repo: None,
             feldman_freak_repo: None,
+            prospect_profile_repo: None,
         }
     }
 
@@ -52,6 +88,13 @@ impl AutoPickService {
     /// Wire in the Feldman Freak repository for athleticism bonus
     pub fn with_feldman_freak_repo(mut self, repo: Arc<dyn FeldmanFreakRepository>) -> Self {
         self.feldman_freak_repo = Some(repo);
+        self
+    }
+
+    /// Wire in the prospect profile repository so The Beast 2026 grade tiers
+    /// can nudge BPA scores. When this is unset, no Beast bonus is applied.
+    pub fn with_prospect_profile_repo(mut self, repo: Arc<dyn ProspectProfileRepository>) -> Self {
+        self.prospect_profile_repo = Some(repo);
         self
     }
 
@@ -204,6 +247,30 @@ impl AutoPickService {
             HashMap::new()
         };
 
+        // Pre-fetch The Beast 2026 grade tiers (1 query) → HashMap<player_id, tier> for O(1) lookup.
+        // We pull every profile from the Beast source once and look up by player id below; this
+        // avoids one query per player. The tier string is later converted to a small additive
+        // bonus via `beast_grade_tier_bonus` and added on top of the BPA score.
+        let beast_grade_by_player: HashMap<Uuid, String> = if let Some(profile_repo) =
+            &self.prospect_profile_repo
+        {
+            match profile_repo.find_by_source(BEAST_SOURCE).await {
+                Ok(profiles) => profiles
+                    .into_iter()
+                    .filter_map(|p| p.grade_tier.map(|t| (p.player_id, t)))
+                    .collect(),
+                Err(e) => {
+                    tracing::warn!(
+                            "Failed to fetch Beast 2026 profiles for BPA scoring: {}. No Beast tier bonuses will be applied.",
+                            e
+                        );
+                    HashMap::new()
+                }
+            }
+        } else {
+            HashMap::new()
+        };
+
         // Pre-fetch Feldman Freaks for the current draft year (1 query) → HashSet for O(1) lookup
         let feldman_freak_ids: HashSet<Uuid> = if let Some(freak_repo) = &self.feldman_freak_repo {
             match freak_repo.find_by_year(draft_year).await {
@@ -237,7 +304,7 @@ impl AutoPickService {
             let is_feldman_freak = feldman_freak_ids.contains(&player.id);
 
             // Calculate BPA score with pre-loaded data (0 additional queries)
-            let bpa_score = self.player_eval_service.calculate_bpa_score_preloaded(
+            let raw_bpa_score = self.player_eval_service.calculate_bpa_score_preloaded(
                 player,
                 scouting_report,
                 combine,
@@ -245,6 +312,14 @@ impl AutoPickService {
                 consensus_ranking_score,
                 is_feldman_freak,
             );
+
+            // Beast 2026 grade-tier nudge: a small additive bonus capped at +5.0 so
+            // Brugler's tier acts as a tiebreaker rather than dominating the BPA signal.
+            let beast_tier = beast_grade_by_player.get(&player.id);
+            let beast_bonus = beast_tier
+                .map(|t| beast_grade_tier_bonus(t.as_str()))
+                .unwrap_or(0.0);
+            let bpa_score = (raw_bpa_score + beast_bonus).min(105.0);
 
             // Calculate need score from pre-fetched needs (0 additional queries)
             let need_score =
@@ -272,6 +347,7 @@ impl AutoPickService {
                 position_factor,
                 ranking_score,
                 is_feldman_freak,
+                beast_tier.map(String::as_str),
                 final_score,
                 round,
                 bpa_w,
@@ -306,17 +382,22 @@ impl AutoPickService {
         position_factor: f64,
         ranking_score: f64,
         is_feldman_freak: bool,
+        beast_tier: Option<&str>,
         final_score: f64,
         round: i32,
         bpa_w: f64,
     ) -> String {
         let freak_tag = if is_feldman_freak { " [Freak]" } else { "" };
+        let beast_tag = beast_tier
+            .map(|t| format!(" [Beast: {}]", t))
+            .unwrap_or_default();
         format!(
-            "{} {} ({:?}){}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosFactor={:.2}, Final={:.1} (R{}: {:.0}% BPA / {:.0}% Need)",
+            "{} {} ({:?}){}{}: BPA={:.1}, Need={:.1}, Rank={:.1}, PosFactor={:.2}, Final={:.1} (R{}: {:.0}% BPA / {:.0}% Need)",
             player.first_name,
             player.last_name,
             player.position,
             freak_tag,
+            beast_tag,
             bpa_score,
             need_score,
             ranking_score,
@@ -333,6 +414,30 @@ impl AutoPickService {
 mod tests {
     use super::*;
     use crate::models::PlayerRankingWithSource;
+
+    #[test]
+    fn test_beast_grade_tier_bonus() {
+        // Top tiers get the largest nudge
+        assert_eq!(beast_grade_tier_bonus("1st round"), 5.0);
+        assert_eq!(beast_grade_tier_bonus("2nd round"), 4.0);
+        assert_eq!(beast_grade_tier_bonus("3rd round"), 3.0);
+        // Compound tiers like "4th-5th" / "5th-6th" / "6th-7th"
+        assert_eq!(beast_grade_tier_bonus("4th-5th"), 2.0);
+        assert_eq!(beast_grade_tier_bonus("5th-6th"), 1.5);
+        assert_eq!(beast_grade_tier_bonus("6th-7th"), 1.0);
+        assert_eq!(beast_grade_tier_bonus("7th-FA"), 0.5);
+        // Free agent / unknown returns 0
+        assert_eq!(beast_grade_tier_bonus("FA"), 0.0);
+        assert_eq!(beast_grade_tier_bonus("Free Agent"), 0.0);
+        assert_eq!(beast_grade_tier_bonus(""), 0.0);
+    }
+
+    #[test]
+    fn test_beast_grade_tier_bonus_case_insensitive() {
+        assert_eq!(beast_grade_tier_bonus("1ST ROUND"), 5.0);
+        assert_eq!(beast_grade_tier_bonus("  4th-5th  "), 2.0);
+    }
+
     use crate::models::{CombineResults, DraftStrategy, Position, ScoutingReport, TeamNeed};
     use crate::repositories::{
         CombineResultsRepository, DraftStrategyRepository, FeldmanFreakRepository,

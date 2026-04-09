@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
-	import { rankingsApi } from '$lib/api';
+	import { rankingsApi, prospectProfilesApi, type ProspectProfileSummary } from '$lib/api';
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import type { AvailablePlayer, RankingBadge } from '$lib/types';
@@ -14,6 +14,7 @@
 	let selectedPosition = $state<string>('all');
 	let selectedGroup = $state<string>('all');
 	let playerRankings = $state<Map<string, RankingBadge[]>>(new Map());
+	let beastProfiles = $state<Map<string, ProspectProfileSummary>>(new Map());
 
 	onMount(async () => {
 		try {
@@ -24,7 +25,7 @@
 			loading = false;
 		}
 
-		// Load rankings in the background (non-blocking)
+		// Load rankings + Beast profiles in the background (non-blocking, parallel)
 		rankingsApi
 			.loadAllPlayerRankings()
 			.then((rankings) => {
@@ -32,6 +33,15 @@
 			})
 			.catch((error) => {
 				logger.error('Failed to load rankings:', error);
+			});
+
+		prospectProfilesApi
+			.loadSummariesBySource('the-beast-2026')
+			.then((profiles) => {
+				beastProfiles = profiles;
+			})
+			.catch((error) => {
+				logger.warn('Failed to load Beast profiles (non-fatal):', error);
 			});
 	});
 
@@ -215,6 +225,7 @@
 					title="Available Players"
 					onSelectPlayer={handleSelectPlayer}
 					onViewDetails={handleSelectPlayer}
+					{beastProfiles}
 				/>
 			{/if}
 		</div>

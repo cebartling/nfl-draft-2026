@@ -93,6 +93,14 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             "/players/{player_id}/ras",
             get(handlers::ras::get_player_ras),
         )
+        .route(
+            "/players/{player_id}/profile",
+            get(handlers::prospect_profiles::get_player_profile),
+        )
+        .route(
+            "/prospect-profiles",
+            get(handlers::prospect_profiles::list_prospect_profiles),
+        )
         // Drafts
         .route(
             "/drafts",

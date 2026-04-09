@@ -5,17 +5,26 @@
 	import { page } from '$app/stores';
 	import { playersState } from '$stores/players.svelte';
 	import PlayerDetails from '$components/player/PlayerDetails.svelte';
+	import BeastProfile from '$components/player/BeastProfile.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import type { AvailablePlayer } from '$lib/types';
 	import { toAvailablePlayer } from '$lib/types';
+	import { prospectProfilesApi, type ProspectProfile } from '$lib/api';
 
 	let playerId = $derived($page.params.id!);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let beastProfile = $state<ProspectProfile | null>(null);
 
 	onMount(async () => {
 		try {
 			await playersState.loadPlayer(playerId);
+			// Fetch The Beast profile in parallel; treat 404 as "no profile yet" not an error.
+			try {
+				beastProfile = await prospectProfilesApi.getByPlayer(playerId);
+			} catch (e) {
+				logger.warn('Failed to load Beast profile (non-fatal):', e);
+			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load player';
 			logger.error('Failed to load player:', e);
@@ -78,6 +87,9 @@
 		</div>
 	{:else if player()}
 		<PlayerDetails player={player()!} />
+		{#if beastProfile}
+			<BeastProfile profile={beastProfile} />
+		{/if}
 	{:else}
 		<div class="bg-white rounded-lg shadow p-8 text-center">
 			<p class="text-gray-600">Player not found.</p>

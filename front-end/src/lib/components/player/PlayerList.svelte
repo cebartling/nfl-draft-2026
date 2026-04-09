@@ -3,15 +3,18 @@
 	import { Badge } from '$components/ui';
 	import type { AvailablePlayer, Position } from '$types';
 	import { OFFENSE_POSITIONS, DEFENSE_POSITIONS, SPECIAL_POSITIONS } from '$types';
+	import type { ProspectProfileSummary } from '$lib/api';
 
 	interface Props {
 		players: AvailablePlayer[];
 		title: string;
 		onSelectPlayer?: (player: AvailablePlayer) => void;
 		onViewDetails?: (player: AvailablePlayer) => void;
+		/** Optional Beast 2026 profile lookup, keyed by player id. */
+		beastProfiles?: Map<string, ProspectProfileSummary>;
 	}
 
-	let { players, title, onSelectPlayer, onViewDetails }: Props = $props();
+	let { players, title, onSelectPlayer, onViewDetails, beastProfiles }: Props = $props();
 
 	let searchQuery = $state('');
 	let selectedPosition = $state<Position | 'all'>('all');
@@ -88,7 +91,14 @@
 		{:else}
 			<div class="flex flex-col gap-2">
 				{#each filteredPlayers as player (player.id)}
-					<PlayerCard {player} onSelect={onSelectPlayer} {onViewDetails} />
+					{@const beast = beastProfiles?.get(player.id)}
+					<PlayerCard
+						{player}
+						onSelect={onSelectPlayer}
+						{onViewDetails}
+						beastTier={beast?.grade_tier ?? null}
+						beastOverallRank={beast?.overall_rank ?? null}
+					/>
 				{/each}
 			</div>
 		{/if}

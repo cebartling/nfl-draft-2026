@@ -3,7 +3,12 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { playersState } from '$stores/players.svelte';
-	import { rankingsApi, freaksApi } from '$lib/api';
+	import {
+		rankingsApi,
+		freaksApi,
+		prospectProfilesApi,
+		type ProspectProfileSummary,
+	} from '$lib/api';
 	import { computeConsensusRankings, sortByConsensusRank } from '$lib/utils/prospect-ranking';
 	import { filterProspects, getPositionsForGroup } from '$lib/utils/prospect-filter';
 	import type { ProspectRanking } from '$lib/utils/prospect-ranking';
@@ -21,6 +26,7 @@
 	let consensusRankings = $state<Map<string, ProspectRanking>>(new Map());
 	let sortedPlayerIds = $state<string[]>([]);
 	let playerFreaks = $state<Map<string, FeldmanFreak>>(new Map());
+	let beastProfiles = $state<Map<string, ProspectProfileSummary>>(new Map());
 
 	let availablePositions = $derived(getPositionsForGroup(selectedGroup));
 
@@ -33,18 +39,23 @@
 			loading = false;
 		}
 
-		// Load rankings, sources, and freaks in parallel (non-blocking)
+		// Load rankings, sources, freaks, and Beast profiles in parallel (non-blocking)
 		Promise.all([
 			rankingsApi.loadAllPlayerRankings(),
 			rankingsApi.listSources(),
 			freaksApi.loadByYear(2026),
+			prospectProfilesApi.loadSummariesBySource('the-beast-2026').catch((e) => {
+				logger.warn('Failed to load Beast profiles (non-fatal):', e);
+				return new Map<string, ProspectProfileSummary>();
+			}),
 		])
-			.then(([rankings, rankingSources, freaks]) => {
+			.then(([rankings, rankingSources, freaks, beast]) => {
 				playerRankings = rankings;
 				sources = rankingSources;
 				consensusRankings = computeConsensusRankings(rankings);
 				sortedPlayerIds = sortByConsensusRank(consensusRankings);
 				playerFreaks = freaks;
+				beastProfiles = beast;
 			})
 			.catch((error) => {
 				logger.error('Failed to load rankings:', error);
@@ -221,6 +232,7 @@
 					{playerRankings}
 					{consensusRankings}
 					{playerFreaks}
+					{beastProfiles}
 					onSelectPlayer={handleSelectPlayer}
 				/>
 			{/if}

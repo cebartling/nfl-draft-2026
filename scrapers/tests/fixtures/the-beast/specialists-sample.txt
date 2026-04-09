@@ -1,0 +1,26 @@
+PUNTERS
+     NAME                     SCHOOL                 GRADE    HEIGHT   WEIGHT   HAND SIZE   ARM LENGTH   WING SPAN
+  1 RYAN ECKLEY               Michigan State           6th    6006       200       9 3/8        31 1/2      75 1/2
+
+ 2 BRETT THORSON              Georgia                7th-FA    6012      237        9 1/4       33 1/4      79 7/8
+
+ 3 TOMMY DOMAN                Florida                7th-FA   6043       213       9 5/8        31 3/8      75 3/4
+
+
+
+LONG SNAPPERS
+     NAME                     SCHOOL                 GRADE    HEIGHT   WEIGHT   HAND SIZE   ARM LENGTH   WING SPAN
+  1 ALEX BACKLUND             Iowa                      FA    6020       235        9 1/8       31 1/2      75 1/4
+
+ 2 TYLER WALKER               Auburn                    FA    6014       240        9 1/4       30 5/8      74 1/2
+
+
+
+TOP 100
+                                                                                                                            HAND ARM   WING
+       NAME                       POSITION   SCHOOL                  GRADE     YEAR      HEIGHT WEIGHT    40-YD (10-YD)    SIZE LENGTH SPAN              AGE
+   1 ARVELL REESE                 EDGE1     Ohio State                1st      4JR      6033      243     4.55 (1.58)     9 1/2  33    79 1/4       21.45
+
+   2 JEREMIYAH LOVE               RB1       Notre Dame                1st      4JR      6005      210     4.43 (1.52)     9 3/8  32    77 1/2       21.30
+
+   3 FERNANDO MENDOZA             QB1       Indiana                   1st      4JR      6046      236     DNP (DNP)       9 1/2  31 7/8 76 3/4      22.56

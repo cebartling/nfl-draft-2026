@@ -4,6 +4,7 @@ pub mod drafts;
 pub mod feldman_freaks;
 pub mod health;
 pub mod players;
+pub mod prospect_profiles;
 pub mod rankings;
 pub mod ras;
 pub mod scouting_reports;
