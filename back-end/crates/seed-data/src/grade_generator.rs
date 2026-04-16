@@ -17,33 +17,71 @@ pub fn fnv1a_hash(data: &[u8]) -> u64 {
     hash
 }
 
-/// Convert a ranking position (1-based) to a scouting grade (0.0-10.0 scale).
+/// Convert a ranking position (1-based) to a scouting grade (0.0–10.0 scale).
 ///
-/// Formula: grade = max(3.0, 9.5 - (rank - 1) * 0.03)
-/// - Rank 1 = 9.50 (elite prospect)
-/// - Rank 32 = 8.57 (first-round caliber)
-/// - Rank 100 = 6.53
-/// - Rank 200 = 3.53
-/// - Rank 218+ = 3.0 (floor)
-/// - Rank <= 0 is treated as "unranked" and assigned the floor grade (3.0)
+/// Piecewise-linear curve that is intentionally steep at the top so the
+/// gap between elite and good prospects is wider than per-team scouting
+/// noise. The previous shallow `9.5 - (rank-1) × 0.03` curve produced
+/// only a 0.87-grade gap between rank 1 and rank 30, which was narrower
+/// than `generate_team_grade`'s ±0.8 noise — letting mid-round need
+/// matches flip past top talents in round 1.
+///
+/// Bands:
+/// - Rank 1-10  : 9.9 → 9.3     (slope −0.0667/rank, "elite")
+/// - Rank 10-30 : 9.3 → 8.3     (slope −0.05/rank,   "first round")
+/// - Rank 30-100: 8.3 → 5.5     (slope −0.04/rank,   "day 1-2")
+/// - Rank 100+  : 5.5 → 3.0 floor (slope −0.025/rank, "day 3")
+/// - Rank ≤ 0 returns the 3.0 floor (treated as unranked).
 pub fn rank_to_grade(rank: i32) -> f64 {
     if rank <= 0 {
         return 3.0;
     }
-    let grade = 9.5 - (rank - 1) as f64 * 0.03;
+    let r = rank as f64;
+    let grade = if rank <= 10 {
+        9.9 - (r - 1.0) * 0.0667
+    } else if rank <= 30 {
+        9.3 - (r - 10.0) * 0.05
+    } else if rank <= 100 {
+        8.3 - (r - 30.0) * 0.04
+    } else {
+        5.5 - (r - 100.0) * 0.025
+    };
     grade.max(3.0)
+}
+
+/// Per-team scouting noise half-range selector (consensus grade → max offset).
+///
+/// Elite prospects have more public consensus, so different teams' grades
+/// should cluster tighter. Mid-round and below deserves wider disagreement.
+/// Returned value is the ± half-range used by `generate_team_grade`.
+fn team_grade_variance(consensus_grade: f64) -> f64 {
+    if consensus_grade >= 9.0 {
+        0.3
+    } else if consensus_grade >= 7.5 {
+        0.6
+    } else {
+        0.8
+    }
 }
 
 /// Generate a deterministic team-specific grade variation from a consensus grade.
 ///
 /// Uses FNV-1a hash of the team abbreviation + player name to produce a
-/// deterministic offset in the range [-0.8, +0.8], clamped to [0.0, 10.0].
+/// deterministic offset in a symmetric range around 0 whose half-width
+/// depends on the consensus grade (see `team_grade_variance`):
+/// - consensus ≥ 9.0 : ±0.3 (elite; top ~10-16)
+/// - consensus ≥ 7.5 : ±0.6 (first/second round; top ~50)
+/// - otherwise       : ±0.8 (mid-to-late)
+///
+/// The result is clamped to `[0.0, 10.0]`.
 pub fn generate_team_grade(consensus_grade: f64, team_abbr: &str, first: &str, last: &str) -> f64 {
     let key = format!("{}-{}-{}", team_abbr, first, last);
     let hash = fnv1a_hash(key.as_bytes());
 
-    // Map hash to range [-0.8, 0.8]
-    let offset = ((hash % 1601) as f64 / 1000.0) - 0.8;
+    let max_offset = team_grade_variance(consensus_grade);
+    // Hash bucket in [0, 2000] → fraction in [0.0, 1.0) → scaled to [-max, +max].
+    let frac = (hash % 2001) as f64 / 2000.0;
+    let offset = (frac * 2.0 - 1.0) * max_offset;
 
     (consensus_grade + offset).clamp(0.0, 10.0)
 }
@@ -106,14 +144,60 @@ mod tests {
     #[test]
     fn test_rank_to_grade_top_prospect() {
         let grade = rank_to_grade(1);
-        assert!((grade - 9.5).abs() < f64::EPSILON);
+        assert!((grade - 9.9).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_rank_to_grade_elite_band_end() {
+        // Rank 10 is the boundary of the elite band → 9.3
+        let grade = rank_to_grade(10);
+        assert!(
+            (grade - 9.3).abs() < 0.01,
+            "rank 10 should be ~9.3, got {}",
+            grade
+        );
     }
 
     #[test]
     fn test_rank_to_grade_first_round() {
+        // Rank 32 sits in the 30-100 band: 8.3 - (32-30) × 0.04 = 8.22
         let grade = rank_to_grade(32);
-        // 9.5 - 31 * 0.03 = 9.5 - 0.93 = 8.57
-        assert!((grade - 8.57).abs() < 0.01);
+        assert!(
+            (grade - 8.22).abs() < 0.01,
+            "rank 32 should be ~8.22, got {}",
+            grade
+        );
+    }
+
+    #[test]
+    fn test_rank_to_grade_gap_top_vs_rank_30_exceeds_old_noise() {
+        // The whole point of the new curve: the top-prospect-to-rank-30
+        // gap must exceed the old ±0.8 team noise, so a mid-round need
+        // match can't flip past a top talent in round 1.
+        let gap = rank_to_grade(1) - rank_to_grade(30);
+        assert!(
+            gap > 1.5,
+            "gap rank 1 vs rank 30 must exceed 1.5 (old was 0.87), got {}",
+            gap
+        );
+    }
+
+    #[test]
+    fn test_rank_to_grade_monotonically_decreasing() {
+        // Higher rank (worse prospect) should never produce a higher grade.
+        let mut prev = rank_to_grade(1);
+        for r in 2..=250 {
+            let cur = rank_to_grade(r);
+            assert!(
+                cur <= prev + f64::EPSILON,
+                "non-monotonic: rank {} = {}, rank {} = {}",
+                r - 1,
+                prev,
+                r,
+                cur
+            );
+            prev = cur;
+        }
     }
 
     #[test]
@@ -154,6 +238,40 @@ mod tests {
 
         let grade_low = generate_team_grade(0.5, "DAL", "Test", "Player");
         assert!(grade_low >= 0.0 && grade_low <= 10.0);
+    }
+
+    #[test]
+    fn test_team_grade_variance_elite_tighter_than_mid() {
+        // Sweep all 32 NFL teams for the same player at elite and mid grades
+        // and verify that elite grades cluster tighter than mid grades.
+        let teams = [
+            "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE", "DAL", "DEN", "DET", "GB",
+            "HOU", "IND", "JAX", "KC", "LAC", "LAR", "LV", "MIA", "MIN", "NE", "NO", "NYG", "NYJ",
+            "PHI", "PIT", "SEA", "SF", "TB", "TEN", "WAS",
+        ];
+        let spread = |consensus: f64| -> f64 {
+            let grades: Vec<f64> = teams
+                .iter()
+                .map(|t| generate_team_grade(consensus, t, "Test", "Player"))
+                .collect();
+            let min = grades.iter().cloned().fold(f64::INFINITY, f64::min);
+            let max = grades.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+            max - min
+        };
+        let elite_spread = spread(9.5);
+        let mid_spread = spread(6.0);
+        assert!(
+            elite_spread < mid_spread,
+            "elite spread {} should be less than mid spread {}",
+            elite_spread,
+            mid_spread
+        );
+        // Elite variance is ±0.3 → max possible spread is 0.6
+        assert!(
+            elite_spread <= 0.6 + 1e-9,
+            "elite spread {} exceeds ±0.3 bound",
+            elite_spread
+        );
     }
 
     #[test]
