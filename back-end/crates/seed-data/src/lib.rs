@@ -10,6 +10,7 @@ pub mod percentile_loader;
 pub mod position_mapper;
 pub mod rankings_loader;
 pub mod rankings_validator;
+pub mod scouting_backfill;
 pub mod scouting_report_loader;
 pub mod scouting_report_validator;
 pub mod team_loader;

@@ -88,3 +88,11 @@ else
   echo "Skipping The Beast 2026 (no $BEAST_FILE present)."
   echo "  Generate it with: bun run scrape the-beast --pdf <pdf> --password <pwd> --output back-end/data/the_beast_2026.json"
 fi
+
+# Backfill scouting reports so the auto-pick engine can evaluate every
+# player in the draft pool. Without this, Beast-only prospects (and any
+# other player not in the consensus rankings file) are silently dropped
+# by the engine because it skips anyone without a scouting report.
+echo "Backfilling scouting reports for unscouted players..."
+/app/seed-data scouting backfill --year 2026
+echo "Scouting backfill complete."
