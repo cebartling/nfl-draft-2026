@@ -386,7 +386,11 @@ mod tests {
             .map(|t| grade_tier_to_consensus_grade(t))
             .collect();
         for pair in grades.windows(2) {
-            assert!(pair[0] > pair[1], "Tiers not strictly descending: {:?}", grades);
+            assert!(
+                pair[0] > pair[1],
+                "Tiers not strictly descending: {:?}",
+                grades
+            );
         }
     }
 

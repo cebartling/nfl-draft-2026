@@ -19,9 +19,7 @@ use anyhow::Result;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use domain::repositories::{
-    ProspectProfileRepository, ScoutingReportRepository, TeamRepository,
-};
+use domain::repositories::{ProspectProfileRepository, ScoutingReportRepository, TeamRepository};
 
 use crate::grade_generator::{create_scouting_report_with_grade, grade_tier_to_consensus_grade};
 
@@ -47,7 +45,10 @@ impl ScoutingBackfillStats {
             "  Already scouted (skipped):    {}",
             self.players_already_scouted
         );
-        println!("  Players backfilled:           {}", self.players_backfilled);
+        println!(
+            "  Players backfilled:           {}",
+            self.players_backfilled
+        );
         println!(
             "    - with Beast grade tier:    {}",
             self.players_with_beast_tier
@@ -101,7 +102,13 @@ pub async fn backfill_scouting_reports(
     .bind(draft_year)
     .fetch_all(pool)
     .await
-    .map_err(|e| anyhow::anyhow!("Failed to fetch players for draft year {}: {}", draft_year, e))?
+    .map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to fetch players for draft year {}: {}",
+            draft_year,
+            e
+        )
+    })?
     .into_iter()
     .map(|(id, first_name, last_name)| PlayerRow {
         id,
@@ -112,7 +119,10 @@ pub async fn backfill_scouting_reports(
     stats.players_scanned = players.len();
 
     if players.is_empty() {
-        println!("No players found for draft year {}; nothing to backfill.", draft_year);
+        println!(
+            "No players found for draft year {}; nothing to backfill.",
+            draft_year
+        );
         return Ok(stats);
     }
 
@@ -140,23 +150,21 @@ pub async fn backfill_scouting_reports(
     .collect();
 
     // 4. Pre-load every Beast profile once so the tier lookup is O(1).
-    let beast_tier_by_player: HashMap<Uuid, String> = match profile_repo
-        .find_by_source(BEAST_SOURCE)
-        .await
-    {
-        Ok(profiles) => profiles
-            .into_iter()
-            .filter_map(|p| p.grade_tier.map(|t| (p.player_id, t)))
-            .collect(),
-        Err(e) => {
-            // Not fatal — fall back to neutral grades for everyone.
-            tracing::warn!(
-                "Failed to load Beast profiles for backfill ({}); neutral grades only",
-                e
-            );
-            HashMap::new()
-        }
-    };
+    let beast_tier_by_player: HashMap<Uuid, String> =
+        match profile_repo.find_by_source(BEAST_SOURCE).await {
+            Ok(profiles) => profiles
+                .into_iter()
+                .filter_map(|p| p.grade_tier.map(|t| (p.player_id, t)))
+                .collect(),
+            Err(e) => {
+                // Not fatal — fall back to neutral grades for everyone.
+                tracing::warn!(
+                    "Failed to load Beast profiles for backfill ({}); neutral grades only",
+                    e
+                );
+                HashMap::new()
+            }
+        };
 
     // 5. For each player without a report, create reports × all teams.
     for player in &players {
