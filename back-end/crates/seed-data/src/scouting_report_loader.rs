@@ -349,105 +349,32 @@ mod tests {
         assert_eq!(data.rankings[0].rank, 1);
     }
 
+    // Core grade_to_rank and generate_team_grade behavior is covered in
+    // grade_generator::tests. Here we keep only the scouting-loader integration
+    // tests that exercise the public helpers in the context of this module.
     #[test]
-    fn test_rank_to_grade_top_prospect() {
-        let grade = rank_to_grade(1);
-        assert!((grade - 9.5).abs() < f64::EPSILON);
+    fn test_rank_to_grade_usable_by_loader() {
+        // Smoke test: loader relies on grade being monotonically decreasing
+        // in rank so report grades track talent.
+        assert!(rank_to_grade(1) > rank_to_grade(50));
+        assert!(rank_to_grade(50) > rank_to_grade(200));
     }
 
     #[test]
-    fn test_rank_to_grade_first_round() {
-        let grade = rank_to_grade(32);
-        // 9.5 - 31 * 0.03 = 9.5 - 0.93 = 8.57
-        assert!((grade - 8.57).abs() < 0.01);
+    fn test_generate_team_grade_deterministic_for_loader() {
+        // Loader re-runs must produce the same grades for the same inputs.
+        let a = generate_team_grade(8.0, "DAL", "John", "Smith");
+        let b = generate_team_grade(8.0, "DAL", "John", "Smith");
+        assert!((a - b).abs() < f64::EPSILON);
     }
 
     #[test]
-    fn test_rank_to_grade_floor() {
-        let grade = rank_to_grade(250);
-        assert!((grade - 3.0).abs() < f64::EPSILON);
-
-        let grade = rank_to_grade(500);
-        assert!((grade - 3.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn test_rank_to_grade_zero_returns_floor() {
-        let grade = rank_to_grade(0);
-        assert!((grade - 3.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn test_rank_to_grade_negative_returns_floor() {
-        let grade = rank_to_grade(-1);
-        assert!((grade - 3.0).abs() < f64::EPSILON);
-
-        let grade = rank_to_grade(-100);
-        assert!((grade - 3.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn test_rank_to_grade_mid_range() {
-        let grade = rank_to_grade(100);
-        // 9.5 - 99 * 0.03 = 9.5 - 2.97 = 6.53
-        assert!((grade - 6.53).abs() < 0.01);
-    }
-
-    #[test]
-    fn test_generate_team_grade_deterministic() {
-        let grade1 = generate_team_grade(8.0, "DAL", "John", "Smith");
-        let grade2 = generate_team_grade(8.0, "DAL", "John", "Smith");
-        assert!((grade1 - grade2).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn test_generate_team_grade_varies_by_team() {
-        let grade_dal = generate_team_grade(8.0, "DAL", "John", "Smith");
-        let grade_buf = generate_team_grade(8.0, "BUF", "John", "Smith");
-        assert!(
-            (grade_dal - grade_buf).abs() > f64::EPSILON,
-            "Grades should differ: DAL={}, BUF={}",
-            grade_dal,
-            grade_buf
-        );
-    }
-
-    #[test]
-    fn test_generate_team_grade_within_bounds() {
-        let grade_high = generate_team_grade(9.5, "DAL", "Test", "Player");
-        assert!(grade_high >= 0.0 && grade_high <= 10.0);
-
-        let grade_low = generate_team_grade(0.5, "DAL", "Test", "Player");
-        assert!(grade_low >= 0.0 && grade_low <= 10.0);
-    }
-
-    #[test]
-    fn test_generate_team_grade_range() {
-        let teams = [
-            "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE", "DAL", "DEN", "DET", "GB",
-            "HOU", "IND", "JAX", "KC", "LAC", "LAR", "LV", "MIA", "MIN", "NE", "NO", "NYG", "NYJ",
-            "PHI", "PIT", "SEA", "SF", "TB", "TEN", "WAS",
-        ];
-
-        let consensus = 8.0;
-        let grades: Vec<f64> = teams
-            .iter()
-            .map(|t| generate_team_grade(consensus, t, "Test", "Player"))
-            .collect();
-
-        let min = grades.iter().cloned().fold(f64::INFINITY, f64::min);
-        let max = grades.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
-
-        assert!(
-            min >= 7.2 - f64::EPSILON,
-            "Min grade {} below expected",
-            min
-        );
-        assert!(
-            max <= 8.8 + f64::EPSILON,
-            "Max grade {} above expected",
-            max
-        );
+    fn test_generate_team_grade_within_bounds_for_loader() {
+        // Clamp to [0, 10] — loader invariant to keep ScoutingReport::new happy.
+        let high = generate_team_grade(9.9, "DAL", "Test", "Player");
+        assert!((0.0..=10.0).contains(&high));
+        let low = generate_team_grade(0.5, "DAL", "Test", "Player");
+        assert!((0.0..=10.0).contains(&low));
     }
 
     #[test]
