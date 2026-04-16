@@ -126,6 +126,29 @@ pub fn create_scouting_report(
     rank: i32,
 ) -> Result<ScoutingReport, domain::errors::DomainError> {
     let consensus_grade = rank_to_grade(rank);
+    create_scouting_report_with_grade(
+        player_id,
+        team_id,
+        team_abbr,
+        first_name,
+        last_name,
+        consensus_grade,
+    )
+}
+
+/// Create a scouting report from a caller-supplied consensus grade.
+///
+/// Used when the consensus signal comes from a source other than a numeric
+/// rank — for example, Brugler's grade tiers on Beast prospects who fall
+/// outside his top-100 numeric list.
+pub fn create_scouting_report_with_grade(
+    player_id: uuid::Uuid,
+    team_id: uuid::Uuid,
+    team_abbr: &str,
+    first_name: &str,
+    last_name: &str,
+    consensus_grade: f64,
+) -> Result<ScoutingReport, domain::errors::DomainError> {
     let team_grade = generate_team_grade(consensus_grade, team_abbr, first_name, last_name);
     let fit_grade = generate_fit_grade(team_abbr, first_name, last_name);
     let (injury_concern, character_concern) =
@@ -135,6 +158,36 @@ pub fn create_scouting_report(
         .with_fit_grade(fit_grade)
         .with_injury_concern(injury_concern)
         .with_character_concern(character_concern))
+}
+
+/// Map a Brugler "Beast" grade tier string to a 0-10 consensus grade.
+///
+/// Tiers roughly track where a prospect is expected to be drafted. The
+/// resulting grade is on the same scale as `rank_to_grade`, so it can be
+/// fed into `generate_team_grade` to produce a team-specific variation.
+///
+/// Unknown / missing tiers return a neutral 3.0 floor (same as an unranked
+/// prospect) so we still produce a usable report rather than silently
+/// dropping the player from the draft pool.
+pub fn grade_tier_to_consensus_grade(tier: &str) -> f64 {
+    let normalized = tier.trim().to_lowercase();
+    if normalized.starts_with("1st") {
+        8.8
+    } else if normalized.starts_with("2nd") {
+        7.8
+    } else if normalized.starts_with("3rd") {
+        6.8
+    } else if normalized.starts_with("4th") {
+        5.8
+    } else if normalized.starts_with("5th") {
+        5.0
+    } else if normalized.starts_with("6th") {
+        4.2
+    } else if normalized.starts_with("7th") {
+        3.5
+    } else {
+        3.0
+    }
 }
 
 #[cfg(test)]
@@ -287,5 +340,67 @@ mod tests {
         let (inj2, char2) = generate_concern_flags("DAL", "John", "Smith");
         assert_eq!(inj1, inj2);
         assert_eq!(char1, char2);
+    }
+
+    #[test]
+    fn test_grade_tier_to_consensus_grade_known_tiers() {
+        assert!((grade_tier_to_consensus_grade("1st round") - 8.8).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("2nd round") - 7.8).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("3rd round") - 6.8).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("4th-5th") - 5.8).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("4th round") - 5.8).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("5th-6th") - 5.0).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("6th-7th") - 4.2).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("7th-FA") - 3.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_grade_tier_to_consensus_grade_case_and_whitespace_insensitive() {
+        assert!((grade_tier_to_consensus_grade("1ST ROUND") - 8.8).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("  2nd Round  ") - 7.8).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_grade_tier_to_consensus_grade_unknown_returns_floor() {
+        assert!((grade_tier_to_consensus_grade("") - 3.0).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("FA") - 3.0).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("Free Agent") - 3.0).abs() < f64::EPSILON);
+        assert!((grade_tier_to_consensus_grade("UDFA") - 3.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_grade_tier_ordering_preserved() {
+        // Tiers must be monotonically non-increasing from 1st down to unknown
+        let ordered = [
+            "1st round",
+            "2nd round",
+            "3rd round",
+            "4th-5th",
+            "5th-6th",
+            "6th-7th",
+            "7th-FA",
+            "",
+        ];
+        let grades: Vec<f64> = ordered
+            .iter()
+            .map(|t| grade_tier_to_consensus_grade(t))
+            .collect();
+        for pair in grades.windows(2) {
+            assert!(pair[0] > pair[1], "Tiers not strictly descending: {:?}", grades);
+        }
+    }
+
+    #[test]
+    fn test_create_scouting_report_with_grade_matches_rank_path() {
+        let player = uuid::Uuid::new_v4();
+        let team = uuid::Uuid::new_v4();
+        // Compute rank_to_grade once and feed both paths the same consensus grade
+        // so the test stays correct if the curve is retuned again.
+        let consensus = rank_to_grade(32);
+        let via_rank = create_scouting_report(player, team, "DAL", "Test", "Player", 32).unwrap();
+        let via_grade =
+            create_scouting_report_with_grade(player, team, "DAL", "Test", "Player", consensus)
+                .unwrap();
+        assert!((via_rank.grade - via_grade.grade).abs() < 1e-9);
     }
 }

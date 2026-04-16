@@ -1,9 +1,9 @@
 use seed_data::{
     combine_loader, draft_order_loader, draft_order_validator, feldman_freak_loader,
     feldman_freak_validator, loader, percentile_loader, rankings_loader, rankings_validator,
-    scouting_report_loader, scouting_report_validator, team_loader, team_need_loader,
-    team_need_validator, team_season_loader, team_season_validator, team_validator,
-    the_beast_loader, validator,
+    scouting_backfill, scouting_report_loader, scouting_report_validator, team_loader,
+    team_need_loader, team_need_validator, team_season_loader, team_season_validator,
+    team_validator, the_beast_loader, validator,
 };
 
 use anyhow::Result;
@@ -269,6 +269,18 @@ enum ScoutingActions {
         /// Path to the rankings JSON data file
         #[arg(short, long, default_value = "data/rankings/rankings.json")]
         file: String,
+    },
+
+    /// Backfill scouting reports for players that have none.
+    ///
+    /// Intended to run after `rankings load`, `scouting load`, and
+    /// `the-beast load` have all completed — it fills in reports for the
+    /// Beast-discovered prospects (and any other unscouted players) so
+    /// the auto-pick engine can actually evaluate them.
+    Backfill {
+        /// The draft year to backfill
+        #[arg(short, long)]
+        year: i32,
     },
 }
 
@@ -965,6 +977,34 @@ async fn handle_scouting(action: ScoutingActions) -> Result<()> {
                 if !stats.errors.is_empty() {
                     std::process::exit(1);
                 }
+            }
+        }
+
+        ScoutingActions::Backfill { year } => {
+            println!(
+                "Backfilling scouting reports for unscouted players in draft year {}...",
+                year
+            );
+
+            let database_url = std::env::var("DATABASE_URL")
+                .expect("DATABASE_URL must be set in environment or .env file");
+            let pool = create_pool(&database_url).await?;
+            let team_repo = SqlxTeamRepository::new(pool.clone());
+            let profile_repo = SqlxProspectProfileRepository::new(pool.clone());
+            let scouting_report_repo = SqlxScoutingReportRepository::new(pool.clone());
+
+            let stats = scouting_backfill::backfill_scouting_reports(
+                &pool,
+                year,
+                &team_repo,
+                &profile_repo,
+                &scouting_report_repo,
+            )
+            .await?;
+            stats.print_summary();
+
+            if !stats.errors.is_empty() {
+                std::process::exit(1);
             }
         }
 
