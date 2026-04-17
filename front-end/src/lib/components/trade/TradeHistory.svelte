@@ -69,11 +69,7 @@
 	{:else}
 		<div class="space-y-4">
 			{#each filteredTrades as proposal (proposal.trade.id)}
-				<TradeProposalCard
-					{proposal}
-					currentTeamId={respondingTeamFor(proposal)}
-					{onRespond}
-				/>
+				<TradeProposalCard {proposal} currentTeamId={respondingTeamFor(proposal)} {onRespond} />
 			{/each}
 		</div>
 	{/if}

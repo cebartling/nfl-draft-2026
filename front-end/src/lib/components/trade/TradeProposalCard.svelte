@@ -65,9 +65,7 @@
 			toastState.success(action === 'accept' ? 'Trade accepted' : 'Trade rejected');
 			onUpdate?.();
 		} catch (err) {
-			toastState.error(
-				action === 'accept' ? 'Failed to accept trade' : 'Failed to reject trade'
-			);
+			toastState.error(action === 'accept' ? 'Failed to accept trade' : 'Failed to reject trade');
 			logger.error(`Failed to ${action} trade:`, err);
 		} finally {
 			isAccepting = false;

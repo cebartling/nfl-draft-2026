@@ -26,10 +26,8 @@ pub trait TradeRepository: Send + Sync {
     async fn find_by_session(&self, session_id: Uuid) -> DomainResult<Vec<PickTrade>>;
 
     /// Get all trade proposals (with pick details) for a session
-    async fn find_proposals_by_session(
-        &self,
-        session_id: Uuid,
-    ) -> DomainResult<Vec<TradeProposal>>;
+    async fn find_proposals_by_session(&self, session_id: Uuid)
+        -> DomainResult<Vec<TradeProposal>>;
 
     /// Get pending trades for a team (awaiting their response)
     async fn find_pending_for_team(&self, team_id: Uuid) -> DomainResult<Vec<TradeProposal>>;

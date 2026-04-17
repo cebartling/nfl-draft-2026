@@ -132,11 +132,7 @@
 		detailPlayer = null;
 	}
 
-	async function handleTradeRespond(
-		tradeId: string,
-		teamId: string,
-		action: 'accept' | 'reject'
-	) {
+	async function handleTradeRespond(tradeId: string, teamId: string, action: 'accept' | 'reject') {
 		if (action === 'accept') {
 			await tradesState.accept(tradeId, teamId);
 		} else {
