@@ -203,6 +203,37 @@ impl TradeRepository for SqlxTradeRepository {
             .map_err(Into::into)
     }
 
+    async fn find_proposals_by_session(
+        &self,
+        session_id: Uuid,
+    ) -> DomainResult<Vec<TradeProposal>> {
+        let trades = sqlx::query_as!(
+            PickTradeDb,
+            r#"
+            SELECT id, session_id, from_team_id, to_team_id, status,
+                   from_team_value, to_team_value, value_difference,
+                   proposed_at, responded_at, created_at, updated_at
+            FROM pick_trades
+            WHERE session_id = $1
+            ORDER BY created_at DESC
+            "#,
+            session_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        let mut proposals = Vec::with_capacity(trades.len());
+        for trade_db in trades {
+            let trade = trade_db.to_domain()?;
+            if let Some(proposal) = self.find_trade_with_details(trade.id).await? {
+                proposals.push(proposal);
+            }
+        }
+
+        Ok(proposals)
+    }
+
     async fn find_pending_for_team(&self, team_id: Uuid) -> DomainResult<Vec<TradeProposal>> {
         let trades = sqlx::query_as!(
             PickTradeDb,

@@ -13,11 +13,21 @@
 
 	let { sessionId, availablePicks, onSuccess }: Props = $props();
 
+	const chartOptions = [
+		{ value: 'JimmyJohnson', label: 'Jimmy Johnson (classic)' },
+		{ value: 'RichHill', label: 'Rich Hill' },
+		{ value: 'ChaseStudartAV', label: 'Chase Stuart (AV)' },
+		{ value: 'FitzgeraldSpielberger', label: 'Fitzgerald-Spielberger' },
+		{ value: 'PffWar', label: 'PFF WAR' },
+		{ value: 'SurplusValue', label: 'Surplus Value' },
+	];
+
 	let teams = $state<Team[]>([]);
 	let fromTeamId = $state<string>('');
 	let toTeamId = $state<string>('');
 	let fromTeamPickIds = $state<string[]>([]);
 	let toTeamPickIds = $state<string[]>([]);
+	let chartType = $state<string>('JimmyJohnson');
 	let isLoadingTeams = $state(false);
 	let isSubmitting = $state(false);
 
@@ -25,7 +35,6 @@
 
 	const toTeamPicks = $derived(availablePicks.filter((p) => p.team_id === toTeamId));
 
-	// Load teams
 	$effect(() => {
 		isLoadingTeams = true;
 		teamsApi
@@ -83,13 +92,13 @@
 				session_id: sessionId,
 				from_team_id: fromTeamId,
 				to_team_id: toTeamId,
-				from_team_pick_ids: fromTeamPickIds,
-				to_team_pick_ids: toTeamPickIds,
+				from_team_picks: fromTeamPickIds,
+				to_team_picks: toTeamPickIds,
+				chart_type: chartType,
 			});
 
 			toastState.success('Trade proposal created');
 
-			// Reset form
 			fromTeamId = '';
 			toTeamId = '';
 			fromTeamPickIds = [];
@@ -97,7 +106,8 @@
 
 			onSuccess?.();
 		} catch (err) {
-			toastState.error('Failed to create trade proposal');
+			const message = err instanceof Error ? err.message : 'Failed to create trade proposal';
+			toastState.error(message);
 			logger.error('Failed to create trade proposal:', err);
 		} finally {
 			isSubmitting = false;
@@ -114,7 +124,6 @@
 		</div>
 	{:else}
 		<form onsubmit={handleSubmit} class="space-y-6">
-			<!-- Team Selection -->
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 				<div>
 					<label for="from-team" class="block text-sm font-medium text-gray-700 mb-2">
@@ -157,9 +166,26 @@
 				</div>
 			</div>
 
-			<!-- Pick Selection -->
+			<div>
+				<label for="trade-builder-chart-type" class="block text-sm font-medium text-gray-700 mb-2">
+					Trade Value Chart
+				</label>
+				<select
+					id="trade-builder-chart-type"
+					data-testid="trade-builder-chart-type"
+					bind:value={chartType}
+					class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				>
+					{#each chartOptions as option (option.value)}
+						<option value={option.value}>{option.label}</option>
+					{/each}
+				</select>
+				<p class="text-xs text-gray-500 mt-1">
+					Fairness is validated against the chosen chart (within 15%).
+				</p>
+			</div>
+
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-				<!-- From Team Picks -->
 				<div>
 					<p class="text-sm font-medium text-gray-700 mb-3">
 						From Team Picks ({fromTeamPickIds.length} selected)
@@ -193,7 +219,11 @@
 												</p>
 											</div>
 											{#if fromTeamPickIds.includes(pick.id)}
-												<svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+												<svg
+													class="w-5 h-5 text-blue-600"
+													fill="currentColor"
+													viewBox="0 0 20 20"
+												>
 													<path
 														fill-rule="evenodd"
 														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -213,7 +243,6 @@
 					</div>
 				</div>
 
-				<!-- To Team Picks -->
 				<div>
 					<p class="text-sm font-medium text-gray-700 mb-3">
 						To Team Picks ({toTeamPickIds.length} selected)
@@ -247,7 +276,11 @@
 												</p>
 											</div>
 											{#if toTeamPickIds.includes(pick.id)}
-												<svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+												<svg
+													class="w-5 h-5 text-blue-600"
+													fill="currentColor"
+													viewBox="0 0 20 20"
+												>
 													<path
 														fill-rule="evenodd"
 														d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -268,7 +301,6 @@
 				</div>
 			</div>
 
-			<!-- Submit Button -->
 			<div class="flex justify-end">
 				<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 					Propose Trade

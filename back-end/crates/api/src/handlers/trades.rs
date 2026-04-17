@@ -3,7 +3,7 @@ use crate::state::AppState;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
-use domain::models::{DraftEvent, PickTrade, TradeProposal};
+use domain::models::{ChartType, DraftEvent, PickTrade, TradeProposal};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -16,6 +16,9 @@ pub struct ProposeTradeRequest {
     pub to_team_id: Uuid,
     pub from_team_picks: Vec<Uuid>,
     pub to_team_picks: Vec<Uuid>,
+    /// Optional override for the trade value chart. Falls back to the session's default.
+    #[serde(default)]
+    pub chart_type: Option<ChartType>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -91,6 +94,7 @@ pub async fn propose_trade(
             crate::error::ApiError::NotFound(format!("Session {} not found", payload.session_id))
         })?;
 
+    let chart_type = payload.chart_type.unwrap_or(session.chart_type);
     let proposal = state
         .trade_engine
         .propose_trade(
@@ -99,7 +103,7 @@ pub async fn propose_trade(
             payload.to_team_id,
             payload.from_team_picks.clone(),
             payload.to_team_picks.clone(),
-            Some(session.chart_type),
+            Some(chart_type),
         )
         .await?;
 
@@ -250,5 +254,19 @@ pub async fn get_pending_trades(
     Path(team_id): Path<Uuid>,
 ) -> ApiResult<Json<Vec<TradeProposalResponse>>> {
     let proposals = state.trade_engine.get_pending_trades(team_id).await?;
+    Ok(Json(proposals.into_iter().map(Into::into).collect()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/sessions/{session_id}/trades",
+    responses((status = 200, description = "All trades for a session", body = Vec<TradeProposalResponse>)),
+    tag = "trades"
+)]
+pub async fn get_session_trades(
+    State(state): State<AppState>,
+    Path(session_id): Path<Uuid>,
+) -> ApiResult<Json<Vec<TradeProposalResponse>>> {
+    let proposals = state.trade_engine.get_trades_by_session(session_id).await?;
     Ok(Json(proposals.into_iter().map(Into::into).collect()))
 }

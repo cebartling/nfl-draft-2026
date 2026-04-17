@@ -781,6 +781,119 @@ async fn test_cannot_accept_trade_as_wrong_team() {
     assert_eq!(db_trade.status, "Proposed");
 }
 
+#[tokio::test]
+async fn test_get_trades_by_session() {
+    let (base_url, pool) = common::spawn_app().await;
+    let client = common::create_client();
+
+    // Setup: two teams + draft + session + picks
+    let (team1_id, team2_id) = create_two_teams(&base_url, &client).await;
+    let (draft_id, session_id) = create_draft_and_session(&base_url, &client, &pool).await;
+    initialize_draft_picks(&base_url, &client, &draft_id, &pool).await;
+
+    // Empty session returns an empty array
+    let empty_response = client
+        .get(&format!(
+            "{}/api/v1/sessions/{}/trades",
+            base_url, session_id
+        ))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to list trades on empty session");
+    assert_eq!(empty_response.status(), 200);
+    let empty_trades: serde_json::Value =
+        empty_response.json().await.expect("Failed to parse JSON");
+    assert_eq!(empty_trades.as_array().expect("Expected array").len(), 0);
+
+    // Propose two fair trades in this session so find_proposals_by_session has results
+    let picks = sqlx::query!("SELECT id FROM draft_picks ORDER BY overall_pick LIMIT 6")
+        .fetch_all(&pool)
+        .await
+        .expect("Failed to fetch picks");
+
+    // Assign ownership: team1 owns picks 0,2,4; team2 owns picks 1,3,5
+    for (i, pick) in picks.iter().enumerate() {
+        let team_id = if i % 2 == 0 { team1_id } else { team2_id };
+        sqlx::query!(
+            "UPDATE draft_picks SET team_id = $1 WHERE id = $2",
+            team_id,
+            pick.id
+        )
+        .execute(&pool)
+        .await
+        .expect("Failed to update ownership");
+    }
+
+    // Trade A: pick 1 for pick 2 (Jimmy Johnson: 3000 vs 2600, fair)
+    let trade_a = client
+        .post(&format!("{}/api/v1/trades", base_url))
+        .json(&json!({
+            "session_id": session_id.to_string(),
+            "from_team_id": team1_id.to_string(),
+            "to_team_id": team2_id.to_string(),
+            "from_team_picks": [picks[0].id.to_string()],
+            "to_team_picks": [picks[1].id.to_string()]
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to propose trade A");
+    assert_eq!(trade_a.status(), 201);
+
+    // Trade B: pick 5 for pick 6 (close in value, fair)
+    let trade_b = client
+        .post(&format!("{}/api/v1/trades", base_url))
+        .json(&json!({
+            "session_id": session_id.to_string(),
+            "from_team_id": team1_id.to_string(),
+            "to_team_id": team2_id.to_string(),
+            "from_team_picks": [picks[4].id.to_string()],
+            "to_team_picks": [picks[5].id.to_string()]
+        }))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to propose trade B");
+    assert_eq!(trade_b.status(), 201);
+
+    // GET session trades — both proposals should come back with pick arrays populated
+    let response = client
+        .get(&format!(
+            "{}/api/v1/sessions/{}/trades",
+            base_url, session_id
+        ))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .expect("Failed to list session trades");
+
+    assert_eq!(response.status(), 200);
+    let body: serde_json::Value = response.json().await.expect("Failed to parse JSON");
+    let trades = body.as_array().expect("Expected array");
+    assert_eq!(trades.len(), 2);
+
+    for trade in trades {
+        assert_eq!(
+            trade["trade"]["session_id"].as_str().unwrap(),
+            session_id.to_string()
+        );
+        assert_eq!(trade["trade"]["status"], "Proposed");
+        assert_eq!(trade["from_team_picks"].as_array().unwrap().len(), 1);
+        assert_eq!(trade["to_team_picks"].as_array().unwrap().len(), 1);
+    }
+
+    // DB sanity check: the two trades are persisted against the right session
+    let db_count = sqlx::query!(
+        "SELECT COUNT(*) as count FROM pick_trades WHERE session_id = $1",
+        session_id
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("Failed to count trades");
+    assert_eq!(db_count.count.unwrap(), 2);
+}
+
 // Helper functions
 
 async fn create_two_teams(base_url: &str, client: &reqwest::Client) -> (uuid::Uuid, uuid::Uuid) {

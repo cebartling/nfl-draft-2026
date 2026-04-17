@@ -9,8 +9,9 @@ export interface ProposeTradeParams {
 	session_id: string;
 	from_team_id: string;
 	to_team_id: string;
-	from_team_pick_ids: string[];
-	to_team_pick_ids: string[];
+	from_team_picks: string[];
+	to_team_picks: string[];
+	chart_type?: string;
 }
 
 /**

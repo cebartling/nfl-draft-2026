@@ -2,16 +2,19 @@
 	import { logger } from '$lib/utils/logger';
 	import { page } from '$app/stores';
 	import { draftState } from '$stores/draft.svelte';
-	import { toastState } from '$stores';
+	import { toastState, tradesState } from '$stores';
 	import { draftsApi, sessionsApi } from '$lib/api';
 	import DraftCommandCenter from '$components/draft/DraftCommandCenter.svelte';
 	import DraftBoard from '$components/draft/DraftBoard.svelte';
+	import PickActivityFeed from '$components/draft/PickActivityFeed.svelte';
 
 	import PlayerList from '$components/player/PlayerList.svelte';
 	import PlayerDetails from '$components/player/PlayerDetails.svelte';
 	import Modal from '$components/ui/Modal.svelte';
 	import LoadingSpinner from '$components/ui/LoadingSpinner.svelte';
 	import Tabs from '$components/ui/Tabs.svelte';
+	import TradeBuilder from '$components/trade/TradeBuilder.svelte';
+	import TradeHistory from '$components/trade/TradeHistory.svelte';
 	import type { UUID, AvailablePlayer } from '$lib/types';
 
 	let sessionId = $derived($page.params.id! as UUID);
@@ -26,7 +29,11 @@
 	const tabs = [
 		{ id: 'draft-board', label: 'Draft Board' },
 		{ id: 'available-players', label: 'Available Players' },
+		{ id: 'trades', label: 'Trades' },
 	];
+
+	// Available picks = picks that haven't been used yet (no player assigned)
+	const unusedPicks = $derived(draftState.picks.filter((p) => p.player_id == null));
 
 	async function loadAvailablePlayers() {
 		if (!draftState.session) return;
@@ -42,10 +49,8 @@
 		}
 	}
 
-	// Re-fetch available players whenever the completed pick count changes (own picks or AI/WebSocket picks)
-	// Use != null (loose check) to treat both null and undefined as "not completed"
 	const completedPickCount = $derived(draftState.picks.filter((p) => p.player_id != null).length);
-	let fetchedForPickCount = -1; // plain var (not $state) to avoid dependency cycle
+	let fetchedForPickCount = -1;
 
 	$effect(() => {
 		const session = draftState.session;
@@ -53,6 +58,15 @@
 		if (session && count !== fetchedForPickCount) {
 			fetchedForPickCount = count;
 			loadAvailablePlayers();
+		}
+	});
+
+	// Load trades for this session once
+	let loadedTradesForSession: string | null = null;
+	$effect(() => {
+		if (sessionId && loadedTradesForSession !== sessionId) {
+			loadedTradesForSession = sessionId;
+			tradesState.load(sessionId);
 		}
 	});
 
@@ -70,24 +84,18 @@
 				selectedPlayer.id
 			);
 
-			// Clear selection after successful pick
 			selectedPlayer = null;
 
-			// Advance pick number on the server and locally
 			const updatedSession = await sessionsApi.advancePick(sessionId);
 			draftState.session = updatedSession;
 
-			// Reload picks to reflect the manual pick — this updates completedPickCount,
-			// which triggers the reactive $effect to re-fetch available players
 			await draftState.loadDraft(draftState.session.draft_id);
 
-			// Trigger AI auto-picks for subsequent AI teams
 			if (draftState.session?.auto_pick_enabled && !draftState.isCurrentPickUserControlled) {
 				draftState.isAutoPickRunning = true;
 				try {
 					const result = await sessionsApi.autoPickRun(sessionId);
 					draftState.session = result.session;
-					// Reload picks to reflect AI picks — also updates completedPickCount
 					await draftState.loadDraft(draftState.session.draft_id);
 				} catch (err) {
 					logger.error('Auto-pick run failed:', err);
@@ -100,14 +108,12 @@
 			toastState.success('Pick submitted');
 		} catch (error: unknown) {
 			logger.error('Failed to make pick:', error);
-			// Check if the player was already drafted (stale list)
 			const message =
 				error instanceof Error && error.message.includes('already been drafted')
 					? 'That player was already drafted — please pick another.'
 					: 'Failed to make pick';
 			toastState.error(message);
 			selectedPlayer = null;
-			// Pick count didn't change on failure, so force a refresh manually
 			await loadAvailablePlayers();
 		} finally {
 			making_pick = false;
@@ -125,6 +131,18 @@
 	function handleCloseDetails() {
 		detailPlayer = null;
 	}
+
+	async function handleTradeRespond(
+		tradeId: string,
+		teamId: string,
+		action: 'accept' | 'reject'
+	) {
+		if (action === 'accept') {
+			await tradesState.accept(tradeId, teamId);
+		} else {
+			await tradesState.reject(tradeId, teamId);
+		}
+	}
 </script>
 
 <div class="space-y-3">
@@ -133,7 +151,6 @@
 			<LoadingSpinner size="lg" />
 		</div>
 	{:else}
-		<!-- Draft Command Center: Full-width clock + controls + selected player -->
 		<DraftCommandCenter
 			{sessionId}
 			{selectedPlayer}
@@ -142,10 +159,10 @@
 			onCancelPick={() => (selectedPlayer = null)}
 		/>
 
-		<!-- Tab Navigation -->
+		<PickActivityFeed />
+
 		<Tabs {tabs} {activeTab} onTabChange={(id) => (activeTab = id)} />
 
-		<!-- Tab Panels -->
 		<div
 			id="tabpanel-draft-board"
 			role="tabpanel"
@@ -183,10 +200,32 @@
 				</div>
 			{/if}
 		</div>
+
+		<div
+			id="tabpanel-trades"
+			role="tabpanel"
+			aria-labelledby="tab-trades"
+			hidden={activeTab !== 'trades'}
+		>
+			{#if activeTab === 'trades'}
+				<div class="space-y-4">
+					<TradeBuilder
+						{sessionId}
+						availablePicks={unusedPicks}
+						onSuccess={() => tradesState.load(sessionId)}
+					/>
+					<TradeHistory
+						proposals={tradesState.proposals}
+						isLoading={tradesState.isLoading}
+						currentTeamIds={draftState.controlledTeamIds}
+						onRespond={handleTradeRespond}
+					/>
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
 
-<!-- Player Detail Modal -->
 <Modal
 	open={detailPlayer !== null}
 	onClose={handleCloseDetails}

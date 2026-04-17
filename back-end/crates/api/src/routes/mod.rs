@@ -200,6 +200,10 @@ pub fn create_router_with_cors(state: AppState, cors_origins: &[String]) -> Rout
             "/teams/{team_id}/pending-trades",
             get(handlers::trades::get_pending_trades),
         )
+        .route(
+            "/sessions/{session_id}/trades",
+            get(handlers::trades::get_session_trades),
+        )
         // Team Seasons
         .route(
             "/team-seasons",

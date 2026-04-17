@@ -49,6 +49,7 @@ use domain::models::{ChartType, Conference, Division, DraftStatus, Position};
         trades::reject_trade,
         trades::get_trade,
         trades::get_pending_trades,
+        trades::get_session_trades,
 
         // Available Players
         drafts::get_available_players,
