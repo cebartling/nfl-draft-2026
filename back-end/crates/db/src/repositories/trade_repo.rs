@@ -203,6 +203,75 @@ impl TradeRepository for SqlxTradeRepository {
             .map_err(Into::into)
     }
 
+    async fn find_proposals_by_session(
+        &self,
+        session_id: Uuid,
+    ) -> DomainResult<Vec<TradeProposal>> {
+        let trade_rows = sqlx::query_as!(
+            PickTradeDb,
+            r#"
+            SELECT id, session_id, from_team_id, to_team_id, status,
+                   from_team_value, to_team_value, value_difference,
+                   proposed_at, responded_at, created_at, updated_at
+            FROM pick_trades
+            WHERE session_id = $1
+            ORDER BY created_at DESC
+            "#,
+            session_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        if trade_rows.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Fetch every detail row for all trades in this session in a single
+        // round-trip, then bucket them in-memory. Avoids the N+1 pattern of
+        // calling find_trade_with_details per trade.
+        let trade_ids: Vec<Uuid> = trade_rows.iter().map(|t| t.id).collect();
+        let detail_rows = sqlx::query_as!(
+            PickTradeDetailDb,
+            r#"
+            SELECT id, trade_id, pick_id, direction, pick_value, created_at
+            FROM pick_trade_details
+            WHERE trade_id = ANY($1)
+            "#,
+            &trade_ids
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(DbError::DatabaseError)?;
+
+        let mut picks_by_trade: std::collections::HashMap<Uuid, (Vec<Uuid>, Vec<Uuid>)> =
+            std::collections::HashMap::with_capacity(trade_rows.len());
+        for detail_db in detail_rows {
+            let detail = detail_db.to_domain()?;
+            let entry = picks_by_trade
+                .entry(detail.trade_id)
+                .or_insert_with(|| (Vec::new(), Vec::new()));
+            match detail.direction {
+                TradeDirection::FromTeam => entry.0.push(detail.pick_id),
+                TradeDirection::ToTeam => entry.1.push(detail.pick_id),
+            }
+        }
+
+        let mut proposals = Vec::with_capacity(trade_rows.len());
+        for trade_db in trade_rows {
+            let trade = trade_db.to_domain()?;
+            let (from_team_picks, to_team_picks) =
+                picks_by_trade.remove(&trade.id).unwrap_or_default();
+            proposals.push(TradeProposal {
+                trade,
+                from_team_picks,
+                to_team_picks,
+            });
+        }
+
+        Ok(proposals)
+    }
+
     async fn find_pending_for_team(&self, team_id: Uuid) -> DomainResult<Vec<TradeProposal>> {
         let trades = sqlx::query_as!(
             PickTradeDb,

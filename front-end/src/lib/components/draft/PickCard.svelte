@@ -62,9 +62,11 @@
 	<div class="flex-1 min-w-0 mr-3">
 		{#if player}
 			<div class="flex items-center gap-2 flex-wrap">
-				<Badge variant={getPositionColor(player.position)} size="sm">
-					{player.position}
-				</Badge>
+				<span data-testid="pick-player-position">
+					<Badge variant={getPositionColor(player.position)} size="sm">
+						{player.position}
+					</Badge>
+				</span>
 				<span data-testid="pick-player-name" class="text-sm font-semibold text-gray-900">
 					{player.first_name}
 					{player.last_name}

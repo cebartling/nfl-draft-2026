@@ -2,8 +2,9 @@
 	import { Button, Badge, LoadingSpinner } from '$components/ui';
 	import { teamsApi, tradesApi } from '$api';
 	import { toastState } from '$stores';
+	import { draftState } from '$stores/draft.svelte';
 	import { logger } from '$lib/utils/logger';
-	import type { Team, DraftPick } from '$types';
+	import type { ChartType, Team, DraftPick } from '$types';
 
 	interface Props {
 		sessionId: string;
@@ -13,19 +14,41 @@
 
 	let { sessionId, availablePicks, onSuccess }: Props = $props();
 
+	const chartOptions: Array<{ value: ChartType; label: string }> = [
+		{ value: 'JimmyJohnson', label: 'Jimmy Johnson (classic)' },
+		{ value: 'RichHill', label: 'Rich Hill' },
+		{ value: 'ChaseStudartAV', label: 'Chase Stuart (AV)' },
+		{ value: 'FitzgeraldSpielberger', label: 'Fitzgerald-Spielberger' },
+		{ value: 'PffWar', label: 'PFF WAR' },
+		{ value: 'SurplusValue', label: 'Surplus Value' },
+	];
+
 	let teams = $state<Team[]>([]);
 	let fromTeamId = $state<string>('');
 	let toTeamId = $state<string>('');
 	let fromTeamPickIds = $state<string[]>([]);
 	let toTeamPickIds = $state<string[]>([]);
+	// Default to the session's configured chart so proposals don't accidentally
+	// get evaluated against the wrong value chart. Falls back to Jimmy Johnson
+	// if the session hasn't loaded yet.
+	let chartType = $state<ChartType>(draftState.session?.chart_type ?? 'JimmyJohnson');
+	let chartTypeTouched = $state(false);
 	let isLoadingTeams = $state(false);
 	let isSubmitting = $state(false);
+
+	// Track whether the user has manually changed the chart. If they haven't,
+	// keep the picker in sync with the session when it loads / changes.
+	$effect(() => {
+		const sessionChart = draftState.session?.chart_type;
+		if (!chartTypeTouched && sessionChart && sessionChart !== chartType) {
+			chartType = sessionChart;
+		}
+	});
 
 	const fromTeamPicks = $derived(availablePicks.filter((p) => p.team_id === fromTeamId));
 
 	const toTeamPicks = $derived(availablePicks.filter((p) => p.team_id === toTeamId));
 
-	// Load teams
 	$effect(() => {
 		isLoadingTeams = true;
 		teamsApi
@@ -79,25 +102,32 @@
 		isSubmitting = true;
 
 		try {
+			// Only send chart_type when the user has explicitly picked a chart
+			// different from the session default. Otherwise the backend uses
+			// the session's configured chart, which is what we want.
+			const sessionChart = draftState.session?.chart_type;
+			const chartOverride = chartTypeTouched && chartType !== sessionChart ? chartType : undefined;
 			await tradesApi.propose({
 				session_id: sessionId,
 				from_team_id: fromTeamId,
 				to_team_id: toTeamId,
-				from_team_pick_ids: fromTeamPickIds,
-				to_team_pick_ids: toTeamPickIds,
+				from_team_picks: fromTeamPickIds,
+				to_team_picks: toTeamPickIds,
+				chart_type: chartOverride,
 			});
 
 			toastState.success('Trade proposal created');
 
-			// Reset form
 			fromTeamId = '';
 			toTeamId = '';
 			fromTeamPickIds = [];
 			toTeamPickIds = [];
+			chartTypeTouched = false;
 
 			onSuccess?.();
 		} catch (err) {
-			toastState.error('Failed to create trade proposal');
+			const message = err instanceof Error ? err.message : 'Failed to create trade proposal';
+			toastState.error(message);
 			logger.error('Failed to create trade proposal:', err);
 		} finally {
 			isSubmitting = false;
@@ -114,7 +144,6 @@
 		</div>
 	{:else}
 		<form onsubmit={handleSubmit} class="space-y-6">
-			<!-- Team Selection -->
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 				<div>
 					<label for="from-team" class="block text-sm font-medium text-gray-700 mb-2">
@@ -157,9 +186,27 @@
 				</div>
 			</div>
 
-			<!-- Pick Selection -->
+			<div>
+				<label for="trade-builder-chart-type" class="block text-sm font-medium text-gray-700 mb-2">
+					Trade Value Chart
+				</label>
+				<select
+					id="trade-builder-chart-type"
+					data-testid="trade-builder-chart-type"
+					bind:value={chartType}
+					onchange={() => (chartTypeTouched = true)}
+					class="w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				>
+					{#each chartOptions as option (option.value)}
+						<option value={option.value}>{option.label}</option>
+					{/each}
+				</select>
+				<p class="text-xs text-gray-500 mt-1">
+					Fairness is validated against the chosen chart (within 15%).
+				</p>
+			</div>
+
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-				<!-- From Team Picks -->
 				<div>
 					<p class="text-sm font-medium text-gray-700 mb-3">
 						From Team Picks ({fromTeamPickIds.length} selected)
@@ -213,7 +260,6 @@
 					</div>
 				</div>
 
-				<!-- To Team Picks -->
 				<div>
 					<p class="text-sm font-medium text-gray-700 mb-3">
 						To Team Picks ({toTeamPickIds.length} selected)
@@ -268,7 +314,6 @@
 				</div>
 			</div>
 
-			<!-- Submit Button -->
 			<div class="flex justify-end">
 				<Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
 					Propose Trade

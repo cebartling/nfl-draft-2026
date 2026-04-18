@@ -9,9 +9,10 @@
 		proposal: TradeProposal;
 		currentTeamId?: string;
 		onUpdate?: () => void;
+		onRespond?: (tradeId: string, teamId: string, action: 'accept' | 'reject') => Promise<void>;
 	}
 
-	let { proposal, currentTeamId, onUpdate }: Props = $props();
+	let { proposal, currentTeamId, onUpdate, onRespond }: Props = $props();
 
 	let fromTeam = $state<Team | null>(null);
 	let toTeam = $state<Team | null>(null);
@@ -29,7 +30,6 @@
 
 	const isFairTrade = $derived(valueDifference < 100);
 
-	// Load team data
 	$effect(() => {
 		isLoading = true;
 		Promise.all([
@@ -48,36 +48,27 @@
 			});
 	});
 
-	async function handleAccept() {
+	async function respond(action: 'accept' | 'reject') {
 		if (!currentTeamId) return;
 
-		isAccepting = true;
+		if (action === 'accept') isAccepting = true;
+		else isRejecting = true;
 
 		try {
-			await tradesApi.accept(proposal.trade.id, currentTeamId);
-			toastState.success('Trade accepted');
+			if (onRespond) {
+				await onRespond(proposal.trade.id, currentTeamId, action);
+			} else if (action === 'accept') {
+				await tradesApi.accept(proposal.trade.id, currentTeamId);
+			} else {
+				await tradesApi.reject(proposal.trade.id, currentTeamId);
+			}
+			toastState.success(action === 'accept' ? 'Trade accepted' : 'Trade rejected');
 			onUpdate?.();
 		} catch (err) {
-			toastState.error('Failed to accept trade');
-			logger.error('Failed to accept trade:', err);
+			toastState.error(action === 'accept' ? 'Failed to accept trade' : 'Failed to reject trade');
+			logger.error(`Failed to ${action} trade:`, err);
 		} finally {
 			isAccepting = false;
-		}
-	}
-
-	async function handleReject() {
-		if (!currentTeamId) return;
-
-		isRejecting = true;
-
-		try {
-			await tradesApi.reject(proposal.trade.id, currentTeamId);
-			toastState.success('Trade rejected');
-			onUpdate?.();
-		} catch (err) {
-			toastState.error('Failed to reject trade');
-			logger.error('Failed to reject trade:', err);
-		} finally {
 			isRejecting = false;
 		}
 	}
@@ -113,7 +104,6 @@
 		</div>
 	{:else if fromTeam && toTeam}
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-			<!-- From Team -->
 			<div class="space-y-3">
 				<div class="text-center">
 					<p class="text-sm font-medium text-gray-600 mb-2">From</p>
@@ -142,7 +132,6 @@
 				</div>
 			</div>
 
-			<!-- Arrow -->
 			<div class="flex items-center justify-center">
 				<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
@@ -154,7 +143,6 @@
 				</svg>
 			</div>
 
-			<!-- To Team -->
 			<div class="space-y-3">
 				<div class="text-center">
 					<p class="text-sm font-medium text-gray-600 mb-2">To</p>
@@ -184,7 +172,6 @@
 			</div>
 		</div>
 
-		<!-- Value Difference Indicator -->
 		<div class="mb-6">
 			<div class="flex items-center justify-between mb-2">
 				<p class="text-sm font-medium text-gray-600">Value Difference</p>
@@ -199,12 +186,11 @@
 			</p>
 		</div>
 
-		<!-- Action Buttons -->
 		{#if canRespond}
 			<div class="flex space-x-3">
 				<Button
 					variant="primary"
-					onclick={handleAccept}
+					onclick={() => respond('accept')}
 					disabled={isAccepting || isRejecting}
 					loading={isAccepting}
 				>
@@ -212,7 +198,7 @@
 				</Button>
 				<Button
 					variant="danger"
-					onclick={handleReject}
+					onclick={() => respond('reject')}
 					disabled={isAccepting || isRejecting}
 					loading={isRejecting}
 				>

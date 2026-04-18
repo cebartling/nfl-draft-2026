@@ -1,6 +1,7 @@
 import { wsClient, WebSocketState } from '$lib/api';
 import type { ServerMessage, SessionStatus } from '$lib/types';
 import { draftState } from './draft.svelte';
+import { tradesState } from './trades.svelte';
 import { logger } from '$lib/utils/logger';
 
 /**
@@ -135,12 +136,22 @@ export class WebSocketStateManager {
 
 			case 'trade_proposed':
 				logger.info('Trade proposed:', message);
-				// Trade proposals are handled by trade-specific UI
+				tradesState.onTradeProposed({
+					trade_id: message.trade_id,
+					session_id: message.session_id,
+					from_team_id: message.from_team_id,
+					to_team_id: message.to_team_id,
+					from_team_picks: message.from_team_picks,
+					to_team_picks: message.to_team_picks,
+					from_team_value: message.from_team_value,
+					to_team_value: message.to_team_value,
+				});
 				break;
 
 			case 'trade_executed':
 				logger.info('Trade executed:', message);
-				// Reload draft picks to reflect trade
+				tradesState.onTradeExecuted(message.trade_id);
+				// Reload draft picks to reflect the swap on the board
 				if (draftState.draft) {
 					draftState.loadDraft(draftState.draft.id);
 				}
@@ -148,6 +159,7 @@ export class WebSocketStateManager {
 
 			case 'trade_rejected':
 				logger.info('Trade rejected:', message);
+				tradesState.onTradeRejected(message.trade_id);
 				break;
 
 			case 'error':

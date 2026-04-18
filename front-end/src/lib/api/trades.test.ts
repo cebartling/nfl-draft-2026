@@ -48,8 +48,8 @@ describe('tradesApi', () => {
 				session_id: 'session-1',
 				from_team_id: 'team-a',
 				to_team_id: 'team-b',
-				from_team_pick_ids: ['pick-1'],
-				to_team_pick_ids: ['pick-2'],
+				from_team_picks: ['pick-1'],
+				to_team_picks: ['pick-2'],
 			};
 			const mockProposal = makeProposal();
 			mockPost.mockResolvedValueOnce(mockProposal);
@@ -68,8 +68,8 @@ describe('tradesApi', () => {
 					session_id: 'session-1',
 					from_team_id: 'team-a',
 					to_team_id: 'team-b',
-					from_team_pick_ids: ['pick-1'],
-					to_team_pick_ids: ['pick-32'],
+					from_team_picks: ['pick-1'],
+					to_team_picks: ['pick-32'],
 				})
 			).rejects.toThrow('Trade is not fair');
 		});

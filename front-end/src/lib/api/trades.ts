@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { apiClient } from './client';
-import { TradeSchema, TradeProposalSchema, type Trade, type TradeProposal } from '$lib/types';
+import {
+	TradeSchema,
+	TradeProposalSchema,
+	type ChartType,
+	type Trade,
+	type TradeProposal,
+} from '$lib/types';
 
 /**
  * Parameters for proposing a trade
@@ -9,8 +15,9 @@ export interface ProposeTradeParams {
 	session_id: string;
 	from_team_id: string;
 	to_team_id: string;
-	from_team_pick_ids: string[];
-	to_team_pick_ids: string[];
+	from_team_picks: string[];
+	to_team_picks: string[];
+	chart_type?: ChartType;
 }
 
 /**

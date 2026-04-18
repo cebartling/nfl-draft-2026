@@ -178,6 +178,14 @@ impl TradeEngine {
         self.trade_repo.find_pending_for_team(team_id).await
     }
 
+    /// Get all trade proposals for a session
+    pub async fn get_trades_by_session(
+        &self,
+        session_id: Uuid,
+    ) -> DomainResult<Vec<TradeProposal>> {
+        self.trade_repo.find_proposals_by_session(session_id).await
+    }
+
     /// Get trade by ID with details
     pub async fn get_trade(&self, trade_id: Uuid) -> DomainResult<Option<TradeProposal>> {
         self.trade_repo.find_trade_with_details(trade_id).await
@@ -299,6 +307,7 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<PickTrade>>;
             async fn find_trade_with_details(&self, id: Uuid) -> DomainResult<Option<TradeProposal>>;
             async fn find_by_session(&self, session_id: Uuid) -> DomainResult<Vec<PickTrade>>;
+            async fn find_proposals_by_session(&self, session_id: Uuid) -> DomainResult<Vec<TradeProposal>>;
             async fn find_pending_for_team(&self, team_id: Uuid) -> DomainResult<Vec<TradeProposal>>;
             async fn update(&self, trade: &PickTrade) -> DomainResult<PickTrade>;
             async fn is_pick_in_active_trade(&self, pick_id: Uuid, exclude_trade_id: Option<Uuid>) -> DomainResult<bool>;
