@@ -106,8 +106,7 @@
 			// different from the session default. Otherwise the backend uses
 			// the session's configured chart, which is what we want.
 			const sessionChart = draftState.session?.chart_type;
-			const chartOverride =
-				chartTypeTouched && chartType !== sessionChart ? chartType : undefined;
+			const chartOverride = chartTypeTouched && chartType !== sessionChart ? chartType : undefined;
 			await tradesApi.propose({
 				session_id: sessionId,
 				from_team_id: fromTeamId,
