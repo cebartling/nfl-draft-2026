@@ -90,7 +90,7 @@ export class TradesState {
 					status: 'Proposed',
 					from_team_value: payload.from_team_value,
 					to_team_value: payload.to_team_value,
-					value_difference: payload.from_team_value - payload.to_team_value,
+					value_difference: Math.abs(payload.from_team_value - payload.to_team_value),
 				},
 				from_team_picks: payload.from_team_picks,
 				to_team_picks: payload.to_team_picks,
