@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-04-18",
+    "last_updated": "2026-04-19",
     "sources": [
       "Tankathon.com"
     ],
@@ -96,10 +96,10 @@
       "round": 1,
       "pick_in_round": 10,
       "overall_pick": 10,
-      "team_abbreviation": "CIN",
+      "team_abbreviation": "NYG",
       "original_team_abbreviation": "CIN",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From CIN"
     },
     {
       "round": 1,
