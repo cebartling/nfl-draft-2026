@@ -4,8 +4,8 @@
     "source": "merged",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-04-30",
-    "total_prospects": 531
+    "scraped_at": "2026-05-01",
+    "total_prospects": 530
   },
   "rankings": [
     {
@@ -4636,15 +4636,6 @@
     },
     {
       "rank": 515,
-      "first_name": "Javon",
-      "last_name": "Kilgore",
-      "position": "CB",
-      "school": "South Carolina",
-      "height_inches": null,
-      "weight_pounds": null
-    },
-    {
-      "rank": 516,
       "first_name": "Zane",
       "last_name": "Durant",
       "position": "DT",
@@ -4653,7 +4644,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 517,
+      "rank": 516,
       "first_name": "Gracen",
       "last_name": "Halton",
       "position": "DT",
@@ -4662,7 +4653,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 518,
+      "rank": 517,
       "first_name": "Rayshaun",
       "last_name": "Benny",
       "position": "DT",
@@ -4671,7 +4662,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 519,
+      "rank": 518,
       "first_name": "Xavien",
       "last_name": "Sorey",
       "position": "LB",
@@ -4680,7 +4671,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 520,
+      "rank": 519,
       "first_name": "Cameron",
       "last_name": "Ball",
       "position": "DT",
@@ -4689,7 +4680,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 521,
+      "rank": 520,
       "first_name": "Keyshawn",
       "last_name": "Elliott",
       "position": "LB",
@@ -4698,7 +4689,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 522,
+      "rank": 521,
       "first_name": "Chandler",
       "last_name": "Rivers",
       "position": "CB",
@@ -4707,7 +4698,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 523,
+      "rank": 522,
       "first_name": "Rahul",
       "last_name": "Faison",
       "position": "RB",
@@ -4716,7 +4707,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 524,
+      "rank": 523,
       "first_name": "Jeffrey",
       "last_name": "M’ba",
       "position": "DT",
@@ -4725,7 +4716,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 525,
+      "rank": 524,
       "first_name": "Will",
       "last_name": "Pauling",
       "position": "WR",
@@ -4734,7 +4725,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 526,
+      "rank": 525,
       "first_name": "Luke",
       "last_name": "Altmeyer",
       "position": "QB",
@@ -4743,7 +4734,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 527,
+      "rank": 526,
       "first_name": "Deven",
       "last_name": "Eastern",
       "position": "DT",
@@ -4752,7 +4743,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 528,
+      "rank": 527,
       "first_name": "Tim",
       "last_name": "Keenan",
       "position": "DT",
@@ -4761,7 +4752,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 529,
+      "rank": 528,
       "first_name": "Pat",
       "last_name": "Coogan",
       "position": "C",
@@ -4770,7 +4761,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 530,
+      "rank": 529,
       "first_name": "Brenen",
       "last_name": "Thompson",
       "position": "WR",
@@ -4779,7 +4770,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 531,
+      "rank": 530,
       "first_name": "Parker",
       "last_name": "Robertson",
       "position": "S",
