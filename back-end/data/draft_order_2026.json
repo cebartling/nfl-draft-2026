@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-05-18",
+    "last_updated": "2026-05-19",
     "sources": [
       "Tankathon.com"
     ],
@@ -2130,10 +2130,10 @@
       "round": 7,
       "pick_in_round": 20,
       "overall_pick": 236,
-      "team_abbreviation": "HOU",
+      "team_abbreviation": "CLE",
       "original_team_abbreviation": "HOU",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From HOU"
     },
     {
       "round": 7,
