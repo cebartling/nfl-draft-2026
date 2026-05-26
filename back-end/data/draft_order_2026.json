@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-05-25",
+    "last_updated": "2026-05-26",
     "sources": [
       "Tankathon.com"
     ],
@@ -2049,10 +2049,10 @@
       "round": 7,
       "pick_in_round": 11,
       "overall_pick": 227,
-      "team_abbreviation": "NYG",
+      "team_abbreviation": "MIA",
       "original_team_abbreviation": "NYG",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From NYG"
     },
     {
       "round": 7,
