@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-06-01",
+    "last_updated": "2026-06-02",
     "sources": [
       "Tankathon.com"
     ],
@@ -294,10 +294,10 @@
       "round": 1,
       "pick_in_round": 32,
       "overall_pick": 32,
-      "team_abbreviation": "LAR",
+      "team_abbreviation": "CLE",
       "original_team_abbreviation": "LAR",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From LAR"
     },
     {
       "round": 2,
@@ -1428,10 +1428,10 @@
       "round": 5,
       "pick_in_round": 18,
       "overall_pick": 158,
-      "team_abbreviation": "NE",
+      "team_abbreviation": "CHI",
       "original_team_abbreviation": "CHI",
       "is_compensatory": false,
-      "notes": "From CHI"
+      "notes": null
     },
     {
       "round": 5,
