@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-06-23",
-    "total_prospects": 100
+    "scraped_at": "2026-06-24",
+    "total_prospects": 101
   },
   "rankings": [
     {
@@ -460,6 +460,15 @@
     },
     {
       "rank": 51,
+      "first_name": "Brendan",
+      "last_name": "Sorsby",
+      "position": "QB",
+      "school": "Texas Tech",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 52,
       "first_name": "Trevor",
       "last_name": "Lauck",
       "position": "OT",
@@ -468,7 +477,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 52,
+      "rank": 53,
       "first_name": "Princewill",
       "last_name": "Umanmielen",
       "position": "DE",
@@ -477,7 +486,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 53,
+      "rank": 54,
       "first_name": "Rasheem",
       "last_name": "Biles",
       "position": "LB",
@@ -486,7 +495,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 54,
+      "rank": 55,
       "first_name": "Ashton",
       "last_name": "Hampton",
       "position": "CB",
@@ -495,7 +504,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 55,
+      "rank": 56,
       "first_name": "Jayden",
       "last_name": "Maiava",
       "position": "QB",
@@ -504,7 +513,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 56,
+      "rank": 57,
       "first_name": "Anthony",
       "last_name": "Smith",
       "position": "DE",
@@ -513,7 +522,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 57,
+      "rank": 58,
       "first_name": "Jayden",
       "last_name": "Jackson",
       "position": "DT",
@@ -522,7 +531,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 58,
+      "rank": 59,
       "first_name": "OJ",
       "last_name": "Frederique Jr.",
       "position": "CB",
@@ -531,7 +540,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 59,
+      "rank": 60,
       "first_name": "T.J.",
       "last_name": "Moore",
       "position": "WR",
@@ -540,7 +549,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 60,
+      "rank": 61,
       "first_name": "Ty",
       "last_name": "Benefield",
       "position": "S",
@@ -549,7 +558,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 61,
+      "rank": 62,
       "first_name": "Jadan",
       "last_name": "Baugh",
       "position": "RB",
@@ -558,7 +567,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 62,
+      "rank": 63,
       "first_name": "Suntarine",
       "last_name": "Perkins",
       "position": "LB",
@@ -567,7 +576,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 63,
+      "rank": 64,
       "first_name": "DJ",
       "last_name": "Lagway",
       "position": "QB",
@@ -576,7 +585,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 64,
+      "rank": 65,
       "first_name": "Jamari",
       "last_name": "Sharpe",
       "position": "CB",
@@ -585,7 +594,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 65,
+      "rank": 66,
       "first_name": "Kenyatta",
       "last_name": "Jackson Jr.",
       "position": "DE",
@@ -594,7 +603,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 66,
+      "rank": 67,
       "first_name": "Nate",
       "last_name": "Frazier",
       "position": "RB",
@@ -603,7 +612,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 67,
+      "rank": 68,
       "first_name": "Boubacar",
       "last_name": "Traore",
       "position": "DE",
@@ -612,7 +621,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 68,
+      "rank": 69,
       "first_name": "KJ",
       "last_name": "Duff",
       "position": "WR",
@@ -621,7 +630,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 69,
+      "rank": 70,
       "first_name": "Blake",
       "last_name": "Frazier",
       "position": "OT",
@@ -630,7 +639,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 70,
+      "rank": 71,
       "first_name": "Iapani",
       "last_name": "Laloulu",
       "position": "OG",
@@ -639,7 +648,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 71,
+      "rank": 72,
       "first_name": "Zach",
       "last_name": "Lutmer",
       "position": "S",
@@ -648,7 +657,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 72,
+      "rank": 73,
       "first_name": "Anthonie",
       "last_name": "Knapp",
       "position": "OG",
@@ -657,7 +666,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 73,
+      "rank": 74,
       "first_name": "Bryant",
       "last_name": "Wesco Jr.",
       "position": "WR",
@@ -666,7 +675,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 74,
+      "rank": 75,
       "first_name": "Jyaire",
       "last_name": "Hill",
       "position": "CB",
@@ -675,7 +684,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 75,
+      "rank": 76,
       "first_name": "Brice",
       "last_name": "Pollock",
       "position": "CB",
@@ -684,7 +693,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 76,
+      "rank": 77,
       "first_name": "Evan",
       "last_name": "Tengesdahl",
       "position": "OG",
@@ -693,7 +702,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 77,
+      "rank": 78,
       "first_name": "Jacarrius",
       "last_name": "Peak",
       "position": "OT",
@@ -702,7 +711,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 78,
+      "rank": 79,
       "first_name": "Marcus",
       "last_name": "Neal Jr.",
       "position": "S",
@@ -711,7 +720,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 79,
+      "rank": 80,
       "first_name": "Sam",
       "last_name": "Leavitt",
       "position": "QB",
@@ -720,7 +729,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 80,
+      "rank": 81,
       "first_name": "Terrance",
       "last_name": "Carter Jr.",
       "position": "TE",
@@ -729,7 +738,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 81,
+      "rank": 82,
       "first_name": "Ben",
       "last_name": "Roberts",
       "position": "LB",
@@ -738,7 +747,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 82,
+      "rank": 83,
       "first_name": "Chris",
       "last_name": "Cole",
       "position": "LB",
@@ -747,7 +756,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 83,
+      "rank": 84,
       "first_name": "Niki",
       "last_name": "Prongos",
       "position": "OT",
@@ -756,7 +765,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 84,
+      "rank": 85,
       "first_name": "Mateen",
       "last_name": "Ibirogba",
       "position": "DT",
@@ -765,7 +774,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 85,
+      "rank": 86,
       "first_name": "Duce",
       "last_name": "Robinson",
       "position": "WR",
@@ -774,7 +783,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 86,
+      "rank": 87,
       "first_name": "Justin",
       "last_name": "Scott",
       "position": "DT",
@@ -783,7 +792,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 87,
+      "rank": 88,
       "first_name": "Teitum",
       "last_name": "Tuioti",
       "position": "DE",
@@ -792,7 +801,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 88,
+      "rank": 89,
       "first_name": "Bray",
       "last_name": "Hubbard",
       "position": "S",
@@ -801,7 +810,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 89,
+      "rank": 90,
       "first_name": "Clev",
       "last_name": "Lubin",
       "position": "DE",
@@ -810,7 +819,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 90,
+      "rank": 91,
       "first_name": "Wyatt",
       "last_name": "Young",
       "position": "WR",
@@ -819,7 +828,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 91,
+      "rank": 92,
       "first_name": "Mark",
       "last_name": "Fletcher Jr.",
       "position": "RB",
@@ -828,7 +837,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 92,
+      "rank": 93,
       "first_name": "Nyck",
       "last_name": "Harbor",
       "position": "WR",
@@ -837,7 +846,7 @@
       "weight_pounds": null
     },
     {
-      "rank": 93,
+      "rank": 94,
       "first_name": "Bear",
       "last_name": "Alexander",
       "position": "DT",
