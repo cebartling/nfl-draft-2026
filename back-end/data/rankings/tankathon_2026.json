@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-08-14",
-    "total_prospects": 111
+    "scraped_at": "2026-08-15",
+    "total_prospects": 112
   },
   "rankings": [
     {
@@ -959,6 +959,15 @@
       "last_name": "Moore",
       "position": "WR",
       "school": "Oregon",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
+      "first_name": "DJ",
+      "last_name": "Pickett",
+      "position": "CB",
+      "school": "LSU",
       "height_inches": null,
       "weight_pounds": null
     },
