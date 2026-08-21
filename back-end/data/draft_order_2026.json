@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-08-20",
+    "last_updated": "2026-08-21",
     "sources": [
       "Tankathon.com"
     ],
@@ -1770,10 +1770,10 @@
       "round": 6,
       "pick_in_round": 15,
       "overall_pick": 196,
-      "team_abbreviation": "JAX",
+      "team_abbreviation": "NYG",
       "original_team_abbreviation": "JAX",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From JAX"
     },
     {
       "round": 6,
