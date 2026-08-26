@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-08-25",
+    "last_updated": "2026-08-26",
     "sources": [
       "Tankathon.com"
     ],
@@ -195,15 +195,6 @@
       "round": 1,
       "pick_in_round": 21,
       "overall_pick": 21,
-      "team_abbreviation": "HOU",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": null
-    },
-    {
-      "round": 1,
-      "pick_in_round": 22,
-      "overall_pick": 22,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -211,10 +202,19 @@
     },
     {
       "round": 1,
-      "pick_in_round": 23,
-      "overall_pick": 23,
+      "pick_in_round": 22,
+      "overall_pick": 22,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
+      "is_compensatory": false,
+      "notes": null
+    },
+    {
+      "round": 1,
+      "pick_in_round": 23,
+      "overall_pick": 23,
+      "team_abbreviation": "LAC",
+      "original_team_abbreviation": "LAC",
       "is_compensatory": false,
       "notes": null
     },
@@ -231,8 +231,8 @@
       "round": 1,
       "pick_in_round": 25,
       "overall_pick": 25,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "HOU",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
       "notes": null
     },
@@ -240,8 +240,8 @@
       "round": 1,
       "pick_in_round": 26,
       "overall_pick": 26,
-      "team_abbreviation": "LAC",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
       "notes": null
     },
@@ -483,15 +483,6 @@
       "round": 2,
       "pick_in_round": 21,
       "overall_pick": 53,
-      "team_abbreviation": "HOU",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": null
-    },
-    {
-      "round": 2,
-      "pick_in_round": 22,
-      "overall_pick": 54,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -499,10 +490,19 @@
     },
     {
       "round": 2,
-      "pick_in_round": 23,
-      "overall_pick": 55,
+      "pick_in_round": 22,
+      "overall_pick": 54,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
+      "is_compensatory": false,
+      "notes": null
+    },
+    {
+      "round": 2,
+      "pick_in_round": 23,
+      "overall_pick": 55,
+      "team_abbreviation": "LAC",
+      "original_team_abbreviation": "LAC",
       "is_compensatory": false,
       "notes": null
     },
@@ -519,8 +519,8 @@
       "round": 2,
       "pick_in_round": 25,
       "overall_pick": 57,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "HOU",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
       "notes": null
     },
@@ -528,8 +528,8 @@
       "round": 2,
       "pick_in_round": 26,
       "overall_pick": 58,
-      "team_abbreviation": "LAC",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
       "notes": null
     },
@@ -771,15 +771,6 @@
       "round": 3,
       "pick_in_round": 21,
       "overall_pick": 85,
-      "team_abbreviation": "HOU",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": null
-    },
-    {
-      "round": 3,
-      "pick_in_round": 22,
-      "overall_pick": 86,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -787,10 +778,19 @@
     },
     {
       "round": 3,
-      "pick_in_round": 23,
-      "overall_pick": 87,
+      "pick_in_round": 22,
+      "overall_pick": 86,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
+      "is_compensatory": false,
+      "notes": null
+    },
+    {
+      "round": 3,
+      "pick_in_round": 23,
+      "overall_pick": 87,
+      "team_abbreviation": "LAC",
+      "original_team_abbreviation": "LAC",
       "is_compensatory": false,
       "notes": null
     },
@@ -807,8 +807,8 @@
       "round": 3,
       "pick_in_round": 25,
       "overall_pick": 89,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "HOU",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
       "notes": null
     },
@@ -816,8 +816,8 @@
       "round": 3,
       "pick_in_round": 26,
       "overall_pick": 90,
-      "team_abbreviation": "LAC",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
       "notes": null
     },
@@ -1104,15 +1104,6 @@
       "round": 4,
       "pick_in_round": 21,
       "overall_pick": 122,
-      "team_abbreviation": "HOU",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": null
-    },
-    {
-      "round": 4,
-      "pick_in_round": 22,
-      "overall_pick": 123,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -1120,10 +1111,19 @@
     },
     {
       "round": 4,
-      "pick_in_round": 23,
-      "overall_pick": 124,
+      "pick_in_round": 22,
+      "overall_pick": 123,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
+      "is_compensatory": false,
+      "notes": null
+    },
+    {
+      "round": 4,
+      "pick_in_round": 23,
+      "overall_pick": 124,
+      "team_abbreviation": "LAC",
+      "original_team_abbreviation": "LAC",
       "is_compensatory": false,
       "notes": null
     },
@@ -1140,8 +1140,8 @@
       "round": 4,
       "pick_in_round": 25,
       "overall_pick": 126,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "HOU",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
       "notes": null
     },
@@ -1149,8 +1149,8 @@
       "round": 4,
       "pick_in_round": 26,
       "overall_pick": 127,
-      "team_abbreviation": "LAC",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
       "notes": null
     },
@@ -1437,15 +1437,6 @@
       "round": 5,
       "pick_in_round": 21,
       "overall_pick": 159,
-      "team_abbreviation": "CLE",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": "From HOU"
-    },
-    {
-      "round": 5,
-      "pick_in_round": 22,
-      "overall_pick": 160,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -1453,10 +1444,19 @@
     },
     {
       "round": 5,
-      "pick_in_round": 23,
-      "overall_pick": 161,
+      "pick_in_round": 22,
+      "overall_pick": 160,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
+      "is_compensatory": false,
+      "notes": null
+    },
+    {
+      "round": 5,
+      "pick_in_round": 23,
+      "overall_pick": 161,
+      "team_abbreviation": "LAC",
+      "original_team_abbreviation": "LAC",
       "is_compensatory": false,
       "notes": null
     },
@@ -1473,17 +1473,17 @@
       "round": 5,
       "pick_in_round": 25,
       "overall_pick": 163,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "CLE",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From HOU"
     },
     {
       "round": 5,
       "pick_in_round": 26,
       "overall_pick": 164,
-      "team_abbreviation": "LAC",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
       "notes": null
     },
@@ -1824,15 +1824,6 @@
       "round": 6,
       "pick_in_round": 21,
       "overall_pick": 202,
-      "team_abbreviation": "NE",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": "From HOU"
-    },
-    {
-      "round": 6,
-      "pick_in_round": 22,
-      "overall_pick": 203,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -1840,12 +1831,21 @@
     },
     {
       "round": 6,
-      "pick_in_round": 23,
-      "overall_pick": 204,
+      "pick_in_round": 22,
+      "overall_pick": 203,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
       "is_compensatory": false,
       "notes": null
+    },
+    {
+      "round": 6,
+      "pick_in_round": 23,
+      "overall_pick": 204,
+      "team_abbreviation": "NO",
+      "original_team_abbreviation": "LAC",
+      "is_compensatory": false,
+      "notes": "From LAC"
     },
     {
       "round": 6,
@@ -1860,19 +1860,19 @@
       "round": 6,
       "pick_in_round": 25,
       "overall_pick": 206,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "NE",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From HOU"
     },
     {
       "round": 6,
       "pick_in_round": 26,
       "overall_pick": 207,
-      "team_abbreviation": "NO",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
-      "notes": "From LAC"
+      "notes": null
     },
     {
       "round": 6,
@@ -2175,15 +2175,6 @@
       "round": 7,
       "pick_in_round": 21,
       "overall_pick": 241,
-      "team_abbreviation": "CLE",
-      "original_team_abbreviation": "HOU",
-      "is_compensatory": false,
-      "notes": "From HOU"
-    },
-    {
-      "round": 7,
-      "pick_in_round": 22,
-      "overall_pick": 242,
       "team_abbreviation": "DEN",
       "original_team_abbreviation": "DEN",
       "is_compensatory": false,
@@ -2191,12 +2182,21 @@
     },
     {
       "round": 7,
-      "pick_in_round": 23,
-      "overall_pick": 243,
+      "pick_in_round": 22,
+      "overall_pick": 242,
       "team_abbreviation": "HOU",
       "original_team_abbreviation": "NE",
       "is_compensatory": false,
       "notes": "From NE"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 23,
+      "overall_pick": 243,
+      "team_abbreviation": "LAC",
+      "original_team_abbreviation": "LAC",
+      "is_compensatory": false,
+      "notes": null
     },
     {
       "round": 7,
@@ -2211,17 +2211,17 @@
       "round": 7,
       "pick_in_round": 25,
       "overall_pick": 245,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
+      "team_abbreviation": "CLE",
+      "original_team_abbreviation": "HOU",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From HOU"
     },
     {
       "round": 7,
       "pick_in_round": 26,
       "overall_pick": 246,
-      "team_abbreviation": "LAC",
-      "original_team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
+      "original_team_abbreviation": "DET",
       "is_compensatory": false,
       "notes": null
     },
