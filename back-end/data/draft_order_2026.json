@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-08-29",
+    "last_updated": "2026-08-30",
     "sources": [
       "Tankathon.com"
     ],
@@ -726,10 +726,10 @@
       "round": 3,
       "pick_in_round": 16,
       "overall_pick": 80,
-      "team_abbreviation": "DAL",
+      "team_abbreviation": "PIT",
       "original_team_abbreviation": "DAL",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From DAL"
     },
     {
       "round": 3,
@@ -996,10 +996,10 @@
       "round": 4,
       "pick_in_round": 9,
       "overall_pick": 110,
-      "team_abbreviation": "PIT",
+      "team_abbreviation": "DAL",
       "original_team_abbreviation": "PIT",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From PIT"
     },
     {
       "round": 4,
@@ -1716,10 +1716,10 @@
       "round": 6,
       "pick_in_round": 9,
       "overall_pick": 190,
-      "team_abbreviation": "DAL",
+      "team_abbreviation": "PIT",
       "original_team_abbreviation": "PIT",
       "is_compensatory": false,
-      "notes": "From PIT"
+      "notes": null
     },
     {
       "round": 6,
