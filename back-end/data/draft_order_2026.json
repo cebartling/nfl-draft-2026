@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-08-30",
+    "last_updated": "2026-08-31",
     "sources": [
       "Tankathon.com"
     ],
@@ -1311,10 +1311,10 @@
       "round": 5,
       "pick_in_round": 7,
       "overall_pick": 145,
-      "team_abbreviation": "ATL",
+      "team_abbreviation": "CHI",
       "original_team_abbreviation": "ATL",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From ATL"
     },
     {
       "round": 5,
@@ -1833,10 +1833,10 @@
       "round": 6,
       "pick_in_round": 22,
       "overall_pick": 203,
-      "team_abbreviation": "NE",
+      "team_abbreviation": "MIN",
       "original_team_abbreviation": "NE",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From NE"
     },
     {
       "round": 6,
@@ -2112,10 +2112,10 @@
       "round": 7,
       "pick_in_round": 14,
       "overall_pick": 234,
-      "team_abbreviation": "MIN",
+      "team_abbreviation": "NE",
       "original_team_abbreviation": "MIN",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From MIN"
     },
     {
       "round": 7,
@@ -2202,10 +2202,10 @@
       "round": 7,
       "pick_in_round": 24,
       "overall_pick": 244,
-      "team_abbreviation": "SF",
+      "team_abbreviation": "HOU",
       "original_team_abbreviation": "SF",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From SF"
     },
     {
       "round": 7,
