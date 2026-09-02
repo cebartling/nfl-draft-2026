@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-09-01",
+    "last_updated": "2026-09-02",
     "sources": [
       "Tankathon.com"
     ],
@@ -2292,15 +2292,6 @@
       "round": 7,
       "pick_in_round": 33,
       "overall_pick": 254,
-      "team_abbreviation": "DET",
-      "original_team_abbreviation": "DET",
-      "is_compensatory": true,
-      "notes": "Compensatory pick"
-    },
-    {
-      "round": 7,
-      "pick_in_round": 34,
-      "overall_pick": 255,
       "team_abbreviation": "KC",
       "original_team_abbreviation": "KC",
       "is_compensatory": true,
@@ -2308,8 +2299,8 @@
     },
     {
       "round": 7,
-      "pick_in_round": 35,
-      "overall_pick": 256,
+      "pick_in_round": 34,
+      "overall_pick": 255,
       "team_abbreviation": "MIA",
       "original_team_abbreviation": "MIA",
       "is_compensatory": true,
@@ -2317,10 +2308,19 @@
     },
     {
       "round": 7,
-      "pick_in_round": 36,
-      "overall_pick": 257,
+      "pick_in_round": 35,
+      "overall_pick": 256,
       "team_abbreviation": "SF",
       "original_team_abbreviation": "SF",
+      "is_compensatory": true,
+      "notes": "Compensatory pick"
+    },
+    {
+      "round": 7,
+      "pick_in_round": 36,
+      "overall_pick": 257,
+      "team_abbreviation": "KC",
+      "original_team_abbreviation": "KC",
       "is_compensatory": true,
       "notes": "Compensatory pick"
     }
