@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-09-05",
-    "total_prospects": 133
+    "scraped_at": "2026-09-06",
+    "total_prospects": 135
   },
   "rankings": [
     {
@@ -1144,6 +1144,15 @@
     },
     {
       "rank": 2028,
+      "first_name": "Dijon",
+      "last_name": "Lee Jr.",
+      "position": "CB",
+      "school": "Alabama",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
       "first_name": "Dakorien",
       "last_name": "Moore",
       "position": "WR",
@@ -1175,6 +1184,15 @@
       "last_name": "Sanders Jr.",
       "position": "OT",
       "school": "Tennessee",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
+      "first_name": "Kamario",
+      "last_name": "Taylor",
+      "position": "QB",
+      "school": "Mississippi State",
       "height_inches": null,
       "weight_pounds": null
     },
