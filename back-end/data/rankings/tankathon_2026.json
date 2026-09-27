@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-09-26",
-    "total_prospects": 164
+    "scraped_at": "2026-09-27",
+    "total_prospects": 165
   },
   "rankings": [
     {
@@ -1373,6 +1373,15 @@
       "last_name": "Berry",
       "position": "RB",
       "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
+      "first_name": "JJ",
+      "last_name": "Buchanan",
+      "position": "WR",
+      "school": "Michigan",
       "height_inches": null,
       "weight_pounds": null
     },
