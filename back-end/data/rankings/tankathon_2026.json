@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-09-29",
-    "total_prospects": 162
+    "scraped_at": "2026-09-30",
+    "total_prospects": 163
   },
   "rankings": [
     {
@@ -1409,6 +1409,15 @@
       "last_name": "Pickett",
       "position": "CB",
       "school": "LSU",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
+      "first_name": "Keelon",
+      "last_name": "Russell",
+      "position": "QB",
+      "school": "Alabama",
       "height_inches": null,
       "weight_pounds": null
     },
