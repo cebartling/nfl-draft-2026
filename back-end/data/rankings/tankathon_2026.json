@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-10-05",
-    "total_prospects": 174
+    "scraped_at": "2026-10-06",
+    "total_prospects": 175
   },
   "rankings": [
     {
@@ -1571,6 +1571,15 @@
       "last_name": "Underwood",
       "position": "QB",
       "school": "Michigan",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2029,
+      "first_name": "Jesse",
+      "last_name": "Legree",
+      "position": "WR",
+      "school": "Oregon State",
       "height_inches": null,
       "weight_pounds": null
     }
