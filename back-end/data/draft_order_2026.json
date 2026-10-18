@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-10-17",
+    "last_updated": "2026-10-18",
     "sources": [
       "Tankathon.com"
     ],
@@ -1923,8 +1923,8 @@
       "round": 6,
       "pick_in_round": 33,
       "overall_pick": 213,
-      "team_abbreviation": "MIN",
-      "original_team_abbreviation": "MIN",
+      "team_abbreviation": "SEA",
+      "original_team_abbreviation": "SEA",
       "is_compensatory": true,
       "notes": "Compensatory pick"
     },
@@ -1932,8 +1932,8 @@
       "round": 6,
       "pick_in_round": 34,
       "overall_pick": 214,
-      "team_abbreviation": "SEA",
-      "original_team_abbreviation": "SEA",
+      "team_abbreviation": "MIN",
+      "original_team_abbreviation": "MIN",
       "is_compensatory": true,
       "notes": "Compensatory pick"
     },
