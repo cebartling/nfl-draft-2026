@@ -4,8 +4,8 @@
     "source": "tankathon",
     "source_url": "https://www.tankathon.com/nfl/big_board",
     "draft_year": 2026,
-    "scraped_at": "2026-10-17",
-    "total_prospects": 180
+    "scraped_at": "2026-10-18",
+    "total_prospects": 182
   },
   "rankings": [
     {
@@ -1522,6 +1522,15 @@
     },
     {
       "rank": 2028,
+      "first_name": "Daeden",
+      "last_name": "Hopkins",
+      "position": "DE",
+      "school": "Missouri",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
       "first_name": "Bo",
       "last_name": "Jackson",
       "position": "RB",
@@ -1616,6 +1625,15 @@
       "last_name": "Underwood",
       "position": "QB",
       "school": "Michigan",
+      "height_inches": null,
+      "weight_pounds": null
+    },
+    {
+      "rank": 2028,
+      "first_name": "Jayden",
+      "last_name": "Woods",
+      "position": "DE",
+      "school": "Florida",
       "height_inches": null,
       "weight_pounds": null
     },
