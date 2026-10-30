@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-10-29",
+    "last_updated": "2026-10-30",
     "sources": [
       "Tankathon.com"
     ],
@@ -96,8 +96,8 @@
       "round": 1,
       "pick_in_round": 10,
       "overall_pick": 10,
-      "team_abbreviation": "NYJ",
-      "original_team_abbreviation": "NYJ",
+      "team_abbreviation": "NO",
+      "original_team_abbreviation": "NO",
       "is_compensatory": false,
       "notes": null
     },
@@ -105,8 +105,8 @@
       "round": 1,
       "pick_in_round": 11,
       "overall_pick": 11,
-      "team_abbreviation": "NO",
-      "original_team_abbreviation": "NO",
+      "team_abbreviation": "NYJ",
+      "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
       "notes": null
     },
@@ -258,10 +258,10 @@
       "round": 1,
       "pick_in_round": 28,
       "overall_pick": 28,
-      "team_abbreviation": "CHI",
+      "team_abbreviation": "TEN",
       "original_team_abbreviation": "CHI",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From CHI"
     },
     {
       "round": 1,
@@ -375,8 +375,8 @@
       "round": 2,
       "pick_in_round": 9,
       "overall_pick": 41,
-      "team_abbreviation": "NYJ",
-      "original_team_abbreviation": "NYJ",
+      "team_abbreviation": "NO",
+      "original_team_abbreviation": "NO",
       "is_compensatory": false,
       "notes": null
     },
@@ -384,8 +384,8 @@
       "round": 2,
       "pick_in_round": 10,
       "overall_pick": 42,
-      "team_abbreviation": "NO",
-      "original_team_abbreviation": "NO",
+      "team_abbreviation": "NYJ",
+      "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
       "notes": null
     },
@@ -654,8 +654,8 @@
       "round": 3,
       "pick_in_round": 8,
       "overall_pick": 72,
-      "team_abbreviation": "NYJ",
-      "original_team_abbreviation": "NYJ",
+      "team_abbreviation": "NO",
+      "original_team_abbreviation": "NO",
       "is_compensatory": false,
       "notes": null
     },
@@ -663,8 +663,8 @@
       "round": 3,
       "pick_in_round": 9,
       "overall_pick": 73,
-      "team_abbreviation": "NO",
-      "original_team_abbreviation": "NO",
+      "team_abbreviation": "NYJ",
+      "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
       "notes": null
     },
@@ -987,8 +987,8 @@
       "round": 4,
       "pick_in_round": 7,
       "overall_pick": 109,
-      "team_abbreviation": "NYJ",
-      "original_team_abbreviation": "NYJ",
+      "team_abbreviation": "NO",
+      "original_team_abbreviation": "NO",
       "is_compensatory": false,
       "notes": null
     },
@@ -996,8 +996,8 @@
       "round": 4,
       "pick_in_round": 8,
       "overall_pick": 110,
-      "team_abbreviation": "NO",
-      "original_team_abbreviation": "NO",
+      "team_abbreviation": "NYJ",
+      "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
       "notes": null
     },
@@ -1176,10 +1176,10 @@
       "round": 4,
       "pick_in_round": 28,
       "overall_pick": 130,
-      "team_abbreviation": "CHI",
+      "team_abbreviation": "TEN",
       "original_team_abbreviation": "CHI",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From CHI"
     },
     {
       "round": 4,
@@ -1311,8 +1311,8 @@
       "round": 5,
       "pick_in_round": 6,
       "overall_pick": 145,
-      "team_abbreviation": "NYJ",
-      "original_team_abbreviation": "NYJ",
+      "team_abbreviation": "NO",
+      "original_team_abbreviation": "NO",
       "is_compensatory": false,
       "notes": null
     },
@@ -1320,8 +1320,8 @@
       "round": 5,
       "pick_in_round": 7,
       "overall_pick": 146,
-      "team_abbreviation": "NO",
-      "original_team_abbreviation": "NO",
+      "team_abbreviation": "NYJ",
+      "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
       "notes": null
     },
@@ -1662,15 +1662,6 @@
       "round": 6,
       "pick_in_round": 5,
       "overall_pick": 184,
-      "team_abbreviation": "MIN",
-      "original_team_abbreviation": "NYJ",
-      "is_compensatory": false,
-      "notes": "From NYJ"
-    },
-    {
-      "round": 6,
-      "pick_in_round": 6,
-      "overall_pick": 185,
       "team_abbreviation": "NE",
       "original_team_abbreviation": "NO",
       "is_compensatory": false,
@@ -1678,12 +1669,21 @@
     },
     {
       "round": 6,
+      "pick_in_round": 6,
+      "overall_pick": 185,
+      "team_abbreviation": "MIN",
+      "original_team_abbreviation": "NYJ",
+      "is_compensatory": false,
+      "notes": "From NYJ"
+    },
+    {
+      "round": 6,
       "pick_in_round": 7,
       "overall_pick": 186,
-      "team_abbreviation": "HOU",
+      "team_abbreviation": "NE",
       "original_team_abbreviation": "HOU",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From HOU"
     },
     {
       "round": 6,
@@ -1698,10 +1698,10 @@
       "round": 6,
       "pick_in_round": 9,
       "overall_pick": 188,
-      "team_abbreviation": "IND",
+      "team_abbreviation": "BUF",
       "original_team_abbreviation": "IND",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From IND"
     },
     {
       "round": 6,
@@ -1743,10 +1743,10 @@
       "round": 6,
       "pick_in_round": 14,
       "overall_pick": 193,
-      "team_abbreviation": "ATL",
+      "team_abbreviation": "KC",
       "original_team_abbreviation": "ATL",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From ATL"
     },
     {
       "round": 6,
@@ -1761,10 +1761,10 @@
       "round": 6,
       "pick_in_round": 16,
       "overall_pick": 195,
-      "team_abbreviation": "MIN",
+      "team_abbreviation": "NE",
       "original_team_abbreviation": "NE",
       "is_compensatory": false,
-      "notes": "From NE"
+      "notes": null
     },
     {
       "round": 6,
@@ -1779,10 +1779,10 @@
       "round": 6,
       "pick_in_round": 18,
       "overall_pick": 197,
-      "team_abbreviation": "SEA",
+      "team_abbreviation": "LAC",
       "original_team_abbreviation": "SEA",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From SEA"
     },
     {
       "round": 6,
@@ -2004,10 +2004,10 @@
       "round": 7,
       "pick_in_round": 1,
       "overall_pick": 222,
-      "team_abbreviation": "LAC",
+      "team_abbreviation": "DET",
       "original_team_abbreviation": "LAC",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From LAC"
     },
     {
       "round": 7,
@@ -2040,10 +2040,10 @@
       "round": 7,
       "pick_in_round": 5,
       "overall_pick": 226,
-      "team_abbreviation": "DEN",
-      "original_team_abbreviation": "NO",
+      "team_abbreviation": "CAR",
+      "original_team_abbreviation": "NYJ",
       "is_compensatory": false,
-      "notes": "From NO"
+      "notes": "From NYJ"
     },
     {
       "round": 7,
@@ -2058,7 +2058,7 @@
       "round": 7,
       "pick_in_round": 7,
       "overall_pick": 228,
-      "team_abbreviation": "MIN",
+      "team_abbreviation": "NE",
       "original_team_abbreviation": "PHI",
       "is_compensatory": false,
       "notes": "From PHI"
@@ -2094,10 +2094,10 @@
       "round": 7,
       "pick_in_round": 11,
       "overall_pick": 232,
-      "team_abbreviation": "PHI",
-      "original_team_abbreviation": "NYJ",
+      "team_abbreviation": "DEN",
+      "original_team_abbreviation": "NO",
       "is_compensatory": false,
-      "notes": "From NYJ"
+      "notes": "From NO"
     },
     {
       "round": 7,
@@ -2256,10 +2256,10 @@
       "round": 7,
       "pick_in_round": 29,
       "overall_pick": 250,
-      "team_abbreviation": "BUF",
+      "team_abbreviation": "IND",
       "original_team_abbreviation": "BUF",
       "is_compensatory": false,
-      "notes": null
+      "notes": "From BUF"
     },
     {
       "round": 7,
@@ -2283,10 +2283,10 @@
       "round": 7,
       "pick_in_round": 32,
       "overall_pick": 253,
-      "team_abbreviation": "NE",
+      "team_abbreviation": "MIN",
       "original_team_abbreviation": "MIN",
       "is_compensatory": false,
-      "notes": "From MIN"
+      "notes": null
     },
     {
       "round": 7,
