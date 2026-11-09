@@ -92,3 +92,8 @@ back-end/data/the_beast_2026.json
 
 # Beads
 .beads/dolt-monitor.pid.lock
+
+# Beads / Dolt files (added by bd init)
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
